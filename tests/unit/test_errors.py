@@ -31,8 +31,15 @@ def test_logger_names() -> None:
 
 
 def test_configure_logging_is_idempotent() -> None:
-    logger = configure_logging(logging.WARNING)
-    n = len(logger.handlers)
-    assert configure_logging(logging.WARNING) is logger
-    assert len(logger.handlers) == n
-    assert logger.level == logging.WARNING
+    logger = logging.getLogger("thermalfea")
+    before, level = list(logger.handlers), logger.level
+    try:
+        assert configure_logging(logging.WARNING) is logger
+        n = len(logger.handlers)
+        assert n == len(before) + 1
+        assert configure_logging(logging.WARNING) is logger
+        assert len(logger.handlers) == n
+        assert logger.level == logging.WARNING
+    finally:  # leave the logger as it was for the other tests
+        logger.handlers[:] = before
+        logger.setLevel(level)

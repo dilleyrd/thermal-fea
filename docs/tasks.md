@@ -98,7 +98,7 @@ through `DofMap`, and every physics contribution is a `Term` (Data §13).
   through the registry (`register_bc` etc.), not a hard-coded list. `api.save/load`.
   Accept: a model that uses every class round-trips to an equal object; the JSON is stable
   (sorted keys, 2-space indent).
-- [ ] **M2.3 [B] Gmsh session.** `geometry/gmsh_session.py`: process-wide singleton guarded
+- [x] **M2.3 [B] Gmsh session.** `geometry/gmsh_session.py`: process-wide singleton guarded
   by a `threading.RLock`; `gmsh.initialize(interruptible=False)` (so it can run in a worker
   thread); terminal output off, messages redirected to `logging`; context manager
   `fresh_model(name)` that clears the previous model.
