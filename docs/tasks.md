@@ -76,7 +76,7 @@ through `DofMap`, and every physics contribution is a `Term` (Data §13).
   solve_partitioned(K, F, fixed_idx, fixed_val) -> T` (Theory §4) using `splu`;
   `Factorization` wrapper that can be cached and reused; singular or NaN → `SolverError`.
   Accept: 1D bar by hand; singular system raises.
-- [ ] **M1.7 [A] Functions.** `core/functions.py` (Data §1).
+- [x] **M1.7 [A] Functions.** `core/functions.py` (Data §1).
   Accept: table interpolation and both extrapolation modes; expression vectorised over
   arrays; `__import__('os')`, attribute access and unknown names all raise `ModelError`;
   dependency flags and breakpoints correct.
