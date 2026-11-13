@@ -115,7 +115,7 @@ through `DofMap`, and every physics contribution is a `Term` (Data §13).
   surfaces from `getAdjacencies`; 40-point display polyline per curve from `getValue`).
   Accept: plate with hole has area w·h − πr²; two touching rectangles yield 2 surfaces and
   exactly one shared curve; rebuild gives identical fingerprints.
-- [ ] **M2.6 [B] Selection resolution.** `selections.resolve` (Data §5) and API helpers
+- [x] **M2.6 [B] Selection resolution.** `selections.resolve` (Data §5) and API helpers
   `select_points/curves/surfaces(model, built, name, where=predicate | tags=[...])`.
   Accept: a selection survives adding an unrelated shape elsewhere; it becomes stale (with
   a clear message) when its curve is cut in two.
