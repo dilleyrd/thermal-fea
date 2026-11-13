@@ -50,7 +50,7 @@ through `DofMap`, and every physics contribution is a `Term` (Data §13).
   code obtains element data only through `registry.element(name)`.
   Accept: ΣN = 1; ΣdN = 0; N_i at node j = δ_ij; dN matches central finite differences to
   1e-7; a dummy element registered inside a test is returned by the registry.
-- [ ] **M1.3 [A] Mesh classes and test-mesh generator.** `core/mesh.py` (Data §2) and
+- [x] **M1.3 [A] Mesh classes and test-mesh generator.** `core/mesh.py` (Data §2) and
   `core/meshgen.py: rect_mesh(x0, y0, w, h, nx, ny, etype, region=1) -> Mesh` with facet
   blocks tagged entity 1 bottom, 2 right, 3 top, 4 left, plus `distort(mesh, amplitude, seed)`
   that perturbs interior nodes.
