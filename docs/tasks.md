@@ -29,7 +29,7 @@ through `DofMap`, and every physics contribution is a `Term` (Data §13).
   Plan §3 with an empty `__init__.py`; `scripts/check.ps1` running `ruff check` then
   `pytest -q`.
   Accept: `pip install -e .[dev]` succeeds; `python -c "import thermalfea"`; `scripts/check.ps1` exits 0.
-- [ ] **M0.2 [A] Errors, logging, layer test.** `core/errors.py` (Data §12);
+- [x] **M0.2 [A] Errors, logging, layer test.** `core/errors.py` (Data §12);
   `tests/unit/test_layers.py` parses every source file with `ast` and fails if a module
   outside `geometry/`, `meshing/` imports `gmsh`, or a module outside `gui/` imports
   `PySide6` or `thermalfea.gui` (Plan §3 layer rules).
