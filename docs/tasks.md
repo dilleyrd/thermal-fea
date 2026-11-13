@@ -72,7 +72,7 @@ through `DofMap`, and every physics contribution is a `Term` (Data §13).
   `solver/assembler.py: Assembler` collecting `(conn, Ke)` and `(conn, fe)` batches and
   producing CSR `K` and dense `F` (COO then `tocsr()`, duplicates summed).
   Accept: assembling two elements by hand gives the expected matrix.
-- [ ] **M1.6 [B] Linear solve with prescribed values.** `solver/linear.py:
+- [x] **M1.6 [B] Linear solve with prescribed values.** `solver/linear.py:
   solve_partitioned(K, F, fixed_idx, fixed_val) -> T` (Theory §4) using `splu`;
   `Factorization` wrapper that can be cached and reused; singular or NaN → `SolverError`.
   Accept: 1D bar by hand; singular system raises.
