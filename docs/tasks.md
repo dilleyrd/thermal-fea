@@ -131,7 +131,7 @@ through `DofMap`, and every physics contribution is a `Term` (Data §13).
   Accept: for a plate with a hole and a two-region plate, all four element types:
   `validate()` passes; Σ element areas matches geometry (1e-3 linear, 1e-6 quadratic);
   Σ edge lengths on the outer rectangle = perimeter; every interface edge appears once.
-- [ ] **M2.8 [A] Size controls and structured meshing.** Curve/point sizes, transfinite
+- [x] **M2.8 [A] Size controls and structured meshing.** Curve/point sizes, transfinite
   curve divisions, transfinite surfaces (3- or 4-sided only; otherwise `MeshError`),
   distance/threshold refinement fields.
   Accept: a transfinite rectangle has exactly nx·ny quads; refinement gives smaller

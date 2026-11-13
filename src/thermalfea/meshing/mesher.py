@@ -27,6 +27,8 @@ log = logging.getLogger(__name__)
 _ALGORITHMS = {"delaunay": 5, "frontal": 6, "frontal_quad": 8}
 _SPATIAL = 3  # gmsh always returns three coordinates per node
 _LINE_ENDS = 2  # a line facet is identified by its two end nodes (stored first)
+_DISTANCE_SAMPLING = 100  # points per curve used by gmsh's distance field
+_TRANSFINITE_SIDES = (3, 4)  # a transfinite surface has three or four sides
 _MAX_SIDES_PER_EDGE = 2  # boundary edge: one element; interface edge: two
 
 
@@ -55,10 +57,118 @@ def apply_settings(gmsh: ModuleType, model: Model, built: BuiltGeometry, dim: in
     option("Mesh.SecondOrderIncomplete", 1)  # 8-node, not 9-node, quads
     option("Mesh.Smoothing", settings.smoothing_passes)
     option("Mesh.RecombineAll", 0)
+    # constraints and fields of an earlier generation must not leak into this one
+    gmsh.model.mesh.removeConstraints()
+    for field_tag in gmsh.model.mesh.field.list():
+        gmsh.model.mesh.field.remove(field_tag)
     gmsh.model.mesh.setSize(gmsh.model.getEntities(0), settings.global_size)
     if settings.element_shape == "quad":
         for tag in built.entities(dim):
             gmsh.model.mesh.setRecombine(dim, tag)
+    _apply_size_controls(gmsh, model, built)
+    _apply_structured(gmsh, model, built, dim)
+
+
+def _selection_tags(model: Model, built: BuiltGeometry, name: str, dims: tuple[int, ...]) -> tuple:
+    """Dimension and current tags of a selection used by a mesh control."""
+    selection = model.selections.get(name)
+    if selection is None:
+        raise MeshError(f"mesh settings refer to unknown selection {name!r}")
+    if selection.dim not in dims:
+        raise MeshError(
+            f"selection {name!r} has dimension {selection.dim}; this mesh control needs "
+            f"dimension {' or '.join(map(str, dims))}"
+        )
+    try:
+        return selection.dim, resolve(selection, built)
+    except StaleSelectionError as exc:
+        raise MeshError(str(exc)) from None
+
+
+def _apply_size_controls(gmsh: ModuleType, model: Model, built: BuiltGeometry) -> None:
+    """Point sizes, curve sizes and distance-based refinements (as a background field)."""
+    settings = model.mesh_settings
+    field = gmsh.model.mesh.field
+    fields: list[int] = []
+    for name, size in settings.point_sizes.items():
+        if not size > 0.0:
+            raise MeshError(f"point size for {name!r} must be positive")
+        _, tags = _selection_tags(model, built, name, (0,))
+        gmsh.model.mesh.setSize([(0, t) for t in tags], size)
+    for name, size in settings.curve_sizes.items():
+        if not size > 0.0:
+            raise MeshError(f"curve size for {name!r} must be positive")
+        _, tags = _selection_tags(model, built, name, (1,))
+        tag = field.add("Constant")
+        field.setNumbers(tag, "CurvesList", tags)
+        field.setNumber(tag, "IncludeBoundary", 1)
+        field.setNumber(tag, "VIn", size)
+        field.setNumber(tag, "VOut", settings.global_size)
+        fields.append(tag)
+    for r in settings.refinements:
+        if not (0.0 < r.size_min <= r.size_max and 0.0 <= r.dist_min < r.dist_max):
+            raise MeshError(
+                f"refinement on {r.selection!r} needs 0 < size_min <= size_max and "
+                "0 <= dist_min < dist_max"
+            )
+        sel_dim, tags = _selection_tags(model, built, r.selection, (0, 1))
+        distance = field.add("Distance")
+        field.setNumbers(distance, "PointsList" if sel_dim == 0 else "CurvesList", tags)
+        field.setNumber(distance, "Sampling", _DISTANCE_SAMPLING)
+        threshold = field.add("Threshold")
+        field.setNumber(threshold, "InField", distance)
+        field.setNumber(threshold, "SizeMin", r.size_min)
+        field.setNumber(threshold, "SizeMax", r.size_max)
+        field.setNumber(threshold, "DistMin", r.dist_min)
+        field.setNumber(threshold, "DistMax", r.dist_max)
+        fields.append(threshold)
+    if fields:
+        combined = field.add("Min")
+        field.setNumbers(combined, "FieldsList", fields)
+        field.setAsBackgroundMesh(combined)
+
+
+def _apply_structured(gmsh: ModuleType, model: Model, built: BuiltGeometry, dim: int) -> None:
+    """Transfinite curve divisions and transfinite (structured) surfaces."""
+    settings = model.mesh_settings
+    divisions: dict[int, int] = {}
+    for name, n in settings.curve_divisions.items():
+        if n < 1:
+            raise MeshError(f"curve divisions for {name!r} must be at least 1")
+        _, tags = _selection_tags(model, built, name, (1,))
+        divisions.update(dict.fromkeys(tags, int(n)))
+
+    for name in settings.structured_surfaces:
+        _, surfaces = _selection_tags(model, built, name, (dim,))
+        for surface in surfaces:
+            boundary = [abs(int(t)) for _, t in gmsh.model.getBoundary([(dim, surface)])]
+            if len(boundary) not in _TRANSFINITE_SIDES:
+                raise MeshError(
+                    f"structured meshing needs a 3- or 4-sided surface; a surface of "
+                    f"selection {name!r} has {len(boundary)} boundary curves"
+                )
+            # sides that must carry the same number of elements: opposite pairs of a
+            # four-sided surface, all sides of a three-sided one
+            n_sides = len(boundary)
+            groups = (
+                [boundary] if n_sides == min(_TRANSFINITE_SIDES)
+                else [boundary[0::2], boundary[1::2]]
+            )
+            for group in groups:
+                given = {divisions[c] for c in group if c in divisions}
+                if len(given) > 1:
+                    raise MeshError(
+                        f"structured surface in {name!r}: opposite sides have different "
+                        f"numbers of divisions {sorted(given)}"
+                    )
+                n = given.pop() if given else max(
+                    max(1, round(built.curves[c].measure / settings.global_size)) for c in group
+                )
+                divisions.update(dict.fromkeys(group, n))
+            gmsh.model.mesh.setTransfiniteSurface(surface)
+
+    for curve, n in divisions.items():
+        gmsh.model.mesh.setTransfiniteCurve(curve, n + 1)
 
 
 # ------------------------------------------------------------------------- extraction
