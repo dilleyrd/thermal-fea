@@ -138,7 +138,7 @@ through `DofMap`, and every physics contribution is a `Term` (Data §13).
   elements near the chosen curve than far from it.
 - [x] **M2.9 [A] Mesh quality.** `meshing/quality.py: report(mesh) -> QualityReport`
   (per-element min angle, aspect ratio, min/max Jacobian ratio; counts; worst elements).
-- [ ] **M2.10 [A] STEP/BREP import.** `geometry/importers.py` via `occ.importShapes`; keep
+- [x] **M2.10 [A] STEP/BREP import.** `geometry/importers.py` via `occ.importShapes`; keep
   only surfaces lying in the z = 0 plane; anything else → `GeometryError` with explanation.
 - [ ] **M2.11 [A] API facade and `thermalfea info`.** Data §11 (`new_model`, `Geometry`
   helpers, `build`, `mesh`, `assign_region`); CLI prints entity, node and element counts.

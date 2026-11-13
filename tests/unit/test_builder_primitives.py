@@ -161,7 +161,8 @@ def test_built_geometry_records_the_session_serial() -> None:
         ([g.Polygon("p", [(0, 0), (1, 0)])], "at least three"),
         ([g.Point("a", 0, 0), g.Spline("s", ["a"])], "at least two"),
         ([g.Point("a", 0, 0), g.Point("b", 0, 0), g.Line("l", "a", "b")], "operation 'l'"),
-        ([g.ImportFile("i", "x.step", "step")], "not supported"),
+        ([g.ImportFile("i", "no-such-file.step", "step")], "operation 'i' .*file not found"),
+        ([g.ImportFile("i", "x.dxf", "dxf")], "not supported"),
     ],
 )
 def test_errors_name_the_operation(geometry: list, message: str) -> None:

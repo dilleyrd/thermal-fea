@@ -24,6 +24,7 @@ from ..model import geometry_ops as ops
 from ..model.model import Model
 from ..model.selections import Fingerprint
 from .gmsh_session import GmshSession
+from .importers import import_shapes
 
 log = logging.getLogger(__name__)
 
@@ -303,6 +304,11 @@ def _delete(ctx: BuildContext, op: ops.Delete) -> list[DimTag]:
     ctx.occ.remove(targets, recursive=True)
     ctx.forget(targets)
     return []
+
+
+@handler(ops.ImportFile)
+def _import_file(ctx: BuildContext, op: ops.ImportFile) -> list[DimTag]:
+    return import_shapes(ctx.occ, op.path, op.format, op.scale)
 
 
 # ----------------------------------------------------------------- finishing the model
