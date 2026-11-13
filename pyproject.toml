@@ -1,0 +1,43 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "thermalfea"
+version = "0.1.0"
+description = "2D steady-state and transient thermal finite-element analysis"
+requires-python = ">=3.11"
+dependencies = [
+    "numpy",
+    "scipy",
+    "gmsh",
+    "PySide6",
+    "matplotlib",
+    "h5py",
+    "meshio",
+]
+
+[project.optional-dependencies]
+dev = ["pytest", "pytest-qt", "ruff"]
+dxf = ["ezdxf"]
+
+[project.scripts]
+thermalfea = "thermalfea.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+"thermalfea.materials" = ["data/*.json"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-ra"
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+src = ["src", "tests"]
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "UP", "B"]

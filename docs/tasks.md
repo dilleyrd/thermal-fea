@@ -21,7 +21,7 @@ through `DofMap`, and every physics contribution is a `Term` (Data §13).
 
 ## M0 — Scaffolding
 
-- [ ] **M0.1 [A] Project skeleton.** `git init` and add the `origin` remote if the folder
+- [x] **M0.1 [A] Project skeleton.** `git init` and add the `origin` remote if the folder
   is not yet a repository (ignore `.venv/` and `.deepeval/`); `pyproject.toml` (package `thermalfea`, src
   layout, Python ≥ 3.11; deps: numpy, scipy, gmsh, PySide6, matplotlib, h5py, meshio;
   extras `dev`: pytest, pytest-qt, ruff; extra `dxf`: ezdxf); console script
