@@ -43,7 +43,7 @@ through `DofMap`, and every physics contribution is a `Term` (Data §13).
   T3, T6, Q4, Q8, L2, L3 exactly as Theory §3.
   Accept: weights sum to the reference measure; each rule integrates monomials exactly up
   to its degree (T3 rule: 2, Dunavant: 4, 2×2: 3 per axis, 3×3: 5 per axis).
-- [ ] **M1.2 [A] Shape functions.** `core/elements.py: shape(etype, pts) -> N (n_pts, n)`,
+- [x] **M1.2 [A] Shape functions.** `core/elements.py: shape(etype, pts) -> N (n_pts, n)`,
   `dshape(etype, pts) -> dN (n_pts, dim, n)`, `node_coords(etype)`. Theory §3. Register
   each of the six types as an `ElementType` in `core/registry.py` (Data §13) including its
   quadrature (M1.1), facet type, local facet node indices and display simplices; all other
