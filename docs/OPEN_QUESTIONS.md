@@ -37,3 +37,20 @@ V-37 passes with no library code mentioning `Tet4` or a 3D case.
 
 **Still to do at M3.G:** switch V-37 to `ConductionTerm` + `solve_steady`, add the flux part
 of V-01 through `post/recovery.py`, and add the `examples/` scripts for these cases.
+
+## Q4 — defaults and field order in the model classes (Data §3, §8) — raised in M2.1
+
+1. `Stream` (Data §8) lists `roughness = 0.0` before the required `mass_flow`, `T_inlet` and
+   `path`, the same problem as Q1. **Done for now:** `Stream` is a keyword-only dataclass;
+   `mass_flow` and `path` default to `None` (the data model says they may be `None`).
+2. `BoundaryCondition.active` has no stated default. **Done for now:** keyword-only,
+   default `True`, so `FixedTemperature("base", "bottom", T=373.15)` works as in Data §11.
+3. `Model()` needs a `mesh_settings` and an `initial_condition`, but `MeshSettings.global_size`
+   and `InitialCondition.kind` have no defaults. **Done for now:** a new model gets
+   `global_size = 0.01` m and a uniform initial temperature of 293.15 K
+   (`model/model.py: DEFAULT_GLOBAL_SIZE, DEFAULT_INITIAL_TEMPERATURE`). Both are
+   placeholders chosen here, not numbers from the plan.
+4. `Transform.params` is not specified. **Done for now:** a `dict[str, float]` with keys
+   `dx, dy` (translate); `angle, cx, cy` (rotate, radians); `x0, y0, x1, y1` (mirror line);
+   `factor, cx, cy` (scale).
+5. `NetBranch` defaults: `kind = "duct"`, `length = 0`, `K_minor = 0`, `stream = None`.
