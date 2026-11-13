@@ -91,7 +91,7 @@ through `DofMap`, and every physics contribution is a `Term` (Data §13).
 
 - [x] **M2.1 [A] Model dataclasses.** `model/model.py`, `bcs.py`, `settings.py`,
   `geometry_ops.py`, `selections.py` (classes only) — Data §3, §4, §5, §8, §10.
-- [ ] **M2.2 [B] Serialisation.** `model/serialize.py: to_json(model) -> dict`,
+- [x] **M2.2 [B] Serialisation.** `model/serialize.py: to_json(model) -> dict`,
   `from_json(dict) -> Model`; every polymorphic class is written with a `"type"` tag;
   `schema_version` checked on load (newer → `ModelError`; older → run
   `model/migrations.py`, Data §13, which starts empty). Polymorphic classes are looked up

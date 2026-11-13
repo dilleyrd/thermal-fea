@@ -10,6 +10,7 @@ import dataclasses
 from dataclasses import dataclass, field
 from typing import Literal, get_type_hints
 
+from ..core import registry
 from ..core.errors import ModelError
 from ..core.functions import Function, as_function
 
@@ -310,3 +311,21 @@ class FlowNetwork:
 
     nodes: list[NetNode] = field(default_factory=list)
     branches: list[NetBranch] = field(default_factory=list)
+
+
+# ------------------------------------------------------------------------ registration
+
+registry.register_family(registry.BC_FAMILY, BoundaryCondition)
+for _tag, _cls in (
+    ("fixed_temperature", FixedTemperature),
+    ("heat_flux", HeatFlux),
+    ("heat_flow", HeatFlow),
+    ("heat_generation", HeatGeneration),
+    ("heat_power", HeatPower),
+    ("convection", Convection),
+    ("correlation_convection", CorrelationConvection),
+    ("radiation_ambient", RadiationAmbient),
+    ("symmetry", Symmetry),
+    ("adiabatic", Adiabatic),
+):
+    registry.register_bc(_tag, _cls)

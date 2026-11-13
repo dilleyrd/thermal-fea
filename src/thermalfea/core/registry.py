@@ -139,3 +139,122 @@ def element_by_gmsh_type(gmsh_type: int) -> ElementType:
         if et.gmsh_type == gmsh_type:
             return et
     raise ModelError(f"no element type registered for gmsh type {gmsh_type}")
+
+
+# ------------------------------------------------------------ polymorphic class families
+#
+# A *family* is a base class whose subclasses are written to JSON with a ``"type"`` tag
+# (geometry operations, boundary conditions, ...). The serialiser, the solver and the GUI
+# find the concrete class through these tables, so adding a class never means editing them.
+
+_FAMILIES: dict[str, type] = {}
+_CLASSES: dict[str, dict[str, type]] = {}
+
+
+def register_family(family: str, base: type) -> None:
+    """Declare a family of tagged classes with the given base class."""
+    _FAMILIES[family] = base
+    _CLASSES.setdefault(family, {})
+
+
+def families() -> dict[str, type]:
+    """Return the registered families: name -> base class."""
+    return dict(_FAMILIES)
+
+
+def register_class(family: str, tag: str, cls: type) -> None:
+    """Register ``cls`` under ``tag`` in a family.
+
+    Raises
+    ------
+    ModelError
+        If the family is unknown, the class is not a subclass of its base, or the tag is
+        already used by a different class.
+    """
+    if family not in _FAMILIES:
+        raise ModelError(f"unknown class family {family!r}")
+    if not issubclass(cls, _FAMILIES[family]):
+        raise ModelError(f"{cls.__name__} is not a {_FAMILIES[family].__name__}")
+    existing = _CLASSES[family].get(tag)
+    if existing is not None and existing is not cls:
+        raise ModelError(f"{family} tag {tag!r} is already used by {existing.__name__}")
+    _CLASSES[family][tag] = cls
+
+
+def class_by_tag(family: str, tag: str) -> type:
+    """Return the class registered under ``tag`` in a family."""
+    try:
+        return _CLASSES[family][tag]
+    except KeyError:
+        raise ModelError(f"unknown {family} type {tag!r}") from None
+
+
+def tag_of(family: str, cls: type) -> str:
+    """Return the tag a class is registered under in a family."""
+    for tag, registered in _CLASSES.get(family, {}).items():
+        if registered is cls:
+            return tag
+    raise ModelError(f"{cls.__name__} is not registered in family {family!r}")
+
+
+def tags(family: str) -> list[str]:
+    """Return the tags registered in a family, in registration order."""
+    return list(_CLASSES.get(family, {}))
+
+
+# ------------------------------------------------------------------ boundary conditions
+
+BC_FAMILY = "bc"
+
+
+@dataclass
+class BcInfo:
+    """Registry record of a boundary-condition class.
+
+    Attributes
+    ----------
+    tag : str
+        JSON ``"type"`` tag.
+    cls : type
+        The boundary-condition dataclass.
+    term_factory : callable or None
+        Builds the solver terms of one instance; ``None`` if it contributes nothing or
+        the physics is not implemented yet.
+    form : object or None
+        GUI form metadata (``FormSpec``), or ``None``.
+    """
+
+    tag: str
+    cls: type
+    term_factory: Callable | None = None
+    form: object | None = None
+
+
+_BCS: dict[str, BcInfo] = {}
+
+
+def register_bc(
+    tag: str, cls: type, term_factory: Callable | None = None, form: object | None = None
+) -> None:
+    """Register a boundary-condition class with its JSON tag, term factory and form."""
+    register_class(BC_FAMILY, tag, cls)
+    _BCS[tag] = BcInfo(tag, cls, term_factory, form)
+
+
+def bc_info(key: str | type) -> BcInfo:
+    """Return the registry record of a boundary condition, by tag or by class."""
+    tag = key if isinstance(key, str) else tag_of(BC_FAMILY, key)
+    try:
+        return _BCS[tag]
+    except KeyError:
+        raise ModelError(f"unknown boundary-condition type {tag!r}") from None
+
+
+def set_bc_term_factory(key: str | type, term_factory: Callable) -> None:
+    """Attach the solver term factory to an already registered boundary condition."""
+    bc_info(key).term_factory = term_factory
+
+
+def bc_tags() -> list[str]:
+    """Return the tags of all registered boundary conditions, in registration order."""
+    return list(_BCS)

@@ -10,6 +10,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import Literal
 
+from ..core import registry
 from ..core.errors import ModelError
 
 
@@ -156,3 +157,24 @@ class Delete(GeometryOp):
     """Remove the results of earlier operations."""
 
     targets: list[str]
+
+
+# ------------------------------------------------------------------------ registration
+
+GEOMETRY_FAMILY = "geometry_op"
+registry.register_family(GEOMETRY_FAMILY, GeometryOp)
+for _tag, _cls in (
+    ("point", Point),
+    ("line", Line),
+    ("arc", Arc),
+    ("spline", Spline),
+    ("rectangle", Rectangle),
+    ("circle", Circle),
+    ("polygon", Polygon),
+    ("surface_from_curves", SurfaceFromCurves),
+    ("boolean", Boolean),
+    ("transform", Transform),
+    ("import_file", ImportFile),
+    ("delete", Delete),
+):
+    registry.register_class(GEOMETRY_FAMILY, _tag, _cls)
