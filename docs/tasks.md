@@ -80,7 +80,7 @@ through `DofMap`, and every physics contribution is a `Term` (Data §13).
   Accept: table interpolation and both extrapolation modes; expression vectorised over
   arrays; `__import__('os')`, attribute access and unknown names all raise `ModelError`;
   dependency flags and breakpoints correct.
-- [ ] **M1.8 [A] Materials and libraries.** `materials/material.py`, `materials/library.py`,
+- [x] **M1.8 [A] Materials and libraries.** `materials/material.py`, `materials/library.py`,
   JSON data files with exactly the numbers in Data §6.
   Accept: every library entry loads; values equal the table in Data §6 (test reads both).
 - [ ] **M1.G [C] Gate.** Implement V-01 (temperature part) and V-33 with nodal values set

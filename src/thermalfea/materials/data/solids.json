@@ -1,0 +1,62 @@
+[
+  {
+    "name": "Aluminium 6061-T6",
+    "k": 167.0,
+    "rho": 2700.0,
+    "cp": 896.0
+  },
+  {
+    "name": "Copper (pure)",
+    "k": 401.0,
+    "rho": 8933.0,
+    "cp": 385.0
+  },
+  {
+    "name": "Carbon steel AISI 1010",
+    "k": 63.9,
+    "rho": 7832.0,
+    "cp": 434.0
+  },
+  {
+    "name": "Stainless steel 304",
+    "k": 14.9,
+    "rho": 7900.0,
+    "cp": 477.0
+  },
+  {
+    "name": "Titanium Ti-6Al-4V",
+    "k": 6.7,
+    "rho": 4430.0,
+    "cp": 526.0
+  },
+  {
+    "name": "Silicon",
+    "k": 148.0,
+    "rho": 2330.0,
+    "cp": 712.0
+  },
+  {
+    "name": "Alumina (polycrystalline)",
+    "k": 36.0,
+    "rho": 3970.0,
+    "cp": 765.0
+  },
+  {
+    "name": "Soda-lime glass",
+    "k": 1.4,
+    "rho": 2500.0,
+    "cp": 750.0
+  },
+  {
+    "name": "Concrete (stone mix)",
+    "k": 1.4,
+    "rho": 2300.0,
+    "cp": 880.0
+  },
+  {
+    "name": "FR-4 (through-thickness)",
+    "k": 0.3,
+    "rho": 1850.0,
+    "cp": 1100.0
+  }
+]
