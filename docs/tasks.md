@@ -39,7 +39,7 @@ through `DofMap`, and every physics contribution is a `Term` (Data §13).
 
 ## M1 — FE kernel
 
-- [ ] **M1.1 [A] Quadrature.** `core/quadrature.py: rule(etype) -> (points, weights)` for
+- [x] **M1.1 [A] Quadrature.** `core/quadrature.py: rule(etype) -> (points, weights)` for
   T3, T6, Q4, Q8, L2, L3 exactly as Theory §3.
   Accept: weights sum to the reference measure; each rule integrates monomials exactly up
   to its degree (T3 rule: 2, Dunavant: 4, 2×2: 3 per axis, 3×3: 5 per axis).
