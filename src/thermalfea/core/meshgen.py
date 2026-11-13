@@ -37,15 +37,17 @@ def _cell_node_offsets(et: ElementType) -> ndarray:
     """
     if et.facets is None or len(et.facets) not in _CELL_SPLITS:
         raise MeshError(f"rect_mesh does not support element type {et.name!r}")
-    corners = _CELL_SPLITS[len(et.facets)]
-    n_corner = corners.shape[1]
-    linear = next(
-        element(name)
-        for name in ("T3", "Q4")
-        if element(name).n_nodes == n_corner and len(element(name).facets) == n_corner
+    corners = _CELL_SPLITS[len(et.facets)]  # (n_sub, n_corner, 2)
+    # Affine map of the reference element onto each sub-shape, fixed by the images of the
+    # first, second and last corner (the sub-shapes are parallelograms or triangles).
+    ref = et.node_coords
+    last = corners.shape[1] - 1
+    ref_edges = np.stack([ref[1] - ref[0], ref[last] - ref[0]], axis=-1)
+    cell_edges = np.stack(
+        [corners[:, 1] - corners[:, 0], corners[:, last] - corners[:, 0]], axis=-1
     )
-    weights = linear.shape(et.node_coords)  # (n_nodes, n_corner)
-    unit = np.einsum("nc,sci->sni", weights, corners)
+    affine = cell_edges @ np.linalg.inv(ref_edges)  # (n_sub, 2, 2)
+    unit = corners[:, :1] + np.einsum("sij,nj->sni", affine, ref - ref[0])
     offsets = unit * et.order
     rounded = np.rint(offsets)
     if not np.allclose(offsets, rounded, atol=1e-12):

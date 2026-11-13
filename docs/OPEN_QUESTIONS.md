@@ -23,3 +23,17 @@ does not give the `name` stored in `fluids.json`.
 
 **Done for now:** the names are `"Air"` and `"Water"`; lookups by `library.fluid(name)` and
 `library.solid(name)` ignore case.
+
+## Q3 — V-01 / V-37 at the M1 gate use the kernel directly — raised in M1.G
+
+V-37 asks for a solve "with the unmodified kernel, `ConductionTerm` and steady driver", and
+verification cases are meant to have a runnable script in `examples/`. `ConductionTerm`
+(M3.1), the steady driver (M3.7) and the scripting API (M2.11, M3.11) do not exist at M1.G.
+
+**Done for now:** V-01 (temperature part), V-33 and V-37 solve through
+`geometry` -> `conduction` -> `DofMap`/`Assembler` -> `solve_partitioned`
+(`tests/verification/kernel_solve.py`). All three pass at their stated tolerances, and
+V-37 passes with no library code mentioning `Tet4` or a 3D case.
+
+**Still to do at M3.G:** switch V-37 to `ConductionTerm` + `solve_steady`, add the flux part
+of V-01 through `post/recovery.py`, and add the `examples/` scripts for these cases.

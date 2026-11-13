@@ -83,7 +83,7 @@ through `DofMap`, and every physics contribution is a `Term` (Data §13).
 - [x] **M1.8 [A] Materials and libraries.** `materials/material.py`, `materials/library.py`,
   JSON data files with exactly the numbers in Data §6.
   Accept: every library entry loads; values equal the table in Data §6 (test reads both).
-- [ ] **M1.G [C] Gate.** Implement V-01 (temperature part) and V-33 with nodal values set
+- [x] **M1.G [C] Gate.** Implement V-01 (temperature part) and V-33 with nodal values set
   directly on `rect_mesh` meshes. Implement V-37 (3D tetrahedron guard test). Review M1
   code for vectorisation, units in docstrings, and Plan §7 rules 1–4.
 

@@ -173,7 +173,7 @@ Details and acceptance tests are in [docs/tasks.md](docs/tasks.md).
 | # | Milestone | Result | Depends on | Status |
 |---|---|---|---|---|
 | M0 | Scaffolding | Installable package, CI script, layer test | — | ☑ |
-| M1 | FE kernel | Steady linear conduction on hand-built meshes | M0 | ☐ |
+| M1 | FE kernel | Steady linear conduction on hand-built meshes | M0 | ☑ |
 | M2 | Model, geometry, meshing | Build and mesh any 2D shape from a script; save/load | M0 | ☐ |
 | M3 | Loads, nonlinear steady solver, recovery | All loads except flow and enclosure radiation; flux, reactions, energy balance | M1, M2 | ☐ |
 | M4 | Transient solver | Adaptive time stepping, HDF5 results | M3 | ☐ |
