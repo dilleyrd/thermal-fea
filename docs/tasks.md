@@ -56,7 +56,7 @@ through `DofMap`, and every physics contribution is a `Term` (Data §13).
   that perturbs interior nodes.
   Accept: `validate()` passes for all four types, distorted or not; a mesh with one element
   reversed fails validation.
-- [ ] **M1.4 [B] Element geometry kernel and conduction matrix.**
+- [x] **M1.4 [B] Element geometry kernel and conduction matrix.**
   `physics/kernel.py: geometry(block, nodes) -> ElemGeom` with fields `N (gp, n)`,
   `dNdx (e, gp, dim, n)`, `dV (e, gp)` = |J|·w, `xgp (e, gp, dim)`; the same for facets
   (`facet_geometry` → `N`, `dS`, `xgp`, with dS = √det(JᵀJ)·w, J being the dim × (dim−1)
