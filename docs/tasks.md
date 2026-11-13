@@ -103,7 +103,7 @@ through `DofMap`, and every physics contribution is a `Term` (Data §13).
   thread); terminal output off, messages redirected to `logging`; context manager
   `fresh_model(name)` that clears the previous model.
   Accept: two builds in a row, and one from a non-main thread, both work.
-- [ ] **M2.4 [B] Builder: primitives.** `geometry/builder.py: build(model) -> BuiltGeometry`
+- [x] **M2.4 [B] Builder: primitives.** `geometry/builder.py: build(model) -> BuiltGeometry`
   for `Point, Line, Arc, Spline, Rectangle, Circle, Polygon, SurfaceFromCurves` with the
   OCC kernel. Keep a map op id → list of (dim, tag).
   Accept: areas from `occ.getMass` equal analytic values for each primitive.
