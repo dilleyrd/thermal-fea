@@ -33,38 +33,45 @@ is read as a `Constant`.
 
 `core/mesh.py`. The only mesh representation the solver and post-processor see.
 
+Written for any space dimension (Plan §7). Today `dim = 2`, element types are T3, Q4, T6,
+Q8 and facet types are L2, L3. "Facet" = boundary element of dimension dim − 1 (an element
+edge in 2D); "entity" = the geometry curve (2D) or surface (3D) it lies on.
+
 ```python
 @dataclass
 class ElementBlock:
-    etype: Literal["T3", "Q4", "T6", "Q8"]
+    etype: str             # key into the element registry (§13), e.g. "T3"
     conn: ndarray          # (n_elem, n_nodes_per_elem) int64, 0-based node indices
     region: ndarray        # (n_elem,) int32 region id
     elem_ids: ndarray      # (n_elem,) global element numbers, 0-based, unique across blocks
 
 @dataclass
-class EdgeBlock:
-    etype: Literal["L2", "L3"]
-    conn: ndarray          # (n_edge, 2 or 3)
-    curve: ndarray         # (n_edge,) int32 geometry curve tag
-    parent_elem: ndarray   # (n_edge,) global id of the adjacent element
-                           # (for an interface curve: the element on the lower region id)
+class FacetBlock:
+    etype: str             # e.g. "L2", "L3"
+    conn: ndarray          # (n_facet, n_nodes_per_facet)
+    entity: ndarray        # (n_facet,) int32 geometry tag of the curve (2D) / surface (3D)
+    parent_elem: ndarray   # (n_facet,) global id of the adjacent element
+                           # (on an interface: the element on the lower region id)
 
 @dataclass
 class Mesh:
-    nodes: ndarray                     # (n_nodes, 2) float64, metres
+    dim: int                           # space dimension; 2 today
+    nodes: ndarray                     # (n_nodes, dim) float64, metres
     blocks: list[ElementBlock]
-    edges: list[EdgeBlock]             # every element edge lying on a geometry curve
+    facets: list[FacetBlock]           # every element facet lying on a geometry entity
     node_sets: dict[str, ndarray]      # named selection -> node indices
     point_nodes: dict[int, int]        # geometry point tag -> node index
     axisymmetric: bool
-    def edges_on(self, curve_tags: Sequence[int]) -> list[EdgeBlock]: ...
+    def facets_on(self, entity_tags: Sequence[int]) -> list[FacetBlock]: ...
     def region_elements(self, region_id: int) -> list[ElementBlock]: ...
-    def outward_normals(self, edge_block: EdgeBlock) -> ndarray: ...   # (n_edge, 2)
-    def validate(self) -> None:   # positive Jacobians, no orphan nodes, edges CCW w.r.t. parent
+    def outward_normals(self, facet_block: FacetBlock) -> ndarray: ...   # (n_facet, dim)
+    def validate(self) -> None:   # positive Jacobians, no orphan nodes, facet orientation
 ```
 
-Edge orientation: edge nodes are stored so that the parent element lies on the **left**;
-the outward normal is then (dy, −dx)/length.
+Facet orientation in 2D: nodes are stored so that the parent element lies on the **left**;
+the outward normal is then (dy, −dx)/length. `outward_normals` must give the same result
+by the general rule (normal to the facet, pointing away from the parent element centroid)
+so that it also works in 3D.
 
 ## §3 Model
 
@@ -152,10 +159,10 @@ Loads never store raw gmsh tags alone, because tags can change when geometry is 
 ```python
 @dataclass
 class Fingerprint:
-    dim: int                      # 0 point, 1 curve, 2 surface
-    center: tuple[float, float]   # centre of mass
-    measure: float                # 0, length, or area
-    bbox: tuple[float, float, float, float]
+    dim: int                      # 0 point, 1 curve, 2 surface (3 volume in future)
+    center: tuple[float, float, float]   # centre of mass (z = 0 today)
+    measure: float                # 0, length, area (or volume)
+    bbox: tuple[float, float, float, float, float, float]   # xmin ymin zmin xmax ymax zmax
 
 @dataclass
 class Selection:
@@ -317,11 +324,15 @@ Errors block the solve; warnings do not. Minimum checks:
 
 ```
 /meta            attrs: schema_version, model_hash, created, analysis, solver settings (JSON)
-/mesh/nodes      (n_nodes, 2)
+/mesh            attr dim
+/mesh/nodes      (n_nodes, dim)
 /mesh/blocks/<i> conn, region, elem_ids; attr etype
-/mesh/edges/<i>  conn, curve, parent_elem; attr etype
+/mesh/facets/<i> conn, entity, parent_elem; attr etype
 /steps/time      (n_steps,) extendable
-/steps/T         (n_steps, n_dofs) extendable, chunked by step, gzip — includes fluid DOFs
+/steps/fields/<name>   (n_steps, n_values[, n_components]) extendable, chunked by step, gzip;
+                 attrs: location (node | element | facet | extra:<group>), units.
+                 Today the only stored field is `T` (location node) plus one
+                 `T_fluid:<stream>` per in-plane stream (location extra:<stream>).
 /steps/dt, /steps/iterations, /steps/converged
 /steps/energy    (n_steps, k) columns named in attr `columns`
 /fluid/<stream>  node s-coordinates, dof indices; per step: mass_flow, h_mean, Re, dp
@@ -371,6 +382,108 @@ api.plot_contour(results, step=-1, field="T", path="out.png")
 
 `progress(info: StepInfo) -> bool`: called after each step/iteration; returning `False`
 cancels the solve cleanly (results so far remain valid).
+
+## §13 Extension interfaces (Plan §7)
+
+These are the seams that let later versions add 3D, new physics, another flow solver and
+another viewport. Build them as specified even though each has one implementation today.
+
+```python
+# core/registry.py
+@dataclass(frozen=True)
+class ElementType:
+    name: str                    # "T3"
+    dim: int                     # dimension of the element itself (2 for T3, 1 for L2)
+    n_nodes: int
+    order: int
+    gmsh_type: int
+    shape: Callable[[ndarray], ndarray]      # pts (n, dim) -> N (n, n_nodes)
+    dshape: Callable[[ndarray], ndarray]     # pts -> dN (n, dim, n_nodes)
+    node_coords: ndarray                     # (n_nodes, dim) reference coordinates
+    quadrature: tuple[ndarray, ndarray]      # points, weights
+    facet_type: str | None                   # "L2" for T3/Q4, "L3" for T6/Q8, None for facets
+    facets: ndarray | None                   # local node indices of each facet
+    display_simplices: ndarray               # local indices splitting it into linear simplices
+
+register_element(et: ElementType) -> None;  element(name: str) -> ElementType
+register_bc(tag: str, cls: type, term_factory: Callable, form: FormSpec | None) -> None
+register_field(name: str, spec: ResultFieldSpec) -> None    # derived, plottable result fields
+```
+
+```python
+# solver/dofs.py
+class DofMap:
+    def add_field(self, name: str, n_nodes: int, components: int = 1) -> None
+    def add_extra(self, group: str, count: int) -> None          # e.g. fluid nodes of a stream
+    def node_dofs(self, field: str, nodes: ndarray, component: int = 0) -> ndarray
+    def extra_dofs(self, group: str) -> ndarray
+    n_dofs: int
+
+# solver/terms.py
+@dataclass
+class State:
+    u: ndarray            # current iterate, all DOFs
+    u_prev: ndarray       # converged solution of the previous step (transient)
+    t: float; dt: float | None
+    dofs: DofMap
+
+class Term(Protocol):
+    name: str
+    is_linear: bool                  # contribution does not depend on u
+    is_time_dependent: bool
+    symmetric: bool
+    def setup(self, problem: "CompiledProblem") -> None: ...        # precompute geometry etc.
+    def conductance(self, s: State, asm: Assembler) -> None: ...    # adds to K and tangent
+    def load(self, s: State, asm: Assembler) -> None: ...           # adds to F / residual
+    def capacitance(self, s: State, asm: Assembler) -> None: ...    # adds to C (may do nothing)
+    def breakpoints(self) -> list[float]: ...
+    def boundary_heat(self, s: State) -> float | None: ...          # for the energy balance
+    def results(self, s: State) -> dict[str, ndarray]: ...          # extra per-step output
+```
+
+`CompiledProblem` is a list of terms, a `DofMap`, the prescribed-DOF provider and the
+settings. `solver/steady.py` and `solver/transient.py` loop over `problem.terms` and
+contain no heat-transfer-specific code. Each module in `physics/`, plus `flow/` and the
+convection evaluator, exposes its work as one or more `Term`s.
+
+```python
+# flow/provider.py
+class FlowProvider(Protocol):
+    def setup(self, problem) -> None: ...          # may add extra DOF groups
+    def terms(self) -> list[Term]: ...             # coupling terms for the solid system
+    def update(self, s: State) -> None: ...        # e.g. re-solve hydraulics (lagged)
+    def results(self, s: State) -> dict[str, ndarray]: ...
+```
+The 1D stream/network solver is `flow/coupling.py: StreamNetworkProvider`.
+
+```python
+# gui/scene.py — the only viewport API the rest of the GUI may use
+class SceneView(Protocol):
+    selection_changed: Signal            # (dim: int, tags: list[int])
+    point_picked: Signal                 # (x, y, z)
+    def widget(self) -> QWidget: ...
+    def set_geometry(self, built: BuiltGeometry | None) -> None: ...
+    def set_mesh(self, mesh: Mesh | None, color_by: ndarray | None = None) -> None: ...
+    def set_field(self, spec: FieldDisplay | None) -> None: ...      # contour / vector display
+    def set_symbols(self, symbols: list[LoadSymbol]) -> None: ...
+    def set_selection_mode(self, mode: Literal["none","point","curve","surface","node","element"]) -> None: ...
+    def highlight(self, dim: int, tags: list[int]) -> None: ...
+    def fit(self) -> None: ...
+    def save_image(self, path: str, dpi: int = 200) -> None: ...
+```
+`FieldDisplay` carries plain arrays (display simplices, values, vectors, range, levels,
+labels) prepared by `post/`, so a different renderer needs no access to solver objects.
+
+```python
+# solver/linear.py
+class LinearSolver(Protocol):
+    def factorize(self, A: csr_matrix, symmetric: bool) -> "Factorization": ...
+class Factorization(Protocol):
+    def solve(self, b: ndarray) -> ndarray: ...
+```
+
+`model/migrations.py: MIGRATIONS: dict[int, Callable[[dict], dict]]` — entry `n` upgrades a
+model dict from schema version n to n + 1; `from_json` applies them in sequence.
 
 ## §12 Errors
 `core/errors.py`: `ThermalFEAError` base; `ModelError` (bad input), `GeometryError`,

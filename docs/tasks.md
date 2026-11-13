@@ -12,6 +12,11 @@ Session prompt for an unattended run:
 > Read PLAN.md, then work through docs/tasks.md in order following PLAN.md §4, including
 > rule 11. After each task, tick its box, commit, push, and give a one-line status.
 
+**Plan §7 (designing for future extension) applies to every task** and overrides any task
+wording that conflicts with it. In particular: no literal 2 for the space dimension, no
+`if etype == …` outside the element registry, boundary elements are `FacetBlock`s, DOFs go
+through `DofMap`, and every physics contribution is a `Term` (Data §13).
+
 ---
 
 ## M0 — Scaffolding
@@ -39,25 +44,31 @@ Session prompt for an unattended run:
   Accept: weights sum to the reference measure; each rule integrates monomials exactly up
   to its degree (T3 rule: 2, Dunavant: 4, 2×2: 3 per axis, 3×3: 5 per axis).
 - [ ] **M1.2 [A] Shape functions.** `core/elements.py: shape(etype, pts) -> N (n_pts, n)`,
-  `dshape(etype, pts) -> dN (n_pts, 2, n)` (1D: `(n_pts, 1, n)`), `node_coords(etype)`.
-  Theory §3.
-  Accept: ΣN = 1; ΣdN = 0; N_i at node j = δ_ij; dN matches central finite differences to 1e-7.
+  `dshape(etype, pts) -> dN (n_pts, dim, n)`, `node_coords(etype)`. Theory §3. Register
+  each of the six types as an `ElementType` in `core/registry.py` (Data §13) including its
+  quadrature (M1.1), facet type, local facet node indices and display simplices; all other
+  code obtains element data only through `registry.element(name)`.
+  Accept: ΣN = 1; ΣdN = 0; N_i at node j = δ_ij; dN matches central finite differences to
+  1e-7; a dummy element registered inside a test is returned by the registry.
 - [ ] **M1.3 [A] Mesh classes and test-mesh generator.** `core/mesh.py` (Data §2) and
-  `core/meshgen.py: rect_mesh(x0, y0, w, h, nx, ny, etype, region=1) -> Mesh` with edge
-  blocks tagged curve 1 bottom, 2 right, 3 top, 4 left, plus `distort(mesh, amplitude, seed)`
+  `core/meshgen.py: rect_mesh(x0, y0, w, h, nx, ny, etype, region=1) -> Mesh` with facet
+  blocks tagged entity 1 bottom, 2 right, 3 top, 4 left, plus `distort(mesh, amplitude, seed)`
   that perturbs interior nodes.
   Accept: `validate()` passes for all four types, distorted or not; a mesh with one element
   reversed fails validation.
 - [ ] **M1.4 [B] Element geometry kernel and conduction matrix.**
   `physics/kernel.py: geometry(block, nodes) -> ElemGeom` with fields `N (gp, n)`,
-  `dNdx (e, gp, 2, n)`, `dV (e, gp)` = |J|·w, `xgp (e, gp, 2)`; the same for edges
-  (`edge_geometry` → `N`, `dS`, `xgp`). `gfactor(xgp, axisymmetric, thickness)` (Theory §1).
+  `dNdx (e, gp, dim, n)`, `dV (e, gp)` = |J|·w, `xgp (e, gp, dim)`; the same for facets
+  (`facet_geometry` → `N`, `dS`, `xgp`, with dS = √det(JᵀJ)·w, J being the dim × (dim−1)
+  Jacobian — this reduces to the edge length factor in 2D).
+  `gfactor(xgp, axisymmetric, thickness, dim)` (Theory §1; returns 1 when dim = 3).
   `physics/conduction.py: conduction(geom, D, g) -> Ke (e, n, n)` with `D` shaped
-  `(e, gp, 2, 2)`, using `einsum`. Theory §2.
+  `(e, gp, dim, dim)`, using `einsum`. Theory §2. Nothing in the kernel may assume dim = 2.
   Accept: rows of Ke sum to 0; Ke symmetric; for one unit-square Q4 with k = 1 equals the
   textbook matrix (diag 2/3, adjacent −1/6, opposite −1/3); axisymmetric T3 area integral
   of g reproduces the ring volume.
-- [ ] **M1.5 [A] DOF map and assembler.** `solver/dofs.py: DofMap(n_mesh_nodes, n_extra)`;
+- [ ] **M1.5 [A] DOF map and assembler.** `solver/dofs.py: DofMap` with named fields and
+  extra groups exactly as Data §13;
   `solver/assembler.py: Assembler` collecting `(conn, Ke)` and `(conn, fe)` batches and
   producing CSR `K` and dense `F` (COO then `tocsr()`, duplicates summed).
   Accept: assembling two elements by hand gives the expected matrix.
@@ -73,7 +84,8 @@ Session prompt for an unattended run:
   JSON data files with exactly the numbers in Data §6.
   Accept: every library entry loads; values equal the table in Data §6 (test reads both).
 - [ ] **M1.G [C] Gate.** Implement V-01 (temperature part) and V-33 with nodal values set
-  directly on `rect_mesh` meshes. Review M1 code for vectorisation and units in docstrings.
+  directly on `rect_mesh` meshes. Implement V-37 (3D tetrahedron guard test). Review M1
+  code for vectorisation, units in docstrings, and Plan §7 rules 1–4.
 
 ## M2 — Model, geometry, meshing
 
@@ -81,7 +93,9 @@ Session prompt for an unattended run:
   `geometry_ops.py`, `selections.py` (classes only) — Data §3, §4, §5, §8, §10.
 - [ ] **M2.2 [B] Serialisation.** `model/serialize.py: to_json(model) -> dict`,
   `from_json(dict) -> Model`; every polymorphic class is written with a `"type"` tag;
-  `schema_version` checked on load (newer → `ModelError`). `api.save/load`.
+  `schema_version` checked on load (newer → `ModelError`; older → run
+  `model/migrations.py`, Data §13, which starts empty). Polymorphic classes are looked up
+  through the registry (`register_bc` etc.), not a hard-coded list. `api.save/load`.
   Accept: a model that uses every class round-trips to an equal object; the JSON is stable
   (sorted keys, 2-space indent).
 - [ ] **M2.3 [B] Gmsh session.** `geometry/gmsh_session.py`: process-wide singleton guarded
@@ -108,8 +122,10 @@ Session prompt for an unattended run:
 - [ ] **M2.7 [B] Mesher.** `meshing/mesher.py: generate(model, built) -> Mesh`. Apply
   `MeshSettings`; set `Mesh.SecondOrderIncomplete = 1` (so quads are 8-node, not 9-node);
   quads by `setRecombine` on every surface; then extract: renumber node tags to 0-based
-  dense indices, drop unused nodes, element types gmsh 2→T3, 3→Q4, 9→T6, 16→Q8,
-  1→L2, 8→L3; region id = surface tag; orient every edge so its parent element is on the
+  dense indices, drop unused nodes, element types by the registry's `gmsh_type`
+  (2→T3, 3→Q4, 9→T6, 16→Q8, 1→L2, 8→L3); elements of dimension `dim` become
+  `ElementBlock`s, those of dimension dim − 1 become `FacetBlock`s; region id = surface
+  tag; orient every edge so its parent element is on the
   left (Data §2); find `parent_elem` by matching the edge's end nodes against element
   sides. Any other element type → `MeshError`.
   Accept: for a plate with a hole and a two-region plate, all four element types:
@@ -131,10 +147,14 @@ Session prompt for an unattended run:
 
 ## M3 — Loads, nonlinear steady solver, recovery
 
-- [ ] **M3.1 [B] Problem compilation.** `solver/compile.py: compile(model, built, mesh) ->
-  CompiledProblem`: resolved edge blocks per BC, element blocks with material and thickness
-  per region, precomputed `ElemGeom` for every block, the `DofMap`, and the flags
-  `is_linear` and `is_time_dependent` (Theory §5 definition).
+- [ ] **M3.1 [B] Terms and problem compilation.** `solver/terms.py` (`State`, `Term`,
+  Data §13). `solver/compile.py: compile(model, built, mesh) -> CompiledProblem`: builds the
+  `DofMap` (field `"T"`), and one `Term` per contribution by calling the term factory
+  registered for each BC class; each term's `setup` resolves its facet or element blocks
+  and precomputes its `ElemGeom`. `is_linear` / `is_time_dependent` are the conjunction of
+  the terms' flags (Theory §5 definition). Wrap M1.4 conduction as `ConductionTerm`.
+  **All later physics tasks (M3.2–M3.6, M4.1, M6.3, M7, M9.3, M10.1) deliver `Term`s
+  registered this way**; the drivers in M3.7 and M4.2 loop over `problem.terms` only.
 - [ ] **M3.2 [A] Body loads.** `physics/body_loads.py`: `HeatGeneration`, `HeatPower`
   (Theory §2). Function evaluated at integration points with `t, x, y, T`.
 - [ ] **M3.3 [A] Surface loads.** `physics/surface_loads.py`: `HeatFlux`, `HeatFlow`,
@@ -252,7 +272,9 @@ All plotting functions take a `Results`, return a Matplotlib `Figure`, optionall
 - [ ] **M7.3 [B] Network hydraulics.** `flow/network.py: solve_network(network, streams,
   fluid_T) -> dict[branch, mass_flow], dict[node, pressure]` (Theory §9.2).
   Accept: V-30, V-31; mass is conserved at every node to 1e-10.
-- [ ] **M7.4 [C] Coupling.** `flow/coupling.py`: inside each nonlinear iteration update h
+- [ ] **M7.4 [C] Coupling.** `flow/provider.py` (`FlowProvider`, Data §13) and
+  `flow/coupling.py: StreamNetworkProvider`; the drivers call only the provider interface.
+  Inside each nonlinear iteration update h
   (lagged properties), then hydraulics when needed (Theory §9.2 last paragraph); the matrix
   is unsymmetric — confirm nothing downstream assumes symmetry. Write `/fluid/<stream>`
   results (Data §9); add the stream enthalpy term to the energy balance.
@@ -278,7 +300,10 @@ Boundary Conditions, Flow (Streams, Network), Enclosures, Analysis Settings, Sol
   stale; load edit → results stale). `gui/commands.py: ModelEditCommand(QUndoCommand)`
   stores the model JSON before and after an edit (whole-model snapshot — simple and always
   correct). Signals: `model_changed`, `geometry_built`, `mesh_changed`, `results_changed`.
-- [ ] **M8.3 [C] Viewport.** `gui/viewport.py`: Matplotlib canvas with equal aspect and
+- [ ] **M8.3 [C] Viewport.** `gui/scene.py`: the `SceneView` interface, `FieldDisplay` and
+  `LoadSymbol` (Data §13). `gui/viewport_mpl.py: MplSceneView` implements it; no other GUI
+  module may touch the model-view Matplotlib artists (add this to the layer test). The
+  implementation: Matplotlib canvas with equal aspect and
   separate artist layers (geometry, mesh, load symbols, results, highlight). Wheel zoom
   about the cursor, middle-drag pan, fit-all, coordinate read-out. Picking for points,
   curves, surfaces (point-in-polygon on the sampled boundary), nodes and elements, with
@@ -290,7 +315,9 @@ Boundary Conditions, Flow (Streams, Network), Enclosures, Analysis Settings, Sol
   dataclass using field metadata (label, quantity for unit conversion, limits);
   `FunctionEditor` widget for constant / table (editable grid, paste from Excel, preview
   plot) / expression (validated live); `SelectionEditor` widget ("pick in viewport" then
-  Apply). Every edit goes through `ModelEditCommand`.
+  Apply). Every edit goes through `ModelEditCommand`. Tree entries, "add" menus and panels
+  for loads are generated from the BC registry (`FormSpec`), so a newly registered load
+  appears without editing GUI code.
 - [ ] **M8.5 [B] Geometry tools.** Dialogs for each op in Data §4 with numeric entry and
   click-to-place with grid snap; booleans and transforms on the current selection; delete;
   STEP/BREP import; editable operation history list (edit parameters, reorder is not

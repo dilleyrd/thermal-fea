@@ -46,9 +46,13 @@ documents the task you pick tells you to read.
 - **Files:** save and load models; results stored beside the model.
 - **Scripting:** everything the GUI does is available from a Python API and a command line.
 
-### Out of scope (do not build)
-3D analysis, CFD (Navier–Stokes), structural or thermal-stress coupling, participating-media
-radiation, parallel/distributed solving, a custom mesher or CAD kernel.
+### Not in this version (do not build now, but do not block — see §7)
+3D analysis, CFD (Navier–Stokes), structural or thermal-stress coupling, other physics,
+a 3D graphics viewport, participating-media radiation, parallel/distributed solving.
+These are expected future extensions. §7 lists the design rules that keep them possible.
+
+### Never in scope
+A custom mesher or CAD kernel (gmsh/OpenCASCADE already handles 3D).
 
 ### Known limitation to state in the user documentation
 Surface-to-surface radiation is planned for planar models first. The axisymmetric version
@@ -83,6 +87,7 @@ internally removes a whole class of bugs.
 ```
 src/thermalfea/
   core/        elements.py quadrature.py mesh.py functions.py units.py errors.py
+               registry.py (element types, BC types, terms, correlations, result fields)
   materials/   material.py library.py data/solids.json data/fluids.json
   model/       model.py geometry_ops.py selections.py bcs.py settings.py serialize.py
   geometry/    gmsh_session.py builder.py importers.py
@@ -91,10 +96,11 @@ src/thermalfea/
                radiation_ambient.py enclosure.py viewfactors.py contact.py
   convection/  correlations.py fluid_props.py evaluator.py
   flow/        network.py stream.py coupling.py
-  solver/      dofs.py assembler.py linear.py nonlinear.py steady.py transient.py
+  solver/      dofs.py terms.py assembler.py linear.py nonlinear.py steady.py transient.py
                timestep.py results_writer.py
   post/        results.py recovery.py reactions.py energy.py path.py plots.py export.py
-  gui/         app.py main_window.py tree.py viewport.py property_panels/ dialogs/
+  gui/         app.py main_window.py tree.py scene.py (viewport interface)
+               viewport_mpl.py (Matplotlib implementation) property_panels/ dialogs/
                commands.py worker.py
   api.py       the public scripting facade
   cli.py       `thermalfea solve model.tfea`, `thermalfea info`, `thermalfea export`
@@ -200,3 +206,58 @@ The release criteria, checked in M11:
    correlation used outside its validity range (warning), and so on.
 6. A 100 000-node linear transient model runs 100 steps in under 60 s on a laptop.
 7. A user guide documents every formula, correlation, its source and its validity range.
+
+---
+
+## 7. Designing for future extension
+
+Planned future directions: 3D analysis, more physics (structural, thermal stress, species,
+electrical), more capable fluid flow (2D/3D CFD or coupling to an external CFD code), and a
+3D graphics viewport. None of this is built now. The rules below cost little today and
+avoid a rewrite later. **They are binding on every task**; where a task description and
+this section disagree, this section wins. Interfaces are in Data §13.
+
+1. **No hard-coded dimension.** Code never writes the literal 2 for the space dimension.
+   It uses `mesh.dim` and `ElementType.dim`. Arrays are shaped `(…, dim)` and `(…, dim, dim)`.
+   Planar thickness and the axisymmetric 2πr factor live in one function (`gfactor`), which
+   returns 1 for a future 3D model.
+2. **Elements are registered, not enumerated.** Shape functions, quadrature, gmsh type
+   code, facet type and display subdivision for each element live in one `ElementType`
+   record in `core/registry.py`. No `if etype == "T3"` anywhere outside that registration.
+   Adding a tetrahedron later means adding one record.
+3. **Boundaries are facets.** Boundary elements are "facets" (dimension = dim − 1): lines
+   today, triangles and quads in 3D. Their measure uses the general formula
+   √det(JᵀJ), which is correct for a line in 2D and a surface in 3D. In `docs/theory.md`,
+   read "edge" as "facet".
+4. **Unknowns are named fields.** The `DofMap` holds named fields (`"T"` today), each with
+   a number of components per node, plus named extra DOF groups (fluid nodes). Nothing
+   assumes "one DOF per node" or that DOF index = node index; always go through the map.
+5. **Physics are terms.** Every contribution to the equations (conduction, capacitance,
+   each load type, streams, enclosure radiation, contact) implements the `Term` interface.
+   The steady and transient drivers know only about terms, never about heat transfer.
+   New physics = new terms and fields, with the drivers unchanged.
+6. **Loads, correlations and result fields are registered.** A boundary-condition class
+   registers its JSON tag, its term factory and its GUI form metadata. The serializer, the
+   solver and the GUI find it through the registry. Adding a load must not require editing
+   the serializer, the driver or the main window.
+7. **The flow solver is a replaceable provider.** The solid solver talks to flow through
+   the `FlowProvider` interface (supplies terms and results). The 1D stream/network solver
+   is the first implementation; a CFD solver or an external-code coupling can be another.
+8. **The viewport is an interface.** GUI code talks to `SceneView` (Data §13), never to
+   Matplotlib directly. `viewport_mpl.py` is the only GUI file that imports Matplotlib
+   artists for the model view. A VTK/PyVista implementation can be added for 3D without
+   touching panels, tree or tools. (Charts — history, path — may use Matplotlib directly.)
+9. **Results are generic.** The results file stores any number of named fields, each with a
+   location (node, element, facet, extra DOF group) and component count.
+10. **Files are versioned and migratable.** `schema_version` on the model and results;
+    `model/migrations.py` holds one function per version step; loading an older file
+    migrates it. Never change the meaning of an existing field without a version bump.
+11. **Linear solver behind an interface.** Only `solver/linear.py` calls SciPy's solvers,
+    so iterative or parallel solvers can be added for large 3D systems.
+12. **Geometry and selections carry a dimension.** Selections and fingerprints already
+    store `dim` (0–3) and 3-component coordinates (z = 0 today). Geometry operations are
+    plain records replayed by the builder, so 3D operations (extrude, revolve, box) are
+    new records, not a redesign.
+
+A guard test keeps rules 1–5 honest: verification case V-37 registers a 4-node tetrahedron
+inside the test and runs a 3D patch test through the unmodified kernel and steady driver.

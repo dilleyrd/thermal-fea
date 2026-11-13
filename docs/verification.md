@@ -78,6 +78,12 @@ relative error against the analytic value, with the mesh size given.
 | V-35 | Thermal contact: V-11 with a contact conductance h_c = 2000 at the interface | temperature jump = q/h_c; q from series resistance including 1/h_c; 1e-9 |
 | V-36 | Phase change (Stefan problem, one phase): semi-infinite slab initially at T_m = 300 (liquid at its freezing point), surface dropped to 280 K; L = 1e5 J/kg, T_liq − T_sol = 1 K centred on T_m | interface position X(t) = 2λ√(αt), λ from λ e^{λ²} erf(λ) = c (T_m − T_s)/(L √π) by `brentq` | 5% on X at two times |
 
+## Extensibility guard
+
+| ID | Problem | Requirement |
+|---|---|---|
+| V-37 | 3D patch test. Inside the test only: register a 4-node tetrahedron `Tet4` (N = [1−ξ−η−ζ, ξ, η, ζ], 1-point rule at (¼,¼,¼) with w = 1/6, facet type `T3`) and build a `Mesh` with `dim = 3` of a unit cube split into 6 tetrahedra plus one interior node arrangement of your choice. Impose T = 300 + 10x + 20y + 30z on all boundary nodes, k = 50, and solve with the unmodified kernel, `ConductionTerm` and steady driver. Also integrate a unit flux over one cube face using `facet_geometry` on T3 facets. | Interior temperatures exact to 1e-10; flux = (−500, −1000, −1500) in every element; face integral = 1.0. The test must pass **without any change to library code that mentions `Tet4` or dim = 3**. |
+
 Note on V-23: model two solid slabs each 1 m wide (x) and 0.02 m thick (y), separated by a 0.01 m gap, enclosure
 = the two gap-facing edges, `open_to_ambient = True` with T_ambient = 300 K (the open ends
 are 1% of the view and are ignored by sampling only |x − 0.5| < 0.1).
