@@ -67,7 +67,7 @@ through `DofMap`, and every physics contribution is a `Term` (Data §13).
   Accept: rows of Ke sum to 0; Ke symmetric; for one unit-square Q4 with k = 1 equals the
   textbook matrix (diag 2/3, adjacent −1/6, opposite −1/3); axisymmetric T3 area integral
   of g reproduces the ring volume.
-- [ ] **M1.5 [A] DOF map and assembler.** `solver/dofs.py: DofMap` with named fields and
+- [x] **M1.5 [A] DOF map and assembler.** `solver/dofs.py: DofMap` with named fields and
   extra groups exactly as Data §13;
   `solver/assembler.py: Assembler` collecting `(conn, Ke)` and `(conn, fe)` batches and
   producing CSR `K` and dense `F` (COO then `tocsr()`, duplicates summed).
