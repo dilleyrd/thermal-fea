@@ -34,7 +34,7 @@ through `DofMap`, and every physics contribution is a `Term` (Data §13).
   outside `geometry/`, `meshing/` imports `gmsh`, or a module outside `gui/` imports
   `PySide6` or `thermalfea.gui` (Plan §3 layer rules).
   Accept: the layer test passes, and fails when a forbidden import is added temporarily.
-- [ ] **M0.3 [A] `CLAUDE.md`.** Ten lines at most: point to `PLAN.md`, repeat Plan §4 rules
+- [x] **M0.3 [A] `CLAUDE.md`.** Ten lines at most: point to `PLAN.md`, repeat Plan §4 rules
   1–6, give the check command.
 
 ## M1 — FE kernel
