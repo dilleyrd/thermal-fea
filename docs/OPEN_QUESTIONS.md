@@ -70,3 +70,11 @@ explicit embed step.
 
 Also: `SurfaceFromCurves` accepts its curves in any order; the builder chains them by
 shared end points because gmsh requires loop order.
+
+## Q6 — definitions of the mesh quality measures — raised in M2.9
+
+The plan names the measures (min angle, aspect ratio, min/max Jacobian ratio) without
+defining them. **Done for now** (`meshing/quality.py`): minimum interior corner angle in
+degrees from the straight lines between corner nodes; aspect ratio = longest / shortest
+corner-to-corner side; Jacobian ratio = min det J / max det J over the integration points
+and the nodes. No pass/fail thresholds are applied; the report only measures.
