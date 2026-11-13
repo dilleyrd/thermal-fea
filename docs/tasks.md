@@ -119,7 +119,7 @@ through `DofMap`, and every physics contribution is a `Term` (Data §13).
   `select_points/curves/surfaces(model, built, name, where=predicate | tags=[...])`.
   Accept: a selection survives adding an unrelated shape elsewhere; it becomes stale (with
   a clear message) when its curve is cut in two.
-- [ ] **M2.7 [B] Mesher.** `meshing/mesher.py: generate(model, built) -> Mesh`. Apply
+- [x] **M2.7 [B] Mesher.** `meshing/mesher.py: generate(model, built) -> Mesh`. Apply
   `MeshSettings`; set `Mesh.SecondOrderIncomplete = 1` (so quads are 8-node, not 9-node);
   quads by `setRecombine` on every surface; then extract: renumber node tags to 0-based
   dense indices, drop unused nodes, element types by the registry's `gmsh_type`
