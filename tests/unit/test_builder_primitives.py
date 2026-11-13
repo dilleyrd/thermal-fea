@@ -56,25 +56,46 @@ def test_polygon() -> None:
 
 
 def test_point_line_arc_spline() -> None:
+    """Curves are checked as the boundary of surfaces: construction geometry that bounds
+    nothing is dropped at the end of a build (M2.5)."""
     built = build(
         Model(
             geometry=[
-                g.Point("a", 0.0, 0.0),
-                g.Point("b", 3.0, 4.0),
+                # quarter disc of radius 1
+                g.Point("o", 0.0, 0.0),
                 g.Point("c", 1.0, 0.0),
                 g.Point("d", 0.0, 1.0),
-                g.Point("e", 1.5, 2.0),
-                g.Line("line", "a", "b"),
-                g.Arc("arc", "c", "a", "d"),  # quarter circle of radius 1 about the origin
-                g.Spline("spline", ["a", "e", "b"]),  # through collinear points: straight
+                g.Line("oc", "o", "c"),
+                g.Arc("arc", "c", "o", "d"),
+                g.Line("do", "d", "o"),
+                g.SurfaceFromCurves("quarter", ["oc", "arc", "do"]),
+                # 3-4-5 triangle whose hypotenuse is a spline through collinear points
+                g.Point("a", 10.0, 0.0),
+                g.Point("b", 13.0, 4.0),
+                g.Point("e", 11.5, 2.0),
+                g.Point("f", 13.0, 0.0),
+                g.Spline("spline", ["a", "e", "b"]),
+                g.Line("bf", "b", "f"),
+                g.Line("fa", "f", "a"),
+                g.SurfaceFromCurves("triangle", ["spline", "bf", "fa"]),
+                # construction geometry that bounds nothing
+                g.Point("lonely", 50.0, 50.0),
+                g.Point("lonely2", 51.0, 50.0),
+                g.Line("unused", "lonely", "lonely2"),
             ]
         )
     )
-    assert dims(built, "a") == [0]
-    assert dims(built, "line") == dims(built, "arc") == dims(built, "spline") == [1]
-    assert measure(built, "line") == pytest.approx(5.0, rel=1e-12)
+    assert dims(built, "o") == [0]
+    assert dims(built, "oc") == dims(built, "arc") == dims(built, "spline") == [1]
+    assert measure(built, "oc") == pytest.approx(1.0, rel=1e-12)
     assert measure(built, "arc") == pytest.approx(math.pi / 2.0, rel=1e-10)
+    assert measure(built, "quarter") == pytest.approx(math.pi / 4.0, rel=1e-10)
     assert measure(built, "spline") == pytest.approx(5.0, rel=1e-8)
+    assert measure(built, "bf") == pytest.approx(4.0, rel=1e-12)
+    assert measure(built, "triangle") == pytest.approx(6.0, rel=1e-8)
+    for op_id in ("lonely", "lonely2", "unused", "e"):
+        assert built.op_entities[op_id] == []
+    assert len(built.surfaces) == 2 and len(built.curves) == 6 and len(built.points) == 6
 
 
 def test_surface_from_curves_half_disc() -> None:

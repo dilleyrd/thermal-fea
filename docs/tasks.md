@@ -107,7 +107,7 @@ through `DofMap`, and every physics contribution is a `Term` (Data §13).
   for `Point, Line, Arc, Spline, Rectangle, Circle, Polygon, SurfaceFromCurves` with the
   OCC kernel. Keep a map op id → list of (dim, tag).
   Accept: areas from `occ.getMass` equal analytic values for each primitive.
-- [ ] **M2.5 [C] Builder: booleans, transforms, final fragment, fingerprints.** `Boolean`
+- [x] **M2.5 [C] Builder: booleans, transforms, final fragment, fingerprints.** `Boolean`
   via `occ.fuse/cut/intersect`, `Transform`, `Delete`. After every OCC boolean, update the
   op-id map from the returned `outDimTagsMap`. After the last op: one `occ.fragment` of all
   surfaces, `synchronize`, then fill `BuiltGeometry` (surfaces, curves, points, each with

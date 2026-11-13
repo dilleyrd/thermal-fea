@@ -54,3 +54,19 @@ of V-01 through `post/recovery.py`, and add the `examples/` scripts for these ca
    `dx, dy` (translate); `angle, cx, cy` (rotate, radians); `x0, y0, x1, y1` (mirror line);
    `factor, cx, cy` (scale).
 5. `NetBranch` defaults: `kind = "duct"`, `length = 0`, `K_minor = 0`, `stream = None`.
+
+## Q5 — construction geometry after the final fragment — raised in M2.5
+
+The plan says the builder ends with one `occ.fragment` over all surfaces, but not what
+happens to points and curves that bound no surface (construction points, a spline's
+interior points, unused lines). Left in the gmsh model they would be meshed as curve
+elements with no parent element.
+
+**Done for now:** after the fragment, curves and points that bound no surface are removed,
+and their operations own no entities (`built.op_entities[id] == []`). Consequence: a free
+point or curve drawn *inside* a surface is not embedded in the mesh. If embedded points or
+curves are wanted (for a point load or a probe line), that needs a decision and an
+explicit embed step.
+
+Also: `SurfaceFromCurves` accepts its curves in any order; the builder chains them by
+shared end points because gmsh requires loop order.

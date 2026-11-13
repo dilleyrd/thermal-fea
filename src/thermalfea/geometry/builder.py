@@ -11,10 +11,12 @@ Each operation class has a handler registered with :func:`handler`, so a new ope
 from __future__ import annotations
 
 import logging
+import math
 from collections.abc import Callable
 from dataclasses import dataclass, field
 from types import ModuleType
 
+import numpy as np
 from numpy import ndarray
 
 from ..core.errors import GeometryError
@@ -30,6 +32,8 @@ DimTag = tuple[int, int]
 POINT_DIM, CURVE_DIM, SURFACE_DIM = 0, 1, 2
 _MIN_SPLINE_POINTS = 2
 _MIN_POLYGON_VERTICES = 3
+#: Number of points sampled along each curve for display.
+POLYLINE_POINTS = 40
 
 
 @dataclass
@@ -106,6 +110,27 @@ class BuildContext:
             raise GeometryError(f"operation {op_id!r} has {len(found)} entities, expected one")
         return found[0]
 
+
+    def remap(self, inputs: list[DimTag], mapping: list[list[DimTag]]) -> None:
+        """Update every operation's entities after an OCC boolean.
+
+        ``mapping[i]`` lists what input entity ``inputs[i]`` became (``outDimTagsMap``);
+        an empty list means it was consumed.
+        """
+        table = {entity: list(children) for entity, children in zip(inputs, mapping, strict=True)}
+        for op_id, owned in self.op_entities.items():
+            updated: list[DimTag] = []
+            for entity in owned:
+                for child in table.get(entity, [entity]):
+                    if child not in updated:
+                        updated.append(child)
+            self.op_entities[op_id] = updated
+
+    def forget(self, removed: list[DimTag]) -> None:
+        """Drop removed entities from every operation's list."""
+        gone = set(removed)
+        for op_id, owned in self.op_entities.items():
+            self.op_entities[op_id] = [e for e in owned if e not in gone]
 
     def ordered_loop(self, curve_tags: list[int]) -> list[int]:
         """Return the curves of a closed loop in chain order.
@@ -220,6 +245,130 @@ def _surface_from_curves(ctx: BuildContext, op: ops.SurfaceFromCurves) -> list[D
     return [(SURFACE_DIM, ctx.occ.addPlaneSurface(loops))]
 
 
+# ------------------------------------------------------- booleans, transforms, delete
+
+
+@handler(ops.Boolean)
+def _boolean(ctx: BuildContext, op: ops.Boolean) -> list[DimTag]:
+    objects = [e for op_id in op.objects for e in ctx.entities(op_id)]
+    tools = [e for op_id in op.tools for e in ctx.entities(op_id)]
+    if not objects or not tools:
+        raise GeometryError("a boolean needs at least one object and one tool")
+    operation = {"union": ctx.occ.fuse, "cut": ctx.occ.cut, "intersect": ctx.occ.intersect}[
+        op.kind
+    ]
+    result, mapping = operation(objects, tools)
+    ctx.remap(objects + tools, mapping)
+    return [(int(d), int(t)) for d, t in result]
+
+
+def _mirror_plane(params: dict[str, float]) -> tuple[float, float, float, float]:
+    """Plane ``a x + b y + c z + d = 0`` containing the mirror line and the z axis."""
+    x0, y0, x1, y1 = (params[k] for k in ("x0", "y0", "x1", "y1"))
+    a, b = -(y1 - y0), x1 - x0
+    norm = math.hypot(a, b)
+    if norm == 0.0:
+        raise GeometryError("the two points of a mirror line coincide")
+    return a / norm, b / norm, 0.0, -(a * x0 + b * y0) / norm
+
+
+@handler(ops.Transform)
+def _transform(ctx: BuildContext, op: ops.Transform) -> list[DimTag]:
+    targets = [e for op_id in op.targets for e in ctx.entities(op_id)]
+    if not targets:
+        raise GeometryError("a transform needs at least one target")
+    if op.copy:
+        targets = [(int(d), int(t)) for d, t in ctx.occ.copy(targets)]
+    q = op.params
+    try:
+        if op.kind == "translate":
+            ctx.occ.translate(targets, q["dx"], q["dy"], 0.0)
+        elif op.kind == "rotate":
+            ctx.occ.rotate(targets, q["cx"], q["cy"], 0.0, 0.0, 0.0, 1.0, q["angle"])
+        elif op.kind == "mirror":
+            ctx.occ.mirror(targets, *_mirror_plane(q))
+        else:
+            f = q["factor"]
+            if f <= 0.0:
+                raise GeometryError("scale factor must be positive")
+            ctx.occ.dilate(targets, q["cx"], q["cy"], 0.0, f, f, f)
+    except KeyError as exc:
+        raise GeometryError(f"{op.kind} transform lacks parameter {exc}") from None
+    return targets
+
+
+@handler(ops.Delete)
+def _delete(ctx: BuildContext, op: ops.Delete) -> list[DimTag]:
+    targets = [e for op_id in op.targets for e in ctx.entities(op_id)]
+    ctx.occ.remove(targets, recursive=True)
+    ctx.forget(targets)
+    return []
+
+
+# ----------------------------------------------------------------- finishing the model
+
+
+def _fragment_and_clean(ctx: BuildContext) -> None:
+    """Make the surfaces conformal and drop construction geometry.
+
+    One ``occ.fragment`` over all surfaces makes neighbouring regions share their curves.
+    Curves and points that bound no surface afterwards (construction points, unused
+    lines) are removed, so that nothing is meshed without a parent element.
+    """
+    occ, model = ctx.occ, ctx.gmsh.model
+    surfaces = [(int(d), int(t)) for d, t in occ.getEntities(SURFACE_DIM)]
+    if len(surfaces) > 1:
+        _, mapping = occ.fragment(surfaces, [])
+        ctx.remap(surfaces, mapping)
+    occ.synchronize()
+    for dim in range(SURFACE_DIM - 1, -1, -1):
+        dangling = [
+            (dim, int(tag))
+            for _, tag in model.getEntities(dim)
+            if len(model.getAdjacencies(dim, tag)[0]) == 0
+        ]
+        if dangling:
+            occ.remove(dangling, recursive=False)
+            occ.synchronize()
+    alive = {(int(d), int(t)) for d, t in model.getEntities()}
+    for op_id, owned in ctx.op_entities.items():
+        ctx.op_entities[op_id] = [e for e in owned if e in alive]
+
+
+def _fingerprint(ctx: BuildContext, dim: int, tag: int) -> Fingerprint:
+    model = ctx.gmsh.model
+    if dim == POINT_DIM:
+        center = tuple(float(v) for v in model.getValue(dim, tag, []))
+        return Fingerprint(dim, center, 0.0, center + center)
+    return Fingerprint(
+        dim,
+        tuple(float(v) for v in ctx.occ.getCenterOfMass(dim, tag)),
+        float(ctx.occ.getMass(dim, tag)),
+        tuple(float(v) for v in model.getBoundingBox(dim, tag)),
+    )
+
+
+def _describe(ctx: BuildContext, serial: int) -> BuiltGeometry:
+    """Collect the final entities, fingerprints, adjacency and display polylines."""
+    model = ctx.gmsh.model
+    built = BuiltGeometry(serial=serial, op_entities=ctx.op_entities)
+    for dim in (POINT_DIM, CURVE_DIM, SURFACE_DIM):
+        target = built.entities(dim)
+        for _, tag in model.getEntities(dim):
+            target[int(tag)] = _fingerprint(ctx, dim, int(tag))
+    for tag in built.curves:
+        upward, _ = model.getAdjacencies(CURVE_DIM, tag)
+        built.curve_surfaces[tag] = sorted(int(t) for t in upward)
+        lo, hi = model.getParametrizationBounds(CURVE_DIM, tag)
+        u = np.linspace(lo[0], hi[0], POLYLINE_POINTS)
+        built.curve_polylines[tag] = np.asarray(model.getValue(CURVE_DIM, tag, u)).reshape(
+            POLYLINE_POINTS, -1
+        )
+    if built.points:
+        built.bbox = tuple(float(v) for v in model.getBoundingBox(-1, -1))
+    return built
+
+
 # --------------------------------------------------------------------------------- build
 
 
@@ -266,7 +415,9 @@ def build(model: Model) -> BuiltGeometry:
         ctx = BuildContext(gmsh)
         replay(ctx, model)
         try:
-            ctx.occ.synchronize()
+            _fragment_and_clean(ctx)
+            return _describe(ctx, session.serial)
+        except GeometryError:
+            raise
         except Exception as exc:
-            raise GeometryError(f"gmsh could not synchronise the geometry: {exc}") from exc
-        return BuiltGeometry(serial=session.serial, op_entities=ctx.op_entities)
+            raise GeometryError(f"gmsh could not finish the geometry: {exc}") from exc
