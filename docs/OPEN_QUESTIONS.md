@@ -141,6 +141,20 @@ same constant. If the benchmark value 5.67e-8 should be used instead, change tha
 5. **Line search switched off** (`line_search = False`): the full step is taken, except
    that a trial with a temperature ≤ 0 K is still halved, as Theory §5 requires.
 
+## Q11 — sign convention of reported heat flows — raised in M3.10
+
+Theory §4 defines the reaction at a prescribed node as positive when heat *enters* the
+body, and the energy balance of §7 sums "generation + heat in". Theory §7 also lists the
+heat flow through a boundary set as positive *out* of the body. Reporting some flows
+positive-in and others positive-out in one table would be confusing.
+
+**Done for now:** one convention everywhere — a reported heat flow is positive when heat
+enters the body (`Term.boundary_heat`, `post/reactions.heat_flows`, the energy balance,
+and later the `/reactions/<bc>` datasets). The magnitudes are those of Theory §7; only
+the sign of the boundary-set formulas is reversed. A fixed-temperature set reports
++Σ R_p. If §7's positive-out convention is wanted for boundary sets, it is one sign in
+`heat_flows`.
+
 Also: total loads (`HeatPower`, `HeatFlow`) and `FixedTemperature` refuse a function that
 depends on T (a total, or a prescribed value, as a function of the local temperature has
 no defined meaning); the error message says what to use instead.

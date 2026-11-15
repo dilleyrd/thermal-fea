@@ -169,6 +169,29 @@ class CompiledProblem:
         values : ndarray
             Their prescribed values.
         """
+        idx, values, _ = self._prescribed(t, warn=True)
+        return idx, values
+
+    def prescribed_owners(self, t: float) -> tuple[ndarray, ndarray]:
+        """Prescribed DOFs and, for each, the index of the constraint that sets it.
+
+        Parameters
+        ----------
+        t : float
+            Time [s].
+
+        Returns
+        -------
+        idx : ndarray of int64
+            Distinct DOF numbers, ascending.
+        owner : ndarray of int64
+            Index into ``constraints`` of the constraint whose value is used at each DOF
+            (the later one where several overlap).
+        """
+        idx, _, owner = self._prescribed(t, warn=False)
+        return idx, owner
+
+    def _prescribed(self, t: float, warn: bool) -> tuple[ndarray, ndarray, ndarray]:
         values = np.full(self.dofs.n_dofs, np.nan)
         owner = np.full(self.dofs.n_dofs, -1, dtype=np.int64)
         for k, constraint in enumerate(self.constraints):
@@ -176,7 +199,7 @@ class CompiledProblem:
             idx = np.asarray(idx, dtype=np.int64)
             vals = np.broadcast_to(np.asarray(vals, dtype=float), idx.shape)
             clash = (owner[idx] >= 0) & (values[idx] != vals)
-            if clash.any():
+            if warn and clash.any():
                 earlier = sorted({self.constraints[j].name for j in np.unique(owner[idx[clash]])})
                 log.warning(
                     "%r and %s prescribe different values at %d shared DOF(s); %r wins",
@@ -186,4 +209,4 @@ class CompiledProblem:
             values[idx] = vals
             owner[idx] = k
         idx = np.flatnonzero(owner >= 0)
-        return idx, values[idx]
+        return idx, values[idx], owner[idx]
