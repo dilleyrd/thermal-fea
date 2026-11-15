@@ -173,7 +173,7 @@ through `DofMap`, and every physics contribution is a `Term` (Data §13).
   fixed, settings) -> NewtonResult` implementing Theory §5 steps 1–6 exactly;
   `solver/steady.py: solve_steady(problem) -> T`. Linear problems: one solve, no iteration.
   Log one line per iteration (residual, max ΔT, line-search factor).
-- [ ] **M3.8 [A] Validation.** `model/validate.py` with every check in Data §8, each with a
+- [x] **M3.8 [A] Validation.** `model/validate.py` with every check in Data §8, each with a
   unit test that triggers it.
 - [ ] **M3.9 [B] Recovery.** `post/recovery.py: nodal_flux(mesh, problem, T) ->
   dict[region, (node_idx, q (n, 2))]`, `element_flux`, `gradient` (Theory §7).

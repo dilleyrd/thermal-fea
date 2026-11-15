@@ -1,0 +1,278 @@
+"""M3.8 — validation (Data §8): one test per check, each triggering it."""
+
+from __future__ import annotations
+
+import pytest
+
+from thermalfea import api
+from thermalfea.core.errors import ModelError
+from thermalfea.core.functions import Expression, Table
+from thermalfea.materials.material import Material
+from thermalfea.model import bcs
+from thermalfea.model.model import InitialCondition, Model, RegionAssignment
+from thermalfea.model.validate import Issue, errors, raise_if_errors, validate
+
+
+def good(analysis: str = "planar", x0: float = 0.0) -> tuple[Model, object, object]:
+    """A valid two-region model: no issues at all."""
+    model = api.new_model(analysis)
+    geo = api.Geometry(model)
+    geo.rectangle(x0, 0.0, 0.4, 0.5, id="left")
+    geo.rectangle(x0 + 0.4, 0.0, 0.6, 0.5, id="right")
+    model.mesh_settings.global_size = 0.1
+    built = api.build(model)
+    api.select_surfaces(model, built, "L", where=lambda s: s.center[0] < x0 + 0.4)
+    api.select_surfaces(model, built, "R", where=lambda s: s.center[0] > x0 + 0.4)
+    api.select_curves(model, built, "bottom-left",
+                      where=lambda c: abs(c.center[1]) < 1e-9 and c.center[0] < x0 + 0.4)
+    api.select_curves(model, built, "west", where=lambda c: abs(c.center[0] - x0) < 1e-9)
+    api.select_curves(model, built, "east", where=lambda c: abs(c.center[0] - x0 - 1.0) < 1e-9)
+    api.select_curves(model, built, "interface",
+                      where=lambda c: abs(c.center[0] - x0 - 0.4) < 1e-9)
+    api.select_points(model, built, "origin",
+                      where=lambda p: abs(p.center[0] - x0) + abs(p.center[1]) < 1e-9)
+    api.assign_region(model, "L", material="Copper (pure)")
+    api.assign_region(model, "R", material="Silicon")
+    model.bcs += [
+        bcs.FixedTemperature("hot", "west", T=400.0),
+        bcs.Convection("cool", "east", h=100.0, T_inf=300.0),
+    ]
+    return model, built, api.mesh(model, built)
+
+
+def codes(issues: list[Issue], severity: str | None = None) -> list[str]:
+    return [i.code for i in issues if severity is None or i.severity == severity]
+
+
+def only(issues: list[Issue], code: str) -> Issue:
+    (issue,) = [i for i in issues if i.code == code]
+    return issue
+
+
+def test_valid_model_has_no_issues() -> None:
+    model, built, mesh = good()
+    assert validate(model, built, mesh) == []
+    assert validate(model, built) == []  # the mesh is optional
+    raise_if_errors([])
+    axi = good("axisymmetric", x0=0.2)
+    assert validate(*axi) == []
+
+
+# ------------------------------------------------------------------------------ regions
+
+
+def test_surface_without_region() -> None:
+    model, built, mesh = good()
+    model.regions.pop()
+    issue = only(validate(model, built, mesh), "no-region")
+    assert issue.severity == "error" and issue.kind == "region"
+    assert "has no region assignment" in issue.message and "surface" in issue.message
+
+
+def test_surface_with_two_regions() -> None:
+    model, built, mesh = good()
+    model.regions.append(RegionAssignment("all", "Silicon"))
+    issues = validate(model, built, mesh)
+    assert codes(issues) == ["multiple-regions", "multiple-regions"]
+    assert "'L', 'all'" in issues[0].message or "'R', 'all'" in issues[0].message
+
+
+def test_missing_material() -> None:
+    model, built, mesh = good()
+    model.regions[0].material = "Unobtainium"
+    issue = only(validate(model, built, mesh), "missing-material")
+    assert issue.severity == "error" and (issue.kind, issue.name) == ("region", "L")
+    assert "'Unobtainium'" in issue.message
+
+
+def test_missing_fluid() -> None:
+    model, built, mesh = good()
+    model.bcs.append(bcs.CorrelationConvection("nat", "east", "vplate_natural", "Mercury", 300.0))
+    model.streams.append(bcs.Stream(
+        name="s", fluid="Oil", mode="through_plane", walls=["east"], flow_area=1e-4,
+        wetted_perimeter=0.04, cross_section="circular", T_inlet=300.0, mass_flow=0.1))
+    issues = validate(model, built, mesh)
+    assert codes(issues) == ["missing-fluid", "missing-fluid"]
+    assert [(i.kind, i.name) for i in issues] == [("bc", "nat"), ("stream", "s")]
+    model.bcs[-1].fluid, model.streams[0].fluid = "Air", "Water"
+    assert validate(model, built, mesh) == []
+
+
+def test_region_with_bad_selection_or_thickness() -> None:
+    model, built, mesh = good()
+    model.regions[0].selection = "west"  # curves, not surfaces
+    assert "wrong-selection" in codes(validate(model, built, mesh))
+    model, built, mesh = good()
+    model.regions[0].selection = "nope"
+    assert "unknown-selection" in codes(validate(model, built, mesh))
+    model, built, mesh = good()
+    model.regions[0].thickness = 0.0
+    assert codes(validate(model, built, mesh)) == ["bad-thickness"]
+
+
+# --------------------------------------------------------------------------- selections
+
+
+def test_stale_selection() -> None:
+    model, built, _ = good()
+    model.geometry[0].height = 0.25  # the left rectangle shrinks: its curves change
+    rebuilt = api.build(model)
+    issues = validate(model, rebuilt, api.mesh(model, rebuilt))
+    stale = [i for i in issues if i.code == "stale-selection"]
+    assert stale and all(i.severity == "error" and i.kind == "selection" for i in stale)
+    assert {"L", "west", "interface"} <= {i.name for i in stale}
+    assert all(f"'{i.name}' is stale" in i.message for i in stale)
+    # a stale selection is reported once, not again by everything that uses it
+    assert codes(issues).count("stale-selection") == len(stale)
+    assert "unknown-selection" not in codes(issues)
+
+
+def test_bc_with_unknown_or_wrong_selection() -> None:
+    model, built, mesh = good()
+    model.bcs.append(bcs.HeatFlux("flux", "missing", q=1.0))
+    issue = only(validate(model, built, mesh), "unknown-selection")
+    assert (issue.kind, issue.name) == ("boundary condition", "flux")
+    model.bcs[-1] = bcs.FixedTemperature("fix", "L", T=300.0)  # a surface selection
+    issue = only(validate(model, built, mesh), "wrong-selection")
+    assert "points or curves" in issue.message
+    model.bcs[-1].active = False  # inactive conditions are not checked
+    assert validate(model, built, mesh) == []
+
+
+def test_curve_with_two_fixed_temperatures() -> None:
+    model, built, mesh = good()
+    model.bcs.append(bcs.FixedTemperature("again", "west", T=350.0))
+    issue = only(validate(model, built, mesh), "double-fixed-temperature")
+    assert issue.severity == "error" and "'hot', 'again'" in issue.message
+    # a fixed point at the end of a fixed curve is not "two BCs on a curve"
+    model.bcs[-1] = bcs.FixedTemperature("pin", "origin", T=350.0)
+    assert validate(model, built, mesh) == []
+
+
+# -------------------------------------------------------------------------- physics
+
+
+def test_steady_without_temperature_reference() -> None:
+    model, built, mesh = good()
+    model.bcs[:] = [bcs.HeatFlux("in", "west", q=10.0), bcs.HeatFlux("out", "east", q=-10.0)]
+    issue = only(validate(model, built, mesh), "no-temperature-reference")
+    assert issue.severity == "error" and "temperature reference" in issue.message
+    for reference in (
+        bcs.FixedTemperature("f", "west", T=300.0),
+        bcs.Convection("c", "west", h=1.0, T_inf=300.0),
+        bcs.RadiationAmbient("r", "west", emissivity=0.5, T_inf=300.0),
+        bcs.CorrelationConvection("n", "west", "vplate_natural", "Air", 300.0),
+    ):
+        model.bcs.append(reference)
+        assert "no-temperature-reference" not in codes(validate(model, built, mesh))
+        model.bcs.pop()
+    model.bcs.append(bcs.FixedTemperature("off", "west", T=300.0, active=False))
+    assert "no-temperature-reference" in codes(validate(model, built, mesh))
+    model.bcs.pop()
+    model.streams.append(bcs.Stream(
+        name="s", fluid="Water", mode="in_plane", walls=["east"], flow_area=1e-4,
+        wetted_perimeter=0.04, cross_section="circular", T_inlet=300.0, mass_flow=0.1))
+    assert "no-temperature-reference" not in codes(validate(model, built, mesh))
+    model.streams.clear()
+    model.solution.kind = "transient"  # a transient analysis has its initial condition
+    assert "no-temperature-reference" not in codes(validate(model, built, mesh))
+
+
+def test_radiation_with_a_non_absolute_temperature() -> None:
+    model, built, mesh = good()
+    model.bcs[1] = bcs.RadiationAmbient("rad", "east", emissivity=0.8, T_inf=27.0)
+    assert validate(model, built, mesh) == []  # 27 K is odd but absolute
+    model.bcs[1].T_inf = Expression("-20")
+    issue = only(validate(model, built, mesh), "non-absolute-temperature")
+    assert issue.severity == "error" and (issue.kind, issue.name) == ("bc", "rad")
+    assert "Celsius" in issue.message
+    model.bcs[1].T_inf = Expression("300")
+    model.bcs[0].T = Expression("0")  # another temperature of the model at 0 K
+    assert only(validate(model, built, mesh), "non-absolute-temperature").name == "hot"
+    # without radiation a temperature <= 0 is not an error
+    model.bcs[1] = bcs.Convection("cool", "east", h=100.0, T_inf=-20.0)
+    assert errors(validate(model, built, mesh)) == []
+
+
+def test_transient_needs_positive_capacity_and_end_time() -> None:
+    model, built, mesh = good()
+    model.solution.kind = "transient"
+    model.solution.end_time = 0.0
+    issue = only(validate(model, built, mesh), "bad-end-time")
+    assert issue.severity == "error" and issue.kind == "solution"
+    model.solution.end_time = 10.0
+    assert validate(model, built, mesh) == []
+    model.materials["Silicon"] = Material("Silicon", 148.0, 0.0, 712.0)
+    issue = only(validate(model, built, mesh), "bad-capacity")
+    assert (issue.kind, issue.name) == ("material", "Silicon") and "density" in issue.message
+    model.materials["Silicon"] = Material(
+        "Silicon", 148.0, 2330.0, Table([300.0, 400.0], [700.0, -1.0], "T"))
+    assert "specific heat" in only(validate(model, built, mesh), "bad-capacity").message
+    model.solution.kind = "steady"  # rho and cp do not matter in a steady analysis
+    assert errors(validate(model, built, mesh)) == []
+    model.materials["Silicon"] = Material("Silicon", -1.0, 2330.0, 712.0)
+    assert only(validate(model, built, mesh), "bad-conductivity").severity == "error"
+
+
+def test_axisymmetric_node_with_negative_radius() -> None:
+    model, built, mesh = good("axisymmetric", x0=-0.2)
+    issue = only(validate(model, built, mesh), "negative-radius")
+    assert issue.severity == "error" and issue.kind == "mesh" and "radius" in issue.message
+    assert "negative-radius" not in codes(validate(model, built, None))  # needs the mesh
+    on_axis = good("axisymmetric", x0=0.0)
+    assert validate(*on_axis) == []
+    planar = good("planar", x0=-0.2)
+    assert validate(*planar) == []
+
+
+def test_property_table_not_covering_the_temperature_range_is_a_warning() -> None:
+    model, built, mesh = good()  # the model's temperatures span 300 .. 400 K
+    table = Table([320.0, 380.0], [140.0, 120.0], "T")
+    model.materials["Silicon"] = Material("Silicon", table, 2330.0, 712.0)
+    issues = validate(model, built, mesh)
+    assert codes(issues) == ["table-range"] and errors(issues) == []
+    issue = issues[0]
+    assert issue.severity == "warning" and (issue.kind, issue.name) == ("material", "Silicon")
+    assert "320 to 380 K" in issue.message and "300 to 400 K" in issue.message
+    assert "held" in issue.message
+    raise_if_errors(issues)  # warnings do not block the solve
+    wide = Table([250.0, 500.0], [150.0, 100.0], "T", extrapolate="linear")
+    model.materials["Silicon"] = Material("Silicon", wide, 2330.0, 712.0)
+    assert validate(model, built, mesh) == []
+    # an unused material is not checked
+    model.materials["spare"] = Material("spare", table, 1.0, 1.0)
+    assert validate(model, built, mesh) == []
+
+
+def test_contact_must_be_an_interface_between_two_regions() -> None:
+    model, built, mesh = good()
+    model.contacts.append(bcs.Contact("joint", "interface", conductance=2000.0))
+    assert validate(model, built, mesh) == []
+    model.contacts[0].selection = "west"  # an outer boundary: one region only
+    issue = only(validate(model, built, mesh), "contact-not-interface")
+    assert issue.severity == "error" and (issue.kind, issue.name) == ("contact", "joint")
+    assert "borders 1 region" in issue.message
+    model.contacts[0].selection = "L"
+    assert "wrong-selection" in codes(validate(model, built, mesh))
+
+
+def test_initial_condition_temperatures_count_in_a_transient_analysis() -> None:
+    model, built, mesh = good()
+    model.solution.kind = "transient"
+    model.bcs[1] = bcs.RadiationAmbient("rad", "east", emissivity=0.8, T_inf=300.0)
+    model.initial_condition = InitialCondition("uniform", value=-5.0)
+    issue = only(validate(model, built, mesh), "non-absolute-temperature")
+    assert issue.name == "initial condition"
+    model.initial_condition = InitialCondition("per_region", per_region={"L": 300.0, "R": 0.0})
+    assert "of R" in only(validate(model, built, mesh), "non-absolute-temperature").name
+
+
+def test_raise_if_errors_lists_every_error() -> None:
+    model, built, mesh = good()
+    model.regions.pop()
+    model.bcs.append(bcs.HeatFlux("flux", "missing", q=1.0))
+    issues = validate(model, built, mesh)
+    assert len(errors(issues)) == 2
+    with pytest.raises(ModelError, match="2 error") as info:
+        raise_if_errors(issues)
+    assert "no region assignment" in str(info.value) and "'missing'" in str(info.value)
