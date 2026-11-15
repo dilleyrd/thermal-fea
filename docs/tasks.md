@@ -185,7 +185,7 @@ through `DofMap`, and every physics contribution is a `Term` (Data §13).
 
 ## M4 — Transient solver
 
-- [ ] **M4.1 [A] Capacitance.** `physics/capacitance.py`: consistent and lumped
+- [x] **M4.1 [A] Capacitance.** `physics/capacitance.py`: consistent and lumped
   (Theory §2, §3 — HRZ for quadratic elements).
   Accept: total of C equals ∫ρc g dA for both forms, all element types; lumped is diagonal
   and positive.

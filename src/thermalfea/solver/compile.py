@@ -17,6 +17,7 @@ from ..model.bcs import BoundaryCondition
 from ..model.model import Model
 from ..model.selections import Selection, StaleSelectionError, resolve
 from ..physics import builtin  # noqa: F401  (registers the built-in term factories)
+from ..physics.capacitance import CapacitanceTerm
 from ..physics.conduction import ConductionTerm
 from .dofs import DofMap
 from .problem import TEMPERATURE, CompiledProblem, RegionData
@@ -142,6 +143,10 @@ def compile(  # noqa: A001
     conduction = ConductionTerm()
     _setup(problem, conduction)
     problem.terms.append(conduction)
+    if model.solution.kind == "transient":
+        thermal_mass = CapacitanceTerm(lumped=model.solution.lumped_capacitance)
+        _setup(problem, thermal_mass)
+        problem.terms.append(thermal_mass)
     for bc in model.bcs:
         attach(problem, bc)
     log.debug(
