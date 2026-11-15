@@ -189,7 +189,7 @@ through `DofMap`, and every physics contribution is a `Term` (Data §13).
   (Theory §2, §3 — HRZ for quadratic elements).
   Accept: total of C equals ∫ρc g dA for both forms, all element types; lumped is diagonal
   and positive.
-- [ ] **M4.2 [C] θ-method, fixed step.** `solver/transient.py: solve_transient(problem)`
+- [x] **M4.2 [C] θ-method, fixed step.** `solver/transient.py: solve_transient(problem)`
   implementing Theory §6 (residual, tangent, stored g_n, θ = 1 on discontinuity steps,
   factorisation reuse in the linear constant-Δt case).
   Accept: V-16 and V-21.

@@ -166,6 +166,36 @@ the scale also includes the heat passing through the prescribed nodes, summed no
 node (the larger of what enters and what leaves). This only ever enlarges the scale in
 that degenerate situation; in every other verification case it changes nothing.
 
+## Q14 — which steps count as "discontinuity steps" (Theory §6) — raised in M4.2
+
+Theory §6: "At a step where a prescribed temperature or a load jumps discontinuously, use
+θ = 1 for that one step." It does not say how a jump is recognised.
+
+**Done for now** (`solver/transient.py`):
+
+1. **The first step**, when the initial state is not in equilibrium with the loads at the
+   start time (‖g(T₀, t₀)‖ on the free DOFs is not negligible), or when an initial
+   temperature differs from the prescribed value that replaces it. The loads are, in
+   effect, switched on at t₀. *This matters:* without it V-21 cannot be met. On V-16 with
+   θ = ½ the suddenly applied convection excites fast modes that Crank–Nicolson hardly
+   damps; the resulting ringing (about 0.01 K) hides the O(Δt²) error and the observed
+   order came out anywhere between 1.7 and 8.8. With θ = 1 on the first step the observed
+   order is 1.99–2.00 for all four element types, and V-16 still passes at 1e-4.
+2. **Later steps**, when the change of a prescribed value or of g over the first 1e-8 of
+   the step exceeds 1e-3 of its change over the whole step (a continuous function changes
+   by about 1e-8 of it, a jump at the start of the step by all of it). This costs two
+   extra assemblies per step and is done only when θ < 1 and the problem depends on time.
+   A jump that falls strictly inside a step is not seen; table breakpoints are mandatory
+   times (M4.3), but a table is continuous anyway, and a jump written in an expression
+   (`where(t > 5, …)`) is caught only if a step happens to start at it.
+
+**To confirm:** that an out-of-equilibrium start should be treated as a discontinuity.
+
+Also in M4.2: `solve_transient(problem, T0=None, on_step=None, *, t0=0, store=True)`
+returns a `TransientResult`; `on_step(record)` receives a `StepRecord` per accepted step
+and may return `False` to cancel. A fixed-step run takes its step from
+`solution.initial_dt`.
+
 ## Q13 — choices made in the verification examples — raised in M3.G
 
 - **Nodes at check points.** V-09 and V-10 check the temperature at given points. Point
