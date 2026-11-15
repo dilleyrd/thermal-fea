@@ -96,6 +96,10 @@ def test_missing_fluid() -> None:
     assert [(i.kind, i.name) for i in issues] == [("bc", "nat"), ("stream", "s")]
     model.bcs[-1].fluid, model.streams[0].fluid = "Air", "Water"
     assert validate(model, built, mesh) == []
+    # the user power law needs no fluid properties, so its fluid name is not checked
+    model.bcs[-1] = bcs.CorrelationConvection(
+        "law", "east", "power_law", "anything", 300.0, params={"C": 2.0, "n": 0.25})
+    assert validate(model, built, mesh) == []
 
 
 def test_region_with_bad_selection_or_thickness() -> None:

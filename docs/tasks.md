@@ -250,7 +250,7 @@ All plotting functions take a `Results`, return a Matplotlib `Figure`, optionall
   `CORRELATIONS: dict[str, CorrelationInfo]` (function, required inputs, validity range,
   description, source). No model or mesh access in this file.
   Accept: V-25, V-26.
-- [ ] **M6.3 [B] Evaluator.** `convection/evaluator.py`: turns a `CorrelationConvection`
+- [x] **M6.3 [B] Evaluator.** `convection/evaluator.py`: turns a `CorrelationConvection`
   into h at every edge integration point, given the lagged wall temperature (Theory §8):
   film properties, local or average wall-temperature mode, automatic characteristic length
   (total length of the selection for plates; required input for cylinders), automatic

@@ -251,6 +251,36 @@ and may return `False` to cancel. A fixed-step run takes its step from
    `StepInfo` (step, time, Δt, iterations, converged, residual, end time). Only an explicit
    `False` cancels.
 
+## Q17 — convection correlations as boundary conditions (Theory §8, Data §8) — raised in M6.2 / M6.3
+
+1. **Inputs the class has no field for.** `inclined_natural` needs the inclination,
+   `plate_forced_local` the leading-edge point and flow direction, `power_law` its C and n;
+   `CorrelationConvection` has no fields for them. **Done for now:** one optional field
+   `params: dict[str, float]` was added after `multiplier` (keys `theta_deg`; `x0, y0,
+   dir_x, dir_y`; `C, n`). Existing fields are unchanged; older files load as before.
+2. **Characteristic length of horizontal plates.** Theory §8 lists "area/perimeter"; task
+   M6.3 says the automatic value for plates is the total length of the selection. In a 2D
+   model of unit depth these differ (an infinitely deep strip of width L has
+   area/perimeter = L/2). **Done for now:** the task text — the selection length — for all
+   plate correlations; cylinders require `char_length`. An explicit `char_length` always
+   overrides. **To confirm** which is intended for horizontal plates.
+3. **Dittus–Boelter as the "optional user selection"** for ducts: it replaces Gnielinski as
+   the turbulent formula; the laminar value and the linear transition between Re = 2300 and
+   4000 are kept. Its stated range (Re ≥ 1e4) is not enforced in the transition region.
+4. **Validity range of `duct_internal`.** The table leaves it blank; the Gnielinski range
+   of §8.1 is used (0.5 ≤ Pr ≤ 2000, Re ≤ 5e6).
+5. **`duct_internal` is not offered as a boundary condition**; internal flow belongs to
+   streams (M7). Using it in a `CorrelationConvection` raises a clear error.
+6. **Sources.** `CorrelationInfo.source` holds only the names the theory document gives
+   (Churchill–Bernstein, Churchill–Chu, Gnielinski, Dittus–Boelter) and otherwise
+   "docs/theory.md §8". Textbook citations are left for the human check of M11.1.
+7. **"Lagged" wall temperature** is the current Newton iterate: the tangent carries no
+   dh/dT, which is the lagging Theory §8 describes. No separate state is kept.
+8. **"Once per BC per solve"** for validity warnings: once per compiled problem, since a
+   problem is compiled for each solve.
+9. **Ideal-gas β** is 1/T at the film temperature as given, even beyond the property table;
+   the other properties are held at the table's end values, with one warning per fluid.
+
 ## Q13 — choices made in the verification examples — raised in M3.G
 
 - **Nodes at check points.** V-09 and V-10 check the temperature at given points. Point

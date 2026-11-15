@@ -122,6 +122,11 @@ class CorrelationConvection(BoundaryCondition):
         Wall temperature used for the film properties.
     multiplier : float
         Factor applied to the computed coefficient.
+    params : dict of str to float
+        Extra inputs of some correlations. Documented keys: ``"theta_deg"`` (inclination
+        from vertical [deg], ``inclined_natural``); ``"x0"``, ``"y0"`` (leading-edge point
+        [m]) and ``"dir_x"``, ``"dir_y"`` (flow direction, need not be normalised) for
+        ``plate_forced_local``; ``"C"`` and ``"n"`` for ``power_law``.
     """
 
     correlation: str
@@ -132,6 +137,7 @@ class CorrelationConvection(BoundaryCondition):
     face_direction: Literal["up", "down"] | None = None
     wall_T_mode: Literal["local", "average"] = "local"
     multiplier: float = 1.0
+    params: dict[str, float] = field(default_factory=dict)
 
     def __post_init__(self) -> None:
         super().__post_init__()

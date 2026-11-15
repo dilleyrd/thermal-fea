@@ -9,6 +9,7 @@ before a problem is compiled.
 
 from __future__ import annotations
 
+from ..convection import evaluator  # noqa: F401
 from . import (  # noqa: F401
     body_loads,
     conduction,

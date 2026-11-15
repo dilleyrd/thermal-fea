@@ -83,7 +83,7 @@ def full_model() -> Model:
             bcs.CorrelationConvection(
                 "nat", "bottom", correlation="vplate_natural", fluid="Air", T_inf=300.0,
                 velocity=2.0, char_length=0.5, face_direction="up", wall_T_mode="average",
-                multiplier=1.2,
+                multiplier=1.2, params={"theta_deg": 30.0},
             ),
             bcs.RadiationAmbient("rad", "bottom", emissivity=0.8, T_inf=300.0),
             bcs.Symmetry("sym", "bottom"),

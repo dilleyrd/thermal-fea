@@ -33,6 +33,8 @@ if TYPE_CHECKING:  # the builder imports gmsh; this module must not (Plan §3)
 
 log = logging.getLogger(__name__)
 
+#: The user power law h = C |dT|^n needs no fluid properties.
+NO_FLUID = "power_law"
 AXIS_TOL = 1e-9  # axisymmetric: nodes may lie this fraction of L left of the axis
 SURFACE_DIM, CURVE_DIM = 2, 1
 _INTERFACE_SIDES = 2
@@ -189,7 +191,8 @@ class _Checker:
 
         fluids = library.fluids()
         for bc in model.bcs:
-            if isinstance(bc, CorrelationConvection) and bc.active and bc.fluid not in fluids:
+            needs_fluid = isinstance(bc, CorrelationConvection) and bc.correlation != NO_FLUID
+            if needs_fluid and bc.active and bc.fluid not in fluids:
                 self.error("missing-fluid", f"boundary condition {bc.name!r} uses unknown "
                            f"fluid {bc.fluid!r}", "bc", bc.name)
         for stream in model.streams:
