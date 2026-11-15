@@ -198,7 +198,7 @@ through `DofMap`, and every physics contribution is a `Term` (Data §13).
   mandatory times (outputs, table breakpoints, end time), `max_dT_per_step`, the Δt₀
   suggestion and the oscillation warning.
   Accept: unit tests of the controller alone with scripted error sequences; V-17, V-18.
-- [ ] **M4.4 [B] Streaming output, progress, cancel.** Extendable datasets; output control
+- [x] **M4.4 [B] Streaming output, progress, cancel.** Extendable datasets; output control
   (`all | every_n | times`); `progress` callback (Data §11); flush every 10 steps so a
   crashed or cancelled run leaves a readable file; per-step energy columns.
 - [ ] **M4.5 [A] Initial conditions.** All four kinds of `InitialCondition`; prescribed

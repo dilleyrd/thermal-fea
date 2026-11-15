@@ -99,3 +99,52 @@ def heat_flows(
         for constraint, total in zip(problem.constraints, totals, strict=True):
             flows[constraint.name] = flows.get(constraint.name, 0.0) + float(total)
     return flows
+
+
+def term_heats(
+    problem: CompiledProblem,
+    u: ndarray,
+    t: float,
+    u_prev: ndarray | None = None,
+    dt: float | None = None,
+) -> dict[str, float]:
+    """Heat each load term adds to the body at one state [W] (positive into the body).
+
+    Parameters
+    ----------
+    problem : CompiledProblem
+    u : ndarray, shape (n_dofs,)
+        Solution [K].
+    t : float
+        Time [s].
+    u_prev, dt
+        Previous solution and time step [s], passed on to the terms.
+    """
+    state = State(u=u, u_prev=u if u_prev is None else u_prev, t=t, dt=dt, dofs=problem.dofs)
+    heats: dict[str, float] = {}
+    for term in problem.terms:
+        heat = term.boundary_heat(state)
+        if heat is not None:
+            heats[term.name] = heats.get(term.name, 0.0) + float(heat)
+    return heats
+
+
+def constraint_heats(problem: CompiledProblem, reaction: ndarray, t: float) -> dict[str, float]:
+    """Heat entering through each prescribed-temperature condition [W].
+
+    Parameters
+    ----------
+    problem : CompiledProblem
+    reaction : ndarray, shape (n_dofs,)
+        Reaction heat flow at every DOF [W] (see :func:`reaction_vector`).
+    t : float
+        Time [s] at which the prescribed DOFs are taken.
+    """
+    if not problem.constraints:
+        return {}
+    idx, owner = problem.prescribed_owners(t)
+    totals = np.bincount(owner, weights=reaction[idx], minlength=len(problem.constraints))
+    heats: dict[str, float] = {}
+    for constraint, total in zip(problem.constraints, totals, strict=True):
+        heats[constraint.name] = heats.get(constraint.name, 0.0) + float(total)
+    return heats

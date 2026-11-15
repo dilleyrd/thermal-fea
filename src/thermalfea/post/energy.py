@@ -15,7 +15,7 @@ from numpy import ndarray
 from ..solver.nonlinear import Assembled
 from ..solver.problem import CompiledProblem
 from ..solver.steady import STEADY_TIME, assemble
-from .reactions import heat_flows, reaction_vector
+from .reactions import constraint_heats, heat_flows, reaction_vector, term_heats
 
 
 @dataclass
@@ -127,3 +127,68 @@ def energy_balance(
         at_nodes = reaction_vector(system, u, capacitance_rate)[idx]
         gross = float(max(at_nodes[at_nodes > 0.0].sum(), -at_nodes[at_nodes < 0.0].sum()))
     return EnergyBalance(flows, stored, gross)
+
+
+def gross_through_constraints(problem: CompiledProblem, reaction: ndarray, t: float) -> float:
+    """Heat passing through the prescribed nodes, summed node by node [W]."""
+    if not problem.constraints:
+        return 0.0
+    idx, _ = problem.prescribed_owners(t)
+    at_nodes = reaction[idx]
+    return float(max(at_nodes[at_nodes > 0.0].sum(), -at_nodes[at_nodes < 0.0].sum()))
+
+
+def step_energy_balance(
+    problem: CompiledProblem,
+    theta: float,
+    t: float,
+    dt: float,
+    T: ndarray,
+    T_prev: ndarray,
+    g_new: ndarray,
+    g_prev: ndarray,
+    capacitance_rate: ndarray,
+    heats_prev: dict[str, float],
+) -> tuple[EnergyBalance, dict[str, float]]:
+    """Energy balance of one time step of the theta-method.
+
+    The scheme balances the stored-energy rate against the *theta-weighted* heat flows of
+    the two ends of the step, ``C dT/dt = theta g_{n+1} + (1 - theta) g_n``. The balance
+    reported for the step therefore uses the same weighting, so that it closes to the
+    solver residual: each load contributes ``theta q_{n+1} + (1 - theta) q_n``, and a
+    fixed temperature the reaction ``(C dT/dt - theta g_{n+1} - (1 - theta) g_n)_p``.
+
+    Parameters
+    ----------
+    problem : CompiledProblem
+    theta : float
+        The theta used by the step.
+    t, dt : float
+        Time at the end of the step and its size [s].
+    T, T_prev : ndarray
+        Solution at the end and at the start of the step [K].
+    g_new, g_prev : ndarray
+        ``g(T, t)`` and ``g(T_prev, t - dt)`` [W].
+    capacitance_rate : ndarray
+        ``C (T - T_prev) / dt`` [W].
+    heats_prev : dict of str to float
+        Result of :func:`~thermalfea.post.reactions.term_heats` at the start of the step.
+
+    Returns
+    -------
+    balance : EnergyBalance
+    heats_new : dict of str to float
+        Term heats at the end of the step, to pass as ``heats_prev`` of the next one.
+    """
+    heats_new = term_heats(problem, T, t, T_prev, dt)
+    flows = {
+        name: theta * heat + (1.0 - theta) * heats_prev.get(name, heat)
+        for name, heat in heats_new.items()
+    }
+    reaction = capacitance_rate - theta * g_new - (1.0 - theta) * g_prev
+    for name, heat in constraint_heats(problem, reaction, t).items():
+        flows[name] = flows.get(name, 0.0) + heat
+    balance = EnergyBalance(
+        flows, float(capacitance_rate.sum()), gross_through_constraints(problem, reaction, t)
+    )
+    return balance, heats_new

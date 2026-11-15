@@ -22,7 +22,7 @@ from .model.serialize import from_json, to_json
 from .model.validate import raise_if_errors, validate
 from .post.results import Results
 from .solver.compile import compile as compile_problem
-from .solver.run import StepInfo, run_steady
+from .solver.run import StepInfo, run_steady, run_transient
 
 log = logging.getLogger(__name__)
 
@@ -464,7 +464,8 @@ def solve(
         folder = Path(tempfile.mkdtemp(prefix="thermalfea-"))
         safe = "".join(c if c.isalnum() or c in "-_ " else "_" for c in model.name) or "model"
         path = folder / f"{safe}.tfea.h5"
-    if model.solution.kind != "steady":
-        raise ModelError("transient analysis is not available yet")
-    run_steady(problem, path, progress)
+    if model.solution.kind == "steady":
+        run_steady(problem, path, progress)
+    else:
+        run_transient(problem, path, progress)
     return Results(path)

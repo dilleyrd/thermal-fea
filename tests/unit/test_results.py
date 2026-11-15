@@ -278,9 +278,5 @@ def test_solve_without_built_uses_the_stored_tags(caplog: pytest.LogCaptureFixtu
     assert "energy balance" in text and "relative imbalance" in text and "cooling" in text
 
 
-def test_transient_is_refused_for_now_and_results_path() -> None:
-    model, _, mesh = nafems_t4()
-    model.solution.kind = "transient"
-    with pytest.raises(ModelError, match="transient"):
-        api.solve(model, mesh)
+def test_results_path() -> None:
     assert api.results_path("C:/work/plate.tfea") == Path("C:/work/plate.tfea.h5")

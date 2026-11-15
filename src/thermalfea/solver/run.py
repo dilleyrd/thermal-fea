@@ -7,10 +7,16 @@ from collections.abc import Callable
 from dataclasses import dataclass
 from pathlib import Path
 
-from ..post.energy import EnergyBalance, energy_balance
+import numpy as np
+from numpy import ndarray
+
+from ..model.settings import SolutionSettings
+from ..post.energy import EnergyBalance, energy_balance, step_energy_balance
+from ..post.reactions import term_heats
 from .problem import CompiledProblem
 from .results_writer import ResultsWriter
 from .steady import STEADY_TIME, steady_solution
+from .transient import StepRecord, TransientResult, initial_state, solve_transient
 
 log = logging.getLogger(__name__)
 
@@ -84,3 +90,133 @@ def run_steady(
             StepInfo(0, STEADY_TIME, 0.0, result.iterations, result.converged, result.residual,
                      STEADY_TIME)
         )
+
+
+#: The results file is flushed to disk after this many stored steps, so that a crashed
+#: or cancelled run leaves a readable file.
+FLUSH_EVERY = 10
+_TIME_TOL = 1e-9
+
+
+class OutputSelector:
+    """Decides which steps of a transient run are stored (``settings.output``).
+
+    * ``"all"``: every step;
+    * ``"every_n"``: every ``output_every``-th step;
+    * ``"times"``: the steps at the requested ``output_times``.
+
+    The initial state and the last step are always stored.
+
+    Parameters
+    ----------
+    settings : SolutionSettings
+    """
+
+    def __init__(self, settings: SolutionSettings) -> None:
+        self.kind = settings.output
+        self.every = int(settings.output_every)
+        self.times = np.sort(np.asarray(settings.output_times, dtype=float))
+        self.end = float(settings.end_time)
+
+    def _is(self, t: float, target: float) -> bool:
+        return abs(t - target) <= _TIME_TOL * max(1.0, abs(target))
+
+    def wanted(self, step: int, t: float) -> bool:
+        """True if the step numbered ``step`` at time ``t`` [s] is to be stored."""
+        if step == 0 or self._is(t, self.end) or self.kind == "all":
+            return True
+        if self.kind == "every_n":
+            return step % self.every == 0
+        if self.times.size == 0:
+            return False
+        nearest = self.times[np.argmin(np.abs(self.times - t))]
+        return self._is(t, float(nearest))
+
+
+def run_transient(
+    problem: CompiledProblem,
+    path: str | Path,
+    progress: ProgressCallback | None = None,
+    T0: ndarray | float | None = None,
+    t0: float = 0.0,
+) -> TransientResult:
+    """Solve a transient problem, streaming the selected steps to a results file.
+
+    The initial state is stored first; each stored step carries its energy balance and
+    the heat flow of every boundary condition. The file is flushed every
+    :data:`FLUSH_EVERY` stored steps, and it is closed properly whether the run finishes,
+    is cancelled by the progress callback or fails, so it is always readable.
+
+    Parameters
+    ----------
+    problem : CompiledProblem
+    path : str or Path
+        Results file to create.
+    progress : callable, optional
+        ``progress(info: StepInfo) -> bool``, called after every step; returning ``False``
+        cancels the run cleanly (the last computed step is stored).
+    T0 : ndarray or float, optional
+        Initial temperatures [K]; by default the model's initial condition.
+    t0 : float
+        Start time [s].
+
+    Returns
+    -------
+    TransientResult
+        Without the stored temperatures (they are in the file).
+
+    Raises
+    ------
+    ConvergenceError, SolverError
+        If the solution fails; the steps stored before the failure remain in the file.
+    """
+    settings = problem.settings
+    selector = OutputSelector(settings)
+    start, _ = initial_state(problem, T0, t0)
+    heats = term_heats(problem, start, t0)
+    last: dict[str, object] = {"balance": None}
+
+    with ResultsWriter(path, problem) as writer:
+        writer.append_step(t0, start, dt=0.0, iterations=0, converged=True)
+        writer.flush()
+
+        def store(record: StepRecord, balance: EnergyBalance) -> None:
+            writer.append_step(
+                record.t, record.T, dt=record.dt, iterations=record.iterations,
+                converged=record.converged, balance=balance,
+            )
+            if writer.n_steps % FLUSH_EVERY == 0:
+                writer.flush()
+
+        def on_step(record: StepRecord) -> bool:
+            nonlocal heats
+            balance, heats = step_energy_balance(
+                problem, record.theta, record.t, record.dt, record.T, record.T_prev,
+                record.system.residual(record.T), record.g_prev, record.capacitance_rate, heats,
+            )
+            stored = selector.wanted(record.step, record.t)
+            if stored:
+                store(record, balance)
+            last.update(record=record, balance=balance, stored=stored)
+            if progress is None:
+                return True
+            keep_going = progress(
+                StepInfo(record.step, record.t, record.dt, record.iterations, record.converged,
+                         record.residual, float(settings.end_time))
+            )
+            return keep_going is not False
+
+        # the driver gets the original T0, so that it can see a jump of a prescribed
+        # temperature at the start
+        result = solve_transient(problem, T0, on_step, t0=t0, store=False)
+        if result.cancelled and not last.get("stored", True):
+            store(last["record"], last["balance"])  # type: ignore[arg-type]
+
+    if last["balance"] is not None:
+        log_balance(last["balance"])  # type: ignore[arg-type]
+    log.info(
+        "transient run %s at t = %.6g s: %d step(s), %d rejected, %d Newton failure(s)",
+        "cancelled" if result.cancelled else "finished", result.times[-1], result.n_steps,
+        result.rejected, result.newton_failures,
+    )
+    return result

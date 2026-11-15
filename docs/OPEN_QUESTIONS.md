@@ -217,6 +217,23 @@ and may return `False` to cancel. A fixed-step run takes its step from
    edge for h, the larger principal conductivity for k, and properties at the initial
    temperature. The oscillation warning is checked once, for the first step.
 
+## Q16 — what a transient run stores, and its per-step energy balance — raised in M4.4
+
+1. **Which steps are stored.** The initial state (step 0, with no energy balance) and the
+   last step are always stored. In between: every step (`all`), every n-th step counted
+   from the start (`every_n`), or the steps at `output_times` (`times`). A cancelled run
+   also stores the last step it computed.
+2. **Per-step energy balance.** The θ-method balances the stored-energy rate against the
+   θ-weighted heat flows at the two ends of the step. The balance stored for a step uses
+   the same weighting — each load contributes θ q(n+1) + (1 − θ) q(n), a fixed temperature
+   the reaction (C ΔT/Δt − θ g(n+1) − (1 − θ) g(n)) at its nodes — so that it closes to the
+   solver residual (below 1e-8 on linear cases). For θ = 1 this is simply the balance at
+   the end of the step. A balance built from the end-of-step flows alone would show an
+   O(Δt) imbalance for θ < 1 that is not a solver error.
+3. **Progress callback.** Called after every accepted step, stored or not, with a
+   `StepInfo` (step, time, Δt, iterations, converged, residual, end time). Only an explicit
+   `False` cancels.
+
 ## Q13 — choices made in the verification examples — raised in M3.G
 
 - **Nodes at check points.** V-09 and V-10 check the temperature at given points. Point
