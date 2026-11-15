@@ -24,6 +24,7 @@ from .model.serialize import from_json, to_json
 from .model.validate import raise_if_errors, validate
 from .post import export, plots
 from .post.results import Results
+from .post.summary import text_summary
 from .solver.compile import compile as compile_problem
 from .solver.run import StepInfo, run_steady, run_transient
 
@@ -588,6 +589,27 @@ def plot_history(
     return plots.history(  # type: ignore[arg-type]
         results, points=points, nodes=nodes, path=path, **options
     )
+
+
+def summary(results: Results, step: int = -1) -> str:
+    """Text summary of one stored step; see :func:`thermalfea.post.summary.text_summary`.
+
+    Parameters
+    ----------
+    results : Results
+    step : int
+        Stored step; negative counts from the end (default the last).
+
+    Returns
+    -------
+    str
+
+    Raises
+    ------
+    ModelError
+        If the step is out of range.
+    """
+    return text_summary(results, step)
 
 
 def export_csv(

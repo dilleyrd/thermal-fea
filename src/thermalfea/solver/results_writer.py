@@ -135,7 +135,8 @@ class ResultsWriter:
         else:
             meta.attrs["model"] = ""
             meta.attrs["model_hash"] = ""
-            meta.attrs["analysis"] = "axisymmetric" if problem.mesh.axisymmetric else "planar"
+            geometry = "axisymmetric" if problem.mesh.axisymmetric else "planar"
+            meta.attrs["analysis"] = f"{geometry}, {problem.settings.kind}"
         regions = {
             str(region_id): {
                 "name": r.name,

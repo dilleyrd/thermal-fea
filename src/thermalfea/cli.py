@@ -24,6 +24,7 @@ EXIT_OK, EXIT_ERROR, EXIT_NOT_CONVERGED = 0, 1, 2
 
 def _solve(args: argparse.Namespace) -> int:
     from . import api
+    from .post.summary import text_summary
 
     out = sys.stdout.write
     model = api.load(args.model)
@@ -46,14 +47,7 @@ def _solve(args: argparse.Namespace) -> int:
         return True
 
     results = api.solve(model, mesh, progress=progress, built=built, path=path)
-    balance = results.energy_balance()
-    temperature = results.temperature()
-    out(f"Steps stored: {results.n_steps}\n")
-    out(f"Temperature at the last step: {temperature.min():.6g} to {temperature.max():.6g} K\n")
-    out("Heat entering the body at the last step [W]:\n")
-    for name in results.heat_flow_names:
-        out(f"  {name}: {results.heat_flow(name)[-1]:.6g}\n")
-    out(f"Energy imbalance: {balance['relative_imbalance'][-1]:.2e} of the throughput\n")
+    out(text_summary(results) + "\n")
     out(f"Results:  {results.path}\n")
     return EXIT_OK
 

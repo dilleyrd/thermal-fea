@@ -65,9 +65,9 @@ def test_steady_solve_writes_results_beside_the_model(
     assert "steady case (planar, steady)" in out
     assert re.search(r"Mesh:\s+\d+ nodes, \d+ elements", out)
     assert "steady solution: 1 iteration(s)" in out
-    assert "Steps stored: 1" in out
-    assert re.search(r"hot: \d", out) and re.search(r"cool: -\d", out)
-    assert "Energy imbalance" in out and str(expected) in out
+    assert re.search(r"Steps stored:\s+1 \(", out)
+    assert re.search(r"^\s+hot\s+\d", out, re.M) and re.search(r"^\s+cool\s+-\d", out, re.M)
+    assert "Energy balance [W]:" in out and str(expected) in out
     results = Results(expected)
     assert results.n_steps == 1 and results.temperature().max() == pytest.approx(400.0)
 
@@ -86,7 +86,7 @@ def test_transient_solve_prints_one_progress_line_per_step(
         assert re.match(rf"step\s+{n}\s+t = {10 * n} s\s+dt = 10 s\s+iterations 1\s+residual", line)
     assert lines[-1].rstrip().endswith("(100 %)") and lines[0].rstrip().endswith("(25 %)")
     assert target.is_file() and not (tmp_path / "transient.tfea.h5").exists()
-    assert "Steps stored: 5" in out and str(target) in out
+    assert re.search(r"Steps stored:\s+5 \(", out) and str(target) in out
     results = Results(target)
     np.testing.assert_allclose(results.times, [0.0, 10.0, 20.0, 30.0, 40.0])
     assert results.temperature().mean() < 400.0
