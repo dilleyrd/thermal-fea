@@ -155,7 +155,7 @@ through `DofMap`, and every physics contribution is a `Term` (Data §13).
   the terms' flags (Theory §5 definition). Wrap M1.4 conduction as `ConductionTerm`.
   **All later physics tasks (M3.2–M3.6, M4.1, M6.3, M7, M9.3, M10.1) deliver `Term`s
   registered this way**; the drivers in M3.7 and M4.2 loop over `problem.terms` only.
-- [ ] **M3.2 [A] Body loads.** `physics/body_loads.py`: `HeatGeneration`, `HeatPower`
+- [x] **M3.2 [A] Body loads.** `physics/body_loads.py`: `HeatGeneration`, `HeatPower`
   (Theory §2). Function evaluated at integration points with `t, x, y, T`.
 - [ ] **M3.3 [A] Surface loads.** `physics/surface_loads.py`: `HeatFlux`, `HeatFlow`,
   `Convection` matrices and vectors (Theory §2).

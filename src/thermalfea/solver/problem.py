@@ -14,8 +14,10 @@ from typing import TYPE_CHECKING, Any
 import numpy as np
 from numpy import ndarray
 
+from ..core.errors import ModelError
 from ..core.mesh import Mesh
 from ..materials.material import Material
+from ..model.selections import StaleSelectionError, resolve
 from ..model.settings import SolutionSettings
 from .dofs import DofMap
 from .terms import Constraint, Term
@@ -80,6 +82,51 @@ class CompiledProblem:
     built: Any = None
     #: Data shared between terms (element batches, ...), filled on demand.
     cache: dict[str, Any] = field(default_factory=dict, repr=False)
+    #: Named entity sets for problems assembled by hand: name -> (dimension, tags).
+    #: Looked up before the model's selections.
+    named_entities: dict[str, tuple[int, list[int]]] = field(default_factory=dict)
+
+    def selection_tags(self, name: str, dims: tuple[int, ...]) -> tuple[int, list[int]]:
+        """Resolve a named selection to the current tags of its entities.
+
+        Parameters
+        ----------
+        name : str
+            Name of a selection of the model (or of an entry of ``named_entities``).
+        dims : tuple of int
+            Entity dimensions the caller accepts.
+
+        Returns
+        -------
+        dim : int
+            Dimension of the selection.
+        tags : list of int
+            Entity tags: curve tags are facet ``entity`` values, surface tags are
+            element ``region`` ids.
+
+        Raises
+        ------
+        ModelError
+            If the selection is unknown, of the wrong dimension, or stale.
+        """
+        if name in self.named_entities:
+            dim, tags = self.named_entities[name]
+            tags = list(tags)
+        else:
+            selection = self.model.selections.get(name) if self.model is not None else None
+            if selection is None:
+                raise ModelError(f"unknown selection {name!r}")
+            dim = selection.dim
+            try:
+                tags = resolve(selection, self.built)
+            except StaleSelectionError as exc:
+                raise ModelError(str(exc)) from None
+        if dim not in dims:
+            raise ModelError(
+                f"selection {name!r} has dimension {dim}, but dimension "
+                f"{' or '.join(map(str, dims))} is needed here"
+            )
+        return dim, tags
 
     @property
     def is_linear(self) -> bool:

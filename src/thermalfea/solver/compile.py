@@ -13,6 +13,7 @@ from typing import TYPE_CHECKING
 from ..core import registry
 from ..core.errors import ModelError
 from ..core.mesh import Mesh
+from ..model.bcs import BoundaryCondition
 from ..model.model import Model
 from ..model.selections import Selection, StaleSelectionError, resolve
 from ..physics import builtin  # noqa: F401  (registers the built-in term factories)
@@ -27,37 +28,8 @@ log = logging.getLogger(__name__)
 
 
 def selection_tags(problem: CompiledProblem, name: str, dims: tuple[int, ...]) -> tuple[int, list]:
-    """Resolve a named selection of the problem's model to current entity tags.
-
-    Parameters
-    ----------
-    problem : CompiledProblem
-        Must have been compiled from a model.
-    name : str
-        Selection name.
-    dims : tuple of int
-        Entity dimensions the caller accepts.
-
-    Returns
-    -------
-    dim : int
-        Dimension of the selection.
-    tags : list of int
-
-    Raises
-    ------
-    ModelError
-        If the selection is unknown, of the wrong dimension, or stale.
-    """
-    selection = problem.model.selections.get(name) if problem.model is not None else None
-    if selection is None:
-        raise ModelError(f"unknown selection {name!r}")
-    if selection.dim not in dims:
-        raise ModelError(
-            f"selection {name!r} has dimension {selection.dim}, but dimension "
-            f"{' or '.join(map(str, dims))} is needed here"
-        )
-    return selection.dim, _resolve(selection, problem.built)
+    """Shortcut for :meth:`CompiledProblem.selection_tags`."""
+    return problem.selection_tags(name, dims)
 
 
 def _resolve(selection: Selection, built: BuiltGeometry) -> list[int]:
@@ -95,6 +67,41 @@ def _regions(model: Model, built: BuiltGeometry, mesh: Mesh) -> dict[int, Region
     return regions
 
 
+def _setup(problem: CompiledProblem, item: object) -> None:
+    try:
+        item.setup(problem)  # type: ignore[attr-defined]
+    except ModelError as exc:
+        raise ModelError(f"{item.name}: {exc}") from None  # type: ignore[attr-defined]
+
+
+def attach(problem: CompiledProblem, bc: BoundaryCondition) -> None:
+    """Add the terms and constraints of one boundary condition to a problem.
+
+    The factories registered for the condition's class are called, and every term and
+    constraint they return is set up and appended. Inactive conditions, and classes
+    registered without factories, add nothing.
+
+    Parameters
+    ----------
+    problem : CompiledProblem
+        Compiled from a model, or assembled by hand with ``named_entities``.
+    bc : BoundaryCondition
+    """
+    if not bc.active:
+        return
+    info = registry.bc_info(type(bc))
+    for factory, target in (
+        (info.term_factory, problem.terms),
+        (info.constraint_factory, problem.constraints),
+    ):
+        if factory is None:
+            continue
+        made = factory(bc)
+        for item in made if isinstance(made, (list, tuple)) else [made]:
+            _setup(problem, item)
+            target.append(item)
+
+
 def compile(model: Model, built: BuiltGeometry, mesh: Mesh) -> CompiledProblem:  # noqa: A001
     """Compile a model into the list of terms the drivers solve.
 
@@ -126,22 +133,11 @@ def compile(model: Model, built: BuiltGeometry, mesh: Mesh) -> CompiledProblem: 
         model=model,
         built=built,
     )
-    problem.terms.append(ConductionTerm())
+    conduction = ConductionTerm()
+    _setup(problem, conduction)
+    problem.terms.append(conduction)
     for bc in model.bcs:
-        if not bc.active:
-            continue
-        info = registry.bc_info(type(bc))
-        if info.term_factory is not None:
-            made = info.term_factory(bc)
-            problem.terms.extend(made if isinstance(made, (list, tuple)) else [made])
-        if info.constraint_factory is not None:
-            made = info.constraint_factory(bc)
-            problem.constraints.extend(made if isinstance(made, (list, tuple)) else [made])
-    for item in (*problem.terms, *problem.constraints):
-        try:
-            item.setup(problem)
-        except ModelError as exc:
-            raise ModelError(f"{item.name}: {exc}") from None
+        attach(problem, bc)
     log.debug(
         "compiled %d term(s), %d constraint(s); linear=%s",
         len(problem.terms), len(problem.constraints), problem.is_linear,
