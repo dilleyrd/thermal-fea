@@ -35,6 +35,8 @@ _MIN_SPLINE_POINTS = 2
 _MIN_POLYGON_VERTICES = 3
 #: Number of points sampled along each curve for display.
 POLYLINE_POINTS = 40
+#: Relative tolerance when re-identifying an entity by its bounding box and measure.
+SIGNATURE_TOL = 1e-7
 
 
 @dataclass
@@ -111,6 +113,62 @@ class BuildContext:
             raise GeometryError(f"operation {op_id!r} has {len(found)} entities, expected one")
         return found[0]
 
+    # ------------------------------------------------------------------ tag tracking
+    #
+    # An OCC boolean reports what became of its *input* entities (outDimTagsMap), but it
+    # also renumbers their boundary curves and points without saying so. Operations that
+    # own such lower-dimensional entities (Point, Line, Arc, Spline) would then silently
+    # point at a different curve. They are therefore re-identified geometrically: an
+    # entity is the same one only if an entity with the same bounding box and measure
+    # still exists; otherwise the operation loses it.
+
+    def signature(self, entity: DimTag) -> ndarray:
+        """Bounding box and measure of an entity: seven numbers that identify it."""
+        dim, tag = entity
+        measure = self.occ.getMass(dim, tag) if dim > POINT_DIM else 0.0
+        return np.array([*self.occ.getBoundingBox(dim, tag), measure])
+
+    def snapshot(self, exclude: list[DimTag] = ()) -> dict[DimTag, ndarray]:  # type: ignore[assignment]
+        """Signatures of every owned entity except ``exclude``, taken before a change."""
+        skip = set(exclude)
+        out: dict[DimTag, ndarray] = {}
+        for owned in self.op_entities.values():
+            for entity in owned:
+                if entity not in skip and entity not in out:
+                    out[entity] = self.signature(entity)
+        return out
+
+    def reidentify(self, before: dict[DimTag, ndarray]) -> None:
+        """Re-find the entities of a :meth:`snapshot` after gmsh may have renumbered them.
+
+        Each entity keeps its tag if the entity now carrying that tag has the same
+        signature, moves to the tag of the entity that has it, or is dropped from every
+        operation when no entity matches.
+        """
+        current: dict[int, tuple[ndarray, ndarray]] = {}
+        table: dict[DimTag, list[DimTag]] = {}
+        for entity, sig in before.items():
+            dim, tag = entity
+            if dim not in current:
+                tags = np.array([int(t) for _, t in self.occ.getEntities(dim)], dtype=np.int64)
+                sigs = np.array([self.signature((dim, int(t))) for t in tags]).reshape(-1, sig.size)
+                current[dim] = (tags, sigs)
+            tags, sigs = current[dim]
+            tol = SIGNATURE_TOL * max(1.0, float(np.abs(sig).max()))
+            same = np.all(np.abs(sigs - sig) <= tol, axis=1) if tags.size else np.zeros(0, bool)
+            if same[tags == tag].any():
+                continue  # unchanged
+            table[entity] = [(dim, int(tags[same][0]))] if same.any() else []
+        if not table:
+            return
+        self.remap(list(table), list(table.values()))
+        ends: dict[int, tuple[int, int]] = {}
+        for curve, points in self.curve_ends.items():
+            new_curve = table.get((CURVE_DIM, curve), [(CURVE_DIM, curve)])
+            new_points = [table.get((POINT_DIM, p), [(POINT_DIM, p)]) for p in points]
+            if new_curve and all(new_points):
+                ends[new_curve[0][1]] = (new_points[0][0][1], new_points[1][0][1])
+        self.curve_ends = ends
 
     def remap(self, inputs: list[DimTag], mapping: list[list[DimTag]]) -> None:
         """Update every operation's entities after an OCC boolean.
@@ -258,8 +316,10 @@ def _boolean(ctx: BuildContext, op: ops.Boolean) -> list[DimTag]:
     operation = {"union": ctx.occ.fuse, "cut": ctx.occ.cut, "intersect": ctx.occ.intersect}[
         op.kind
     ]
+    before = ctx.snapshot(exclude=objects + tools)
     result, mapping = operation(objects, tools)
     ctx.remap(objects + tools, mapping)
+    ctx.reidentify(before)
     return [(int(d), int(t)) for d, t in result]
 
 
@@ -280,6 +340,8 @@ def _transform(ctx: BuildContext, op: ops.Transform) -> list[DimTag]:
         raise GeometryError("a transform needs at least one target")
     if op.copy:
         targets = [(int(d), int(t)) for d, t in ctx.occ.copy(targets)]
+    # moving a shape moves (and may renumber) its boundary; see BuildContext.reidentify
+    before = {} if op.copy else ctx.snapshot(exclude=targets)
     q = op.params
     try:
         if op.kind == "translate":
@@ -295,14 +357,17 @@ def _transform(ctx: BuildContext, op: ops.Transform) -> list[DimTag]:
             ctx.occ.dilate(targets, q["cx"], q["cy"], 0.0, f, f, f)
     except KeyError as exc:
         raise GeometryError(f"{op.kind} transform lacks parameter {exc}") from None
+    ctx.reidentify(before)
     return targets
 
 
 @handler(ops.Delete)
 def _delete(ctx: BuildContext, op: ops.Delete) -> list[DimTag]:
     targets = [e for op_id in op.targets for e in ctx.entities(op_id)]
+    before = ctx.snapshot(exclude=targets)
     ctx.occ.remove(targets, recursive=True)
     ctx.forget(targets)
+    ctx.reidentify(before)
     return []
 
 
@@ -324,8 +389,10 @@ def _fragment_and_clean(ctx: BuildContext) -> None:
     occ, model = ctx.occ, ctx.gmsh.model
     surfaces = [(int(d), int(t)) for d, t in occ.getEntities(SURFACE_DIM)]
     if len(surfaces) > 1:
+        before = ctx.snapshot(exclude=surfaces)
         _, mapping = occ.fragment(surfaces, [])
         ctx.remap(surfaces, mapping)
+        ctx.reidentify(before)
     occ.synchronize()
     for dim in range(SURFACE_DIM - 1, -1, -1):
         dangling = [

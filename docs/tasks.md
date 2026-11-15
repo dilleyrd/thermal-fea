@@ -142,7 +142,7 @@ through `DofMap`, and every physics contribution is a `Term` (Data §13).
   only surfaces lying in the z = 0 plane; anything else → `GeometryError` with explanation.
 - [x] **M2.11 [A] API facade and `thermalfea info`.** Data §11 (`new_model`, `Geometry`
   helpers, `build`, `mesh`, `assign_region`); CLI prints entity, node and element counts.
-- [ ] **M2.G [C] Gate.** Script: L-bracket with a hole and an inset second material; save,
+- [x] **M2.G [C] Gate.** Script: L-bracket with a hole and an inset second material; save,
   load, rebuild, mesh; selections resolve identically. Review the builder's tag tracking.
 
 ## M3 — Loads, nonlinear steady solver, recovery
