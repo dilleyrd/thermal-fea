@@ -37,6 +37,8 @@ class Assembler:
         self._vals.clear()
         self._vec_idx.clear()
         self._vec_val.clear()
+        if getattr(self, "_extra", None) is not None:
+            self._extra.reset()
 
     def _check(self, idx: ndarray) -> ndarray:
         idx = np.asarray(idx, dtype=np.int64)
@@ -117,3 +119,39 @@ class Assembler:
         idx = np.concatenate(self._vec_idx)
         val = np.concatenate(self._vec_val)
         return np.bincount(idx, weights=val, minlength=self.n_dofs).astype(float)
+
+    # ------------------------------------------------------- tangent-only contributions
+    #
+    # Theory §5 keeps two things apart: the matrix K and vector F with r = F - K T, and
+    # contributions that enter only the Newton tangent (K_rad) or only the residual
+    # (r_rad). Terms add the latter through the two methods below, so the drivers can
+    # form r = F - K T + residual() and the tangent K + tangent() exactly as written.
+
+    def _extra_channel(self) -> Assembler:
+        extra = getattr(self, "_extra", None)
+        if extra is None:
+            extra = Assembler(self.n_dofs)
+            self._extra = extra
+        return extra
+
+    def add_tangent(self, conn: ndarray, Ke: ndarray, cols: ndarray | None = None) -> None:
+        """Add element matrices that belong to the Newton tangent but not to ``K``.
+
+        Parameters are as for :meth:`add_matrix`.
+        """
+        self._extra_channel().add_matrix(conn, Ke, cols)
+
+    def add_residual(self, conn: ndarray, fe: ndarray) -> None:
+        """Add element vectors that enter the residual directly, not through ``F - K T``.
+
+        Parameters are as for :meth:`add_vector`.
+        """
+        self._extra_channel().add_vector(conn, fe)
+
+    def tangent(self) -> csr_matrix:
+        """Return the assembled tangent-only matrix (zero when none was added)."""
+        return self._extra_channel().matrix()
+
+    def residual(self) -> ndarray:
+        """Return the assembled direct residual contributions (zero when none was added)."""
+        return self._extra_channel().vector()

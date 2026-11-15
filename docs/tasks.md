@@ -147,7 +147,7 @@ through `DofMap`, and every physics contribution is a `Term` (Data §13).
 
 ## M3 — Loads, nonlinear steady solver, recovery
 
-- [ ] **M3.1 [B] Terms and problem compilation.** `solver/terms.py` (`State`, `Term`,
+- [x] **M3.1 [B] Terms and problem compilation.** `solver/terms.py` (`State`, `Term`,
   Data §13). `solver/compile.py: compile(model, built, mesh) -> CompiledProblem`: builds the
   `DofMap` (field `"T"`), and one `Term` per contribution by calling the term factory
   registered for each BC class; each term's `setup` resolves its facet or element blocks

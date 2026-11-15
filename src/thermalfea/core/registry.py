@@ -228,6 +228,8 @@ class BcInfo:
     cls: type
     term_factory: Callable | None = None
     form: object | None = None
+    #: Builds the constraints (prescribed DOF values) of one instance, or ``None``.
+    constraint_factory: Callable | None = None
 
 
 _BCS: dict[str, BcInfo] = {}
@@ -236,9 +238,25 @@ _BCS: dict[str, BcInfo] = {}
 def register_bc(
     tag: str, cls: type, term_factory: Callable | None = None, form: object | None = None
 ) -> None:
-    """Register a boundary-condition class with its JSON tag, term factory and form."""
+    """Register a boundary-condition class with its JSON tag, term factory and form.
+
+    Registering the same class again keeps whatever factories and form it already has,
+    unless new ones are given.
+    """
     register_class(BC_FAMILY, tag, cls)
-    _BCS[tag] = BcInfo(tag, cls, term_factory, form)
+    info = _BCS.get(tag)
+    if info is None:
+        _BCS[tag] = BcInfo(tag, cls, term_factory, form)
+        return
+    if term_factory is not None:
+        info.term_factory = term_factory
+    if form is not None:
+        info.form = form
+
+
+def set_bc_constraint_factory(key: str | type, constraint_factory: Callable) -> None:
+    """Attach the constraint factory to an already registered boundary condition."""
+    bc_info(key).constraint_factory = constraint_factory
 
 
 def bc_info(key: str | type) -> BcInfo:

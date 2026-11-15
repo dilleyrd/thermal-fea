@@ -93,3 +93,22 @@ Related choices in the facade: `api.Geometry` methods return the id of the opera
 append, auto-named `<class><n>` (`rectangle1`, `boolean2`, ...) unless `id=` is given;
 `assign_region` copies a library solid into `model.materials` when the model has no
 material of that name, and replaces an existing assignment of the same selection.
+
+## Q8 — how terms express tangent-only and residual-only parts (Data §13) — raised in M3.1
+
+The `Term` protocol has `conductance` ("adds to K and tangent") and `load` ("adds to F /
+residual"), but Theory §5 needs four separate things: K and F (with r = F − K T and
+F_ref = max(‖F‖, ‖K T‖)), the tangent-only matrix K_rad, and the residual-only vector
+r_rad. The protocol does not say how a term tells them apart.
+
+**Done for now:** the `Term` signatures are unchanged. `Assembler` has two extra channels,
+`add_tangent` and `add_residual`; a term's `conductance` may call `add_matrix` (K) and/or
+`add_tangent` (tangent only), and its `load` may call `add_vector` (F) and/or
+`add_residual` (residual only). The drivers form r = F − K u + residual and the tangent
+K + tangent, exactly as Theory §5 and §6 write them.
+
+Also added, since Data §13 names a "prescribed-DOF provider" without specifying it: a
+`Constraint` protocol (`setup`, `values(t) -> (dofs, values)`, `breakpoints`,
+`is_time_dependent`), a `constraint_factory` slot beside `term_factory` in the BC
+registry, and `CompiledProblem.prescribed(t)`, which merges the constraints (the later
+one wins, with a logged warning).
