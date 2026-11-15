@@ -233,7 +233,7 @@ All plotting functions take a `Results`, return a Matplotlib `Figure`, optionall
   coordinates) and interpolate with the shape functions. `plots.path(...)`.
   Accept: sampling a linear field is exact on distorted quadratic meshes; a point outside
   the mesh returns NaN.
-- [ ] **M5.5 [A] Export.** `post/export.py`: nodal CSV (x, y, T, qx, qy per step); history
+- [x] **M5.5 [A] Export.** `post/export.py`: nodal CSV (x, y, T, qx, qy per step); history
   CSV; VTU per step plus a `.pvd` index through `meshio`; animation of any contour to GIF
   (Pillow writer) or MP4 if ffmpeg is present.
 - [ ] **M5.6 [A] Text summary.** `post/summary.py`: min/max temperature with locations,

@@ -22,7 +22,7 @@ from .model.model import Model, RegionAssignment
 from .model.selections import Fingerprint, Selection, refresh
 from .model.serialize import from_json, to_json
 from .model.validate import raise_if_errors, validate
-from .post import plots
+from .post import export, plots
 from .post.results import Results
 from .solver.compile import compile as compile_problem
 from .solver.run import StepInfo, run_steady, run_transient
@@ -588,3 +588,71 @@ def plot_history(
     return plots.history(  # type: ignore[arg-type]
         results, points=points, nodes=nodes, path=path, **options
     )
+
+
+def export_csv(
+    results: Results, path: str | Path, steps: Sequence[int] | None = None
+) -> Path:
+    """Write nodal temperature and heat flux (SI) to CSV; see :func:`post.export.nodal_csv`.
+
+    Parameters
+    ----------
+    results : Results
+    path : str or Path
+        File to write.
+    steps : sequence of int, optional
+        Stored steps; default all.
+
+    Returns
+    -------
+    Path
+    """
+    return export.nodal_csv(results, path, steps)
+
+
+def export_vtu(
+    results: Results,
+    folder: str | Path,
+    name: str = "results",
+    steps: Sequence[int] | None = None,
+) -> Path:
+    """Write VTU files and a ``.pvd`` index; see :func:`post.export.vtu`.
+
+    Parameters
+    ----------
+    results : Results
+    folder : str or Path
+        Folder to write into (created if missing).
+    name : str
+        Base name of the files.
+    steps : sequence of int, optional
+        Stored steps; default all.
+
+    Returns
+    -------
+    Path
+        The ``.pvd`` file.
+    """
+    return export.vtu(results, folder, name, steps)
+
+
+def export_animation(
+    results: Results, path: str | Path, field: str = "T", **options: object
+) -> Path:
+    """Animate a contour plot to GIF or MP4; see :func:`post.export.animation`.
+
+    Parameters
+    ----------
+    results : Results
+    path : str or Path
+        ``.gif`` or ``.mp4`` file to write.
+    field : str
+        Contour field.
+    **options
+        ``steps``, ``fps``, ``dpi`` and the contour options.
+
+    Returns
+    -------
+    Path
+    """
+    return export.animation(results, path, field=field, **options)  # type: ignore[arg-type]
