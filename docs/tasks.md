@@ -160,7 +160,7 @@ through `DofMap`, and every physics contribution is a `Term` (Data §13).
 - [x] **M3.3 [A] Surface loads.** `physics/surface_loads.py`: `HeatFlux`, `HeatFlow`,
   `Convection` matrices and vectors (Theory §2).
   Accept: total applied heat equals q̄·area for planar and axisymmetric edges.
-- [ ] **M3.4 [A] Prescribed temperatures.** Collect nodes of `FixedTemperature` selections
+- [x] **M3.4 [A] Prescribed temperatures.** Collect nodes of `FixedTemperature` selections
   (curves and points) and evaluate `T(t, x, y)`; conflicting values at a shared node →
   the later BC in the list wins, with a logged warning.
 - [ ] **M3.5 [B] Temperature-dependent properties.** Evaluate k, k2, ρ, c at integration
