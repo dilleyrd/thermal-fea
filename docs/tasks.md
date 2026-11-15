@@ -201,7 +201,7 @@ through `DofMap`, and every physics contribution is a `Term` (Data §13).
 - [x] **M4.4 [B] Streaming output, progress, cancel.** Extendable datasets; output control
   (`all | every_n | times`); `progress` callback (Data §11); flush every 10 steps so a
   crashed or cancelled run leaves a readable file; per-step energy columns.
-- [ ] **M4.5 [A] Initial conditions.** All four kinds of `InitialCondition`; prescribed
+- [x] **M4.5 [A] Initial conditions.** All four kinds of `InitialCondition`; prescribed
   nodes take their BC value at t = 0.
 - [ ] **M4.6 [A] CLI.** `thermalfea solve model.tfea [-o results.h5]` with a progress line
   per step; exit code 2 on `ConvergenceError`.

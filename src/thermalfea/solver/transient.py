@@ -33,10 +33,11 @@ from scipy.sparse import csr_matrix
 
 from ..core.errors import ConvergenceError, ModelError
 from .assembler import Assembler
+from .initial import initial_temperature
 from .linear import Factorization, LinearSolver, default_solver, split_dofs
 from .nonlinear import F_REF_FLOOR, Assembled, newton
 from .problem import CompiledProblem
-from .steady import DEFAULT_START_TEMPERATURE, assemble
+from .steady import assemble
 from .terms import State
 from .timestep import StepController, error_estimate
 
@@ -225,12 +226,7 @@ def initial_state(problem: CompiledProblem, T0: ndarray | float | None, t0: floa
     """
     n = problem.dofs.n_dofs
     if T0 is None:
-        value = DEFAULT_START_TEMPERATURE
-        if problem.model is not None:
-            ic = problem.model.initial_condition
-            if ic.kind == "uniform" and ic.value is not None:
-                value = float(ic.value())
-        T = np.full(n, value)
+        T = initial_temperature(problem)
     else:
         T = np.broadcast_to(np.asarray(T0, dtype=float), (n,)).copy()
     idx, values = problem.prescribed(t0)
@@ -325,7 +321,7 @@ def solve_transient(
         ``problem.settings`` supplies the end time, the step controls, ``theta`` and the
         nonlinear tolerances.
     T0 : ndarray or float, optional
-        Initial temperatures [K]; by default the model's uniform initial condition.
+        Initial temperatures [K]; by default the model's initial condition.
     on_step : callable, optional
         ``on_step(record: StepRecord)``, called after every accepted step; returning
         ``False`` stops the run cleanly.
