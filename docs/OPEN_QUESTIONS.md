@@ -316,6 +316,28 @@ and may return `False` to cancel. A fixed-step run takes its step from
    planar models), need a mass flow only when no `h_override` is given, and are linear
    unless Dittus–Boelter is selected (its exponent depends on the wall temperature).
 
+## Q19 — network hydraulics (Theory §9.2) — raised in M7.3
+
+1. **Convergence measure.** Theory: iterate "until the largest relative change in any ṁ
+   < 1e-6". With prescribed pressures the branch-law flow does not depend on the
+   linearisation coefficient c, so its change alone reached 1e-6 while the reported
+   (linearised) flows were still about 20 % off; with prescribed inflows the linearised
+   flow is constant, which fails the other way. **Done for now:** the change is the larger
+   of (a) the change of the linearised flow between successive solves and (b) the
+   difference between the branch-law flow and the linearised flow. This is stricter than
+   the text and is what makes V-30 and V-31 pass (errors about 2e-6 against 1e-5; that
+   margin is the convergence tolerance itself).
+2. **Reported flows** are the linearised ones of the final solve, ṁ = c (p_i − p_j), so
+   mass is conserved at every node to solver precision. Friction factor and Reynolds
+   number are reported at those flows.
+3. **Friction update** uses the Reynolds number of the previous solve's flow; a branch
+   with zero flow uses Re = 1000 (the starting assumption) to avoid a division by zero.
+4. **Every branch needs a stream**, which supplies its area, hydraulic diameter, roughness
+   and fluid; a "loss" branch uses K_minor alone as its resistance. A branch without a
+   stream has no area and is refused.
+5. **Typical cost:** 25–55 iterations with the prescribed under-relaxation of 0.5; the cap
+   is 200.
+
 ## Q13 — choices made in the verification examples — raised in M3.G
 
 - **Nodes at check points.** V-09 and V-10 check the temperature at given points. Point

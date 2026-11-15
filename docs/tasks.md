@@ -270,7 +270,7 @@ All plotting functions take a `Results`, return a Matplotlib `Figure`, optionall
   Accept: V-27, V-28; the cell matrix times a uniform temperature vector is zero.
 - [x] **M7.2 [B] Through-plane stream.** h from Theory §8.1 at the specified bulk
   temperature, applied as ordinary convection on the walls.
-- [ ] **M7.3 [B] Network hydraulics.** `flow/network.py: solve_network(network, streams,
+- [x] **M7.3 [B] Network hydraulics.** `flow/network.py: solve_network(network, streams,
   fluid_T) -> dict[branch, mass_flow], dict[node, pressure]` (Theory §9.2).
   Accept: V-30, V-31; mass is conserved at every node to 1e-10.
 - [ ] **M7.4 [C] Coupling.** `flow/provider.py` (`FlowProvider`, Data §13) and
