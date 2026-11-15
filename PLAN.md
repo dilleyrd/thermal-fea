@@ -175,7 +175,7 @@ Details and acceptance tests are in [docs/tasks.md](docs/tasks.md).
 | M0 | Scaffolding | Installable package, CI script, layer test | — | ☑ |
 | M1 | FE kernel | Steady linear conduction on hand-built meshes | M0 | ☑ |
 | M2 | Model, geometry, meshing | Build and mesh any 2D shape from a script; save/load | M0 | ☑ |
-| M3 | Loads, nonlinear steady solver, recovery | All loads except flow and enclosure radiation; flux, reactions, energy balance | M1, M2 | ☐ |
+| M3 | Loads, nonlinear steady solver, recovery | All loads except flow and enclosure radiation; flux, reactions, energy balance | M1, M2 | ☑ |
 | M4 | Transient solver | Adaptive time stepping, HDF5 results | M3 | ☐ |
 | M5 | Post-processing (headless) | Contour, vector, history and path plots; export; animation | M4 | ☐ |
 | M6 | Convection library | Correlations and fluid properties as boundary conditions | M3 | ☐ |

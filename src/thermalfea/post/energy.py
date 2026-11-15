@@ -14,8 +14,8 @@ from numpy import ndarray
 
 from ..solver.nonlinear import Assembled
 from ..solver.problem import CompiledProblem
-from ..solver.steady import STEADY_TIME
-from .reactions import heat_flows
+from ..solver.steady import STEADY_TIME, assemble
+from .reactions import heat_flows, reaction_vector
 
 
 @dataclass
@@ -28,10 +28,16 @@ class EnergyBalance:
         Name of each load or boundary condition -> heat entering the body [W].
     stored_rate : float
         Rate of change of the stored energy ``dE/dt = sum(C dT/dt)`` [W]; 0 when steady.
+    gross : float
+        Heat passing through the prescribed nodes [W]: the larger of the heat entering
+        and the heat leaving, summed node by node. It gives the balance a scale when a
+        single fixed-temperature condition both supplies and removes the heat, so that
+        its net flow is zero.
     """
 
     flows: dict[str, float] = field(default_factory=dict)
     stored_rate: float = 0.0
+    gross: float = 0.0
 
     @property
     def heat_in(self) -> float:
@@ -51,7 +57,8 @@ class EnergyBalance:
     @property
     def throughput(self) -> float:
         """Largest magnitude among the terms of the balance [W]."""
-        return max([abs(v) for v in self.flows.values()] + [abs(self.stored_rate)], default=0.0)
+        terms = [abs(v) for v in self.flows.values()] + [abs(self.stored_rate), self.gross]
+        return max(terms)
 
     @property
     def imbalance(self) -> float:
@@ -110,6 +117,13 @@ def energy_balance(
     -------
     EnergyBalance
     """
+    if system is None:
+        system = assemble(problem, u, t, u_prev, dt)
     flows = heat_flows(problem, u, t, system, capacitance_rate, u_prev, dt)
     stored = float(capacitance_rate.sum()) if capacitance_rate is not None else 0.0
-    return EnergyBalance(flows, stored)
+    gross = 0.0
+    if problem.constraints:
+        idx, _ = problem.prescribed_owners(t)
+        at_nodes = reaction_vector(system, u, capacitance_rate)[idx]
+        gross = float(max(at_nodes[at_nodes > 0.0].sum(), -at_nodes[at_nodes < 0.0].sum()))
+    return EnergyBalance(flows, stored, gross)

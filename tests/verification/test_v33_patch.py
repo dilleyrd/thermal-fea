@@ -1,17 +1,21 @@
 """V-33 — patch test.
 
 An irregular 8-element patch with a linear temperature field imposed on the boundary:
-interior nodes exact to 1e-12, flux constant to 1e-10, all element types.
+interior nodes exact to 1e-12, flux constant to 1e-10, all element types. Solved with
+``ConductionTerm`` and the steady driver; the flux comes from ``post/recovery``.
 """
 
 from __future__ import annotations
 
 import numpy as np
 import pytest
-from kernel_solve import boundary_nodes, gauss_point_flux, solve_conduction
+from cases import TYPES, boundary_nodes, conduction_problem
 
 from thermalfea.core.meshgen import distort, rect_mesh
 from thermalfea.core.registry import element
+from thermalfea.post.energy import energy_balance
+from thermalfea.post.recovery import element_flux, nodal_flux
+from thermalfea.solver.steady import steady_solution
 
 K = 50.0
 GRAD = np.array([120.0, -75.0])  # K/m
@@ -25,7 +29,7 @@ def grid(etype: str) -> tuple[int, int]:
 
 
 @pytest.mark.parametrize("seed", [1, 2, 3])
-@pytest.mark.parametrize("etype", ["T3", "Q4", "T6", "Q8"])
+@pytest.mark.parametrize("etype", TYPES)
 def test_v33_patch(etype: str, seed: int) -> None:
     regular = rect_mesh(*BOX, *grid(etype), etype)
     mesh = distort(regular, 0.2, seed)
@@ -39,10 +43,17 @@ def test_v33_patch(etype: str, seed: int) -> None:
     # the patch really is irregular: every interior node is off the regular lattice
     assert np.all(np.any(regular.nodes[interior] != mesh.nodes[interior], axis=1))
 
-    temperature = solve_conduction(mesh, K, fixed, exact[fixed])
+    problem = conduction_problem(mesh, K, fixed, exact[fixed])
+    result = steady_solution(problem)
+    assert result.iterations == 1  # linear: one solve
+    temperature = result.T
 
     assert np.max(np.abs(temperature[interior] - exact[interior]) / exact[interior]) < 1e-12
     q_exact = -K * GRAD
     scale = np.linalg.norm(q_exact)
-    for q in gauss_point_flux(mesh, K, temperature):
-        assert np.max(np.abs(q - q_exact)) / scale < 1e-10
+    (_, q_nodes), = nodal_flux(mesh, problem, temperature).values()
+    assert np.max(np.abs(q_nodes - q_exact)) / scale < 1e-10
+    assert np.max(np.abs(element_flux(mesh, problem, temperature) - q_exact)) / scale < 1e-10
+    # V-34
+    balance = energy_balance(problem, temperature, system=result.system)
+    assert abs(balance.relative_imbalance) < 1e-8

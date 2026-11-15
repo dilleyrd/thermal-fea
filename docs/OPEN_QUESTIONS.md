@@ -35,8 +35,11 @@ verification cases are meant to have a runnable script in `examples/`. `Conducti
 (`tests/verification/kernel_solve.py`). All three pass at their stated tolerances, and
 V-37 passes with no library code mentioning `Tet4` or a 3D case.
 
-**Still to do at M3.G:** switch V-37 to `ConductionTerm` + `solve_steady`, add the flux part
-of V-01 through `post/recovery.py`, and add the `examples/` scripts for these cases.
+**Resolved at M3.G:** V-37 and V-33 now solve with `ConductionTerm` and the steady driver
+(hand-built `CompiledProblem`, no change to library code for `Tet4` or 3D); V-01 checks
+the recovered nodal flux; V-01 … V-14 and V-32 each have a runnable `examples/vNN_*.py`
+that their test loads. V-33 and V-37 have no example script: they are built on hand-made
+meshes inside their tests (V-37 by requirement).
 
 ## Q4 — defaults and field order in the model classes (Data §3, §8) — raised in M2.1
 
@@ -154,6 +157,28 @@ and later the `/reactions/<bc>` datasets). The magnitudes are those of Theory §
 the sign of the boundary-set formulas is reversed. A fixed-temperature set reports
 +Σ R_p. If §7's positive-out convention is wanted for boundary sets, it is one sign in
 `heat_flows`.
+
+**Scale of the relative imbalance (found at M3.G).** Theory §7 reports
+imbalance / max(|terms|). When one fixed-temperature condition both supplies and removes
+all the heat (the patch test: one condition on the whole boundary), its net flow is zero
+and so is every term, and the ratio becomes round-off over round-off. **Done for now:**
+the scale also includes the heat passing through the prescribed nodes, summed node by
+node (the larger of what enters and what leaves). This only ever enlarges the scale in
+that degenerate situation; in every other verification case it changes nothing.
+
+## Q13 — choices made in the verification examples — raised in M3.G
+
+- **Nodes at check points.** V-09 and V-10 check the temperature at given points. Point
+  interpolation arrives with M5.4, so the geometry is drawn in several rectangles whose
+  corners are the check points, making them mesh nodes. The physics is unchanged.
+- **Structured meshes.** The "1D" strips, V-12 and V-32 use transfinite meshes with the
+  stated number of elements or size. V-12 needs this for Q8: an eight-node serendipity
+  quadrilateral reproduces a full quadratic field only when it is a parallelogram, so the
+  1e-9 tolerance cannot hold on a free quad mesh. T6 does not have that restriction.
+- **V-07** lists only "linear 1e-3"; all four element types are run at 1e-3.
+- **V-10 coarse mesh.** The requirement is 0.15 °C at size 0.025, which all four types
+  meet (0.05–0.09 °C). At size 0.05 the linear types are 0.16–0.21 °C off; the test only
+  requires the coarse result to be within 1 °C.
 
 ## Q12 — `api.solve` and the results file (Data §9, §11) — raised in M3.11
 

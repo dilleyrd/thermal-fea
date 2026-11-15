@@ -181,7 +181,7 @@ through `DofMap`, and every physics contribution is a `Term` (Data §13).
   (Theory §4, §7): heat flow per BC and the balance table.
 - [x] **M3.11 [B] Results file, steady.** `solver/results_writer.py` and
   `post/results.py` (Data §9) for a single step; `api.solve` for steady models.
-- [ ] **M3.G [C] Gate.** V-01 … V-14, V-32, V-33, V-34 (steady part).
+- [x] **M3.G [C] Gate.** V-01 … V-14, V-32, V-33, V-34 (steady part).
 
 ## M4 — Transient solver
 
