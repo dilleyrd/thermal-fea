@@ -7,15 +7,18 @@ import logging
 import tempfile
 from collections.abc import Callable, Sequence
 from pathlib import Path
-from typing import Literal
+from typing import Any, Literal
 
 from matplotlib.figure import Figure
 
+from .convection import calculator
+from .convection.calculator import HtcResult
 from .core.errors import ModelError
 from .core.mesh import Mesh
 from .geometry import builder
 from .geometry.builder import BuiltGeometry
 from .materials import library
+from .materials.material import Fluid
 from .meshing import mesher
 from .model import geometry_ops as ops
 from .model.model import Model, RegionAssignment
@@ -678,3 +681,42 @@ def export_animation(
     Path
     """
     return export.animation(results, path, field=field, **options)  # type: ignore[arg-type]
+
+
+# ----------------------------------------------------------------------------- convection
+
+
+def htc(
+    correlation: str,
+    fluid: str | Fluid | None,
+    T_surface: float,
+    T_inf: float,
+    **inputs: Any,
+) -> HtcResult:
+    """Heat-transfer coefficient of one correlation at single values; see
+    :func:`thermalfea.convection.calculator.htc`.
+
+    Parameters
+    ----------
+    correlation : str
+        Correlation ID, one of ``thermalfea.convection.correlations.CORRELATIONS``.
+    fluid : str or Fluid or None
+        Library fluid name or a Fluid object; not needed for ``power_law``.
+    T_surface, T_inf : float
+        Wall and fluid temperatures [K], both above 0.
+    **inputs
+        ``length`` [m], ``velocity`` [m/s], ``theta_deg`` [deg], ``face_direction``
+        (``"up"``/``"down"``), ``x`` [m] (``plate_forced_local``), ``C`` and ``n``
+        (``power_law``), ``multiplier`` (default 1.0), and for ``duct_internal``:
+        ``mass_flow`` [kg/s], ``area`` [m^2], ``wetted_perimeter`` [m], ``cross_section``,
+        ``wall``, ``option``.
+
+    Returns
+    -------
+    HtcResult
+
+    Raises
+    ------
+    ModelError
+    """
+    return calculator.htc(correlation, fluid, T_surface, T_inf, **inputs)
