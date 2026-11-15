@@ -241,7 +241,9 @@ def test_contour_returns_a_figure_with_title_colorbar_and_markers(results: Resul
     assert len(fig.axes) == 2  # plot and colour bar
     ax = fig.axes[0]
     assert "0" in ax.get_title() and "s" in ax.get_title()
-    assert fig.axes[1].get_ylabel() == "Temperature [K]"
+    # the colour bar is vertical for tall models and horizontal for flat ones
+    bar = fig.axes[1]
+    assert "Temperature [K]" in (bar.get_ylabel(), bar.get_xlabel())
     assert len(ax.collections) >= 1 and len(ax.texts) == 2
     assert ax.get_aspect() == 1.0
 

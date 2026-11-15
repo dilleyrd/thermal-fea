@@ -314,23 +314,75 @@ def contour_data(results: Results, step: int = -1, field: str = "T") -> ContourD
 # ------------------------------------------------------------------------------- helpers
 
 
-def _figure(ax: Axes | None) -> tuple[Figure, Axes]:
-    """The figure and axes to draw into: ``ax`` if given, otherwise a new Agg figure."""
+#: A model whose height is below this fraction of its width gets a horizontal colour bar.
+_WIDE_MODEL = 0.4
+#: Margin around the model in a model view, as a fraction of its larger dimension.
+_VIEW_MARGIN = 0.04
+_CHART_SIZE = (7.5, 5.5)  # inches, for line charts
+_VIEW_LONG_SIDE = 7.0  # inches, drawn length of the larger model dimension
+
+
+def _bounds(mesh: Mesh) -> tuple[float, float, float, float]:
+    """Bounding box ``(xmin, ymin, xmax, ymax)`` of a mesh [m]."""
+    lo, hi = mesh.nodes.min(axis=0), mesh.nodes.max(axis=0)
+    return float(lo[0]), float(lo[1]), float(hi[0]), float(hi[1])
+
+
+def _ratio(bounds: tuple[float, float, float, float]) -> float:
+    """Height over width of a bounding box (1 for a degenerate box)."""
+    width, height = bounds[2] - bounds[0], bounds[3] - bounds[1]
+    return height / width if width > 0.0 and height > 0.0 else 1.0
+
+
+def _figure(
+    ax: Axes | None, bounds: tuple[float, float, float, float] | None = None
+) -> tuple[Figure, Axes]:
+    """The figure and axes to draw into: ``ax`` if given, otherwise a new Agg figure.
+
+    With the model's ``bounds`` a new figure is shaped to the model, so that a model view
+    fills it instead of leaving large empty margins; without them it has the size of a
+    line chart.
+    """
     if ax is not None:
         return ax.figure, ax
-    fig = Figure(figsize=(7.5, 5.5), layout="constrained")
+    size = _CHART_SIZE
+    if bounds is not None:
+        ratio = _ratio(bounds)
+        if ratio >= 1.0:  # tall model: colour bar at the side
+            size = (float(np.clip(_VIEW_LONG_SIDE / ratio + 2.4, 4.5, 9.0)), _VIEW_LONG_SIDE)
+        elif ratio >= _WIDE_MODEL:
+            size = (_VIEW_LONG_SIDE + 2.0, float(np.clip(_VIEW_LONG_SIDE * ratio + 1.2, 3.5, 7.0)))
+        else:  # wide, flat model: colour bar underneath
+            size = (_VIEW_LONG_SIDE + 1.5, float(np.clip(_VIEW_LONG_SIDE * ratio + 2.6, 3.0, 6.0)))
+    fig = Figure(figsize=size, layout="constrained")
     FigureCanvasAgg(fig)
     return fig, fig.add_subplot(1, 1, 1)
 
 
-def _frame(fig: Figure, ax: Axes, mappable: ScalarMappable, label: str, title: str) -> None:
-    """Colour bar, equal aspect, axis labels and title of a plot."""
-    fig.colorbar(mappable, ax=ax, label=label)
+def _frame(
+    fig: Figure,
+    ax: Axes,
+    mappable: ScalarMappable,
+    label: str,
+    title: str,
+    bounds: tuple[float, float, float, float] | None = None,
+) -> None:
+    """Colour bar, equal aspect, view limits, axis labels and title of a model view."""
+    wide = bounds is not None and _ratio(bounds) < _WIDE_MODEL
+    fig.colorbar(
+        mappable, ax=ax, label=label, orientation="horizontal" if wide else "vertical",
+        shrink=0.9, pad=0.03,
+    )
     ax.set_aspect("equal")
     ax.set_xlabel("x [m]")
     ax.set_ylabel("y [m]")
     ax.set_title(title)
-    ax.autoscale_view()
+    if bounds is None:
+        ax.autoscale_view()
+    else:  # show the whole model with a small margin, so nothing at its edge is clipped
+        margin = _VIEW_MARGIN * max(bounds[2] - bounds[0], bounds[3] - bounds[1])
+        ax.set_xlim(bounds[0] - margin, bounds[2] + margin)
+        ax.set_ylim(bounds[1] - margin, bounds[3] + margin)
 
 
 def _save(fig: Figure, path: str | Path | None, what: str) -> None:
@@ -390,7 +442,8 @@ def contour(
         For an unknown field or step.
     """
     data = contour_data(results, step, field)
-    fig, ax = _figure(ax)
+    bounds = _bounds(results.mesh)
+    fig, ax = _figure(ax, bounds)
     lo = data.vmin if vmin is None else float(vmin)
     hi = data.vmax if vmax is None else float(vmax)
     if not hi > lo:  # uniform field or inverted limits: keep the colour scale valid
@@ -423,13 +476,17 @@ def contour(
         (data.xy_min, data.vmin, "v", "min"),
         (data.xy_max, data.vmax, "^", "max"),
     ):
-        ax.plot([xy[0]], [xy[1]], marker, color="white", mec="black", ms=7)
+        ax.plot([xy[0]], [xy[1]], marker, color="white", mec="black", ms=7, clip_on=False)
+        # put the label on the side of the marker that faces the middle of the model
+        right = xy[0] <= 0.5 * (bounds[0] + bounds[2])
+        up = xy[1] <= 0.5 * (bounds[1] + bounds[3])
         ax.annotate(
-            f"{text} {value:.4g}", xy=(xy[0], xy[1]), xytext=(6, 6),
-            textcoords="offset points", fontsize=8,
+            f"{text} {value:.4g}", xy=(xy[0], xy[1]),
+            xytext=(7 if right else -7, 7 if up else -7), textcoords="offset points",
+            ha="left" if right else "right", va="bottom" if up else "top", fontsize=8,
             bbox={"boxstyle": "round,pad=0.2", "fc": "white", "alpha": 0.8, "lw": 0.3},
         )
-    _frame(fig, ax, mappable, data.label, data.title)
+    _frame(fig, ax, mappable, data.label, data.title, bounds)
     _save(fig, path, "contour plot")
     return fig
 
@@ -565,12 +622,20 @@ def vectors(
         For a density below 1 or an unknown step.
     """
     data = vector_data(results, step, density)
-    fig, ax = _figure(ax)
+    bounds = _bounds(results.mesh)
+    fig, ax = _figure(ax, bounds)
+    # arrows are centred on their element centroid, so they stay inside the model outline
     arrows = ax.quiver(
         data.xy[:, 0], data.xy[:, 1], data.q[:, 0], data.q[:, 1], data.magnitude,
-        cmap="viridis", scale=scale, angles="xy",
+        cmap="viridis", scale=scale, angles="xy", pivot="mid",
     )
-    _frame(fig, ax, arrows, "Heat flux [W/m²]", data.title)
+    # the outline of the model and of its regions: the mesh facets (end nodes of each)
+    nodes = results.mesh.nodes
+    for facets in results.mesh.facets:
+        ax.add_collection(
+            LineCollection(nodes[facets.conn[:, :2]], colors="0.6", linewidths=0.6, zorder=0)
+        )
+    _frame(fig, ax, arrows, "Heat flux [W/m²]", data.title, bounds)
     _save(fig, path, "vector plot")
     return fig
 
