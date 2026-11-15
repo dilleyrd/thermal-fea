@@ -157,7 +157,7 @@ through `DofMap`, and every physics contribution is a `Term` (Data §13).
   registered this way**; the drivers in M3.7 and M4.2 loop over `problem.terms` only.
 - [x] **M3.2 [A] Body loads.** `physics/body_loads.py`: `HeatGeneration`, `HeatPower`
   (Theory §2). Function evaluated at integration points with `t, x, y, T`.
-- [ ] **M3.3 [A] Surface loads.** `physics/surface_loads.py`: `HeatFlux`, `HeatFlow`,
+- [x] **M3.3 [A] Surface loads.** `physics/surface_loads.py`: `HeatFlux`, `HeatFlow`,
   `Convection` matrices and vectors (Theory §2).
   Accept: total applied heat equals q̄·area for planar and axisymmetric edges.
 - [ ] **M3.4 [A] Prescribed temperatures.** Collect nodes of `FixedTemperature` selections

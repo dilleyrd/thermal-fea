@@ -12,4 +12,5 @@ from __future__ import annotations
 from . import (  # noqa: F401
     body_loads,
     conduction,
+    surface_loads,
 )
