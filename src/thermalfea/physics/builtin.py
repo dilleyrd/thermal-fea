@@ -13,5 +13,6 @@ from . import (  # noqa: F401
     body_loads,
     conduction,
     prescribed,
+    radiation_ambient,
     surface_loads,
 )

@@ -166,7 +166,7 @@ through `DofMap`, and every physics contribution is a `Term` (Data §13).
 - [x] **M3.5 [B] Temperature-dependent properties.** Evaluate k, k2, ρ, c at integration
   points from N·T_e; build D (Theory §2, orthotropic rotation).
   Accept: V-12 matrix check — constant D rotated by 90° swaps the roles of k1 and k2.
-- [ ] **M3.6 [B] Radiation to ambient.** `physics/radiation_ambient.py` residual and
+- [x] **M3.6 [B] Radiation to ambient.** `physics/radiation_ambient.py` residual and
   tangent (Theory §5).
   Accept: tangent matches a finite-difference derivative of the residual to 1e-5 relative.
 - [ ] **M3.7 [C] Nonlinear steady driver.** `solver/nonlinear.py: newton(assemble_fn, T0,

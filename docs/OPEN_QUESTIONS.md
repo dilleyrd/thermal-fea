@@ -112,3 +112,16 @@ Also added, since Data §13 names a "prescribed-DOF provider" without specifying
 `is_time_dependent`), a `constraint_factory` slot beside `term_factory` in the BC
 registry, and `CompiledProblem.prescribed(t)`, which merges the constraints (the later
 one wins, with a logged warning).
+
+## Q9 — value of the Stefan–Boltzmann constant — raised in M3.6
+
+Theory §5 uses σ without giving its value. V-14 (NAFEMS T2) quotes σ = 5.67e-8.
+
+**Done for now:** `core/constants.py: STEFAN_BOLTZMANN = 5.670374419e-8` W/(m² K⁴), the
+exact CODATA 2018 value. It differs from 5.67e-8 by 6.6e-5 relative, far inside the
+0.1 K tolerance of V-14. Verification tests that compute an analytic answer import the
+same constant. If the benchmark value 5.67e-8 should be used instead, change that one line.
+
+Also: total loads (`HeatPower`, `HeatFlow`) and `FixedTemperature` refuse a function that
+depends on T (a total, or a prescribed value, as a function of the local temperature has
+no defined meaning); the error message says what to use instead.
