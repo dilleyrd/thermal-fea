@@ -221,7 +221,7 @@ All plotting functions take a `Results`, return a Matplotlib `Figure`, optionall
   display unit.
   Accept: image-free tests — the triangulation covers the mesh area exactly; the plotted
   array min/max equal the field's.
-- [ ] **M5.2 [A] Vector plot.** `vectors(results, step, density=30, scale=None, ax=None)`:
+- [x] **M5.2 [A] Vector plot.** `vectors(results, step, density=30, scale=None, ax=None)`:
   heat-flux arrows at element centroids, thinned to about `density` arrows across the
   larger model dimension, coloured by magnitude.
 - [ ] **M5.3 [A] History plots.** `history(results, points=[(x, y), …] | nodes=[…])`

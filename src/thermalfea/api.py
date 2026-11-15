@@ -500,3 +500,28 @@ def plot_contour(
     matplotlib.figure.Figure
     """
     return plots.contour(results, step, field, path=path, **options)  # type: ignore[arg-type]
+
+
+def plot_vectors(
+    results: Results,
+    step: int = -1,
+    path: str | Path | None = None,
+    **options: object,
+) -> Figure:
+    """Heat-flux arrow plot; see :func:`thermalfea.post.plots.vectors` for the options.
+
+    Parameters
+    ----------
+    results : Results
+    step : int
+        Stored step; negative counts from the end.
+    path : str or Path, optional
+        Save the figure here.
+    **options
+        ``density``, ``scale``, ``ax``.
+
+    Returns
+    -------
+    matplotlib.figure.Figure
+    """
+    return plots.vectors(results, step, path=path, **options)  # type: ignore[arg-type]

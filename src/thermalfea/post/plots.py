@@ -17,6 +17,7 @@ from pathlib import Path
 import numpy as np
 from matplotlib.axes import Axes
 from matplotlib.backends.backend_agg import FigureCanvasAgg
+from matplotlib.cm import ScalarMappable
 from matplotlib.collections import LineCollection
 from matplotlib.colors import Normalize
 from matplotlib.figure import Figure
@@ -303,6 +304,35 @@ def contour_data(results: Results, step: int = -1, field: str = "T") -> ContourD
     )
 
 
+# ------------------------------------------------------------------------------- helpers
+
+
+def _figure(ax: Axes | None) -> tuple[Figure, Axes]:
+    """The figure and axes to draw into: ``ax`` if given, otherwise a new Agg figure."""
+    if ax is not None:
+        return ax.figure, ax
+    fig = Figure(figsize=(7.5, 5.5), layout="constrained")
+    FigureCanvasAgg(fig)
+    return fig, fig.add_subplot(1, 1, 1)
+
+
+def _frame(fig: Figure, ax: Axes, mappable: ScalarMappable, label: str, title: str) -> None:
+    """Colour bar, equal aspect, axis labels and title of a plot."""
+    fig.colorbar(mappable, ax=ax, label=label)
+    ax.set_aspect("equal")
+    ax.set_xlabel("x [m]")
+    ax.set_ylabel("y [m]")
+    ax.set_title(title)
+    ax.autoscale_view()
+
+
+def _save(fig: Figure, path: str | Path | None, what: str) -> None:
+    """Save the figure as a 200 dpi PNG (or whatever the suffix of ``path`` names)."""
+    if path is not None:
+        fig.savefig(path, dpi=200)
+        log.info("saved %s to %s", what, path)
+
+
 # ------------------------------------------------------------------------------- contour
 
 
@@ -353,12 +383,7 @@ def contour(
         For an unknown field or step.
     """
     data = contour_data(results, step, field)
-    if ax is None:
-        fig = Figure(figsize=(7.5, 5.5), layout="constrained")
-        FigureCanvasAgg(fig)
-        ax = fig.add_subplot(1, 1, 1)
-    else:
-        fig = ax.figure
+    fig, ax = _figure(ax)
     lo = data.vmin if vmin is None else float(vmin)
     hi = data.vmax if vmax is None else float(vmax)
     if not hi > lo:  # uniform field or inverted limits: keep the colour scale valid
@@ -397,13 +422,147 @@ def contour(
             textcoords="offset points", fontsize=8,
             bbox={"boxstyle": "round,pad=0.2", "fc": "white", "alpha": 0.8, "lw": 0.3},
         )
-    fig.colorbar(mappable, ax=ax, label=data.label)
-    ax.set_aspect("equal")
-    ax.set_xlabel("x [m]")
-    ax.set_ylabel("y [m]")
-    ax.set_title(data.title)
-    ax.autoscale_view()
-    if path is not None:
-        fig.savefig(path, dpi=200)
-        log.info("saved contour plot to %s", path)
+    _frame(fig, ax, mappable, data.label, data.title)
+    _save(fig, path, "contour plot")
+    return fig
+
+
+# -------------------------------------------------------------------------------- vectors
+
+
+@dataclass
+class VectorData:
+    """Arrows of a heat-flux vector plot, after thinning.
+
+    Attributes
+    ----------
+    xy : ndarray, shape (n, 2)
+        Arrow positions: element centroids [m].
+    q : ndarray, shape (n, 2)
+        Heat flux at the arrows [W/m^2].
+    magnitude : ndarray, shape (n,)
+        Heat-flux magnitude [W/m^2]; colours the arrows.
+    elements : ndarray of int, shape (n,)
+        Global element ids of the kept elements.
+    time : float
+        Time of the step [s].
+    title : str
+        Plot title, including the time of the step.
+    """
+
+    xy: ndarray
+    q: ndarray
+    magnitude: ndarray
+    elements: ndarray
+    time: float
+    title: str
+
+
+def _thin(xy: ndarray, density: int) -> ndarray:
+    """Positions (into ``xy``) of the elements kept: one per occupied square grid cell.
+
+    The grid spans the bounding box of ``xy`` from its lower-left corner with square cells of
+    size ``extent / density``, where ``extent`` is the larger of the two ranges. In each
+    occupied cell the element whose centroid is nearest the cell centre is kept.
+    """
+    lo = xy.min(axis=0)
+    extent = float(np.max(xy.max(axis=0) - lo))
+    h = extent / density if extent > 0.0 else 1.0
+    ij = np.floor((xy - lo) / h).astype(int)
+    n_i = int(ij[:, 0].max()) + 1
+    key = ij[:, 0] + ij[:, 1] * (n_i + 1)
+    centre = lo + (ij + 0.5) * h
+    distance = np.sum((xy - centre) ** 2, axis=1)
+    order = np.lexsort((distance, key))
+    _, first = np.unique(key[order], return_index=True)
+    return np.sort(order[first])
+
+
+def vector_data(results: Results, step: int = -1, density: int = 30) -> VectorData:
+    """Gather the arrows of a heat-flux vector plot.
+
+    Parameters
+    ----------
+    results : Results
+    step : int
+        Stored step; negative counts from the end.
+    density : int
+        About this many arrows across the larger model dimension (at most
+        ``(density + 1)`` arrows per row of grid cells).
+
+    Returns
+    -------
+    VectorData
+        Positions in metres, heat flux in W/m^2.
+
+    Raises
+    ------
+    ModelError
+        If ``density`` is less than 1, the step is out of range, or no element has a centroid.
+    """
+    if density < 1:
+        raise ModelError(f"vector density must be at least 1, not {density}")
+    flux = results.element_flux(step)
+    time = float(results.times[step])
+    centroids = results.mesh.element_centroids()
+    ids = np.flatnonzero(np.all(np.isfinite(centroids), axis=1))
+    if ids.size == 0:
+        raise ModelError("the mesh has no elements to draw")
+    xy = centroids[ids, :2]
+    chosen = _thin(xy, density)
+    ids = ids[chosen]
+    q = flux[ids, :2]
+    return VectorData(
+        xy=xy[chosen],
+        q=q,
+        magnitude=np.linalg.norm(q, axis=1),
+        elements=ids,
+        time=time,
+        title=f"Heat flux, t = {time:.6g} s",
+    )
+
+
+def vectors(
+    results: Results,
+    step: int = -1,
+    density: int = 30,
+    scale: float | None = None,
+    ax: Axes | None = None,
+    path: str | Path | None = None,
+) -> Figure:
+    """Heat-flux arrows at element centroids, coloured by magnitude.
+
+    Parameters
+    ----------
+    results : Results
+    step : int
+        Stored step; negative counts from the end.
+    density : int
+        About this many arrows across the larger model dimension; see :func:`vector_data`.
+    scale : float, optional
+        Arrow length in units of the plotted flux [W/m^2] per axis unit, as Matplotlib's
+        ``quiver``; ``None`` lets Matplotlib choose.
+    ax : Axes, optional
+        Draw into these axes (the colour bar is added to their figure); otherwise a new
+        figure is made.
+    path : str or Path, optional
+        Also save the figure here (PNG, 200 dpi).
+
+    Returns
+    -------
+    matplotlib.figure.Figure
+
+    Raises
+    ------
+    ModelError
+        For a density below 1 or an unknown step.
+    """
+    data = vector_data(results, step, density)
+    fig, ax = _figure(ax)
+    arrows = ax.quiver(
+        data.xy[:, 0], data.xy[:, 1], data.q[:, 0], data.q[:, 1], data.magnitude,
+        cmap="viridis", scale=scale, angles="xy",
+    )
+    _frame(fig, ax, arrows, "Heat flux [W/m²]", data.title)
+    _save(fig, path, "vector plot")
     return fig
