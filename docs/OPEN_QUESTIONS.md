@@ -78,3 +78,18 @@ defining them. **Done for now** (`meshing/quality.py`): minimum interior corner 
 degrees from the straight lines between corner nodes; aspect ratio = longest / shortest
 corner-to-corner side; Jacobian ratio = min det J / max det J over the integration points
 and the nodes. No pass/fail thresholds are applied; the report only measures.
+
+## Q7 — the selection named "all" (Data §11) — raised in M2.11
+
+The script in Data §11 calls `api.assign_region(model, "all", material=...)` without ever
+creating a selection called "all".
+
+**Done for now:** `api.build(model)` creates (and on every rebuild replaces) a selection
+named `"all"` that holds every surface. The name is therefore reserved: a user selection
+called "all" is overwritten by the next build. `api.build` also resolves every other
+selection against the new geometry and logs a warning for each stale one.
+
+Related choices in the facade: `api.Geometry` methods return the id of the operation they
+append, auto-named `<class><n>` (`rectangle1`, `boolean2`, ...) unless `id=` is given;
+`assign_region` copies a library solid into `model.materials` when the model has no
+material of that name, and replaces an existing assignment of the same selection.
