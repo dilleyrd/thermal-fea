@@ -203,7 +203,7 @@ through `DofMap`, and every physics contribution is a `Term` (Data §13).
   crashed or cancelled run leaves a readable file; per-step energy columns.
 - [x] **M4.5 [A] Initial conditions.** All four kinds of `InitialCondition`; prescribed
   nodes take their BC value at t = 0.
-- [ ] **M4.6 [A] CLI.** `thermalfea solve model.tfea [-o results.h5]` with a progress line
+- [x] **M4.6 [A] CLI.** `thermalfea solve model.tfea [-o results.h5]` with a progress line
   per step; exit code 2 on `ConvergenceError`.
 - [ ] **M4.G [C] Gate.** V-16 … V-21, V-34 on all transient cases.
 
