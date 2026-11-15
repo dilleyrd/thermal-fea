@@ -83,6 +83,46 @@ class Case:
         T = self.T if nodes is None else self.T[nodes]
         return float(np.max(np.abs(T - exact) / np.abs(exact)))
 
+    # ------------------------------------------------------------------- transient
+
+    def step_at(self, time: float) -> int:
+        """Index of the stored step at ``time`` [s]; a step must have been stored there."""
+        times = self.results.times
+        step = int(np.argmin(np.abs(times - time)))
+        if abs(times[step] - time) > 1e-9 * max(1.0, abs(time)):
+            raise ValueError(f"no stored step at t = {time} s; the nearest is at {times[step]} s")
+        return step
+
+    def T_at(self, time: float) -> ndarray:
+        """Nodal temperatures [K] at the stored step at ``time`` [s]."""
+        return self.results.temperature(self.step_at(time))
+
+    @property
+    def worst_imbalance(self) -> float:
+        """Largest relative energy imbalance over all steps (V-34)."""
+        values = self.results.energy_balance()["relative_imbalance"]
+        values = values[np.isfinite(values)]
+        return float(np.abs(values).max()) if values.size else 0.0
+
+    @property
+    def n_steps(self) -> int:
+        """Number of time steps taken (stored steps minus the initial state)."""
+        return int(self.results.n_steps - 1)
+
+
+def transient(model: Model, initial: float, **settings) -> None:
+    """Make a model transient with a uniform initial temperature [K].
+
+    ``settings`` are fields of ``SolutionSettings`` (``end_time``, ``theta``,
+    ``initial_dt``, ``auto_timestep``, ``output_times``, ...).
+    """
+    from thermalfea.core.functions import Constant
+    from thermalfea.model.model import InitialCondition
+    from thermalfea.model.settings import SolutionSettings
+
+    model.initial_condition = InitialCondition("uniform", value=Constant(initial))
+    model.solution = SolutionSettings(kind="transient", **settings)
+
 
 def set_element_type(model: Model, etype: str) -> None:
     """Choose the element shape and order of the mesh for an element type name."""

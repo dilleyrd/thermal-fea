@@ -205,7 +205,7 @@ through `DofMap`, and every physics contribution is a `Term` (Data §13).
   nodes take their BC value at t = 0.
 - [x] **M4.6 [A] CLI.** `thermalfea solve model.tfea [-o results.h5]` with a progress line
   per step; exit code 2 on `ConvergenceError`.
-- [ ] **M4.G [C] Gate.** V-16 … V-21, V-34 on all transient cases.
+- [x] **M4.G [C] Gate.** V-16 … V-21, V-34 on all transient cases.
 
 ## M5 — Post-processing (headless)
 
