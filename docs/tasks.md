@@ -175,7 +175,7 @@ through `DofMap`, and every physics contribution is a `Term` (Data §13).
   Log one line per iteration (residual, max ΔT, line-search factor).
 - [x] **M3.8 [A] Validation.** `model/validate.py` with every check in Data §8, each with a
   unit test that triggers it.
-- [ ] **M3.9 [B] Recovery.** `post/recovery.py: nodal_flux(mesh, problem, T) ->
+- [x] **M3.9 [B] Recovery.** `post/recovery.py: nodal_flux(mesh, problem, T) ->
   dict[region, (node_idx, q (n, 2))]`, `element_flux`, `gradient` (Theory §7).
 - [ ] **M3.10 [B] Reactions and energy balance.** `post/reactions.py`, `post/energy.py`
   (Theory §4, §7): heat flow per BC and the balance table.
