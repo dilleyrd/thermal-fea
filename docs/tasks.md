@@ -260,7 +260,7 @@ All plotting functions take a `Results`, return a Matplotlib `Figure`, optionall
   Accept: V-15.
 - [x] **M6.4 [A] Stand-alone calculator.** `api.htc(correlation, fluid, T_surface, T_inf,
   **inputs) -> HtcResult` (h, Nu, Re or Ra, Pr, regime, warnings) for use by the GUI tool.
-- [ ] **M6.G [C] Gate.** V-15, V-25, V-26; check each formula against Theory §8 line by line.
+- [x] **M6.G [C] Gate.** V-15, V-25, V-26; check each formula against Theory §8 line by line.
 
 ## M7 — Flow solver
 
