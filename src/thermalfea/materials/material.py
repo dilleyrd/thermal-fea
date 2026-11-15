@@ -3,12 +3,15 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 import numpy as np
 
 from ..core.errors import ModelError
 from ..core.functions import Function, as_function, function_from_json, function_to_json
+
+if TYPE_CHECKING:
+    from ..convection.fluid_props import FluidProps
 
 
 @dataclass
@@ -153,6 +156,7 @@ class Fluid:
     mu: list[float]
     k: list[float]
     beta: list[float] | None = None
+    _clamp_warned: bool = field(default=False, init=False, repr=False, compare=False)
 
     def __post_init__(self) -> None:
         if not isinstance(self.name, str) or not self.name:
@@ -175,6 +179,12 @@ class Fluid:
             raise ModelError(f"fluid {self.name!r}: temperatures must be ascending")
         if not self.ideal_gas and self.beta is None:
             raise ModelError(f"fluid {self.name!r}: a liquid needs a beta column")
+
+    def props(self, T: Any) -> FluidProps:
+        """Properties at temperature T [K] (linear interpolation, clamped at the table ends)."""
+        from ..convection.fluid_props import fluid_props  # imported here to avoid an import cycle
+
+        return fluid_props(self, T)
 
     def to_json(self) -> dict[str, Any]:
         """Return the JSON form of the fluid."""

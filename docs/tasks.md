@@ -243,7 +243,7 @@ All plotting functions take a `Results`, return a Matplotlib `Figure`, optionall
 
 ## M6 — Convection library
 
-- [ ] **M6.1 [A] Fluid properties.** `convection/fluid_props.py: FluidProps`,
+- [x] **M6.1 [A] Fluid properties.** `convection/fluid_props.py: FluidProps`,
   `Fluid.props(T)` (Data §6): interpolation, β rule, clamping with a single warning.
 - [ ] **M6.2 [A] Correlations.** `convection/correlations.py`: one pure function per ID in
   Theory §8 and §8.1 (`nu_*`, `friction_churchill`, `nu_duct`), plus a registry
