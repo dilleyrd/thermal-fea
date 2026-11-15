@@ -30,6 +30,7 @@ from ..core.errors import ModelError
 from ..core.mesh import Mesh
 from ..core.registry import element
 from ..core.units import UnitSettings, from_si
+from .path import sample as sample_path
 from .results import Results
 
 log = logging.getLogger(__name__)
@@ -773,6 +774,127 @@ def _draw_history(data: HistoryData, ax: Axes | None, path: str | Path | None, w
     ax.grid(True)
     ax.legend()
     _save(fig, path, what)
+    return fig
+
+
+# --------------------------------------------------------------------------------- path
+
+
+@dataclass
+class PathData:
+    """Line-chart data of a path plot.
+
+    Attributes
+    ----------
+    s : ndarray, shape (n,)
+        Arc length along the path [m].
+    values : ndarray, shape (n,)
+        Field in display units (``ylabel``); NaN where the path leaves the mesh.
+    xlabel, ylabel, title : str
+        Axis labels and plot title.
+    """
+
+    s: ndarray
+    values: ndarray
+    ylabel: str
+    title: str
+    xlabel: str = "Distance along path [m]"
+
+
+def path_data(
+    results: Results,
+    step: int,
+    polyline: Sequence[Sequence[float]],
+    n: int = 200,
+    field: str = "T",
+) -> PathData:
+    """Gather the values of a field along a polyline, in display units.
+
+    Parameters
+    ----------
+    results : Results
+    step : int
+        Stored step; negative counts from the end.
+    polyline : sequence of (x, y)
+        Vertices [m].
+    n : int
+        Number of sample points.
+    field : str
+        One of :data:`FIELDS`. Temperature is in the model's display unit, flux in W/m^2,
+        gradient in K/m (degF/m when the model displays degF).
+
+    Raises
+    ------
+    ModelError
+        For an unknown field or step, or an invalid polyline.
+    """
+    if field not in FIELDS:
+        raise ModelError(f"unknown path field {field!r}; choose from {', '.join(FIELDS)}")
+    source, _, si_unit, name = FIELDS[field]
+    times = results.times
+    if not -times.size <= step < times.size:
+        raise ModelError(f"step {step} is out of range; the file has {times.size} step(s)")
+    s, values = sample_path(results, step, polyline, n, field)
+    if source == "T":
+        values, unit = _display_temperature(results, values)
+    elif source == "flux":
+        unit = si_unit
+    else:
+        units = _unit_settings(results)
+        values = np.asarray(from_si(values, "temperature_difference", units))
+        unit = f"{_TEMPERATURE_LABEL[units.temperature]}/m"
+    return PathData(
+        s=s,
+        values=np.asarray(values, dtype=float),
+        ylabel=f"{name} [{unit}]",
+        title=f"{name} along path, t = {float(times[step]):.6g} s",
+    )
+
+
+def path(
+    results: Results,
+    polyline: Sequence[Sequence[float]],
+    step: int = -1,
+    field: str = "T",
+    n: int = 200,
+    ax: Axes | None = None,
+    path: str | Path | None = None,
+) -> Figure:
+    """A field against distance along a polyline.
+
+    Parameters
+    ----------
+    results : Results
+    polyline : sequence of (x, y)
+        Path vertices [m]; the line breaks where the path leaves the mesh.
+    step : int
+        Stored step; negative counts from the end.
+    field : str
+        ``T``, ``qx``, ``qy``, ``qmag``, ``gradx``, ``grady`` or ``gradmag``.
+    n : int
+        Number of sample points.
+    ax : Axes, optional
+        Draw into these axes; otherwise a new figure is made.
+    path : str or Path, optional
+        Also save the figure here (PNG, 200 dpi).
+
+    Returns
+    -------
+    matplotlib.figure.Figure
+
+    Raises
+    ------
+    ModelError
+        See :func:`path_data`.
+    """
+    data = path_data(results, step, polyline, n, field)
+    fig, ax = _figure(ax)
+    ax.plot(data.s, data.values)
+    ax.set_xlabel(data.xlabel)
+    ax.set_ylabel(data.ylabel)
+    ax.set_title(data.title)
+    ax.grid(True)
+    _save(fig, path, "path plot")
     return fig
 
 

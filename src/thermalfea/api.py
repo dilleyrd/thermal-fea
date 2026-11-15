@@ -527,6 +527,39 @@ def plot_vectors(
     return plots.vectors(results, step, path=path, **options)  # type: ignore[arg-type]
 
 
+def plot_path(
+    results: Results,
+    polyline: Sequence[tuple[float, float]],
+    step: int = -1,
+    field: str = "T",
+    path: str | Path | None = None,
+    **options: object,
+) -> Figure:
+    """A field along a polyline; see :func:`thermalfea.post.plots.path`.
+
+    Parameters
+    ----------
+    results : Results
+    polyline : sequence of (x, y)
+        Path vertices [m].
+    step : int
+        Stored step; negative counts from the end.
+    field : str
+        ``T``, ``qx``, ``qy``, ``qmag``, ``gradx``, ``grady`` or ``gradmag``.
+    path : str or Path, optional
+        Save the figure here.
+    **options
+        ``n`` (sample points), ``ax``.
+
+    Returns
+    -------
+    matplotlib.figure.Figure
+    """
+    return plots.path(  # type: ignore[arg-type]
+        results, polyline, step=step, field=field, path=path, **options
+    )
+
+
 def plot_history(
     results: Results,
     points: Sequence[tuple[float, float]] | None = None,

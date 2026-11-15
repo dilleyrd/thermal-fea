@@ -227,7 +227,7 @@ All plotting functions take a `Results`, return a Matplotlib `Figure`, optionall
 - [x] **M5.3 [A] History plots.** `history(results, points=[(x, y), …] | nodes=[…])`
   (nearest node); `history_stat(results, selection, stat="min|max|mean")`;
   `heat_flow_history(results, bc_names)`.
-- [ ] **M5.4 [B] Path plots.** `post/path.py: sample(results, step, polyline, n=200) ->
+- [x] **M5.4 [B] Path plots.** `post/path.py: sample(results, step, polyline, n=200) ->
   (s, values)`: locate each sample point's element (cKDTree over centroids for candidates,
   then inverse isoparametric mapping by Newton iteration, tolerance 1e-10 in local
   coordinates) and interpolate with the shape functions. `plots.path(...)`.
