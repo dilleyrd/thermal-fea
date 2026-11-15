@@ -8,6 +8,7 @@ or assembled by hand (tests, future physics) — the drivers do not care which.
 from __future__ import annotations
 
 import logging
+from collections.abc import Callable
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Any
 
@@ -85,6 +86,11 @@ class CompiledProblem:
     #: Named entity sets for problems assembled by hand: name -> (dimension, tags).
     #: Looked up before the model's selections.
     named_entities: dict[str, tuple[int, list[int]]] = field(default_factory=dict)
+    #: Hook ``suggest_dt(T) -> float``: a first time step [s] for the state ``T``
+    #: (Theory §6.1); ``None`` when the problem cannot suggest one.
+    suggest_dt: Callable[[ndarray], float] | None = None
+    #: Hook ``check_dt(T, dt)``: called once with the first time step, to warn about it.
+    check_dt: Callable[[ndarray, float], object] | None = None
 
     def selection_tags(self, name: str, dims: tuple[int, ...]) -> tuple[int, list[int]]:
         """Resolve a named selection to the current tags of its entities.

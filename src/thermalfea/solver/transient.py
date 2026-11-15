@@ -38,6 +38,7 @@ from .nonlinear import F_REF_FLOOR, Assembled, newton
 from .problem import CompiledProblem
 from .steady import DEFAULT_START_TEMPERATURE, assemble
 from .terms import State
+from .timestep import StepController, error_estimate
 
 log = logging.getLogger(__name__)
 
@@ -49,8 +50,6 @@ JUMP_FRACTION = 1e-3
 #: An initial temperature differs from the prescribed value that replaces it (a jump at
 #: the start) when they differ by more than this fraction of the value.
 JUMP_TOL = 1e-6
-_TIME_EPS = 1e-12  # relative tolerance when comparing times
-_LAST_STEP_SLACK = 1e-9  # a remainder below this fraction of dt is merged into the last step
 
 
 @dataclass
@@ -118,6 +117,10 @@ class TransientResult:
         True when the ``on_step`` callback stopped the run.
     factorizations : int
         Number of matrix factorisations performed (linear path only).
+    rejected : int
+        Steps rejected by the time-stepping error test and redone with a smaller step.
+    newton_failures : int
+        Steps redone with a smaller step because the nonlinear iteration failed.
     """
 
     times: list[float] = field(default_factory=list)
@@ -127,6 +130,8 @@ class TransientResult:
     thetas: list[float] = field(default_factory=list)
     cancelled: bool = False
     factorizations: int = 0
+    rejected: int = 0
+    newton_failures: int = 0
 
     @property
     def n_steps(self) -> int:
@@ -262,15 +267,41 @@ def _jumps(
     )
 
 
-def fixed_step_size(problem: CompiledProblem) -> float:
-    """Step size of a fixed-step run: ``settings.initial_dt`` (required)."""
-    dt = problem.settings.initial_dt
-    if dt is None or not dt > 0.0:
+def first_step_size(problem: CompiledProblem, T: ndarray) -> float:
+    """Size of the first step [s].
+
+    ``settings.initial_dt`` when given; otherwise the suggestion of Theory §6.1
+    (``h_min^2 / (4 alpha_max)``), which the problem supplies through its ``suggest_dt``
+    hook. A fixed-step run always needs ``initial_dt``.
+    """
+    settings = problem.settings
+    dt = settings.initial_dt
+    if dt is not None:
+        if not dt > 0.0:
+            raise ModelError("the initial time step (solution.initial_dt) must be positive")
+        return float(dt)
+    if not settings.auto_timestep:
         raise ModelError(
             "a fixed-step transient analysis needs a positive initial time step "
             "(solution.initial_dt), or automatic time stepping switched on"
         )
-    return float(dt)
+    if problem.suggest_dt is None:
+        raise ModelError(
+            "no initial time step is given (solution.initial_dt) and the problem cannot "
+            "suggest one"
+        )
+    dt = float(problem.suggest_dt(T))
+    log.info("initial time step suggested from the mesh and materials: %.3g s", dt)
+    return dt
+
+
+def mandatory_times(problem: CompiledProblem) -> list[float]:
+    """Times [s] a step must land on: output times and breakpoints of the loads."""
+    settings = problem.settings
+    times = list(problem.breakpoints())
+    if settings.output == "times":
+        times += [float(t) for t in settings.output_times]
+    return times
 
 
 def solve_transient(
@@ -282,13 +313,17 @@ def solve_transient(
     store: bool = True,
     solver: LinearSolver | None = None,
 ) -> TransientResult:
-    """Integrate in time with the theta-method at a fixed step (Theory §6).
+    """Integrate in time with the theta-method (Theory §6, §6.1).
+
+    With ``settings.auto_timestep`` the step size follows the error estimate of Theory
+    §6.1; otherwise it is the fixed ``settings.initial_dt``. In both cases steps land
+    exactly on the mandatory times (output times, load-table breakpoints, the end time).
 
     Parameters
     ----------
     problem : CompiledProblem
-        ``problem.settings`` supplies ``end_time``, ``initial_dt`` (the step size),
-        ``theta`` and the nonlinear tolerances.
+        ``problem.settings`` supplies the end time, the step controls, ``theta`` and the
+        nonlinear tolerances.
     T0 : ndarray or float, optional
         Initial temperatures [K]; by default the model's uniform initial condition.
     on_step : callable, optional
@@ -307,7 +342,8 @@ def solve_transient(
     Raises
     ------
     ConvergenceError
-        If a step does not converge.
+        If a step does not converge (after cutting the step down to ``dt_min`` when
+        stepping is automatic).
     SolverError
         If a system is singular.
     ModelError
@@ -315,14 +351,13 @@ def solve_transient(
     """
     settings = problem.settings
     solver = solver or default_solver()
-    end = float(settings.end_time)
-    if not end > t0:
-        raise ModelError("the end time of a transient analysis must be after its start")
-    dt_nominal = fixed_step_size(problem)
     symmetric = problem.symmetric
     linear = problem.is_linear
 
     T, shock = initial_state(problem, T0, t0)
+    controller = StepController(settings, t0, mandatory_times(problem), first_step_size(problem, T))
+    if problem.check_dt is not None:
+        problem.check_dt(T, controller.dt)
     system = assemble(problem, T, t0)
     g = system.residual(T)
     # Loads applied to a body that is not in equilibrium with them at the start are a
@@ -336,6 +371,7 @@ def solve_transient(
         F_REF_FLOOR,
     )
     startup = shock or bool(np.linalg.norm(g[free0]) > JUMP_TOL * scale)
+
     result = TransientResult(times=[t0], T=T.copy())
     if store:
         result.temperatures.append(T.copy())
@@ -344,19 +380,10 @@ def solve_transient(
     C_const = assemble_capacitance(problem, T, t0, T, None) if linear else None
     cached: dict[str, object] = {}
 
-    t, step = t0, 0
-    span = end - t0
-    while end - t > _TIME_EPS * span:
-        dt = dt_nominal
-        if end - (t + dt) < _LAST_STEP_SLACK * dt:
-            dt = end - t  # land exactly on the end time (absorbing round-off)
-        t_new = t + dt
-        discontinuous = (step == 0 and startup) or (
-            settings.theta < 1.0 and _jumps(problem, T, t, dt, system)
-        )
-        theta = 1.0 if discontinuous else float(settings.theta)
+    def attempt(dt: float, theta: float) -> tuple:
+        """Solve one step from the current state; returns the new state and its systems."""
+        t_new = controller.t + dt
         fixed_idx, fixed_val = problem.prescribed(t_new)
-
         if linear:
             base = system if not problem.is_time_dependent else assemble(problem, T, t_new, T, dt)
             A = (C_const / dt + theta * base.tangent()).tocsr()
@@ -381,41 +408,60 @@ def solve_transient(
                 )
             step_system = StepSystem(base, C_const, T, g, dt, theta)
             residual = float(np.linalg.norm(step_system.residual(T_new)[free]))
-            iterations, converged, new_system = 1, True, base
-        else:
+            return T_new, 1, True, residual, step_system, base
 
-            def assemble_step(
-                u: ndarray, t_new: float = t_new, dt: float = dt, theta: float = theta,
-                T: ndarray = T, g: ndarray = g,
-            ) -> StepSystem:
-                base = assemble(problem, u, t_new, T, dt)
-                C = assemble_capacitance(problem, theta * u + (1.0 - theta) * T, t_new, T, dt)
-                return StepSystem(base, C, T, g, dt, theta)
+        def assemble_step(u: ndarray) -> StepSystem:
+            base = assemble(problem, u, t_new, T, dt)
+            C = assemble_capacitance(problem, theta * u + (1.0 - theta) * T, t_new, T, dt)
+            return StepSystem(base, C, T, g, dt, theta)
 
+        outcome = newton(
+            assemble_step, T, (fixed_idx, fixed_val), settings,  # type: ignore[arg-type]
+            symmetric=symmetric, solver=solver,
+        )
+        step_system = outcome.system
+        return (outcome.T, outcome.iterations, outcome.converged, outcome.residual,
+                step_system, step_system.base)  # type: ignore[union-attr]
+
+    step = 0
+    T_before: ndarray | None = None  # the solution one step before T
+    dt_before: float | None = None
+    while not controller.finished:
+        t = controller.t
+        dt = controller.propose()
+        discontinuous = (step == 0 and startup) or (
+            settings.theta < 1.0 and _jumps(problem, T, t, dt, system)
+        )
+        theta = 1.0 if discontinuous else float(settings.theta)
+        try:
+            T_new, iterations, converged, residual, step_system, new_system = attempt(dt, theta)
+        except ConvergenceError as exc:
             try:
-                outcome = newton(
-                    assemble_step, T, (fixed_idx, fixed_val), settings,  # type: ignore[arg-type]
-                    symmetric=symmetric, solver=solver,
-                )
-            except ConvergenceError as exc:
+                controller.newton_failed()
+            except ConvergenceError as final:
                 raise ConvergenceError(
-                    f"step {step + 1} (t = {t_new:g} s, dt = {dt:g} s) did not converge: {exc}"
+                    f"step {step + 1} (t = {t + dt:g} s, dt = {dt:g} s) did not converge: "
+                    f"{exc} [{final}]"
                 ) from None
-            T_new, iterations, converged = outcome.T, outcome.iterations, outcome.converged
-            residual = outcome.residual
-            step_system = outcome.system  # type: ignore[assignment]
-            new_system = step_system.base
+            result.newton_failures += 1
+            continue
+
+        error = error_estimate(T_new, T, T_before, dt, dt_before)
+        if not controller.accept(error, float(np.abs(T_new - T).max())):
+            result.rejected += 1
+            continue
 
         rate = step_system.rate(T_new)
         g_new = new_system.residual(T_new)
         step += 1
         record = StepRecord(
-            step=step, t=t_new, dt=dt, theta=theta, T=T_new, T_prev=T, iterations=iterations,
-            converged=converged, residual=residual, system=new_system, g_prev=g,
-            capacitance_rate=rate,
+            step=step, t=controller.t, dt=dt, theta=theta, T=T_new, T_prev=T,
+            iterations=iterations, converged=converged, residual=residual, system=new_system,
+            g_prev=g, capacitance_rate=rate,
         )
-        T, g, system, t = T_new, g_new, new_system, t_new
-        result.times.append(t)
+        T_before, dt_before = T, dt
+        T, g, system = T_new, g_new, new_system
+        result.times.append(controller.t)
         result.iterations.append(iterations)
         result.thetas.append(theta)
         result.T = T
@@ -423,10 +469,10 @@ def solve_transient(
             result.temperatures.append(T.copy())
         log.info(
             "step %d: t = %.6g s, dt = %.3g s, theta = %g, %d iteration(s), residual %.2e W",
-            step, t, dt, theta, iterations, residual,
+            step, controller.t, dt, theta, iterations, residual,
         )
         if on_step is not None and on_step(record) is False:
             result.cancelled = True
-            log.info("transient run cancelled at t = %.6g s", t)
+            log.info("transient run cancelled at t = %.6g s", controller.t)
             break
     return result

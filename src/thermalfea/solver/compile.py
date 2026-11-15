@@ -16,7 +16,10 @@ from ..core.mesh import Mesh
 from ..model.bcs import BoundaryCondition
 from ..model.model import Model
 from ..model.selections import Selection, StaleSelectionError, resolve
-from ..physics import builtin  # noqa: F401  (registers the built-in term factories)
+from ..physics import (
+    builtin,  # noqa: F401  (registers the built-in term factories)
+    timescales,
+)
 from ..physics.capacitance import CapacitanceTerm
 from ..physics.conduction import ConductionTerm
 from .dofs import DofMap
@@ -144,9 +147,14 @@ def compile(  # noqa: A001
     _setup(problem, conduction)
     problem.terms.append(conduction)
     if model.solution.kind == "transient":
-        thermal_mass = CapacitanceTerm(lumped=model.solution.lumped_capacitance)
+        lumped = model.solution.lumped_capacitance
+        thermal_mass = CapacitanceTerm(lumped=lumped)
         _setup(problem, thermal_mass)
         problem.terms.append(thermal_mass)
+        problem.suggest_dt = lambda T: timescales.suggested_dt(problem, T)
+        problem.check_dt = lambda T, dt: timescales.warn_if_oscillation_likely(
+            problem, T, dt, lumped
+        )
     for bc in model.bcs:
         attach(problem, bc)
     log.debug(

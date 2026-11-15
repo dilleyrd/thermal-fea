@@ -193,7 +193,7 @@ through `DofMap`, and every physics contribution is a `Term` (Data §13).
   implementing Theory §6 (residual, tangent, stored g_n, θ = 1 on discontinuity steps,
   factorisation reuse in the linear constant-Δt case).
   Accept: V-16 and V-21.
-- [ ] **M4.3 [B] Automatic time stepping.** `solver/timestep.py: StepController`
+- [x] **M4.3 [B] Automatic time stepping.** `solver/timestep.py: StepController`
   (Theory §6.1): error estimate, accept/reject, growth limits, Newton-failure cutback,
   mandatory times (outputs, table breakpoints, end time), `max_dT_per_step`, the Δt₀
   suggestion and the oscillation warning.

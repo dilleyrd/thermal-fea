@@ -196,6 +196,27 @@ returns a `TransientResult`; `on_step(record)` receives a `StepRecord` per accep
 and may return `False` to cancel. A fixed-step run takes its step from
 `solution.initial_dt`.
 
+## Q15 — details of the step controller that Theory §6.1 leaves open — raised in M4.3
+
+1. **First step.** There is no predictor, so no error test; the step size is kept for the
+   second step (factor 1).
+2. **Error rejection at Δt_min.** Theory raises only for a Newton failure below Δt_min.
+   When the error test fails but the step is already at Δt_min, the step is accepted with
+   a logged warning rather than looping.
+3. **After a step shortened for a mandatory time**, the next step returns to the size the
+   controller wanted before shortening (if the shortened step was accurate), instead of
+   growing back from the short step.
+4. **`max_dT_per_step`.** A step whose largest nodal change exceeds the limit is rejected
+   and redone with Δt · 0.9 · limit / change (at most Δt / 2); after an accepted step the
+   next Δt is capped at Δt · limit / change.
+5. **Fixed stepping** (`auto_timestep = False`) also lands on the mandatory times; it does
+   no error control, and a Newton failure raises at once.
+6. **Mandatory times:** table breakpoints of every term and constraint, the output times
+   when `output == "times"`, and the end time.
+7. **Suggested Δt₀ and the oscillation test** use the shortest corner-to-corner element
+   edge for h, the larger principal conductivity for k, and properties at the initial
+   temperature. The oscillation warning is checked once, for the first step.
+
 ## Q13 — choices made in the verification examples — raised in M3.G
 
 - **Nodes at check points.** V-09 and V-10 check the temperature at given points. Point
