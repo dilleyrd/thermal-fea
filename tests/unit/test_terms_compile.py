@@ -364,9 +364,3 @@ def test_compile_errors() -> None:
     model.regions[0].selection = "nope"
     with pytest.raises(ModelError, match="unknown selection 'nope'"):
         compile_problem(model, built, mesh)
-
-    model, built, mesh = plate_model()
-    model.materials["Silicon"] = Material("Silicon", 1.0, 1.0, 1.0, k2=2.0)
-    with pytest.raises(ModelError, match="orthotropic"):
-        problem = compile_problem(model, built, mesh)
-        problem.terms[0].conductance(state(problem), Assembler(problem.dofs.n_dofs))

@@ -163,7 +163,7 @@ through `DofMap`, and every physics contribution is a `Term` (Data §13).
 - [x] **M3.4 [A] Prescribed temperatures.** Collect nodes of `FixedTemperature` selections
   (curves and points) and evaluate `T(t, x, y)`; conflicting values at a shared node →
   the later BC in the list wins, with a logged warning.
-- [ ] **M3.5 [B] Temperature-dependent properties.** Evaluate k, k2, ρ, c at integration
+- [x] **M3.5 [B] Temperature-dependent properties.** Evaluate k, k2, ρ, c at integration
   points from N·T_e; build D (Theory §2, orthotropic rotation).
   Accept: V-12 matrix check — constant D rotated by 90° swaps the roles of k1 and k2.
 - [ ] **M3.6 [B] Radiation to ambient.** `physics/radiation_ambient.py` residual and
