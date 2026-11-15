@@ -9,6 +9,8 @@ from collections.abc import Callable, Sequence
 from pathlib import Path
 from typing import Literal
 
+from matplotlib.figure import Figure
+
 from .core.errors import ModelError
 from .core.mesh import Mesh
 from .geometry import builder
@@ -20,6 +22,7 @@ from .model.model import Model, RegionAssignment
 from .model.selections import Fingerprint, Selection, refresh
 from .model.serialize import from_json, to_json
 from .model.validate import raise_if_errors, validate
+from .post import plots
 from .post.results import Results
 from .solver.compile import compile as compile_problem
 from .solver.run import StepInfo, run_steady, run_transient
@@ -469,3 +472,31 @@ def solve(
     else:
         run_transient(problem, path, progress)
     return Results(path)
+
+
+def plot_contour(
+    results: Results,
+    step: int = -1,
+    field: str = "T",
+    path: str | Path | None = None,
+    **options: object,
+) -> Figure:
+    """Contour plot of a field; see :func:`thermalfea.post.plots.contour` for the options.
+
+    Parameters
+    ----------
+    results : Results
+    step : int
+        Stored step; negative counts from the end.
+    field : str
+        ``T``, ``qx``, ``qy``, ``qmag``, ``gradx``, ``grady`` or ``gradmag``.
+    path : str or Path, optional
+        Save the figure here.
+    **options
+        ``levels``, ``vmin``, ``vmax``, ``smooth``, ``show_mesh``, ``ax``.
+
+    Returns
+    -------
+    matplotlib.figure.Figure
+    """
+    return plots.contour(results, step, field, path=path, **options)  # type: ignore[arg-type]

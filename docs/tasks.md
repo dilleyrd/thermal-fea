@@ -212,7 +212,7 @@ through `DofMap`, and every physics contribution is a `Term` (Data §13).
 All plotting functions take a `Results`, return a Matplotlib `Figure`, optionally save to
 `path`, and take `ax=None` so the GUI can draw into its own axes.
 
-- [ ] **M5.1 [B] Contour plot.** `post/plots.py: contour(results, step, field, levels=12,
+- [x] **M5.1 [B] Contour plot.** `post/plots.py: contour(results, step, field, levels=12,
   vmin=None, vmax=None, smooth=False, show_mesh=False, ax=None)`. Fields: `T`, `qx`, `qy`,
   `qmag`, `gradx`, `grady`, `gradmag`. Build a display triangulation once per mesh
   (T3 as is; Q4 → 2; T6 → 4; Q8 → 6 triangles using mid-side nodes). Flux fields are drawn
