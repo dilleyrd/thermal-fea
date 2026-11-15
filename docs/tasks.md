@@ -224,7 +224,7 @@ All plotting functions take a `Results`, return a Matplotlib `Figure`, optionall
 - [x] **M5.2 [A] Vector plot.** `vectors(results, step, density=30, scale=None, ax=None)`:
   heat-flux arrows at element centroids, thinned to about `density` arrows across the
   larger model dimension, coloured by magnitude.
-- [ ] **M5.3 [A] History plots.** `history(results, points=[(x, y), …] | nodes=[…])`
+- [x] **M5.3 [A] History plots.** `history(results, points=[(x, y), …] | nodes=[…])`
   (nearest node); `history_stat(results, selection, stat="min|max|mean")`;
   `heat_flow_history(results, bc_names)`.
 - [ ] **M5.4 [B] Path plots.** `post/path.py: sample(results, step, polyline, n=200) ->

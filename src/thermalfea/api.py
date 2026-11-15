@@ -525,3 +525,33 @@ def plot_vectors(
     matplotlib.figure.Figure
     """
     return plots.vectors(results, step, path=path, **options)  # type: ignore[arg-type]
+
+
+def plot_history(
+    results: Results,
+    points: Sequence[tuple[float, float]] | None = None,
+    nodes: Sequence[int] | None = None,
+    path: str | Path | None = None,
+    **options: object,
+) -> Figure:
+    """Temperature history at some nodes; see :func:`thermalfea.post.plots.history`.
+
+    Parameters
+    ----------
+    results : Results
+    points : sequence of (x, y), optional
+        Positions [m], each plotted at its nearest node.
+    nodes : sequence of int, optional
+        Node indices. Give exactly one of ``points`` and ``nodes``.
+    path : str or Path, optional
+        Save the figure here.
+    **options
+        ``ax``.
+
+    Returns
+    -------
+    matplotlib.figure.Figure
+    """
+    return plots.history(  # type: ignore[arg-type]
+        results, points=points, nodes=nodes, path=path, **options
+    )

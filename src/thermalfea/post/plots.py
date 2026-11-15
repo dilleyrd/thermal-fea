@@ -11,6 +11,7 @@ arrays to be drawn (triangulation, values in display units, extrema, labels), an
 from __future__ import annotations
 
 import logging
+from collections.abc import Callable, Sequence
 from dataclasses import dataclass, field
 from pathlib import Path
 
@@ -23,6 +24,7 @@ from matplotlib.colors import Normalize
 from matplotlib.figure import Figure
 from matplotlib.tri import Triangulation
 from numpy import ndarray
+from scipy.spatial import cKDTree
 
 from ..core.errors import ModelError
 from ..core.mesh import Mesh
@@ -204,6 +206,13 @@ def _unit_settings(results: Results) -> UnitSettings:
     return model.display_units if model is not None else UnitSettings()
 
 
+def _display_temperature(results: Results, kelvin: ndarray) -> tuple[ndarray, str]:
+    """Temperatures [K] converted to the model's display unit, and that unit's label."""
+    units = _unit_settings(results)
+    values = np.asarray(from_si(np.asarray(kelvin, dtype=float), "temperature", units), float)
+    return values, _TEMPERATURE_LABEL[units.temperature]
+
+
 def contour_data(results: Results, step: int = -1, field: str = "T") -> ContourData:
     """Gather the arrays of a contour plot.
 
@@ -242,11 +251,8 @@ def contour_data(results: Results, step: int = -1, field: str = "T") -> ContourD
     time = float(times[step])
 
     if source == "T":
-        T = from_si(np.asarray(results.temperature(step), dtype=float), "temperature", units)
-        groups: list[tuple[int | None, ndarray, ndarray]] = [
-            (None, np.arange(mesh.n_nodes), np.asarray(T))
-        ]
-        unit = _TEMPERATURE_LABEL[units.temperature]
+        T, unit = _display_temperature(results, results.temperature(step))
+        groups: list[tuple[int | None, ndarray, ndarray]] = [(None, np.arange(mesh.n_nodes), T)]
     else:
         raw = results.flux(step) if source == "flux" else results.gradient(step)
         groups = []
@@ -566,3 +572,302 @@ def vectors(
     _frame(fig, ax, arrows, "Heat flux [W/m²]", data.title)
     _save(fig, path, "vector plot")
     return fig
+
+
+# ------------------------------------------------------------------------------- history
+
+#: Statistics of the temperature over a node set, by name.
+STATS: dict[str, Callable[..., ndarray]] = {"min": np.min, "max": np.max, "mean": np.mean}
+
+#: Histories with fewer steps than this are drawn with a marker at every step.
+_MARKER_LIMIT = 50
+
+
+@dataclass
+class HistoryData:
+    """Line-chart data of a history plot.
+
+    Attributes
+    ----------
+    times : ndarray, shape (n_steps,)
+        Time of every stored step [s].
+    series : dict of str to ndarray
+        Label -> values, each of shape (n_steps,), in the units of ``ylabel``.
+    ylabel : str
+        Vertical axis label, e.g. ``"Temperature [K]"``.
+    title : str
+        Plot title.
+    """
+
+    times: ndarray
+    series: dict[str, ndarray]
+    ylabel: str
+    title: str
+
+
+def _points_array(points: Sequence[tuple[float, float]]) -> ndarray:
+    """Points as an ``(n, 2)`` float array; anything else is a :class:`ModelError`."""
+    try:
+        xy = np.asarray(points, dtype=float)
+    except (TypeError, ValueError):
+        raise ModelError("points must be (x, y) pairs") from None
+    if xy.ndim != 2 or xy.shape[1] != 2 or xy.shape[0] == 0:
+        raise ModelError("points must be a non-empty sequence of (x, y) pairs")
+    return xy
+
+
+def nearest_nodes(mesh: Mesh, points: Sequence[tuple[float, float]]) -> ndarray:
+    """Index of the mesh node nearest to each point.
+
+    Parameters
+    ----------
+    mesh : Mesh
+    points : sequence of (x, y)
+        Positions [m].
+
+    Returns
+    -------
+    ndarray of int, shape (n,)
+    """
+    _, index = cKDTree(mesh.nodes[:, :2]).query(_points_array(points))
+    return np.asarray(index, dtype=int)
+
+
+def _selected_temperatures(results: Results, nodes: ndarray) -> ndarray:
+    """Temperatures [K] of some nodes at every stored step, shape (n_steps, len(nodes))."""
+    rows = [results.temperature(step)[nodes] for step in range(results.n_steps)]
+    return np.asarray(rows, dtype=float).reshape(len(rows), nodes.size)
+
+
+def history_data(
+    results: Results,
+    points: Sequence[tuple[float, float]] | None = None,
+    nodes: Sequence[int] | None = None,
+) -> HistoryData:
+    """Gather the temperature history of some nodes.
+
+    Parameters
+    ----------
+    results : Results
+    points : sequence of (x, y), optional
+        Positions [m]; each is replaced by its nearest mesh node.
+    nodes : sequence of int, optional
+        Node indices.
+
+    Returns
+    -------
+    HistoryData
+        One series per node, labelled with the node's coordinates, in the model's display
+        unit (K when the results have no model).
+
+    Raises
+    ------
+    ModelError
+        If exactly one of ``points`` and ``nodes`` is not given, or a node index is out of
+        range.
+    """
+    if (points is None) == (nodes is None):
+        raise ModelError("history: give exactly one of points= and nodes=")
+    mesh = results.mesh
+    if points is not None:
+        index = nearest_nodes(mesh, points)
+    else:
+        raw = np.asarray(nodes)
+        if raw.size == 0 or not np.issubdtype(raw.dtype, np.integer):
+            raise ModelError("nodes must be a non-empty sequence of node indices")
+        index = raw.reshape(-1).astype(int)
+    if index.min() < 0 or index.max() >= mesh.n_nodes:
+        raise ModelError(f"node index out of range; the mesh has {mesh.n_nodes} nodes")
+    values, unit = _display_temperature(results, _selected_temperatures(results, index))
+    xy = mesh.nodes[index, :2]
+    series = {
+        f"node {int(node)} ({x:g}, {y:g})": values[:, k].copy()
+        for k, (node, (x, y)) in enumerate(zip(index, xy.tolist(), strict=True))
+    }
+    return HistoryData(
+        times=np.asarray(results.times, dtype=float),
+        series=series,
+        ylabel=f"Temperature [{unit}]",
+        title="Temperature history",
+    )
+
+
+def history_stat_data(results: Results, selection: str, stat: str = "mean") -> HistoryData:
+    """Gather the minimum, maximum or mean temperature over a node set, at every step.
+
+    Parameters
+    ----------
+    results : Results
+    selection : str
+        Name of a node set in ``results.mesh.node_sets``.
+    stat : {"min", "max", "mean"}
+
+    Returns
+    -------
+    HistoryData
+        One series, labelled e.g. ``"mean of corner"``, in the model's display unit.
+
+    Raises
+    ------
+    ModelError
+        For an unknown statistic, an unknown or empty node set.
+    """
+    if stat not in STATS:
+        raise ModelError(f"unknown statistic {stat!r}; choose from {', '.join(STATS)}")
+    node_sets = results.mesh.node_sets
+    if selection not in node_sets:
+        raise ModelError(
+            f"unknown node set {selection!r} (available: {', '.join(node_sets) or 'none'})"
+        )
+    index = np.asarray(node_sets[selection], dtype=int).reshape(-1)
+    if index.size == 0:
+        raise ModelError(f"node set {selection!r} has no nodes")
+    values, unit = _display_temperature(results, _selected_temperatures(results, index))
+    return HistoryData(
+        times=np.asarray(results.times, dtype=float),
+        series={f"{stat} of {selection}": STATS[stat](values, axis=1)},
+        ylabel=f"Temperature [{unit}]",
+        title=f"{stat} temperature over {selection}",
+    )
+
+
+def heat_flow_history_data(results: Results, bc_names: Sequence[str] | None = None) -> HistoryData:
+    """Gather the heat flow through boundary conditions, at every step.
+
+    Parameters
+    ----------
+    results : Results
+    bc_names : sequence of str, optional
+        Boundary-condition names; default all of ``results.heat_flow_names``.
+
+    Returns
+    -------
+    HistoryData
+        One series per name, in watts, positive when heat enters the body.
+
+    Raises
+    ------
+    ModelError
+        For an unknown name (see :meth:`Results.heat_flow`) or when there is none to show.
+    """
+    names = results.heat_flow_names if bc_names is None else list(bc_names)
+    if not names:
+        raise ModelError("the results store no heat flow to plot")
+    return HistoryData(
+        times=np.asarray(results.times, dtype=float),
+        series={name: np.asarray(results.heat_flow(name), dtype=float) for name in names},
+        ylabel="Heat flow into the body [W]",
+        title="Heat flow through boundary conditions",
+    )
+
+
+def _draw_history(data: HistoryData, ax: Axes | None, path: str | Path | None, what: str) -> Figure:
+    """Draw one line per series, with a legend, grid and labelled axes."""
+    fig, ax = _figure(ax)
+    marker = "o" if data.times.size < _MARKER_LIMIT else None
+    for label, values in data.series.items():
+        ax.plot(data.times, values, marker=marker, ms=3.5, label=label)
+    ax.set_xlabel("Time [s]")
+    ax.set_ylabel(data.ylabel)
+    ax.set_title(data.title)
+    ax.grid(True)
+    ax.legend()
+    _save(fig, path, what)
+    return fig
+
+
+def history(
+    results: Results,
+    points: Sequence[tuple[float, float]] | None = None,
+    nodes: Sequence[int] | None = None,
+    ax: Axes | None = None,
+    path: str | Path | None = None,
+) -> Figure:
+    """Temperature against time at some nodes.
+
+    Parameters
+    ----------
+    results : Results
+    points : sequence of (x, y), optional
+        Positions [m]; each is plotted at its nearest mesh node.
+    nodes : sequence of int, optional
+        Node indices. Give exactly one of ``points`` and ``nodes``.
+    ax : Axes, optional
+        Draw into these axes; otherwise a new figure is made.
+    path : str or Path, optional
+        Also save the figure here (PNG, 200 dpi).
+
+    Returns
+    -------
+    matplotlib.figure.Figure
+
+    Raises
+    ------
+    ModelError
+        See :func:`history_data`.
+    """
+    return _draw_history(history_data(results, points, nodes), ax, path, "history plot")
+
+
+def history_stat(
+    results: Results,
+    selection: str,
+    stat: str = "mean",
+    ax: Axes | None = None,
+    path: str | Path | None = None,
+) -> Figure:
+    """Minimum, maximum or mean temperature over a node set, against time.
+
+    Parameters
+    ----------
+    results : Results
+    selection : str
+        Name of a node set of the mesh.
+    stat : {"min", "max", "mean"}
+    ax : Axes, optional
+        Draw into these axes; otherwise a new figure is made.
+    path : str or Path, optional
+        Also save the figure here (PNG, 200 dpi).
+
+    Returns
+    -------
+    matplotlib.figure.Figure
+
+    Raises
+    ------
+    ModelError
+        See :func:`history_stat_data`.
+    """
+    data = history_stat_data(results, selection, stat)
+    return _draw_history(data, ax, path, "history statistic plot")
+
+
+def heat_flow_history(
+    results: Results,
+    bc_names: Sequence[str] | None = None,
+    ax: Axes | None = None,
+    path: str | Path | None = None,
+) -> Figure:
+    """Heat flow into the body through boundary conditions, against time.
+
+    Parameters
+    ----------
+    results : Results
+    bc_names : sequence of str, optional
+        Boundary conditions to plot; default all of them.
+    ax : Axes, optional
+        Draw into these axes; otherwise a new figure is made.
+    path : str or Path, optional
+        Also save the figure here (PNG, 200 dpi).
+
+    Returns
+    -------
+    matplotlib.figure.Figure
+
+    Raises
+    ------
+    ModelError
+        See :func:`heat_flow_history_data`.
+    """
+    data = heat_flow_history_data(results, bc_names)
+    return _draw_history(data, ax, path, "heat flow plot")
