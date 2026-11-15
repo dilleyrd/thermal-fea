@@ -179,7 +179,7 @@ through `DofMap`, and every physics contribution is a `Term` (Data §13).
   dict[region, (node_idx, q (n, 2))]`, `element_flux`, `gradient` (Theory §7).
 - [x] **M3.10 [B] Reactions and energy balance.** `post/reactions.py`, `post/energy.py`
   (Theory §4, §7): heat flow per BC and the balance table.
-- [ ] **M3.11 [B] Results file, steady.** `solver/results_writer.py` and
+- [x] **M3.11 [B] Results file, steady.** `solver/results_writer.py` and
   `post/results.py` (Data §9) for a single step; `api.solve` for steady models.
 - [ ] **M3.G [C] Gate.** V-01 … V-14, V-32, V-33, V-34 (steady part).
 

@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import logging
+import tempfile
 from collections.abc import Callable, Sequence
 from pathlib import Path
 from typing import Literal
@@ -18,6 +19,10 @@ from .model import geometry_ops as ops
 from .model.model import Model, RegionAssignment
 from .model.selections import Fingerprint, Selection, refresh
 from .model.serialize import from_json, to_json
+from .model.validate import raise_if_errors, validate
+from .post.results import Results
+from .solver.compile import compile as compile_problem
+from .solver.run import StepInfo, run_steady
 
 log = logging.getLogger(__name__)
 
@@ -404,3 +409,62 @@ def assign_region(
     region = RegionAssignment(selection, material, float(thickness), float(material_angle))
     model.regions = [r for r in model.regions if r.selection != selection] + [region]
     return region
+
+
+# ------------------------------------------------------------------------------- solve
+
+
+def results_path(model_path: str | Path) -> Path:
+    """Path of the results file stored beside a model file: ``<model>.tfea.h5``."""
+    model_path = Path(model_path)
+    return model_path.with_name(model_path.name + ".h5")
+
+
+def solve(
+    model: Model,
+    mesh: Mesh,
+    progress: Callable[[StepInfo], bool] | None = None,
+    *,
+    built: BuiltGeometry | None = None,
+    path: str | Path | None = None,
+) -> Results:
+    """Solve a model on a mesh and return its results.
+
+    Parameters
+    ----------
+    model : Model
+    mesh : Mesh
+        The mesh from :func:`mesh`.
+    progress : callable, optional
+        ``progress(info: StepInfo) -> bool``, called after each step; returning ``False``
+        cancels the solve cleanly (the results stored so far remain valid).
+    built : BuiltGeometry, keyword-only, optional
+        The build the mesh was made from. When given, the model is validated first and
+        its selections are resolved against it. Without it the selections' stored tags
+        are used, which are current after :func:`build`.
+    path : str or Path, keyword-only, optional
+        Results file to write. By default a file named after the model in the system's
+        temporary folder; use :func:`results_path` to store it beside a model file.
+
+    Returns
+    -------
+    Results
+
+    Raises
+    ------
+    ModelError
+        If validation finds errors.
+    ConvergenceError, SolverError
+        If the solution fails.
+    """
+    if built is not None:
+        raise_if_errors(validate(model, built, mesh))
+    problem = compile_problem(model, built, mesh)
+    if path is None:
+        folder = Path(tempfile.mkdtemp(prefix="thermalfea-"))
+        safe = "".join(c if c.isalnum() or c in "-_ " else "_" for c in model.name) or "model"
+        path = folder / f"{safe}.tfea.h5"
+    if model.solution.kind != "steady":
+        raise ModelError("transient analysis is not available yet")
+    run_steady(problem, path, progress)
+    return Results(path)

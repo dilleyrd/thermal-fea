@@ -32,14 +32,16 @@ def selection_tags(problem: CompiledProblem, name: str, dims: tuple[int, ...]) -
     return problem.selection_tags(name, dims)
 
 
-def _resolve(selection: Selection, built: BuiltGeometry) -> list[int]:
+def _resolve(selection: Selection, built: BuiltGeometry | None) -> list[int]:
+    if built is None:  # trust the tags that api.build refreshed
+        return list(selection.tags)
     try:
         return resolve(selection, built)
     except StaleSelectionError as exc:
         raise ModelError(str(exc)) from None
 
 
-def _regions(model: Model, built: BuiltGeometry, mesh: Mesh) -> dict[int, RegionData]:
+def _regions(model: Model, built: BuiltGeometry | None, mesh: Mesh) -> dict[int, RegionData]:
     regions: dict[int, RegionData] = {}
     for assignment in model.regions:
         selection = model.selections.get(assignment.selection)
@@ -102,14 +104,18 @@ def attach(problem: CompiledProblem, bc: BoundaryCondition) -> None:
             target.append(item)
 
 
-def compile(model: Model, built: BuiltGeometry, mesh: Mesh) -> CompiledProblem:  # noqa: A001
+def compile(  # noqa: A001
+    model: Model, built: BuiltGeometry | None, mesh: Mesh
+) -> CompiledProblem:
     """Compile a model into the list of terms the drivers solve.
 
     Parameters
     ----------
     model : Model
-    built : BuiltGeometry
-        The build of ``model`` that ``mesh`` was generated from.
+    built : BuiltGeometry or None
+        The build of ``model`` that ``mesh`` was generated from. With ``None`` the tags
+        stored in the model's selections are used as they are; they are current after
+        :func:`thermalfea.api.build`.
     mesh : Mesh
 
     Returns

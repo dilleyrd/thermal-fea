@@ -155,6 +155,25 @@ the sign of the boundary-set formulas is reversed. A fixed-temperature set repor
 +Σ R_p. If §7's positive-out convention is wanted for boundary sets, it is one sign in
 `heat_flows`.
 
+## Q12 — `api.solve` and the results file (Data §9, §11) — raised in M3.11
+
+1. **`api.solve(model, mesh)` has no built geometry**, but selections are resolved against
+   one. **Done for now:** `solve` takes an optional keyword `built=`. With it, the model is
+   validated first and selections are resolved by fingerprint. Without it, the tags stored
+   in the selections are used as they are; `api.build` refreshes them, so the Data §11
+   script works. A model whose geometry was edited without rebuilding would then use old
+   tags unnoticed — pass `built=` to be safe.
+2. **Where the results go.** A `Model` does not know its file name, so "beside the model"
+   cannot be the default. **Done for now:** `solve(..., path=…)`; by default a file named
+   after the model in the system temporary folder. `api.results_path(model_path)` gives
+   `<model>.tfea.h5`.
+3. **Additions to the file layout**, needed to read results without gmsh: `/meta` also
+   holds `regions` (region id → material, thickness, angle) so that flux can be recovered;
+   `/mesh` also holds `axisymmetric`, `point_nodes` and `node_sets`; `/reactions/<i>` is
+   keyed by index with the BC name in an attribute (names may contain `/`).
+4. **Energy columns** of `/steps/energy`: `heat_in, heat_out, net, stored_rate, imbalance,
+   relative_imbalance`.
+
 Also: total loads (`HeatPower`, `HeatFlow`) and `FixedTemperature` refuse a function that
 depends on T (a total, or a prescribed value, as a function of the local temperature has
 no defined meaning); the error message says what to use instead.

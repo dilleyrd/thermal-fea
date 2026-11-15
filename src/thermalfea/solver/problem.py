@@ -117,10 +117,15 @@ class CompiledProblem:
             if selection is None:
                 raise ModelError(f"unknown selection {name!r}")
             dim = selection.dim
-            try:
-                tags = resolve(selection, self.built)
-            except StaleSelectionError as exc:
-                raise ModelError(str(exc)) from None
+            if self.built is None:
+                # no built geometry at hand: trust the tags stored in the selection,
+                # which api.build refreshes on every build
+                tags = list(selection.tags)
+            else:
+                try:
+                    tags = resolve(selection, self.built)
+                except StaleSelectionError as exc:
+                    raise ModelError(str(exc)) from None
         if dim not in dims:
             raise ModelError(
                 f"selection {name!r} has dimension {dim}, but dimension "
