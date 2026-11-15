@@ -242,6 +242,9 @@ class Stream:
     nu_option : {"auto", "dittus_boelter"}
     h_multiplier : float
         Factor applied to the computed heat-transfer coefficient.
+    h_override : Function, optional
+        Heat-transfer coefficient [W/(m^2 K)] used instead of the duct correlation; a
+        function of time only.
     """
 
     name: str
@@ -258,6 +261,7 @@ class Stream:
     n_cells: int | None = None
     nu_option: Literal["auto", "dittus_boelter"] = "auto"
     h_multiplier: float = 1.0
+    h_override: Function | None = None
 
     def __post_init__(self) -> None:
         _choice(self.mode, ("in_plane", "through_plane"), "stream mode")

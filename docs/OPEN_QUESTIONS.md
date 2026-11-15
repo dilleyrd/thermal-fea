@@ -281,6 +281,34 @@ and may return `False` to cancel. A fixed-step run takes its step from
 9. **Ideal-gas β** is 1/T at the film temperature as given, even beyond the property table;
    the other properties are held at the table's end values, with one warning per fluid.
 
+## Q18 — in-plane streams (Theory §9.1, Data §8) — raised in M7.1
+
+1. **"Constant h override" (V-27).** The `Stream` class has no field for a given
+   heat-transfer coefficient. **Done for now:** one optional field
+   `h_override: Function | None = None` (a function of time only) was added. With it, and
+   the single c_p below, the stream's rows are linear and a problem with such streams
+   solves in one step.
+2. **Which c_p.** Theory §9.1 names the temperature for the properties behind h (the
+   cell's upstream fluid node) but not for the c_p in NTU = G / (ṁ c_p). **Done for now:**
+   one c_p per stream, at its inlet temperature. V-27 ("the scheme is exact here", 1e-6
+   for 1 and 20 cells) and V-29 (ṁ c_p (T_in − T_out) with a single c_p) only hold with a
+   c_p that is the same in every cell. **To confirm.**
+3. **Default cells.** "One per wall edge along the path": wall edges whose midpoints
+   project to the same path coordinate (the two sides of a channel) share a cell; cell
+   boundaries lie half-way between neighbouring edge midpoints.
+4. **Edge midpoint** is the length-weighted mean of the edge's points; its path
+   coordinate is that of the nearest point of the path polyline.
+5. **Flow direction.** The mass flow must be positive; flow the other way needs the path
+   reversed. Reverse flow from a network is not handled yet (M7.3 / M7.4).
+6. **Wall condition for the laminar Nusselt number** is the constant-wall-temperature
+   value (the stated default); the "wall hotter than fluid" flag of Dittus–Boelter is
+   taken from the mean wall and mean fluid temperature of the stream.
+7. **Assembly.** Theory suggests building a dense matrix per cell and scattering it. The
+   same matrix is built with sparse products over all cells at once (no Python loop over
+   cells); a test checks it against the scattered dense cell matrices.
+8. Fluid DOFs are an extra group of the DOF map named `stream:<name>`; the inlet node is
+   prescribed through a constraint, like a fixed temperature.
+
 ## Q13 — choices made in the verification examples — raised in M3.G
 
 - **Nodes at check points.** V-09 and V-10 check the temperature at given points. Point

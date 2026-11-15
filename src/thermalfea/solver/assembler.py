@@ -70,6 +70,26 @@ class Assembler:
         self._cols.append(np.broadcast_to(columns[..., None, :], Ke.shape).ravel())
         self._vals.append(Ke.ravel())
 
+    def add_sparse(self, matrix: csr_matrix) -> None:
+        """Add a whole sparse matrix of the size of the global system.
+
+        Used by terms whose contribution is naturally built with sparse products (for
+        example the stream coupling) rather than from element matrices.
+
+        Parameters
+        ----------
+        matrix : scipy.sparse matrix, shape (n_dofs, n_dofs)
+        """
+        if matrix.shape != (self.n_dofs, self.n_dofs):
+            raise SolverError(
+                f"assembly: sparse matrix of shape {matrix.shape} does not match the "
+                f"system size {self.n_dofs}"
+            )
+        coo = matrix.tocoo()
+        self._rows.append(coo.row.astype(np.int64))
+        self._cols.append(coo.col.astype(np.int64))
+        self._vals.append(coo.data.astype(float))
+
     def add_vector(self, conn: ndarray, fe: ndarray) -> None:
         """Add a batch of element vectors.
 

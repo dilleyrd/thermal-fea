@@ -264,7 +264,7 @@ All plotting functions take a `Results`, return a Matplotlib `Figure`, optionall
 
 ## M7 — Flow solver
 
-- [ ] **M7.1 [C] In-plane stream.** `flow/stream.py`: build cells along the path, assign
+- [x] **M7.1 [C] In-plane stream.** `flow/stream.py`: build cells along the path, assign
   wall edges to cells, create fluid DOFs in the `DofMap`, and assemble the cell matrices of
   Theory §9.1 (inlet node prescribed to `T_inlet`).
   Accept: V-27, V-28; the cell matrix times a uniform temperature vector is zero.

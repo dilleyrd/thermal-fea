@@ -13,7 +13,7 @@ from typing import TYPE_CHECKING
 from ..core import registry
 from ..core.errors import ModelError
 from ..core.mesh import Mesh
-from ..model.bcs import BoundaryCondition
+from ..model.bcs import BoundaryCondition, Stream
 from ..model.model import Model
 from ..model.selections import Selection, StaleSelectionError, resolve
 from ..physics import (
@@ -108,6 +108,27 @@ def attach(problem: CompiledProblem, bc: BoundaryCondition) -> None:
             target.append(item)
 
 
+def attach_stream(problem: CompiledProblem, stream: Stream) -> None:
+    """Add the terms and constraints of one stream to a problem.
+
+    An in-plane stream brings its own fluid DOFs (an extra group of the DOF map), a
+    coupling term and the constraint that prescribes its inlet temperature.
+
+    Parameters
+    ----------
+    problem : CompiledProblem
+        Compiled from a model, or assembled by hand with ``named_entities``.
+    stream : Stream
+    """
+    from ..flow.stream import stream_items  # imported here: flow builds on the solver
+
+    terms, constraints = stream_items(stream)
+    for target, items in ((problem.terms, terms), (problem.constraints, constraints)):
+        for item in items:
+            _setup(problem, item)
+            target.append(item)
+
+
 def compile(  # noqa: A001
     model: Model, built: BuiltGeometry | None, mesh: Mesh
 ) -> CompiledProblem:
@@ -157,6 +178,8 @@ def compile(  # noqa: A001
         )
     for bc in model.bcs:
         attach(problem, bc)
+    for stream in model.streams:
+        attach_stream(problem, stream)
     log.debug(
         "compiled %d term(s), %d constraint(s); linear=%s",
         len(problem.terms), len(problem.constraints), problem.is_linear,
