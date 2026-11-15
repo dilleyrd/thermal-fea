@@ -169,7 +169,7 @@ through `DofMap`, and every physics contribution is a `Term` (Data §13).
 - [x] **M3.6 [B] Radiation to ambient.** `physics/radiation_ambient.py` residual and
   tangent (Theory §5).
   Accept: tangent matches a finite-difference derivative of the residual to 1e-5 relative.
-- [ ] **M3.7 [C] Nonlinear steady driver.** `solver/nonlinear.py: newton(assemble_fn, T0,
+- [x] **M3.7 [C] Nonlinear steady driver.** `solver/nonlinear.py: newton(assemble_fn, T0,
   fixed, settings) -> NewtonResult` implementing Theory §5 steps 1–6 exactly;
   `solver/steady.py: solve_steady(problem) -> T`. Linear problems: one solve, no iteration.
   Log one line per iteration (residual, max ΔT, line-search factor).

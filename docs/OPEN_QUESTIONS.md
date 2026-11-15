@@ -122,6 +122,25 @@ exact CODATA 2018 value. It differs from 5.67e-8 by 6.6e-5 relative, far inside 
 0.1 K tolerance of V-14. Verification tests that compute an analytic answer import the
 same constant. If the benchmark value 5.67e-8 should be used instead, change that one line.
 
+## Q10 — details of the steady driver that Theory §5 leaves open — raised in M3.7
+
+1. **Starting temperature of the nonlinear iteration.** Not specified. **Done for now:**
+   uniform, equal to the mean of the prescribed temperatures; if there are none, the
+   model's uniform initial condition; failing that 293.15 K. `steady_solution(problem, T0=…)`
+   accepts an explicit start.
+2. **Time at which a steady analysis evaluates time-dependent loads.** Not specified.
+   **Done for now:** t = 0.
+3. **Norms in F_ref = max(‖F‖₂, ‖K T‖₂, 1e-12).** Taken over *all* DOFs, so that the
+   reaction heat flows at prescribed nodes count. Over the free DOFs alone F_ref would be
+   zero for a body loaded only through fixed temperatures (V-13), and the residual test
+   could never pass. ‖r_f‖₂ is over the free DOFs, as written.
+4. **When the convergence test is applied.** After the update of step 4, with the residual
+   at the new iterate and the step just taken. A linear residual solved exactly in one
+   step therefore takes two iterations in the Newton path (the first step is large, the
+   second confirms); truly linear problems never enter that path.
+5. **Line search switched off** (`line_search = False`): the full step is taken, except
+   that a trial with a temperature ≤ 0 K is still halved, as Theory §5 requires.
+
 Also: total loads (`HeatPower`, `HeatFlow`) and `FixedTemperature` refuse a function that
 depends on T (a total, or a prescribed value, as a function of the local temperature has
 no defined meaning); the error message says what to use instead.
