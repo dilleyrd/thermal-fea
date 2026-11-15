@@ -308,6 +308,13 @@ and may return `False` to cancel. A fixed-step run takes its step from
    cells); a test checks it against the scattered dense cell matrices.
 8. Fluid DOFs are an extra group of the DOF map named `stream:<name>`; the inlet node is
    prescribed through a constraint, like a fixed temperature.
+9. **Through-plane streams (M7.2) count as a temperature reference in validation.** Data §8
+   lists "fixed T, convection, radiation or an in-plane stream". A through-plane stream is
+   convection to its bulk temperature, so it fixes the temperature level just as a
+   convection condition does; without this a plate cooled only by a through-plane stream
+   was rejected. They are refused in axisymmetric models (Theory §9.1 defines them for
+   planar models), need a mass flow only when no `h_override` is given, and are linear
+   unless Dittus–Boelter is selected (its exponent depends on the wall temperature).
 
 ## Q13 — choices made in the verification examples — raised in M3.G
 

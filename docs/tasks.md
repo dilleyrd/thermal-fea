@@ -268,7 +268,7 @@ All plotting functions take a `Results`, return a Matplotlib `Figure`, optionall
   wall edges to cells, create fluid DOFs in the `DofMap`, and assemble the cell matrices of
   Theory §9.1 (inlet node prescribed to `T_inlet`).
   Accept: V-27, V-28; the cell matrix times a uniform temperature vector is zero.
-- [ ] **M7.2 [B] Through-plane stream.** h from Theory §8.1 at the specified bulk
+- [x] **M7.2 [B] Through-plane stream.** h from Theory §8.1 at the specified bulk
   temperature, applied as ordinary convection on the walls.
 - [ ] **M7.3 [B] Network hydraulics.** `flow/network.py: solve_network(network, streams,
   fluid_T) -> dict[branch, mass_flow], dict[node, pressure]` (Theory §9.2).

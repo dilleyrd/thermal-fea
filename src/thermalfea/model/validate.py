@@ -226,13 +226,14 @@ class _Checker:
         if model.solution.kind != "steady":
             return
         reference = (FixedTemperature, Convection, CorrelationConvection, RadiationAmbient)
-        has = any(bc.active and isinstance(bc, reference) for bc in model.bcs) or any(
-            stream.mode == "in_plane" for stream in model.streams
+        # an in-plane stream fixes its inlet; a through-plane stream is convection to its bulk
+        has = any(bc.active and isinstance(bc, reference) for bc in model.bcs) or bool(
+            model.streams
         )
         if not has:
             self.error("no-temperature-reference", "a steady analysis needs at least one "
                        "temperature reference (a fixed temperature, convection, radiation or "
-                       "an in-plane stream); without one the temperature level is undetermined")
+                       "a stream); without one the temperature level is undetermined")
 
     def absolute_temperatures(self) -> list[tuple[float, str, str]]:
         """With radiation, every temperature must be absolute (> 0 K)."""

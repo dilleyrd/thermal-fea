@@ -41,8 +41,10 @@ from ..convection import correlations as c
 from ..convection.fluid_props import fluid_props
 from ..core.errors import ModelError
 from ..materials import library
+from ..materials.material import Fluid
 from ..model.bcs import Stream
-from ..physics.batches import facet_batches
+from ..physics.batches import FacetBatch, facet_batches
+from ..physics.surface_loads import ConvectionTerm, FacetTerm
 from ..solver.assembler import Assembler
 from ..solver.terms import BaseTerm, State
 
@@ -179,7 +181,64 @@ class InletConstraint:
         return self._term.stream.T_inlet.breakpoints()
 
 
-class StreamTerm(BaseTerm):
+class _StreamCommon:
+    """Parts shared by the in-plane and the through-plane stream terms.
+
+    Holds the stream, its fluid and hydraulic diameter, the construction checks, the
+    mass flow (own or imposed by a network branch) and the time breakpoints.
+    """
+
+    name: str
+    stream: Stream
+    fluid: Fluid
+    D_h: float
+    mass_flow_override: float | None
+
+    def _init_stream(self, stream: Stream) -> None:
+        """Check the stream's data and set ``stream``, ``fluid``, ``D_h`` and flags."""
+        if stream.flow_area <= 0.0 or stream.wetted_perimeter <= 0.0:
+            raise ModelError(f"stream {stream.name!r}: flow area and perimeter must be positive")
+        if stream.h_multiplier <= 0.0:
+            raise ModelError(f"stream {stream.name!r}: h_multiplier must be positive")
+        if stream.T_inlet.depends_on_T:
+            raise ModelError(f"stream {stream.name!r}: the inlet temperature cannot depend on T")
+        self.stream = stream
+        self.fluid = library.fluid(stream.fluid)
+        self.D_h = float(c.hydraulic_diameter(stream.flow_area, stream.wetted_perimeter))
+        override = stream.h_override
+        if override is not None and override.depends_on_T:
+            raise ModelError(f"stream {stream.name!r}: h_override may depend on time only")
+        functions = [stream.T_inlet, stream.mass_flow, override]
+        self.is_time_dependent = any(f is not None and f.depends_on_time for f in functions)
+        #: mass flow [kg/s] imposed from outside (a network branch); overrides the model's
+        self.mass_flow_override = None
+
+    def mass_flow(self, t: float) -> float:
+        """Mass flow of the stream [kg/s] at time ``t`` [s]."""
+        if self.mass_flow_override is not None:
+            value = self.mass_flow_override
+        elif self.stream.mass_flow is not None:
+            value = float(self.stream.mass_flow(t=t))
+        else:
+            raise ModelError(
+                f"stream {self.name!r} has no mass flow: give one, or attach it to a "
+                "network branch"
+            )
+        if not value > 0.0:
+            raise ModelError(
+                f"stream {self.name!r}: the mass flow must be positive (got {value:g} kg/s); "
+                "reverse the path for flow in the other direction"
+            )
+        return value
+
+    def breakpoints(self) -> list[float]:
+        """Breakpoints of the stream's functions of time."""
+        stream = self.stream
+        functions = [stream.T_inlet, stream.mass_flow, stream.h_override]
+        return sorted({t for f in functions if f is not None for t in f.breakpoints()})
+
+
+class StreamTerm(_StreamCommon, BaseTerm):
     """An in-plane stream coupled to the wall edges it wets (Theory §9.1).
 
     Parameters
@@ -191,31 +250,16 @@ class StreamTerm(BaseTerm):
     symmetric = False
 
     def __init__(self, stream: Stream) -> None:
-        super().__init__(stream.name)
+        BaseTerm.__init__(self, stream.name)
         if stream.mode != "in_plane":
             raise ModelError(f"stream {stream.name!r} is not an in-plane stream")
         if not stream.path or len(stream.path) < _MIN_PATH_POINTS:
             raise ModelError(f"stream {stream.name!r}: an in-plane stream needs a path")
-        if stream.flow_area <= 0.0 or stream.wetted_perimeter <= 0.0:
-            raise ModelError(f"stream {stream.name!r}: flow area and perimeter must be positive")
-        if stream.h_multiplier <= 0.0:
-            raise ModelError(f"stream {stream.name!r}: h_multiplier must be positive")
-        if stream.T_inlet.depends_on_T:
-            raise ModelError(f"stream {stream.name!r}: the inlet temperature cannot depend on T")
-        self.stream = stream
+        self._init_stream(stream)
         self.group = f"stream:{stream.name}"
-        self.fluid = library.fluid(stream.fluid)
-        self.D_h = float(c.hydraulic_diameter(stream.flow_area, stream.wetted_perimeter))
-        override = stream.h_override
-        if override is not None and override.depends_on_T:
-            raise ModelError(f"stream {stream.name!r}: h_override may depend on time only")
         # with a given h, a single c_p and no temperature-dependent property the rows are
         # linear in the temperatures
-        self.is_linear = override is not None
-        functions = [stream.T_inlet, stream.mass_flow, override]
-        self.is_time_dependent = any(f is not None and f.depends_on_time for f in functions)
-        #: mass flow [kg/s] imposed from outside (a network branch); overrides the model's
-        self.mass_flow_override: float | None = None
+        self.is_linear = stream.h_override is not None
         self.fluid_dofs: ndarray = np.empty(0, dtype=np.int64)
         self._cache: dict[int, tuple] = {}
 
@@ -282,24 +326,6 @@ class StreamTerm(BaseTerm):
         return self._cache[n_dofs]
 
     # ---------------------------------------------------------------------- physics
-
-    def mass_flow(self, t: float) -> float:
-        """Mass flow of the stream [kg/s] at time ``t`` [s]."""
-        if self.mass_flow_override is not None:
-            value = self.mass_flow_override
-        elif self.stream.mass_flow is not None:
-            value = float(self.stream.mass_flow(t=t))
-        else:
-            raise ModelError(
-                f"stream {self.name!r} has no mass flow: give one, or attach it to a "
-                "network branch"
-            )
-        if not value > 0.0:
-            raise ModelError(
-                f"stream {self.name!r}: the mass flow must be positive (got {value:g} kg/s); "
-                "reverse the path for flow in the other direction"
-            )
-        return value
 
     def capacity_rate(self, t: float) -> float:
         """``m c_p`` [W/K], with ``c_p`` at the inlet temperature (one value per stream)."""
@@ -372,18 +398,96 @@ class StreamTerm(BaseTerm):
         """Heat entering the body from the stream [W] (negative when the stream cools it)."""
         return -float(self.heat_to_fluid(s).sum())
 
-    def breakpoints(self) -> list[float]:
-        """Breakpoints of the stream's functions of time."""
-        stream = self.stream
-        functions = [stream.T_inlet, stream.mass_flow, stream.h_override]
-        return sorted({t for f in functions if f is not None for t in f.breakpoints()})
-
     def fluid_temperature(self, u: ndarray) -> ndarray:
         """Temperature of the fluid nodes [K], inlet first, shape (N + 1,)."""
         return np.asarray(u)[self.fluid_dofs]
 
 
+class ThroughPlaneStreamTerm(_StreamCommon, ConvectionTerm):
+    """A through-plane stream: ordinary convection at the bulk temperature (Theory §9.1).
+
+    The fluid temperature is uniform on the walls and equals ``stream.T_inlet(t)`` [K];
+    ``h`` [W/(m^2 K)] comes from the duct correlation of Theory §8.1 with properties at
+    that bulk temperature, or from ``h_override``, times ``h_multiplier``. No fluid DOFs
+    are created.
+
+    Parameters
+    ----------
+    stream : Stream
+        ``mode`` must be ``"through_plane"``; ``mass_flow`` is needed unless ``h_override``
+        is given.
+    """
+
+    symmetric = True
+
+    def __init__(self, stream: Stream) -> None:
+        if stream.mode != "through_plane":
+            raise ModelError(f"stream {stream.name!r} is not a through-plane stream")
+        FacetTerm.__init__(self, stream.name, ", ".join(stream.walls))
+        self._init_stream(stream)
+        # h does not depend on the solution when given, or with the "auto" Nusselt number;
+        # only the Dittus-Boelter exponent depends on whether the wall is hotter
+        self.is_linear = stream.h_override is not None or stream.nu_option == "auto"
+
+    def setup(self, problem: CompiledProblem) -> None:
+        """Resolve the wall edges of every wall selection."""
+        if problem.mesh.axisymmetric:
+            raise ModelError(
+                f"stream {self.name!r}: a through-plane stream needs a planar model"
+            )
+        tags: list[int] = []
+        for wall in self.stream.walls:
+            tags += problem.selection_tags(wall, (problem.mesh.dim - 1,))[1]
+        self._batches = facet_batches(problem, tags)
+        if not self._batches:
+            raise ModelError(f"stream {self.name!r}: its walls contain no element edges")
+
+    def bulk_temperature(self, t: float) -> float:
+        """Bulk fluid temperature [K] at time ``t`` [s]."""
+        return float(self.stream.T_inlet(t=t))
+
+    def _mean_wall_temperature(self, s: State) -> float:
+        """Area-weighted mean wall temperature over all the stream's walls [K]."""
+        total = weight = 0.0
+        for b in self._batches:
+            dA = b.g * b.geom.dS
+            total += float((self.temperature(s, b) * dA).sum())
+            weight += float(dA.sum())
+        return total / weight
+
+    def mean_coefficient(self, s: State) -> float:
+        """Heat-transfer coefficient of the stream [W/(m^2 K)], the same on every wall."""
+        stream = self.stream
+        if stream.h_override is not None:
+            return float(stream.h_override(t=s.t)) * stream.h_multiplier
+        T_bulk = self.bulk_temperature(s.t)
+        p = fluid_props(self.fluid, T_bulk)
+        Re = self.mass_flow(s.t) * self.D_h / (stream.flow_area * p.mu)
+        heating = bool(self._mean_wall_temperature(s) > T_bulk)
+        Nu = c.nu_duct(Re, p.Pr, stream.cross_section, "constant_T", stream.nu_option, heating)
+        h = float(c.nusselt_to_h(Nu, p.k, self.D_h))
+        return h * stream.h_multiplier
+
+    def coefficient(self, s: State, batch: FacetBatch) -> ndarray:
+        """``h`` at every integration point [W/(m^2 K)], shape (f, gp)."""
+        return np.full(batch.g.shape, self.mean_coefficient(s))
+
+    def ambient(self, s: State, batch: FacetBatch) -> ndarray:
+        """Bulk fluid temperature at every integration point [K], shape (f, gp)."""
+        return np.full(batch.g.shape, self.bulk_temperature(s.t))
+
+    def results(self, s: State) -> dict[str, ndarray]:
+        """Named result values: ``h_mean:<name>`` [W/(m^2 K)]."""
+        return {f"h_mean:{self.name}": np.array([self.mean_coefficient(s)])}
+
+
 def stream_items(stream: Stream) -> tuple[list, list]:
-    """The terms and constraints of one in-plane stream: its term and its inlet."""
+    """The terms and constraints of one stream.
+
+    An in-plane stream gives its term and its inlet constraint; a through-plane stream
+    gives one convection term and no constraint.
+    """
+    if stream.mode == "through_plane":
+        return [ThroughPlaneStreamTerm(stream)], []
     term = StreamTerm(stream)
     return [term], [InletConstraint(term)]
