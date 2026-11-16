@@ -87,12 +87,14 @@ and reasons are in the open questions cited.
 
 ## 3. State on 2026-11-16
 
-- Done and pushed: M0 – M7, M8.1 – M8.12; M5.G confirmed by the owner. 1750 tests.
-- In progress: M8.13 (file handling). Then M8.14 (GUI tests), then **M8.G, a human gate**:
-  the owner builds V-10 and V-17 in the GUI from "the tutorial text". That text does not
-  exist yet (the user guide is M11.4); a short walkthrough for the two cases has to be
-  written for the gate. The GUI has never been opened on a real screen — every GUI test
-  ran offscreen — so expect layout and usability findings there.
+- Done and pushed: M0 – M7 and M8.1 – M8.14; M5.G confirmed by the owner. 1794 tests.
+- Next: **M8.G, a human gate**: the owner builds V-10 and V-17 in the GUI following
+  `docs/gui-walkthrough.md` and fills in the friction log at its end. The GUI has never
+  been opened on a real screen — every GUI test ran offscreen, the end-to-end test of
+  M8.14 included — so expect layout and usability findings. Start it with
+  `.venv\Scripts\python.exe -m thermalfea.gui.app`. Friction points already known are
+  listed in section 4 of the walkthrough. `gui/app.py: build_application` builds the
+  whole application without showing it; tests use it.
 - M9 may proceed in parallel with M8 (Plan §5).
 - Awaiting the owner's confirmation, none blocking: Q11, Q14, Q17.2, Q18.2, Q20, Q21.
 - Known gaps, all recorded in Q21: no velocity or angle unit; contacts have no tree node

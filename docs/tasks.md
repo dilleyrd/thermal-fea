@@ -345,7 +345,7 @@ Boundary Conditions, Flow (Streams, Network), Enclosures, Analysis Settings, Sol
 - [x] **M8.13 [A] File handling.** New, Open, Save, Save As, recent files, unsaved-changes
   prompt, results reattached on open if the hash matches, Examples menu that loads the
   verification models.
-- [ ] **M8.14 [B] GUI tests.** `tests/gui/` with `pytest-qt` and
+- [x] **M8.14 [B] GUI tests.** `tests/gui/` with `pytest-qt` and
   `QT_QPA_PLATFORM=offscreen`: start the app, build the V-10 model through the command
   layer, mesh, solve, open a contour, undo/redo ten edits, save and reopen.
 - [ ] **M8.G Human gate.** A person builds V-10 and V-17 from scratch in the GUI following

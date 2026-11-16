@@ -419,7 +419,9 @@ class FormPanel(QWidget):
             if editor.error_text() or not same_function(editor.function(), value):
                 editor.set_function(value)
         elif isinstance(editor, SelectionEditor):
-            editor.name_hint = f"{getattr(self.current_object(), 'name', f.name)} {f.label.lower()}"
+            # an object without a name (a region) lends the title of its form instead
+            owner = getattr(self.current_object(), "name", None) or self.spec.title
+            editor.name_hint = f"{owner} {f.label.lower()}"
             editor.set_value(value)
         elif isinstance(editor, QLineEdit):
             editor.setStyleSheet("")
