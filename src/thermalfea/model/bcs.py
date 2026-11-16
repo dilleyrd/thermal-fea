@@ -13,6 +13,7 @@ from typing import Literal, get_type_hints
 from ..core import registry
 from ..core.errors import ModelError
 from ..core.functions import Function, as_function
+from .bc_forms import BC_FORMS
 
 
 def _choice(value: object, allowed: tuple, what: str) -> None:
@@ -338,4 +339,4 @@ for _tag, _cls in (
     ("symmetry", Symmetry),
     ("adiabatic", Adiabatic),
 ):
-    registry.register_bc(_tag, _cls)
+    registry.register_bc(_tag, _cls, form=BC_FORMS[_tag])

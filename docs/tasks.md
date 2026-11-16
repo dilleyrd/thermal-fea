@@ -311,7 +311,7 @@ Boundary Conditions, Flow (Streams, Network), Enclosures, Analysis Settings, Sol
   hover highlight, click, Ctrl-click to add, and box selection; emits
   `selection_changed(dim, tags)`. Use `LineCollection`/`PolyCollection` and blitting so
   hover stays responsive with 100 000 elements.
-- [ ] **M8.4 [B] Tree and property panels.** `gui/tree.py` with context menus (add, rename,
+- [x] **M8.4 [B] Tree and property panels.** `gui/tree.py` with context menus (add, rename,
   duplicate, suppress, delete). `gui/property_panels/form.py` generates a form from a
   dataclass using field metadata (label, quantity for unit conversion, limits);
   `FunctionEditor` widget for constant / table (editable grid, paste from Excel, preview

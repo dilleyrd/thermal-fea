@@ -396,6 +396,20 @@ None of these blocks the build. Please confirm, or say what to change.
    selection mode clears the selection.
 5. **Matplotlib in the GUI:** the layer test holds an allow-list (`gui/viewport_mpl.py`
    now); chart modules are added to it as they are written (Plan §7 rule 8 allows charts).
+6. **`FormSpec` (M8.4, Data §13 names it but does not define it).** **Done for now:**
+   `core/forms.py` (no Qt): `FieldSpec(name, label, kind, quantity, minimum, maximum,
+   choices, optional, tooltip, selection_dims)` and `FormSpec(title, fields, category,
+   description)`; a class registered without a form gets one derived from its dataclass
+   fields. The built-in forms are in `model/bc_forms.py`.
+7. **No velocity quantity in `core/units.py`:** the velocity of a correlation convection
+   is shown in m/s without conversion. Say if a velocity unit choice is wanted.
+8. **Pasting a table:** lines are split at tabs, else semicolons, else commas, else
+   blanks; with tabs or semicolons a comma inside a number is a decimal comma; a
+   non-numeric first line is skipped as a header.
+9. **Tree actions so far:** loads can be added, renamed, duplicated, suppressed and
+   deleted; materials, streams and enclosures renamed, duplicated and deleted (their
+   "add" comes with M8.6 and M8.12); `name` and `active` are edited in the tree, not in
+   the form.
 
 ## Q13 — choices made in the verification examples — raised in M3.G
 
