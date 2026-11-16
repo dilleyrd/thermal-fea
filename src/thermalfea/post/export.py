@@ -173,6 +173,57 @@ def history_csv(
     return path
 
 
+# ---------------------------------------------------------------------------- series table
+
+
+def series_csv(
+    path: str | Path,
+    x_name: str,
+    x: ndarray,
+    series: dict[str, ndarray],
+) -> Path:
+    """Write one abscissa column and named series columns, as plotted, to a CSV file.
+
+    This writes numbers that were already gathered (for example by
+    :func:`thermalfea.post.plots.history_data` or :func:`thermalfea.post.plots.path_data`)
+    without converting them, so a chart's CSV holds exactly what the chart shows.
+
+    Parameters
+    ----------
+    path : str or Path
+        File to write; the first line is the header.
+    x_name : str
+        Header of the first column, e.g. ``"time [s]"``.
+    x : ndarray, shape (n,)
+        Abscissa values.
+    series : dict of str to ndarray
+        Header -> values, each of shape ``(n,)``. Commas in headers are replaced by
+        semicolons. NaN is written as ``nan``.
+
+    Returns
+    -------
+    Path
+        The file written.
+
+    Raises
+    ------
+    ModelError
+        If a series does not have as many values as ``x``.
+    """
+    path = Path(path)
+    abscissa = np.asarray(x, dtype=float).reshape(-1)
+    columns = [abscissa]
+    for label, values in series.items():
+        column = np.asarray(values, dtype=float).reshape(-1)
+        if column.size != abscissa.size:
+            raise ModelError(f"series {label!r} has {column.size} values, expected {abscissa.size}")
+        columns.append(column)
+    header = ",".join(h.replace(",", ";") for h in [x_name, *series])
+    _write_table(path, header, np.column_stack(columns), "%.17g")
+    log.info("wrote series table with %d column(s) to %s", len(columns), path)
+    return path
+
+
 # ------------------------------------------------------------------------------------- VTU
 
 

@@ -12,6 +12,7 @@ from PySide6.QtCore import QCoreApplication
 from PySide6.QtWidgets import QApplication
 
 from thermalfea.core.errors import ThermalFEAError
+from thermalfea.gui.chart_tools import attach_charts
 from thermalfea.gui.document import Document
 from thermalfea.gui.geometry_tools import attach_geometry_tools
 from thermalfea.gui.load_symbols import attach_loads
@@ -126,7 +127,8 @@ def main(argv: list[str] | None = None) -> int:
     properties.generate_mesh = mesh_tools.generate
     attach_loads(window, document, view)
     properties.solve_controller = attach_solve(window, document, view)
-    attach_results(window, document, view)
+    results_controller = attach_results(window, document, view)
+    attach_charts(window, document, view, results_controller)
     # gmsh is driven from one long-lived thread for the whole session (see gui/worker.py)
     gmsh_worker = SerialWorker(window, "gmsh-worker")
     geometry.worker = gmsh_worker

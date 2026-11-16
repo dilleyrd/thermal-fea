@@ -337,7 +337,7 @@ Boundary Conditions, Flow (Streams, Network), Enclosures, Analysis Settings, Sol
   controls (field, step slider and time box, range, levels, smooth/banded, mesh overlay);
   click probe showing interpolated values (uses `post/path.py` point location); min/max
   markers; play animation.
-- [ ] **M8.11 [B] Charts and export.** Chart window for nodal history (pick nodes in the
+- [x] **M8.11 [B] Charts and export.** Chart window for nodal history (pick nodes in the
   viewport), path plot (pick the polyline), heat-flow history and energy balance; export
   of image, CSV, VTU, GIF.
 - [ ] **M8.12 [A] Flow panels.** Stream editor (pick walls, pick path points), network

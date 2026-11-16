@@ -921,6 +921,30 @@ def _draw_history(data: HistoryData, ax: Axes | None, path: str | Path | None, w
     return fig
 
 
+def draw_history(
+    data: HistoryData, ax: Axes | None = None, path: str | Path | None = None,
+    what: str = "history plot",
+) -> Figure:
+    """Draw prepared history data: one line per series, legend, grid and labelled axes.
+
+    Parameters
+    ----------
+    data : HistoryData
+        Series against time, in display units.
+    ax : matplotlib Axes, optional
+        Axes to draw into; a new figure is made when omitted.
+    path : str or Path, optional
+        Image file to write.
+    what : str
+        Name of the plot, used in error messages.
+
+    Returns
+    -------
+    matplotlib.figure.Figure
+    """
+    return _draw_history(data, ax, path, what)
+
+
 # --------------------------------------------------------------------------------- path
 
 
