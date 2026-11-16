@@ -132,8 +132,8 @@ def test_file_problems(tmp_path: Path) -> None:
     good = write_cad(tmp_path / "ok.brep", lambda occ: occ.addRectangle(0, 0, 0, 1, 1))
     with pytest.raises(GeometryError, match="scale must be positive"):
         build(Model(geometry=[g.ImportFile("part", str(good), "brep", scale=0.0)]))
-    with pytest.raises(GeometryError, match="not supported"):
-        build(Model(geometry=[g.ImportFile("part", str(good), "dxf")]))
+    with pytest.raises(GeometryError, match="file not found"):
+        build(Model(geometry=[g.ImportFile("part", str(tmp_path / "x.dxf"), "dxf")]))
     # the session still works after the failures
     again = build(Model(geometry=[g.ImportFile("part", str(good), "brep")]))
     assert area(again) == pytest.approx(1.0)

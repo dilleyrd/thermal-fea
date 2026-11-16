@@ -100,7 +100,7 @@ and reasons are in the open questions cited.
   done (Q22). Do not start M9 or M10.2 until the owner says so.
 - On 2026-11-16 the owner also put **M10.5 (report) on hold** as a future to-do item.
   Skip it; do not start it until the owner says so.
-- Awaiting the owner's confirmation, none blocking: Q11, Q14, Q17.2, Q18.2, Q20, Q21.
+- Awaiting the owner's confirmation, none blocking: Q11, Q14, Q17.2, Q18.2, Q20, Q21, Q22, Q23.
 - Known gaps, all recorded in Q21: no velocity or angle unit; contacts have no tree node
   or panel (M10.1); GIF export blocks the window; the stream "pick path points" toggle
   does not exclude the probe and the chart path pick; MP4 export is untested (no ffmpeg).

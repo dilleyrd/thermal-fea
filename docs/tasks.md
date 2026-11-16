@@ -373,7 +373,7 @@ Boundary Conditions, Flow (Streams, Network), Enclosures, Analysis Settings, Sol
   point of the curve is duplicated only if it lies on the outer boundary), then
   `physics/contact.py` (Theory §11). Accept: V-35.
 - [ ] **M10.2 [B] Phase change.** Theory §12, with the forced settings. Accept: V-36.
-- [ ] **M10.3 [B] DXF import.** `ezdxf`: LINE, ARC, CIRCLE, LWPOLYLINE (with bulges),
+- [x] **M10.3 [B] DXF import.** `ezdxf`: LINE, ARC, CIRCLE, LWPOLYLINE (with bulges),
   SPLINE → curves; join end points within tolerance; closed loops → surfaces, inner loops
   → holes.
 - [ ] **M10.4 [B] Unit systems.** Full `UnitSettings` (Data §7) through the form generator

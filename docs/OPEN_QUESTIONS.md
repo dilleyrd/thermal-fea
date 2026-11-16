@@ -472,6 +472,34 @@ and M10.2 (phase change), which are on hold. None of the points below blocks the
    conductance. Contact curves are drawn as load symbols of kind "contact". The V-35
    model is in File > Examples.
 
+## Q23 — DXF import (task M10.3) — raised in M10.3
+
+The task text is one sentence; these choices fill it in. None blocks anything.
+
+1. **Join tolerance.** The task says "within tolerance" without a value. **Done for now:**
+   end points closer than `JOIN_TOL = 1e-6` times the largest in-plane extent of the
+   drawing are one point (the same fraction as `importers.PLANE_TOL`). Not settable from
+   the model or the GUI.
+2. **What is ignored and what is refused.** Entity types other than the five named ones
+   (including ELLIPSE, old-style POLYLINE, HATCH, INSERT/blocks, TEXT) are ignored with
+   one warning. Chains that do not close are ignored with a warning; a drawing with no
+   closed outline, a point where more than two segment ends meet, and anything out of the
+   plane z = 0 are errors.
+3. **Nesting.** A loop inside an even number of other loops is a surface, the loops one
+   level deeper are its holes, so an island inside a hole is a surface again. Loops are
+   assumed not to cross; crossing loops are not detected.
+4. **Units.** The `$INSUNITS` header of the file is not read; the `scale` of `ImportFile`
+   is the only conversion, as for STEP and BREP.
+5. **Curve counts.** Arcs are split into pieces of at most 120 degrees and a spline that
+   closes on itself into two curves (an OpenCASCADE restriction), so a semicircle in the
+   drawing is two curves of the model.
+6. **Two existing assertions changed.** `test_importers.py` and
+   `test_builder_primitives.py` asserted that DXF import is "not supported", the
+   placeholder this task replaces; they now assert "file not found" for a missing `.dxf`.
+7. **`ezdxf` was installed into the project venv** (`pip install ezdxf`, the declared
+   extra `dxf`). Without it the DXF tests are skipped and the import raises an error that
+   says how to install it.
+
 ## Q13 — choices made in the verification examples — raised in M3.G
 
 - **Nodes at check points.** V-09 and V-10 check the temperature at given points. Point

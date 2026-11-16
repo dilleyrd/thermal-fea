@@ -145,7 +145,7 @@ _TOOL_LIST: tuple[ToolDef, ...] = (
             placement="scale", selection="targets"),
     ToolDef("delete", "Delete", g.Delete, ("targets",),
             lambda geo, v, i: geo.delete(_ids(v, "targets"), id=i), selection="targets"),
-    ToolDef("import", "Import STEP/BREP", g.ImportFile, ("path", "format", "scale"),
+    ToolDef("import", "Import STEP/BREP/DXF", g.ImportFile, ("path", "format", "scale"),
             lambda geo, v, i: geo.import_file(v["path"], v["format"], v["scale"], id=i)),
 )  # fmt: skip
 

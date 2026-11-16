@@ -66,7 +66,10 @@ _MENU_GROUPS: tuple[tuple[str, ...], ...] = (
 
 def _default_file_chooser(parent: QWidget | None) -> str | None:
     path, _ = QFileDialog.getOpenFileName(
-        parent, "Import STEP/BREP", "", "CAD files (*.step *.stp *.brep);;All files (*)"
+        parent,
+        "Import STEP/BREP/DXF",
+        "",
+        "CAD files (*.step *.stp *.brep *.dxf);;All files (*)",
     )
     return path or None
 
@@ -257,7 +260,7 @@ class GeometryController(QObject):
         return {"targets": ids}
 
     def import_file(self) -> GeometryOpDialog | None:
-        """Ask for a STEP/BREP file and open the import dialog for it.
+        """Ask for a STEP/BREP/DXF file and open the import dialog for it.
 
         Returns
         -------
@@ -271,7 +274,7 @@ class GeometryController(QObject):
         fmt = edit.import_format(path)
         if fmt is None:
             self.window.show_error(
-                "Import", f"Cannot tell the format of {path}; use .step, .stp or .brep."
+                "Import", f"Cannot tell the format of {path}; use .step, .stp, .brep or .dxf."
             )
             return None
         return self.open_tool("import", {"path": path, "format": fmt})

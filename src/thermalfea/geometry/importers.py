@@ -1,7 +1,9 @@
-"""Import of CAD files into the geometry being built (STEP and BREP).
+"""Import of CAD files into the geometry being built (STEP, BREP and DXF).
 
 Only flat surfaces lying in the plane z = 0 are accepted: ThermalFEA models are 2D. Solids,
 surfaces out of that plane and files without surfaces are refused with an explanation.
+DXF drawings (curves, not surfaces) are turned into surfaces by :mod:`.dxf`: closed outlines
+become surfaces and outlines inside them become holes.
 """
 
 from __future__ import annotations
@@ -11,6 +13,7 @@ from pathlib import Path
 from typing import Any
 
 from ..core.errors import GeometryError
+from .dxf import import_dxf
 
 log = logging.getLogger(__name__)
 
@@ -31,7 +34,7 @@ def import_shapes(occ: Any, path: str, fmt: str, scale: float = 1.0) -> list[tup
         ``gmsh.model.occ`` of the model being built.
     path : str
         File to read.
-    fmt : {"step", "brep"}
+    fmt : {"step", "brep", "dxf"}
         File format.
     scale : float
         Factor applied to the coordinates about the origin (for example 0.001 for a file
@@ -48,13 +51,15 @@ def import_shapes(occ: Any, path: str, fmt: str, scale: float = 1.0) -> list[tup
         If the file cannot be read, contains solids, has no surfaces, or has a surface
         that does not lie in the plane z = 0.
     """
-    if fmt not in _FORMATS:
-        raise GeometryError(f"import of {fmt!r} files is not supported (use step or brep)")
+    if fmt not in _FORMATS and fmt != "dxf":
+        raise GeometryError(f"import of {fmt!r} files is not supported (use step, brep or dxf)")
     if not scale > 0.0:
         raise GeometryError("import scale must be positive")
     file = Path(path)
     if not file.is_file():
         raise GeometryError(f"file not found: {path}")
+    if fmt == "dxf":
+        return import_dxf(occ, str(file), scale)
     try:
         shapes = occ.importShapes(str(file), highestDimOnly=True, format=_FORMATS[fmt])
     except Exception as exc:  # gmsh raises plain Exception
