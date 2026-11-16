@@ -410,6 +410,13 @@ None of these blocks the build. Please confirm, or say what to change.
    deleted; materials, streams and enclosures renamed, duplicated and deleted (their
    "add" comes with M8.6 and M8.12); `name` and `active` are edited in the tree, not in
    the form.
+10. **Geometry tools (M8.5).** Booleans on the viewport selection: the earliest selected
+    shape (in history order) is the object, the others are the tools. A selected entity
+    is mapped to the latest operation that owns it. Angles are entered in radians (there
+    is no angle quantity in `core/units.py`); lengths are in metres. A failed rebuild
+    keeps the old geometry, marks it stale and reports the error; undo recovers. An
+    operation that later operations refer to cannot be deleted. The rebuild runs in the
+    GUI thread for now, behind one method, until the worker of M8.9 exists.
 
 ## Q13 — choices made in the verification examples — raised in M3.G
 

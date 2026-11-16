@@ -28,7 +28,17 @@ from PySide6.QtWidgets import (
 )
 
 from thermalfea.core.errors import ModelError
-from thermalfea.core.forms import FieldSpec, FormSpec, unit_label
+from thermalfea.core.forms import (
+    FieldSpec,
+    FormSpec,
+    format_str_list,
+    format_str_lists,
+    format_xy_list,
+    parse_str_list,
+    parse_str_lists,
+    parse_xy_list,
+    unit_label,
+)
 from thermalfea.core.units import UnitSettings, from_si, to_si
 from thermalfea.gui.addressing import Address, resolve
 from thermalfea.gui.document import Document
@@ -183,6 +193,14 @@ def parse_dict(text: str) -> dict[str, float]:
     return out
 
 
+#: Kinds shown as one line of text: ``kind -> (format, parse)``.
+_TEXT_LISTS: dict[str, tuple[Any, Any]] = {
+    "str_list": (format_str_list, parse_str_list),
+    "str_lists": (format_str_lists, parse_str_lists),
+    "xy_list": (format_xy_list, parse_xy_list),
+}
+
+
 class FormPanel(QWidget):
     """A form for one object of the model, generated from a :class:`FormSpec`.
 
@@ -308,6 +326,10 @@ class FormPanel(QWidget):
             line = QLineEdit()
             line.editingFinished.connect(lambda n=name, w=line: self._on_dict(n, w))
             return line, None
+        if f.kind in _TEXT_LISTS:
+            line = QLineEdit()
+            line.editingFinished.connect(lambda n=name, w=line: self._on_text_list(n, w))
+            return line, None
         raise ModelError(f"unsupported form kind {f.kind!r}")  # pragma: no cover
 
     # ------------------------------------------------------------------- loading
@@ -335,7 +357,7 @@ class FormPanel(QWidget):
                         self._unit_labels[field.name].setText(unit_label(field.quantity, units))
                     elif isinstance(editor, FunctionEditor):
                         editor.set_units(units)
-            name = getattr(obj, "name", "")
+            name = getattr(obj, "name", "") or getattr(obj, "id", "")
             self.title_label.setText(f"{self.spec.title}: {name}" if name else self.spec.title)
             for field in self.spec.fields:
                 self._load(field, getattr(obj, field.name, None))
@@ -365,7 +387,12 @@ class FormPanel(QWidget):
             editor.set_value(value)
         elif isinstance(editor, QLineEdit):
             editor.setStyleSheet("")
-            editor.setText(format_dict(value) if f.kind == "dict" else str(value or ""))
+            if f.kind == "dict":
+                editor.setText(format_dict(value))
+            elif f.kind in _TEXT_LISTS:
+                editor.setText(_TEXT_LISTS[f.kind][0](value))
+            else:
+                editor.setText(str(value or ""))
         self._show_error()
 
     # ------------------------------------------------------------------ applying
@@ -448,6 +475,19 @@ class FormPanel(QWidget):
     def _on_dict(self, name: str, line: QLineEdit) -> None:
         try:
             value = parse_dict(line.text())
+        except ValueError as exc:
+            line.setStyleSheet(_BAD_STYLE)
+            line.setToolTip(str(exc))
+            self._set_error(name, str(exc))
+            return
+        line.setStyleSheet("")
+        line.setToolTip(self.spec.field(name).tooltip)
+        self._apply(name, value)
+
+    def _on_text_list(self, name: str, line: QLineEdit) -> None:
+        parse = _TEXT_LISTS[self.spec.field(name).kind][1]
+        try:
+            value = parse(line.text())
         except ValueError as exc:
             line.setStyleSheet(_BAD_STYLE)
             line.setToolTip(str(exc))

@@ -25,13 +25,14 @@ from typing import Any
 
 from PySide6.QtCore import QPoint, Qt, Signal
 from PySide6.QtGui import QAction, QBrush, QColor
-from PySide6.QtWidgets import QMenu, QTreeWidget, QTreeWidgetItem, QWidget
+from PySide6.QtWidgets import QAbstractItemView, QMenu, QTreeWidget, QTreeWidgetItem, QWidget
 
 from thermalfea.core import registry
 from thermalfea.core.errors import ModelError
 from thermalfea.core.forms import copy_name, default_instance, form_for, unique_name
 from thermalfea.gui.addressing import Address, exists, resolve
 from thermalfea.gui.document import Document
+from thermalfea.model.geometry_edit import dependents
 from thermalfea.model.model import Model
 
 #: ``(key, title)`` of the top-level nodes, in display order.
@@ -93,6 +94,9 @@ class ModelTree(QTreeWidget):
         The current item changed by user action; see the module docstring.
     error_occurred(str)
         An action was refused (the message says why).
+    edit_requested(object)
+        "Edit" was chosen for a geometry operation (its address); the operation is also
+        made current so the property panel shows its parameters.
 
     Attributes
     ----------
@@ -102,6 +106,7 @@ class ModelTree(QTreeWidget):
 
     object_selected = Signal(object)
     error_occurred = Signal(str)
+    edit_requested = Signal(object)
 
     def __init__(self, document: Document, parent: QWidget | None = None) -> None:
         super().__init__(parent)
@@ -111,6 +116,10 @@ class ModelTree(QTreeWidget):
         self._expanded: dict[Any, bool] = {}
         self._actions: list[QAction] = []
         self.setHeaderHidden(True)
+        # geometry operations replay in order: the history can never be reordered
+        self.setDragDropMode(QAbstractItemView.DragDropMode.NoDragDrop)
+        self.setAcceptDrops(False)
+        self.setDragEnabled(False)
         self.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
         self.customContextMenuRequested.connect(self._on_context_menu)
         self.currentItemChanged.connect(self._on_current_changed)
@@ -345,6 +354,13 @@ class ModelTree(QTreeWidget):
                     ("suppress", address),
                 )
             add("Delete", lambda: self.delete(address), ("delete", address))
+        elif ref.address is not None and ref.address[0] == "geometry":
+            address = ref.address
+            add("Edit", lambda: self.edit_operation(address), ("edit_op", address))
+            add(
+                "Delete operation", lambda: self.delete_operation(address),
+                ("delete_op", address),
+            )  # fmt: skip
         elif ref.address is not None and ref.address[0] == "regions":
             address = ref.address
             add("Delete", lambda: self.delete(address), ("delete", address))
@@ -493,6 +509,35 @@ class ModelTree(QTreeWidget):
         obj = resolve(self.document.model, address)
         label = getattr(obj, "name", address[0])
         return self.document.edit(f"Delete {label}", mutate)
+
+    def edit_operation(self, address: Address) -> None:
+        """Show the parameters of a geometry operation for editing."""
+        resolve(self.document.model, address)  # raises if it is gone
+        self.select_address(address)
+        self.edit_requested.emit(address)
+
+    def delete_operation(self, address: Address) -> bool:
+        """Delete a geometry operation from the history.
+
+        Raises
+        ------
+        ModelError
+            If a later operation refers to it (nothing is changed).
+        """
+        op = resolve(self.document.model, address)
+        op_id = op.id
+
+        def mutate(model: Model) -> None:
+            ops = model.geometry
+            users = dependents(ops, op_id)
+            if users:
+                raise ModelError(
+                    f"cannot delete {op_id!r}: {', '.join(users)} refer(s) to it; "
+                    "delete or change those first"
+                )
+            del ops[address[1]]
+
+        return self.document.edit(f"Delete {op_id}", mutate)
 
     def begin_rename(self, address: Address) -> None:
         """Start inline editing of an item's text."""

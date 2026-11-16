@@ -319,7 +319,7 @@ Boundary Conditions, Flow (Streams, Network), Enclosures, Analysis Settings, Sol
   Apply). Every edit goes through `ModelEditCommand`. Tree entries, "add" menus and panels
   for loads are generated from the BC registry (`FormSpec`), so a newly registered load
   appears without editing GUI code.
-- [ ] **M8.5 [B] Geometry tools.** Dialogs for each op in Data §4 with numeric entry and
+- [x] **M8.5 [B] Geometry tools.** Dialogs for each op in Data §4 with numeric entry and
   click-to-place with grid snap; booleans and transforms on the current selection; delete;
   STEP/BREP import; editable operation history list (edit parameters, reorder is not
   allowed). Rebuild after each change.

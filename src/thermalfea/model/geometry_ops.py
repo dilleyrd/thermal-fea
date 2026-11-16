@@ -178,3 +178,5 @@ for _tag, _cls in (
     ("delete", Delete),
 ):
     registry.register_class(GEOMETRY_FAMILY, _tag, _cls)
+
+from . import geometry_forms as _geometry_forms  # noqa: E402,F401  (registers the forms)

@@ -13,6 +13,7 @@ from PySide6.QtWidgets import QApplication
 
 from thermalfea.core.errors import ThermalFEAError
 from thermalfea.gui.document import Document
+from thermalfea.gui.geometry_tools import attach_geometry_tools
 from thermalfea.gui.main_window import MainWindow
 from thermalfea.gui.panels import attach_tree
 from thermalfea.gui.viewport_mpl import attach_viewport
@@ -113,6 +114,7 @@ def main(argv: list[str] | None = None) -> int:
     window.set_document(document)
     view = attach_viewport(window, document)
     attach_tree(window, document, view)
+    attach_geometry_tools(window, document, view)
     install_exception_hook(window)
     window.show()
     return int(app.exec())

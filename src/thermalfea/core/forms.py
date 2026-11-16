@@ -29,10 +29,12 @@ from .functions import Constant, Function
 from .units import QUANTITIES, UnitSettings
 
 FieldKind = Literal[
-    "float", "int", "bool", "str", "choice", "function", "selection", "selection_list", "dict"
+    "float", "int", "bool", "str", "choice", "function", "selection", "selection_list", "dict",
+    "str_list", "str_lists", "xy_list",
 ]
 FIELD_KINDS: tuple[str, ...] = (
-    "float", "int", "bool", "str", "choice", "function", "selection", "selection_list", "dict"
+    "float", "int", "bool", "str", "choice", "function", "selection", "selection_list", "dict",
+    "str_list", "str_lists", "xy_list",
 )
 
 #: Fields every object has that a form never shows.
@@ -88,7 +90,9 @@ class FieldSpec:
     kind : {"float", "int", "bool", "str", "choice", "function", "selection", \
 "selection_list", "dict"}
         Which editor is used. ``selection`` is the name of a model selection,
-        ``selection_list`` a list of such names, ``dict`` a ``{str: float}`` mapping.
+        ``selection_list`` a list of such names, ``dict`` a ``{str: float}`` mapping,
+        ``str_list`` a list of words (``"a, b"``), ``str_lists`` a list of such lists
+        (``"a, b; c, d"``) and ``xy_list`` a list of ``(x, y)`` pairs (``"0,0; 1,0"``).
     quantity : str, optional
         Quantity of :data:`thermalfea.core.units.QUANTITIES` for unit conversion (the
         value is stored in SI, shown in display units); ``None`` for none/dimensionless.
@@ -160,6 +164,54 @@ _FORMS: dict[type, FormSpec] = {}
 def register_form(cls: type, spec: FormSpec) -> None:
     """Register the form of a class that is not a boundary condition."""
     _FORMS[cls] = spec
+
+
+def format_str_list(value: list[str] | None) -> str:
+    """Text ``"a, b"`` of a list of words."""
+    return ", ".join(value or [])
+
+
+def parse_str_list(text: str) -> list[str]:
+    """Parse ``"a, b"`` (commas or semicolons) into a list of words; empty items are dropped."""
+    return [w.strip() for w in text.replace(";", ",").split(",") if w.strip()]
+
+
+def format_str_lists(value: list[list[str]] | None) -> str:
+    """Text ``"a, b; c, d"`` of a list of word lists."""
+    return "; ".join(format_str_list(v) for v in (value or []))
+
+
+def parse_str_lists(text: str) -> list[list[str]]:
+    """Parse ``"a, b; c, d"`` into a list of word lists; empty groups are dropped."""
+    groups = (parse_str_list(g) for g in text.split(";"))
+    return [g for g in groups if g]
+
+
+def format_xy_list(value: list[tuple[float, float]] | None) -> str:
+    """Text ``"0,0; 1,0.5"`` of a list of coordinate pairs."""
+    return "; ".join(f"{x:.10g}, {y:.10g}" for x, y in (value or []))
+
+
+def parse_xy_list(text: str) -> list[tuple[float, float]]:
+    """Parse ``"0,0; 1,0.5"`` into coordinate pairs.
+
+    Raises
+    ------
+    ValueError
+        If an item is not two numbers.
+    """
+    out: list[tuple[float, float]] = []
+    for item in text.split(";"):
+        if not item.strip():
+            continue
+        parts = [p.strip() for p in item.split(",")]
+        if len(parts) != 2:  # noqa: PLR2004
+            raise ValueError(f"{item.strip()!r} is not 'x, y'")
+        try:
+            out.append((float(parts[0]), float(parts[1])))
+        except ValueError:
+            raise ValueError(f"{item.strip()!r} is not 'x, y' with numbers") from None
+    return out
 
 
 def _title(cls: type) -> str:
