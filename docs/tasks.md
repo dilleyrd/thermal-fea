@@ -323,7 +323,7 @@ Boundary Conditions, Flow (Streams, Network), Enclosures, Analysis Settings, Sol
   click-to-place with grid snap; booleans and transforms on the current selection; delete;
   STEP/BREP import; editable operation history list (edit parameters, reorder is not
   allowed). Rebuild after each change.
-- [ ] **M8.6 [A] Materials and regions.** Material editor, library browser (copy into the
+- [x] **M8.6 [A] Materials and regions.** Material editor, library browser (copy into the
   model), user library; region assignment panel with thickness and material angle.
 - [ ] **M8.7 [B] Mesh panel.** All `MeshSettings`, Generate button, statistics, quality
   histogram, colour elements by quality.

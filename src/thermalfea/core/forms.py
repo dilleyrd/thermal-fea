@@ -375,7 +375,12 @@ def unique_name(base: str, existing: set[str] | list[str], start: int = 1) -> st
     return f"{base} {n}"
 
 
-def copy_name(name: str, existing: set[str] | list[str]) -> str:
-    """Return a new unique name for a copy of ``name`` ("Convection 1" -> "Convection 2")."""
-    stem = re.sub(r"\s*\d+$", "", name) or name
+def copy_name(name: str, existing: set[str] | list[str], keep_digits: bool = False) -> str:
+    """Return a new unique name for a copy of ``name`` ("Convection 1" -> "Convection 2").
+
+    A trailing counter (blank, then digits) is replaced. With ``keep_digits`` the whole
+    name is kept and a counter appended, for names whose digits are part of the name
+    (material grades: "Aluminium 6061-T6" -> "Aluminium 6061-T6 2").
+    """
+    stem = name if keep_digits else (re.sub(r"\s+\d+$", "", name) or name)
     return unique_name(stem, existing, start=2)

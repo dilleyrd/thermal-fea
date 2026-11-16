@@ -131,3 +131,6 @@ class Model:
     def axisymmetric(self) -> bool:
         """True for an axisymmetric analysis."""
         return self.analysis == "axisymmetric"
+
+
+from . import material_forms as _material_forms  # noqa: E402,F401  (registers the forms)

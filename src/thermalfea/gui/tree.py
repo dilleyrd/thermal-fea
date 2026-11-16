@@ -32,8 +32,10 @@ from thermalfea.core.errors import ModelError
 from thermalfea.core.forms import copy_name, default_instance, form_for, unique_name
 from thermalfea.gui.addressing import Address, exists, resolve
 from thermalfea.gui.document import Document
+from thermalfea.materials import library
+from thermalfea.materials.material import Material
 from thermalfea.model.geometry_edit import dependents
-from thermalfea.model.model import Model
+from thermalfea.model.model import Model, RegionAssignment
 
 #: ``(key, title)`` of the top-level nodes, in display order.
 SECTIONS: tuple[tuple[str, str], ...] = (
@@ -342,6 +344,10 @@ class ModelTree(QTreeWidget):
             for tag in registry.bc_tags():
                 title = self._title_of(registry.bc_info(tag).cls)
                 add(f"Add {title}", lambda t=tag: self.add_bc(t), ("add_bc", tag))
+        elif ref.address is None and ref.section == "materials":
+            add("Add material", self.add_material, ("add_material", None))
+        elif ref.address is None and ref.section == "regions":
+            add("Add region", self.add_region, ("add_region", None))
         elif ref.address is not None and ref.address[0] in _NAMED_LISTS + ("materials",):
             address = ref.address
             add("Rename", lambda: self.begin_rename(address), ("rename", address))
@@ -425,6 +431,56 @@ class ModelTree(QTreeWidget):
         self.select_address(address)
         return address
 
+    def add_material(self) -> Address:
+        """Add a material "Material <n>" with the properties of the first built-in solid.
+
+        The properties are a copy of a library entry (no numbers are invented here). One
+        undo step.
+
+        Returns
+        -------
+        tuple
+            Address of the new material.
+        """
+        template = next(iter(library.solids().values()))
+        holder: list[str] = []
+
+        def mutate(model: Model) -> None:
+            name = unique_name("Material", list(model.materials))
+            model.materials[name] = Material.from_json({**template.to_json(), "name": name})
+            holder.append(name)
+
+        self.document.edit("Add material", mutate)
+        address = ("materials", holder[0])
+        self.select_address(address)
+        return address
+
+    def add_region(self) -> Address:
+        """Append a region with an empty selection, the first material and default geometry.
+
+        Thickness 1.0 m and material angle 0.0 rad. One undo step.
+
+        Returns
+        -------
+        tuple
+            Address of the new region.
+        """
+        holder: list[int] = []
+
+        def mutate(model: Model) -> None:
+            material = next(iter(model.materials), "")
+            model.regions.append(
+                RegionAssignment(
+                    selection="", material=material, thickness=1.0, material_angle=0.0
+                )
+            )
+            holder.append(len(model.regions) - 1)
+
+        self.document.edit("Add region", mutate)
+        address = ("regions", holder[0])
+        self.select_address(address)
+        return address
+
     def rename(self, address: Address, new_name: str) -> bool:
         """Rename an object (unique within its list); ``False`` if nothing changed.
 
@@ -468,7 +524,9 @@ class ModelTree(QTreeWidget):
 
         def mutate(model: Model) -> None:
             obj = copy.deepcopy(resolve(model, address))
-            name = copy_name(obj.name, self._names(model, address[0]))
+            name = copy_name(
+                obj.name, self._names(model, address[0]), keep_digits=address[0] == "materials"
+            )
             obj.name = name
             if address[0] == "materials":
                 model.materials[name] = obj

@@ -16,8 +16,10 @@ from thermalfea.gui.addressing import Address, exists, resolve
 from thermalfea.gui.document import Document
 from thermalfea.gui.main_window import MainWindow
 from thermalfea.gui.property_panels.form import FormPanel
+from thermalfea.gui.property_panels.region import RegionPanel
 from thermalfea.gui.scene import SceneView
 from thermalfea.gui.tree import ModelTree
+from thermalfea.model.model import RegionAssignment
 
 PLACEHOLDER_TEXT = "Select an object in the model tree to edit its properties."
 
@@ -70,7 +72,8 @@ class PropertyController:
         if not hasattr(obj, "__dataclass_fields__"):
             self._install(self._placeholder(), None, None)
             return
-        panel = FormPanel(form_for(type(obj)), self.document, address, self.view)
+        panel_cls = RegionPanel if isinstance(obj, RegionAssignment) else FormPanel
+        panel = panel_cls(form_for(type(obj)), self.document, address, self.view)
         scroll = QScrollArea()
         scroll.setWidgetResizable(True)
         scroll.setWidget(panel)
