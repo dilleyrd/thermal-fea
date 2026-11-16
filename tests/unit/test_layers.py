@@ -2,6 +2,10 @@
 
 * Only ``geometry/`` and ``meshing/`` may import ``gmsh``.
 * Only ``gui/`` may import ``PySide6`` or ``thermalfea.gui``.
+* Inside ``gui/`` only the modules in :data:`MATPLOTLIB_GUI_ALLOWED` may import Matplotlib
+  (Plan §7 rule 8: the model view is reached only through ``SceneView``).
+* ``gui/scene.py`` (the interface) imports no Matplotlib and, of PySide6, only the
+  ``QtCore`` / ``QtWidgets`` names its annotations need (``Signal``, ``QWidget``).
 """
 
 from __future__ import annotations
@@ -13,6 +17,14 @@ SRC = Path(__file__).resolve().parents[2] / "src" / "thermalfea"
 
 GMSH_ALLOWED = ("geometry", "meshing")
 GUI_ALLOWED = ("gui",)
+
+#: GUI modules (relative to the package, POSIX) that may import Matplotlib. Only the model
+#: viewport and, as they are created, chart modules (history/path charts M8.11, the table
+#: preview plot M8.4) belong here: add each chart module to this list when it is written.
+MATPLOTLIB_GUI_ALLOWED = ("gui/viewport_mpl.py",)
+#: The interface module: no Matplotlib, and PySide6 only through these modules.
+SCENE_MODULE = "gui/scene.py"
+SCENE_PYSIDE_ALLOWED = ("PySide6", "PySide6.QtCore", "PySide6.QtWidgets")
 
 
 def imported_modules(source: str, package: str) -> set[str]:
@@ -53,6 +65,19 @@ def violations(source: str, rel: Path) -> list[str]:
             top not in GUI_ALLOWED
         ):
             out.append(f"{rel.as_posix()}: imports {mod} outside gui/")
+        if (
+            top in GUI_ALLOWED
+            and _matches(mod, "matplotlib")
+            and rel.as_posix() not in MATPLOTLIB_GUI_ALLOWED
+        ):
+            out.append(f"{rel.as_posix()}: imports {mod}; only {MATPLOTLIB_GUI_ALLOWED} may")
+        if rel.as_posix() == SCENE_MODULE and _matches(mod, "PySide6"):
+            allowed = any(
+                mod == a or (mod.startswith(a + ".") and a != "PySide6")
+                for a in SCENE_PYSIDE_ALLOWED
+            )
+            if not allowed:
+                out.append(f"{rel.as_posix()}: imports {mod}; only QtCore/QtWidgets names")
     return out
 
 
@@ -82,6 +107,30 @@ def test_detects_gui_imports_outside_gui() -> None:
     assert violations("from . import gui\n", Path("api.py"))
     assert not violations("from PySide6.QtWidgets import QWidget\n", Path("gui/app.py"))
     assert not violations("from . import scene\n", Path("gui/app.py"))
+
+
+def test_detects_matplotlib_in_gui_outside_allow_list() -> None:
+    assert violations("import matplotlib.pyplot\n", Path("gui/main_window.py"))
+    assert violations("from matplotlib.collections import LineCollection\n", Path("gui/a.py"))
+    assert violations("from matplotlib import cm\n", Path("gui/dialogs/x.py"))
+    assert violations("import matplotlib\n", Path("gui/scene.py"))
+    for allowed in MATPLOTLIB_GUI_ALLOWED:
+        assert not violations("import matplotlib\n", Path(allowed))
+    # outside gui/ Matplotlib stays free (post/plots.py draws with it)
+    assert not violations("from matplotlib.figure import Figure\n", Path("post/plots.py"))
+
+
+def test_scene_module_is_interface_only() -> None:
+    assert violations("from PySide6.QtGui import QPainter\n", Path("gui/scene.py"))
+    assert violations("import PySide6.QtGui\n", Path("gui/scene.py"))
+    assert not violations("from PySide6.QtCore import Signal\n", Path("gui/scene.py"))
+    assert not violations("from PySide6.QtWidgets import QWidget\n", Path("gui/scene.py"))
+    assert not violations("from PySide6.QtGui import QPainter\n", Path("gui/other.py"))
+
+
+def test_allow_list_names_existing_files() -> None:
+    for name in (*MATPLOTLIB_GUI_ALLOWED, SCENE_MODULE):
+        assert (SRC / name).is_file(), name
 
 
 def test_allowed_imports_pass() -> None:

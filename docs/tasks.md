@@ -301,7 +301,7 @@ Boundary Conditions, Flow (Streams, Network), Enclosures, Analysis Settings, Sol
   stale; load edit → results stale). `gui/commands.py: ModelEditCommand(QUndoCommand)`
   stores the model JSON before and after an edit (whole-model snapshot — simple and always
   correct). Signals: `model_changed`, `geometry_built`, `mesh_changed`, `results_changed`.
-- [ ] **M8.3 [C] Viewport.** `gui/scene.py`: the `SceneView` interface, `FieldDisplay` and
+- [x] **M8.3 [C] Viewport.** `gui/scene.py`: the `SceneView` interface, `FieldDisplay` and
   `LoadSymbol` (Data §13). `gui/viewport_mpl.py: MplSceneView` implements it; no other GUI
   module may touch the model-view Matplotlib artists (add this to the layer test). The
   implementation: Matplotlib canvas with equal aspect and

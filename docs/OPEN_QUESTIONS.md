@@ -374,6 +374,29 @@ None of these blocks the build; each is a choice the documents leave open. Pleas
 8. **Symmetry.** Checked: `symmetric` is only an ordering hint to the linear solver
    (`solver/linear.py`); nothing else assumes a symmetric matrix.
 
+## Q21 — GUI choices that the documents leave open — raised in M8.1 – M8.3
+
+None of these blocks the build. Please confirm, or say what to change.
+
+1. **Document staleness (M8.2).** What an edit invalidates is decided by comparing the
+   model JSON before and after: a change of `geometry` makes geometry, mesh and results
+   stale; of `mesh_settings`, `analysis` or a selection used by the mesh settings, mesh
+   and results; anything else, results only. Selection tags and the selection `all` are
+   treated as caches of the build, not as edits (a rebuild is not an undo step).
+2. **Nodes and elements in `selection_changed(dim, tags)` (M8.3, Data §13).** The
+   interface has only `dim` and `tags`. **Done for now:** two reserved pseudo-dimensions,
+   `scene.NODE_DIM = -1` (tags are node indices) and `scene.ELEMENT_DIM = -2` (tags are
+   element ids).
+3. **Additions to the viewport beyond Data §13:** a signal `coordinates_changed(x, y)`
+   for the status bar; `FieldDisplay` and `LoadSymbol` are defined in `gui/scene.py`
+   (fields listed in their docstrings). The `SceneView` methods are as written.
+4. **Picking rules:** 8-pixel tolerance; a left drag longer than 4 pixels is a box
+   selection (curves must lie wholly inside, surfaces by bounding box, elements by
+   centroid); click replaces, Ctrl-click toggles, a click on nothing clears; changing the
+   selection mode clears the selection.
+5. **Matplotlib in the GUI:** the layer test holds an allow-list (`gui/viewport_mpl.py`
+   now); chart modules are added to it as they are written (Plan §7 rule 8 allows charts).
+
 ## Q13 — choices made in the verification examples — raised in M3.G
 
 - **Nodes at check points.** V-09 and V-10 check the temperature at given points. Point

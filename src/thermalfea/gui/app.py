@@ -14,6 +14,7 @@ from PySide6.QtWidgets import QApplication
 from thermalfea.core.errors import ThermalFEAError
 from thermalfea.gui.document import Document
 from thermalfea.gui.main_window import MainWindow
+from thermalfea.gui.viewport_mpl import attach_viewport
 
 ORGANIZATION = "ThermalFEA"
 APPLICATION = "ThermalFEA"
@@ -107,7 +108,9 @@ def main(argv: list[str] | None = None) -> int:
     """
     app = create_app(argv)
     window = MainWindow()
-    window.set_document(Document())
+    document = Document()
+    window.set_document(document)
+    attach_viewport(window, document)
     install_exception_hook(window)
     window.show()
     return int(app.exec())
