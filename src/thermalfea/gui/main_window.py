@@ -17,6 +17,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
+from thermalfea.gui.document import Document
 from thermalfea.gui.message_panel import MessagePanel, QtLogHandler
 
 SELECTION_MODES: tuple[str, ...] = ("none", "point", "curve", "surface", "node", "element")
@@ -96,6 +97,7 @@ class MainWindow(QMainWindow):
         self.actions: dict[str, QAction] = {}
         self.menus: dict[str, QMenu] = {}
         self._log_handler: QtLogHandler | None = None
+        self._document: Document | None = None
 
         self._viewport_holder = _Holder("Viewport")
         self.setCentralWidget(self._viewport_holder)
@@ -243,6 +245,70 @@ class MainWindow(QMainWindow):
 
     def _about(self) -> None:
         QMessageBox.about(self, "About ThermalFEA", "ThermalFEA - 2D thermal finite elements.")
+
+    # --------------------------------------------------------------- document
+    @property
+    def document(self) -> Document | None:
+        """The attached document, if any."""
+        return self._document
+
+    def set_document(self, document: Document | None) -> None:
+        """Attach ``document``: wire Edit > Undo/Redo and the window title to it.
+
+        Parameters
+        ----------
+        document : Document or None
+            ``None`` detaches the current document.
+        """
+        old = self._document
+        if old is not None:
+            stack = old.undo_stack
+            for signal, slot in (
+                (stack.canUndoChanged, self._update_undo_redo),
+                (stack.canRedoChanged, self._update_undo_redo),
+                (stack.undoTextChanged, self._update_undo_redo),
+                (stack.redoTextChanged, self._update_undo_redo),
+                (stack.cleanChanged, self._update_title),
+                (old.model_changed, self._update_title),
+            ):
+                signal.disconnect(slot)
+            self.actions["edit.undo"].triggered.disconnect(stack.undo)
+            self.actions["edit.redo"].triggered.disconnect(stack.redo)
+        self._document = document
+        if document is not None:
+            stack = document.undo_stack
+            for signal, slot in (
+                (stack.canUndoChanged, self._update_undo_redo),
+                (stack.canRedoChanged, self._update_undo_redo),
+                (stack.undoTextChanged, self._update_undo_redo),
+                (stack.redoTextChanged, self._update_undo_redo),
+                (stack.cleanChanged, self._update_title),
+                (document.model_changed, self._update_title),
+            ):
+                signal.connect(slot)
+            self.actions["edit.undo"].triggered.connect(stack.undo)
+            self.actions["edit.redo"].triggered.connect(stack.redo)
+        self._update_undo_redo()
+        self._update_title()
+
+    def _update_undo_redo(self, *_args: object) -> None:
+        stack = self._document.undo_stack if self._document is not None else None
+        for key, label, can, text in (
+            ("edit.undo", "&Undo", stack.canUndo() if stack else False,
+             stack.undoText() if stack else ""),
+            ("edit.redo", "&Redo", stack.canRedo() if stack else False,
+             stack.redoText() if stack else ""),
+        ):  # fmt: skip
+            action = self.actions[key]
+            action.setEnabled(can)
+            action.setText(f"{label} {text}" if can and text else label)
+
+    def _update_title(self, *_args: object) -> None:
+        if self._document is None:
+            self.setWindowTitle("ThermalFEA")
+            return
+        star = "*" if self._document.modified else ""
+        self.setWindowTitle(f"{self._document.model.name}{star} - ThermalFEA")
 
     # ----------------------------------------------------------------- status
     def show_status(self, text: str) -> None:

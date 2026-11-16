@@ -296,7 +296,7 @@ Boundary Conditions, Flow (Streams, Network), Enclosures, Analysis Settings, Sol
   toolbar, status bar, window-state persistence (`QSettings`), a `logging` handler that
   writes to the message panel, a global handler that shows `ThermalFEAError` messages in a
   dialog.
-- [ ] **M8.2 [B] Document and undo.** `gui/document.py: Document` owns the `Model`,
+- [x] **M8.2 [B] Document and undo.** `gui/document.py: Document` owns the `Model`,
   `BuiltGeometry`, `Mesh`, results path, and stale flags (geometry edit → mesh and results
   stale; load edit → results stale). `gui/commands.py: ModelEditCommand(QUndoCommand)`
   stores the model JSON before and after an edit (whole-model snapshot — simple and always
