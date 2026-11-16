@@ -1,0 +1,301 @@
+{
+  "analysis": "planar",
+  "bcs": [
+    {
+      "Q": {
+        "type": "constant",
+        "value": 400000.0
+      },
+      "active": true,
+      "name": "heating",
+      "selection": "all",
+      "type": "heat_generation"
+    },
+    {
+      "T": {
+        "type": "constant",
+        "value": 340.0
+      },
+      "active": true,
+      "name": "hot end",
+      "selection": "left",
+      "type": "fixed_temperature"
+    },
+    {
+      "T_inf": {
+        "type": "constant",
+        "value": 300.0
+      },
+      "active": true,
+      "h": {
+        "type": "constant",
+        "value": 50.0
+      },
+      "name": "air",
+      "selection": "right",
+      "type": "convection"
+    }
+  ],
+  "contacts": [],
+  "display_units": {
+    "length": "m",
+    "temperature": "K"
+  },
+  "enclosures": [],
+  "geometry": [
+    {
+      "corner_radius": 0.0,
+      "height": 0.02,
+      "id": "rectangle1",
+      "type": "rectangle",
+      "width": 0.4,
+      "x": 0.0,
+      "y": 0.0
+    }
+  ],
+  "initial_condition": {
+    "kind": "uniform",
+    "per_region": null,
+    "results_path": null,
+    "value": {
+      "type": "constant",
+      "value": 293.15
+    }
+  },
+  "materials": {
+    "solid": {
+      "cp": {
+        "type": "constant",
+        "value": 500.0
+      },
+      "k": {
+        "type": "constant",
+        "value": 50.0
+      },
+      "k2": null,
+      "name": "solid",
+      "phase_change": null,
+      "rho": {
+        "type": "constant",
+        "value": 7800.0
+      }
+    }
+  },
+  "mesh_settings": {
+    "algorithm": "frontal",
+    "curve_divisions": {
+      "bottom": 40,
+      "left": 4,
+      "right": 4,
+      "top": 40
+    },
+    "curve_sizes": {},
+    "element_shape": "quad",
+    "global_size": 0.01,
+    "order": 1,
+    "point_sizes": {},
+    "refinements": [],
+    "smoothing_passes": 3,
+    "structured_surfaces": [
+      "all"
+    ]
+  },
+  "name": "V-29 stream energy (given)",
+  "network": null,
+  "regions": [
+    {
+      "material": "solid",
+      "material_angle": 0.0,
+      "selection": "all",
+      "thickness": 1.0
+    }
+  ],
+  "schema_version": 1,
+  "selections": {
+    "all": {
+      "dim": 2,
+      "fingerprints": [
+        {
+          "bbox": [
+            -1e-07,
+            -1e-07,
+            -1e-07,
+            0.4000001,
+            0.0200001,
+            1e-07
+          ],
+          "center": [
+            0.2,
+            0.01,
+            0.0
+          ],
+          "dim": 2,
+          "measure": 0.008
+        }
+      ],
+      "name": "all",
+      "tags": [
+        1
+      ]
+    },
+    "bottom": {
+      "dim": 1,
+      "fingerprints": [
+        {
+          "bbox": [
+            -1e-07,
+            -1e-07,
+            -1e-07,
+            0.4000001,
+            1e-07,
+            1e-07
+          ],
+          "center": [
+            0.20000000000000004,
+            0.0,
+            0.0
+          ],
+          "dim": 1,
+          "measure": 0.4
+        }
+      ],
+      "name": "bottom",
+      "tags": [
+        1
+      ]
+    },
+    "left": {
+      "dim": 1,
+      "fingerprints": [
+        {
+          "bbox": [
+            -1e-07,
+            -1e-07,
+            -1e-07,
+            1e-07,
+            0.0200001,
+            1e-07
+          ],
+          "center": [
+            0.0,
+            0.01,
+            0.0
+          ],
+          "dim": 1,
+          "measure": 0.02
+        }
+      ],
+      "name": "left",
+      "tags": [
+        4
+      ]
+    },
+    "right": {
+      "dim": 1,
+      "fingerprints": [
+        {
+          "bbox": [
+            0.3999999,
+            -1e-07,
+            -1e-07,
+            0.4000001,
+            0.0200001,
+            1e-07
+          ],
+          "center": [
+            0.4,
+            0.01,
+            0.0
+          ],
+          "dim": 1,
+          "measure": 0.02
+        }
+      ],
+      "name": "right",
+      "tags": [
+        2
+      ]
+    },
+    "top": {
+      "dim": 1,
+      "fingerprints": [
+        {
+          "bbox": [
+            -1e-07,
+            0.0199999,
+            -1e-07,
+            0.4000001,
+            0.0200001,
+            1e-07
+          ],
+          "center": [
+            0.20000000000000004,
+            0.02,
+            0.0
+          ],
+          "dim": 1,
+          "measure": 0.4
+        }
+      ],
+      "name": "top",
+      "tags": [
+        3
+      ]
+    }
+  },
+  "solution": {
+    "auto_timestep": true,
+    "dt_max": null,
+    "dt_min": 1e-09,
+    "end_time": 1.0,
+    "initial_dt": null,
+    "kind": "steady",
+    "line_search": true,
+    "lumped_capacitance": false,
+    "max_dT_per_step": null,
+    "max_iterations": 60,
+    "output": "all",
+    "output_every": 1,
+    "output_times": [],
+    "rtol": 1e-10,
+    "theta": 1.0,
+    "time_tol": 0.02,
+    "ttol": 1e-08
+  },
+  "streams": [
+    {
+      "T_inlet": {
+        "type": "constant",
+        "value": 290.0
+      },
+      "cross_section": "circular",
+      "flow_area": 5e-05,
+      "fluid": "Water",
+      "h_multiplier": 1.0,
+      "h_override": null,
+      "mass_flow": {
+        "type": "constant",
+        "value": 0.02
+      },
+      "mode": "in_plane",
+      "n_cells": null,
+      "name": "lower",
+      "nu_option": "auto",
+      "path": [
+        [
+          0.0,
+          0.0
+        ],
+        [
+          0.4,
+          0.0
+        ]
+      ],
+      "roughness": 0.0,
+      "walls": [
+        "bottom"
+      ],
+      "wetted_perimeter": 0.03
+    }
+  ]
+}

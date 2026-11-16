@@ -29,6 +29,7 @@ where = ["src"]
 
 [tool.setuptools.package-data]
 "thermalfea.materials" = ["data/*.json"]
+"thermalfea.gui" = ["examples/*.json", "examples/*.tfea"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

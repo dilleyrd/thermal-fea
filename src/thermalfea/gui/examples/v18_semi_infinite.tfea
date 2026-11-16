@@ -1,0 +1,369 @@
+{
+  "analysis": "planar",
+  "bcs": [
+    {
+      "T": {
+        "type": "constant",
+        "value": 400.0
+      },
+      "active": true,
+      "name": "step",
+      "selection": "left",
+      "type": "fixed_temperature"
+    }
+  ],
+  "contacts": [],
+  "display_units": {
+    "length": "m",
+    "temperature": "K"
+  },
+  "enclosures": [],
+  "geometry": [
+    {
+      "corner_radius": 0.0,
+      "height": 0.005,
+      "id": "rectangle1",
+      "type": "rectangle",
+      "width": 0.01,
+      "x": 0.0,
+      "y": 0.0
+    },
+    {
+      "corner_radius": 0.0,
+      "height": 0.005,
+      "id": "rectangle2",
+      "type": "rectangle",
+      "width": 0.01,
+      "x": 0.01,
+      "y": 0.0
+    },
+    {
+      "corner_radius": 0.0,
+      "height": 0.005,
+      "id": "rectangle3",
+      "type": "rectangle",
+      "width": 0.48,
+      "x": 0.02,
+      "y": 0.0
+    }
+  ],
+  "initial_condition": {
+    "kind": "uniform",
+    "per_region": null,
+    "results_path": null,
+    "value": {
+      "type": "constant",
+      "value": 300.0
+    }
+  },
+  "materials": {
+    "solid": {
+      "cp": {
+        "type": "constant",
+        "value": 500.0
+      },
+      "k": {
+        "type": "constant",
+        "value": 50.0
+      },
+      "k2": null,
+      "name": "solid",
+      "phase_change": null,
+      "rho": {
+        "type": "constant",
+        "value": 7800.0
+      }
+    }
+  },
+  "mesh_settings": {
+    "algorithm": "frontal",
+    "curve_divisions": {},
+    "curve_sizes": {},
+    "element_shape": "quad",
+    "global_size": 0.02,
+    "order": 1,
+    "point_sizes": {},
+    "refinements": [
+      {
+        "dist_max": 0.3,
+        "dist_min": 0.03,
+        "selection": "left",
+        "size_max": 0.02,
+        "size_min": 0.001
+      }
+    ],
+    "smoothing_passes": 3,
+    "structured_surfaces": []
+  },
+  "name": "V-18 semi-infinite solid",
+  "network": null,
+  "regions": [
+    {
+      "material": "solid",
+      "material_angle": 0.0,
+      "selection": "all",
+      "thickness": 1.0
+    }
+  ],
+  "schema_version": 1,
+  "selections": {
+    "all": {
+      "dim": 2,
+      "fingerprints": [
+        {
+          "bbox": [
+            -1.0000000000021684e-07,
+            -1.0000000000021684e-07,
+            -1.0000000000021684e-07,
+            0.0100001,
+            0.0050001,
+            1.0000000000021684e-07
+          ],
+          "center": [
+            0.005000000000000001,
+            0.0025000000000000005,
+            0.0
+          ],
+          "dim": 2,
+          "measure": 5e-05
+        },
+        {
+          "bbox": [
+            0.0099999,
+            -1.0000000000021684e-07,
+            -1.0000000000021684e-07,
+            0.0200001,
+            0.0050001,
+            1.0000000000021684e-07
+          ],
+          "center": [
+            0.015000000000000001,
+            0.0025000000000000005,
+            0.0
+          ],
+          "dim": 2,
+          "measure": 5e-05
+        },
+        {
+          "bbox": [
+            0.0199999,
+            -1.0000000000021684e-07,
+            -1.0000000000021684e-07,
+            0.5000001,
+            0.0050001,
+            1.0000000000021684e-07
+          ],
+          "center": [
+            0.26,
+            0.0025,
+            0.0
+          ],
+          "dim": 2,
+          "measure": 0.0024
+        }
+      ],
+      "name": "all",
+      "tags": [
+        1,
+        2,
+        3
+      ]
+    },
+    "bottom": {
+      "dim": 1,
+      "fingerprints": [
+        {
+          "bbox": [
+            -1e-07,
+            -1e-07,
+            -1e-07,
+            0.0100001,
+            1e-07,
+            1e-07
+          ],
+          "center": [
+            0.005,
+            0.0,
+            0.0
+          ],
+          "dim": 1,
+          "measure": 0.01
+        },
+        {
+          "bbox": [
+            0.0099999,
+            -1e-07,
+            -1e-07,
+            0.0200001,
+            1e-07,
+            1e-07
+          ],
+          "center": [
+            0.015000000000000001,
+            0.0,
+            0.0
+          ],
+          "dim": 1,
+          "measure": 0.01
+        },
+        {
+          "bbox": [
+            0.0199999,
+            -1e-07,
+            -1e-07,
+            0.5000001,
+            1e-07,
+            1e-07
+          ],
+          "center": [
+            0.26,
+            0.0,
+            0.0
+          ],
+          "dim": 1,
+          "measure": 0.48
+        }
+      ],
+      "name": "bottom",
+      "tags": [
+        1,
+        5,
+        8
+      ]
+    },
+    "left": {
+      "dim": 1,
+      "fingerprints": [
+        {
+          "bbox": [
+            -1e-07,
+            -1e-07,
+            -1e-07,
+            1e-07,
+            0.0050001,
+            1e-07
+          ],
+          "center": [
+            0.0,
+            0.0025,
+            0.0
+          ],
+          "dim": 1,
+          "measure": 0.005
+        }
+      ],
+      "name": "left",
+      "tags": [
+        4
+      ]
+    },
+    "right": {
+      "dim": 1,
+      "fingerprints": [
+        {
+          "bbox": [
+            0.4999999,
+            -1e-07,
+            -1e-07,
+            0.5000001,
+            0.0050001,
+            1e-07
+          ],
+          "center": [
+            0.5,
+            0.0025,
+            0.0
+          ],
+          "dim": 1,
+          "measure": 0.005
+        }
+      ],
+      "name": "right",
+      "tags": [
+        9
+      ]
+    },
+    "top": {
+      "dim": 1,
+      "fingerprints": [
+        {
+          "bbox": [
+            -1e-07,
+            0.0049999,
+            -1e-07,
+            0.0100001,
+            0.0050001,
+            1e-07
+          ],
+          "center": [
+            0.005,
+            0.005,
+            0.0
+          ],
+          "dim": 1,
+          "measure": 0.01
+        },
+        {
+          "bbox": [
+            0.0099999,
+            0.0049999,
+            -1e-07,
+            0.0200001,
+            0.0050001,
+            1e-07
+          ],
+          "center": [
+            0.015000000000000001,
+            0.005,
+            0.0
+          ],
+          "dim": 1,
+          "measure": 0.01
+        },
+        {
+          "bbox": [
+            0.01999990000000002,
+            0.0049999,
+            -1e-07,
+            0.5000001,
+            0.0050001,
+            1e-07
+          ],
+          "center": [
+            0.26,
+            0.005,
+            0.0
+          ],
+          "dim": 1,
+          "measure": 0.48
+        }
+      ],
+      "name": "top",
+      "tags": [
+        3,
+        7,
+        10
+      ]
+    }
+  },
+  "solution": {
+    "auto_timestep": true,
+    "dt_max": null,
+    "dt_min": 1e-09,
+    "end_time": 30.0,
+    "initial_dt": null,
+    "kind": "transient",
+    "line_search": true,
+    "lumped_capacitance": true,
+    "max_dT_per_step": null,
+    "max_iterations": 30,
+    "output": "all",
+    "output_every": 1,
+    "output_times": [],
+    "rtol": 1e-06,
+    "theta": 1.0,
+    "time_tol": 0.02,
+    "ttol": 0.0001
+  },
+  "streams": []
+}

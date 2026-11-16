@@ -1,0 +1,102 @@
+[
+  {
+    "file": "v01_slab.tfea",
+    "title": "V-01 — slab with two fixed faces."
+  },
+  {
+    "file": "v02_convection_slab.tfea",
+    "title": "V-02 — slab with a fixed face and a convecting face."
+  },
+  {
+    "file": "v03_generation_slab.tfea",
+    "title": "V-03 — slab with uniform heat generation."
+  },
+  {
+    "file": "v04_flux_slab.tfea",
+    "title": "V-04 — slab with a heat flux on one face."
+  },
+  {
+    "file": "v05_hollow_cylinder.tfea",
+    "title": "V-05 — hollow cylinder, axisymmetric."
+  },
+  {
+    "file": "v06_quarter_annulus.tfea",
+    "title": "V-06 — the hollow cylinder of V-05 modelled planar, as a quarter annulus."
+  },
+  {
+    "file": "v07_solid_cylinder.tfea",
+    "title": "V-07 — solid cylinder with heat generation and surface convection, axisymmetric."
+  },
+  {
+    "file": "v08_fin.tfea",
+    "title": "V-08 — straight fin modelled in 2D with its real thickness."
+  },
+  {
+    "file": "v09_rectangle_series.tfea",
+    "title": "V-09 — square with three cold sides and one hot side (Fourier series)."
+  },
+  {
+    "file": "v10_nafems_t4.tfea",
+    "title": "V-10 — NAFEMS T4: two-dimensional heat transfer with convection."
+  },
+  {
+    "file": "v11_two_layer_slab.tfea",
+    "title": "V-11 — two-layer slab."
+  },
+  {
+    "file": "v12_orthotropic.tfea",
+    "title": "V-12 — orthotropic square with a manufactured solution."
+  },
+  {
+    "file": "v13_kirchhoff.tfea",
+    "title": "V-13 — slab with temperature-dependent conductivity (Kirchhoff transformation)."
+  },
+  {
+    "file": "v14_nafems_t2.tfea",
+    "title": "V-14 — NAFEMS T2: one-dimensional heat transfer with radiation."
+  },
+  {
+    "file": "v15_natural_convection.tfea",
+    "title": "V-15 - slab with natural convection from a vertical plate correlation."
+  },
+  {
+    "file": "v16_lumped_body.tfea",
+    "title": "V-16 — lumped body cooled by convection."
+  },
+  {
+    "file": "v17_slab_convection.tfea",
+    "title": "V-17 — slab cooled by convection (one-dimensional transient series solution)."
+  },
+  {
+    "file": "v18_semi_infinite.tfea",
+    "title": "V-18 — semi-infinite solid with a step change of surface temperature."
+  },
+  {
+    "file": "v19_nafems_t3.tfea",
+    "title": "V-19 — NAFEMS T3: one-dimensional transient heat transfer."
+  },
+  {
+    "file": "v20_radiative_cooling.tfea",
+    "title": "V-20 — radiative cooling of a lumped body."
+  },
+  {
+    "file": "v21_time_order.tfea",
+    "title": "V-21 — order of the time stepping."
+  },
+  {
+    "file": "v27_stream_constant_wall.tfea",
+    "title": "V-27 — stream along a wall at constant temperature."
+  },
+  {
+    "file": "v28_stream_constant_flux.tfea",
+    "title": "V-28 — stream along a wall with a constant heat flux."
+  },
+  {
+    "file": "v29_stream_energy.tfea",
+    "title": "V-29 — energy conservation with a stream."
+  },
+  {
+    "file": "v32_convergence.tfea",
+    "title": "V-32 — mesh convergence on a manufactured solution."
+  }
+]

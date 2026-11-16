@@ -342,7 +342,7 @@ Boundary Conditions, Flow (Streams, Network), Enclosures, Analysis Settings, Sol
   of image, CSV, VTU, GIF.
 - [x] **M8.12 [A] Flow panels.** Stream editor (pick walls, pick path points), network
   table editor, flow results table and plot, HTC calculator tool window.
-- [ ] **M8.13 [A] File handling.** New, Open, Save, Save As, recent files, unsaved-changes
+- [x] **M8.13 [A] File handling.** New, Open, Save, Save As, recent files, unsaved-changes
   prompt, results reattached on open if the hash matches, Examples menu that loads the
   verification models.
 - [ ] **M8.14 [B] GUI tests.** `tests/gui/` with `pytest-qt` and

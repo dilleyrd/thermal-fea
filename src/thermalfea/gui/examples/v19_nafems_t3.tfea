@@ -1,0 +1,254 @@
+{
+  "analysis": "planar",
+  "bcs": [
+    {
+      "T": {
+        "type": "constant",
+        "value": 273.15
+      },
+      "active": true,
+      "name": "cold",
+      "selection": "left",
+      "type": "fixed_temperature"
+    },
+    {
+      "T": {
+        "text": "273.15 + 100*sin(pi*t/40)",
+        "type": "expression"
+      },
+      "active": true,
+      "name": "driven",
+      "selection": "right",
+      "type": "fixed_temperature"
+    }
+  ],
+  "contacts": [],
+  "display_units": {
+    "length": "m",
+    "temperature": "K"
+  },
+  "enclosures": [],
+  "geometry": [
+    {
+      "corner_radius": 0.0,
+      "height": 0.01,
+      "id": "rectangle1",
+      "type": "rectangle",
+      "width": 0.1,
+      "x": 0.0,
+      "y": 0.0
+    }
+  ],
+  "initial_condition": {
+    "kind": "uniform",
+    "per_region": null,
+    "results_path": null,
+    "value": {
+      "type": "constant",
+      "value": 273.15
+    }
+  },
+  "materials": {
+    "solid": {
+      "cp": {
+        "type": "constant",
+        "value": 440.5
+      },
+      "k": {
+        "type": "constant",
+        "value": 35.0
+      },
+      "k2": null,
+      "name": "solid",
+      "phase_change": null,
+      "rho": {
+        "type": "constant",
+        "value": 7200.0
+      }
+    }
+  },
+  "mesh_settings": {
+    "algorithm": "frontal",
+    "curve_divisions": {
+      "bottom": 20,
+      "left": 1,
+      "right": 1,
+      "top": 20
+    },
+    "curve_sizes": {},
+    "element_shape": "quad",
+    "global_size": 0.01,
+    "order": 1,
+    "point_sizes": {},
+    "refinements": [],
+    "smoothing_passes": 3,
+    "structured_surfaces": [
+      "all"
+    ]
+  },
+  "name": "V-19 NAFEMS T3",
+  "network": null,
+  "regions": [
+    {
+      "material": "solid",
+      "material_angle": 0.0,
+      "selection": "all",
+      "thickness": 1.0
+    }
+  ],
+  "schema_version": 1,
+  "selections": {
+    "all": {
+      "dim": 2,
+      "fingerprints": [
+        {
+          "bbox": [
+            -1e-07,
+            -1e-07,
+            -1e-07,
+            0.10000010000000001,
+            0.0100001,
+            1e-07
+          ],
+          "center": [
+            0.05,
+            0.005,
+            0.0
+          ],
+          "dim": 2,
+          "measure": 0.001
+        }
+      ],
+      "name": "all",
+      "tags": [
+        1
+      ]
+    },
+    "bottom": {
+      "dim": 1,
+      "fingerprints": [
+        {
+          "bbox": [
+            -1e-07,
+            -1e-07,
+            -1e-07,
+            0.10000010000000001,
+            1e-07,
+            1e-07
+          ],
+          "center": [
+            0.05000000000000001,
+            0.0,
+            0.0
+          ],
+          "dim": 1,
+          "measure": 0.1
+        }
+      ],
+      "name": "bottom",
+      "tags": [
+        1
+      ]
+    },
+    "left": {
+      "dim": 1,
+      "fingerprints": [
+        {
+          "bbox": [
+            -1e-07,
+            -1e-07,
+            -1e-07,
+            1e-07,
+            0.0100001,
+            1e-07
+          ],
+          "center": [
+            0.0,
+            0.005,
+            0.0
+          ],
+          "dim": 1,
+          "measure": 0.01
+        }
+      ],
+      "name": "left",
+      "tags": [
+        4
+      ]
+    },
+    "right": {
+      "dim": 1,
+      "fingerprints": [
+        {
+          "bbox": [
+            0.0999999,
+            -1e-07,
+            -1e-07,
+            0.10000010000000001,
+            0.0100001,
+            1e-07
+          ],
+          "center": [
+            0.1,
+            0.005,
+            0.0
+          ],
+          "dim": 1,
+          "measure": 0.01
+        }
+      ],
+      "name": "right",
+      "tags": [
+        2
+      ]
+    },
+    "top": {
+      "dim": 1,
+      "fingerprints": [
+        {
+          "bbox": [
+            -1e-07,
+            0.0099999,
+            -1e-07,
+            0.10000010000000001,
+            0.0100001,
+            1e-07
+          ],
+          "center": [
+            0.05000000000000001,
+            0.01,
+            0.0
+          ],
+          "dim": 1,
+          "measure": 0.1
+        }
+      ],
+      "name": "top",
+      "tags": [
+        3
+      ]
+    }
+  },
+  "solution": {
+    "auto_timestep": false,
+    "dt_max": null,
+    "dt_min": 1e-09,
+    "end_time": 32.0,
+    "initial_dt": 0.5,
+    "kind": "transient",
+    "line_search": true,
+    "lumped_capacitance": false,
+    "max_dT_per_step": null,
+    "max_iterations": 30,
+    "output": "times",
+    "output_every": 1,
+    "output_times": [
+      32.0
+    ],
+    "rtol": 1e-06,
+    "theta": 0.5,
+    "time_tol": 0.02,
+    "ttol": 0.0001
+  },
+  "streams": []
+}

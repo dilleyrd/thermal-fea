@@ -1,0 +1,280 @@
+{
+  "analysis": "planar",
+  "bcs": [
+    {
+      "active": true,
+      "name": "heating",
+      "q": {
+        "type": "constant",
+        "value": 5000.0
+      },
+      "selection": "top",
+      "type": "heat_flux"
+    }
+  ],
+  "contacts": [],
+  "display_units": {
+    "length": "m",
+    "temperature": "K"
+  },
+  "enclosures": [],
+  "geometry": [
+    {
+      "corner_radius": 0.0,
+      "height": 0.002,
+      "id": "rectangle1",
+      "type": "rectangle",
+      "width": 1.0,
+      "x": 0.0,
+      "y": 0.0
+    }
+  ],
+  "initial_condition": {
+    "kind": "uniform",
+    "per_region": null,
+    "results_path": null,
+    "value": {
+      "type": "constant",
+      "value": 293.15
+    }
+  },
+  "materials": {
+    "solid": {
+      "cp": {
+        "type": "constant",
+        "value": 500.0
+      },
+      "k": {
+        "type": "constant",
+        "value": 50.0
+      },
+      "k2": null,
+      "name": "solid",
+      "phase_change": null,
+      "rho": {
+        "type": "constant",
+        "value": 7800.0
+      }
+    }
+  },
+  "mesh_settings": {
+    "algorithm": "frontal",
+    "curve_divisions": {
+      "bottom": 40,
+      "left": 1,
+      "right": 1,
+      "top": 40
+    },
+    "curve_sizes": {},
+    "element_shape": "quad",
+    "global_size": 0.025,
+    "order": 1,
+    "point_sizes": {},
+    "refinements": [],
+    "smoothing_passes": 3,
+    "structured_surfaces": [
+      "all"
+    ]
+  },
+  "name": "V-28 stream constant flux",
+  "network": null,
+  "regions": [
+    {
+      "material": "solid",
+      "material_angle": 0.0,
+      "selection": "all",
+      "thickness": 1.0
+    }
+  ],
+  "schema_version": 1,
+  "selections": {
+    "all": {
+      "dim": 2,
+      "fingerprints": [
+        {
+          "bbox": [
+            -1e-07,
+            -1e-07,
+            -1e-07,
+            1.0000001,
+            0.0020001,
+            1e-07
+          ],
+          "center": [
+            0.5,
+            0.001,
+            0.0
+          ],
+          "dim": 2,
+          "measure": 0.002
+        }
+      ],
+      "name": "all",
+      "tags": [
+        1
+      ]
+    },
+    "bottom": {
+      "dim": 1,
+      "fingerprints": [
+        {
+          "bbox": [
+            -1e-07,
+            -1e-07,
+            -1e-07,
+            1.0000001,
+            1e-07,
+            1e-07
+          ],
+          "center": [
+            0.5,
+            0.0,
+            0.0
+          ],
+          "dim": 1,
+          "measure": 1.0
+        }
+      ],
+      "name": "bottom",
+      "tags": [
+        1
+      ]
+    },
+    "left": {
+      "dim": 1,
+      "fingerprints": [
+        {
+          "bbox": [
+            -1e-07,
+            -1e-07,
+            -1e-07,
+            1e-07,
+            0.0020001,
+            1e-07
+          ],
+          "center": [
+            0.0,
+            0.001,
+            0.0
+          ],
+          "dim": 1,
+          "measure": 0.002
+        }
+      ],
+      "name": "left",
+      "tags": [
+        4
+      ]
+    },
+    "right": {
+      "dim": 1,
+      "fingerprints": [
+        {
+          "bbox": [
+            0.9999999,
+            -1e-07,
+            -1e-07,
+            1.0000001,
+            0.0020001,
+            1e-07
+          ],
+          "center": [
+            1.0,
+            0.001,
+            0.0
+          ],
+          "dim": 1,
+          "measure": 0.002
+        }
+      ],
+      "name": "right",
+      "tags": [
+        2
+      ]
+    },
+    "top": {
+      "dim": 1,
+      "fingerprints": [
+        {
+          "bbox": [
+            -1e-07,
+            0.0019999,
+            -1e-07,
+            1.0000001,
+            0.0020001,
+            1e-07
+          ],
+          "center": [
+            0.5,
+            0.002,
+            0.0
+          ],
+          "dim": 1,
+          "measure": 1.0
+        }
+      ],
+      "name": "top",
+      "tags": [
+        3
+      ]
+    }
+  },
+  "solution": {
+    "auto_timestep": true,
+    "dt_max": null,
+    "dt_min": 1e-09,
+    "end_time": 1.0,
+    "initial_dt": null,
+    "kind": "steady",
+    "line_search": true,
+    "lumped_capacitance": false,
+    "max_dT_per_step": null,
+    "max_iterations": 30,
+    "output": "all",
+    "output_every": 1,
+    "output_times": [],
+    "rtol": 1e-06,
+    "theta": 1.0,
+    "time_tol": 0.02,
+    "ttol": 0.0001
+  },
+  "streams": [
+    {
+      "T_inlet": {
+        "type": "constant",
+        "value": 300.0
+      },
+      "cross_section": "circular",
+      "flow_area": 0.0001,
+      "fluid": "Water",
+      "h_multiplier": 1.0,
+      "h_override": {
+        "type": "constant",
+        "value": 500.0
+      },
+      "mass_flow": {
+        "type": "constant",
+        "value": 0.059822924144532184
+      },
+      "mode": "in_plane",
+      "n_cells": null,
+      "name": "coolant",
+      "nu_option": "auto",
+      "path": [
+        [
+          0.0,
+          0.0
+        ],
+        [
+          1.0,
+          0.0
+        ]
+      ],
+      "roughness": 0.0,
+      "walls": [
+        "bottom"
+      ],
+      "wetted_perimeter": 0.04
+    }
+  ]
+}

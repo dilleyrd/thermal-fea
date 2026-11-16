@@ -308,7 +308,13 @@ class MainWindow(QMainWindow):
             self.setWindowTitle("ThermalFEA")
             return
         star = "*" if self._document.modified else ""
-        self.setWindowTitle(f"{self._document.model.name}{star} - ThermalFEA")
+        path = self._document.path
+        name = path.stem if path is not None else self._document.model.name
+        self.setWindowTitle(f"{name}{star} - ThermalFEA")
+
+    def update_title(self) -> None:
+        """Recompute the window title (document name, path stem and unsaved mark)."""
+        self._update_title()
 
     # ----------------------------------------------------------------- status
     def show_status(self, text: str) -> None:

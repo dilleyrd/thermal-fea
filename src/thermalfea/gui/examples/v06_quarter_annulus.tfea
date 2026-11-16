@@ -1,0 +1,279 @@
+{
+  "analysis": "planar",
+  "bcs": [
+    {
+      "T": {
+        "type": "constant",
+        "value": 400.0
+      },
+      "active": true,
+      "name": "inner",
+      "selection": "inner",
+      "type": "fixed_temperature"
+    },
+    {
+      "T": {
+        "type": "constant",
+        "value": 300.0
+      },
+      "active": true,
+      "name": "outer",
+      "selection": "outer",
+      "type": "fixed_temperature"
+    },
+    {
+      "active": true,
+      "name": "symmetry",
+      "selection": "cuts",
+      "type": "symmetry"
+    }
+  ],
+  "contacts": [],
+  "display_units": {
+    "length": "m",
+    "temperature": "K"
+  },
+  "enclosures": [],
+  "geometry": [
+    {
+      "id": "circle1",
+      "radius": 0.1,
+      "type": "circle",
+      "xc": 0.0,
+      "yc": 0.0
+    },
+    {
+      "id": "circle2",
+      "radius": 0.05,
+      "type": "circle",
+      "xc": 0.0,
+      "yc": 0.0
+    },
+    {
+      "id": "boolean1",
+      "kind": "cut",
+      "objects": [
+        "circle1"
+      ],
+      "tools": [
+        "circle2"
+      ],
+      "type": "boolean"
+    },
+    {
+      "corner_radius": 0.0,
+      "height": 0.1,
+      "id": "rectangle1",
+      "type": "rectangle",
+      "width": 0.1,
+      "x": 0.0,
+      "y": 0.0
+    },
+    {
+      "id": "boolean2",
+      "kind": "intersect",
+      "objects": [
+        "boolean1"
+      ],
+      "tools": [
+        "rectangle1"
+      ],
+      "type": "boolean"
+    }
+  ],
+  "initial_condition": {
+    "kind": "uniform",
+    "per_region": null,
+    "results_path": null,
+    "value": {
+      "type": "constant",
+      "value": 293.15
+    }
+  },
+  "materials": {
+    "solid": {
+      "cp": {
+        "type": "constant",
+        "value": 500.0
+      },
+      "k": {
+        "type": "constant",
+        "value": 50.0
+      },
+      "k2": null,
+      "name": "solid",
+      "phase_change": null,
+      "rho": {
+        "type": "constant",
+        "value": 7800.0
+      }
+    }
+  },
+  "mesh_settings": {
+    "algorithm": "frontal",
+    "curve_divisions": {},
+    "curve_sizes": {},
+    "element_shape": "quad",
+    "global_size": 0.004,
+    "order": 1,
+    "point_sizes": {},
+    "refinements": [],
+    "smoothing_passes": 3,
+    "structured_surfaces": []
+  },
+  "name": "V-06 quarter annulus",
+  "network": null,
+  "regions": [
+    {
+      "material": "solid",
+      "material_angle": 0.0,
+      "selection": "all",
+      "thickness": 1.0
+    }
+  ],
+  "schema_version": 1,
+  "selections": {
+    "all": {
+      "dim": 2,
+      "fingerprints": [
+        {
+          "bbox": [
+            -1e-07,
+            -1e-07,
+            -1e-07,
+            0.10000010000000001,
+            0.10000010000000001,
+            1e-07
+          ],
+          "center": [
+            0.049514871184145215,
+            0.049514871184145215,
+            0.0
+          ],
+          "dim": 2,
+          "measure": 0.005890486225480863
+        }
+      ],
+      "name": "all",
+      "tags": [
+        1
+      ]
+    },
+    "cuts": {
+      "dim": 1,
+      "fingerprints": [
+        {
+          "bbox": [
+            0.0499999,
+            -1e-07,
+            -1e-07,
+            0.10000010000000001,
+            1e-07,
+            1e-07
+          ],
+          "center": [
+            0.07500000000000001,
+            0.0,
+            0.0
+          ],
+          "dim": 1,
+          "measure": 0.05
+        },
+        {
+          "bbox": [
+            -1e-07,
+            0.0499999,
+            -1e-07,
+            1e-07,
+            0.10000010000000001,
+            1e-07
+          ],
+          "center": [
+            0.0,
+            0.07500000000000001,
+            0.0
+          ],
+          "dim": 1,
+          "measure": 0.05
+        }
+      ],
+      "name": "cuts",
+      "tags": [
+        1,
+        3
+      ]
+    },
+    "inner": {
+      "dim": 1,
+      "fingerprints": [
+        {
+          "bbox": [
+            -9.999999999693847e-08,
+            -1e-07,
+            -1e-07,
+            0.050000100000000006,
+            0.050000100000000006,
+            1e-07
+          ],
+          "center": [
+            0.03183098861837906,
+            0.03183098861837906,
+            0.0
+          ],
+          "dim": 1,
+          "measure": 0.07853981633974484
+        }
+      ],
+      "name": "inner",
+      "tags": [
+        2
+      ]
+    },
+    "outer": {
+      "dim": 1,
+      "fingerprints": [
+        {
+          "bbox": [
+            -9.999999999387697e-08,
+            -1e-07,
+            -1e-07,
+            0.10000010000000001,
+            0.10000010000000001,
+            1e-07
+          ],
+          "center": [
+            0.06366197723675812,
+            0.06366197723675812,
+            0.0
+          ],
+          "dim": 1,
+          "measure": 0.15707963267948968
+        }
+      ],
+      "name": "outer",
+      "tags": [
+        4
+      ]
+    }
+  },
+  "solution": {
+    "auto_timestep": true,
+    "dt_max": null,
+    "dt_min": 1e-09,
+    "end_time": 1.0,
+    "initial_dt": null,
+    "kind": "steady",
+    "line_search": true,
+    "lumped_capacitance": false,
+    "max_dT_per_step": null,
+    "max_iterations": 30,
+    "output": "all",
+    "output_every": 1,
+    "output_times": [],
+    "rtol": 1e-06,
+    "theta": 1.0,
+    "time_tol": 0.02,
+    "ttol": 0.0001
+  },
+  "streams": []
+}

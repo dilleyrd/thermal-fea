@@ -1,0 +1,329 @@
+{
+  "analysis": "planar",
+  "bcs": [
+    {
+      "T_inf": {
+        "type": "constant",
+        "value": 300.0
+      },
+      "active": true,
+      "h": {
+        "type": "constant",
+        "value": 20.0
+      },
+      "name": "conv",
+      "selection": "skin",
+      "type": "convection"
+    }
+  ],
+  "contacts": [],
+  "display_units": {
+    "length": "m",
+    "temperature": "K"
+  },
+  "enclosures": [],
+  "geometry": [
+    {
+      "corner_radius": 0.0,
+      "height": 0.01,
+      "id": "rectangle1",
+      "type": "rectangle",
+      "width": 0.01,
+      "x": 0.0,
+      "y": 0.0
+    }
+  ],
+  "initial_condition": {
+    "kind": "uniform",
+    "per_region": null,
+    "results_path": null,
+    "value": {
+      "type": "constant",
+      "value": 400.0
+    }
+  },
+  "materials": {
+    "solid": {
+      "cp": {
+        "type": "constant",
+        "value": 500.0
+      },
+      "k": {
+        "type": "constant",
+        "value": 400.0
+      },
+      "k2": null,
+      "name": "solid",
+      "phase_change": null,
+      "rho": {
+        "type": "constant",
+        "value": 7800.0
+      }
+    }
+  },
+  "mesh_settings": {
+    "algorithm": "frontal",
+    "curve_divisions": {
+      "bottom": 2,
+      "left": 2,
+      "right": 2,
+      "top": 2
+    },
+    "curve_sizes": {},
+    "element_shape": "quad",
+    "global_size": 0.005,
+    "order": 1,
+    "point_sizes": {},
+    "refinements": [],
+    "smoothing_passes": 3,
+    "structured_surfaces": [
+      "all"
+    ]
+  },
+  "name": "V-16 lumped body",
+  "network": null,
+  "regions": [
+    {
+      "material": "solid",
+      "material_angle": 0.0,
+      "selection": "all",
+      "thickness": 1.0
+    }
+  ],
+  "schema_version": 1,
+  "selections": {
+    "all": {
+      "dim": 2,
+      "fingerprints": [
+        {
+          "bbox": [
+            -1e-07,
+            -1e-07,
+            -1e-07,
+            0.0100001,
+            0.0100001,
+            1e-07
+          ],
+          "center": [
+            0.005000000000000001,
+            0.005000000000000001,
+            0.0
+          ],
+          "dim": 2,
+          "measure": 0.0001
+        }
+      ],
+      "name": "all",
+      "tags": [
+        1
+      ]
+    },
+    "bottom": {
+      "dim": 1,
+      "fingerprints": [
+        {
+          "bbox": [
+            -1e-07,
+            -1e-07,
+            -1e-07,
+            0.0100001,
+            1e-07,
+            1e-07
+          ],
+          "center": [
+            0.005,
+            0.0,
+            0.0
+          ],
+          "dim": 1,
+          "measure": 0.01
+        }
+      ],
+      "name": "bottom",
+      "tags": [
+        1
+      ]
+    },
+    "left": {
+      "dim": 1,
+      "fingerprints": [
+        {
+          "bbox": [
+            -1e-07,
+            -1e-07,
+            -1e-07,
+            1e-07,
+            0.0100001,
+            1e-07
+          ],
+          "center": [
+            0.0,
+            0.005,
+            0.0
+          ],
+          "dim": 1,
+          "measure": 0.01
+        }
+      ],
+      "name": "left",
+      "tags": [
+        4
+      ]
+    },
+    "right": {
+      "dim": 1,
+      "fingerprints": [
+        {
+          "bbox": [
+            0.0099999,
+            -1e-07,
+            -1e-07,
+            0.0100001,
+            0.0100001,
+            1e-07
+          ],
+          "center": [
+            0.01,
+            0.005,
+            0.0
+          ],
+          "dim": 1,
+          "measure": 0.01
+        }
+      ],
+      "name": "right",
+      "tags": [
+        2
+      ]
+    },
+    "skin": {
+      "dim": 1,
+      "fingerprints": [
+        {
+          "bbox": [
+            -1e-07,
+            -1e-07,
+            -1e-07,
+            0.0100001,
+            1e-07,
+            1e-07
+          ],
+          "center": [
+            0.005,
+            0.0,
+            0.0
+          ],
+          "dim": 1,
+          "measure": 0.01
+        },
+        {
+          "bbox": [
+            0.0099999,
+            -1e-07,
+            -1e-07,
+            0.0100001,
+            0.0100001,
+            1e-07
+          ],
+          "center": [
+            0.01,
+            0.005,
+            0.0
+          ],
+          "dim": 1,
+          "measure": 0.01
+        },
+        {
+          "bbox": [
+            -1e-07,
+            0.0099999,
+            -1e-07,
+            0.0100001,
+            0.0100001,
+            1e-07
+          ],
+          "center": [
+            0.005,
+            0.01,
+            0.0
+          ],
+          "dim": 1,
+          "measure": 0.01
+        },
+        {
+          "bbox": [
+            -1e-07,
+            -1e-07,
+            -1e-07,
+            1e-07,
+            0.0100001,
+            1e-07
+          ],
+          "center": [
+            0.0,
+            0.005,
+            0.0
+          ],
+          "dim": 1,
+          "measure": 0.01
+        }
+      ],
+      "name": "skin",
+      "tags": [
+        1,
+        2,
+        3,
+        4
+      ]
+    },
+    "top": {
+      "dim": 1,
+      "fingerprints": [
+        {
+          "bbox": [
+            -1e-07,
+            0.0099999,
+            -1e-07,
+            0.0100001,
+            0.0100001,
+            1e-07
+          ],
+          "center": [
+            0.005,
+            0.01,
+            0.0
+          ],
+          "dim": 1,
+          "measure": 0.01
+        }
+      ],
+      "name": "top",
+      "tags": [
+        3
+      ]
+    }
+  },
+  "solution": {
+    "auto_timestep": false,
+    "dt_max": null,
+    "dt_min": 1e-09,
+    "end_time": 1462.5,
+    "initial_dt": 2.4375,
+    "kind": "transient",
+    "line_search": true,
+    "lumped_capacitance": false,
+    "max_dT_per_step": null,
+    "max_iterations": 30,
+    "output": "times",
+    "output_every": 1,
+    "output_times": [
+      487.5,
+      1462.5
+    ],
+    "rtol": 1e-06,
+    "theta": 0.5,
+    "time_tol": 0.02,
+    "ttol": 0.0001
+  },
+  "streams": []
+}

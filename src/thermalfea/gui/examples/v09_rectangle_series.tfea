@@ -1,0 +1,640 @@
+{
+  "analysis": "planar",
+  "bcs": [
+    {
+      "T": {
+        "type": "constant",
+        "value": 300.0
+      },
+      "active": true,
+      "name": "cold",
+      "selection": "cold",
+      "type": "fixed_temperature"
+    },
+    {
+      "T": {
+        "type": "constant",
+        "value": 400.0
+      },
+      "active": true,
+      "name": "hot",
+      "selection": "top",
+      "type": "fixed_temperature"
+    }
+  ],
+  "contacts": [],
+  "display_units": {
+    "length": "m",
+    "temperature": "K"
+  },
+  "enclosures": [],
+  "geometry": [
+    {
+      "corner_radius": 0.0,
+      "height": 0.5,
+      "id": "rectangle1",
+      "type": "rectangle",
+      "width": 0.5,
+      "x": 0.0,
+      "y": 0.0
+    },
+    {
+      "corner_radius": 0.0,
+      "height": 0.25,
+      "id": "rectangle2",
+      "type": "rectangle",
+      "width": 0.5,
+      "x": 0.0,
+      "y": 0.5
+    },
+    {
+      "corner_radius": 0.0,
+      "height": 0.25,
+      "id": "rectangle3",
+      "type": "rectangle",
+      "width": 0.5,
+      "x": 0.0,
+      "y": 0.75
+    },
+    {
+      "corner_radius": 0.0,
+      "height": 0.5,
+      "id": "rectangle4",
+      "type": "rectangle",
+      "width": 0.5,
+      "x": 0.5,
+      "y": 0.0
+    },
+    {
+      "corner_radius": 0.0,
+      "height": 0.25,
+      "id": "rectangle5",
+      "type": "rectangle",
+      "width": 0.5,
+      "x": 0.5,
+      "y": 0.5
+    },
+    {
+      "corner_radius": 0.0,
+      "height": 0.25,
+      "id": "rectangle6",
+      "type": "rectangle",
+      "width": 0.5,
+      "x": 0.5,
+      "y": 0.75
+    }
+  ],
+  "initial_condition": {
+    "kind": "uniform",
+    "per_region": null,
+    "results_path": null,
+    "value": {
+      "type": "constant",
+      "value": 293.15
+    }
+  },
+  "materials": {
+    "solid": {
+      "cp": {
+        "type": "constant",
+        "value": 500.0
+      },
+      "k": {
+        "type": "constant",
+        "value": 50.0
+      },
+      "k2": null,
+      "name": "solid",
+      "phase_change": null,
+      "rho": {
+        "type": "constant",
+        "value": 7800.0
+      }
+    }
+  },
+  "mesh_settings": {
+    "algorithm": "frontal",
+    "curve_divisions": {},
+    "curve_sizes": {},
+    "element_shape": "quad",
+    "global_size": 0.02,
+    "order": 1,
+    "point_sizes": {},
+    "refinements": [],
+    "smoothing_passes": 3,
+    "structured_surfaces": []
+  },
+  "name": "V-09 rectangle series",
+  "network": null,
+  "regions": [
+    {
+      "material": "solid",
+      "material_angle": 0.0,
+      "selection": "all",
+      "thickness": 1.0
+    }
+  ],
+  "schema_version": 1,
+  "selections": {
+    "all": {
+      "dim": 2,
+      "fingerprints": [
+        {
+          "bbox": [
+            -1.0000000002775557e-07,
+            -1.0000000002775557e-07,
+            -1.0000000002775557e-07,
+            0.5000001000000001,
+            0.5000001000000001,
+            1.0000000002775557e-07
+          ],
+          "center": [
+            0.25,
+            0.25,
+            0.0
+          ],
+          "dim": 2,
+          "measure": 0.25
+        },
+        {
+          "bbox": [
+            -1e-07,
+            0.4999999,
+            -1e-07,
+            0.5000001,
+            0.7500001,
+            1e-07
+          ],
+          "center": [
+            0.25,
+            0.625,
+            0.0
+          ],
+          "dim": 2,
+          "measure": 0.125
+        },
+        {
+          "bbox": [
+            -1e-07,
+            0.7499999,
+            -1e-07,
+            0.5000001,
+            1.0000001,
+            1e-07
+          ],
+          "center": [
+            0.25,
+            0.875,
+            0.0
+          ],
+          "dim": 2,
+          "measure": 0.125
+        },
+        {
+          "bbox": [
+            0.4999999,
+            -1.0000000002775557e-07,
+            -1.0000000002775557e-07,
+            1.0000001,
+            0.5000001000000001,
+            1.0000000002775557e-07
+          ],
+          "center": [
+            0.75,
+            0.25,
+            0.0
+          ],
+          "dim": 2,
+          "measure": 0.25
+        },
+        {
+          "bbox": [
+            0.4999999,
+            0.4999999,
+            -1e-07,
+            1.0000001,
+            0.7500001,
+            1e-07
+          ],
+          "center": [
+            0.75,
+            0.625,
+            0.0
+          ],
+          "dim": 2,
+          "measure": 0.125
+        },
+        {
+          "bbox": [
+            0.4999999,
+            0.7499999,
+            -1e-07,
+            1.0000001,
+            1.0000001,
+            1e-07
+          ],
+          "center": [
+            0.75,
+            0.875,
+            0.0
+          ],
+          "dim": 2,
+          "measure": 0.125
+        }
+      ],
+      "name": "all",
+      "tags": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6
+      ]
+    },
+    "bottom": {
+      "dim": 1,
+      "fingerprints": [
+        {
+          "bbox": [
+            -1e-07,
+            -1e-07,
+            -1e-07,
+            0.5000001,
+            1e-07,
+            1e-07
+          ],
+          "center": [
+            0.25,
+            0.0,
+            0.0
+          ],
+          "dim": 1,
+          "measure": 0.5
+        },
+        {
+          "bbox": [
+            0.4999999,
+            -1e-07,
+            -1e-07,
+            1.0000001,
+            1e-07,
+            1e-07
+          ],
+          "center": [
+            0.75,
+            0.0,
+            0.0
+          ],
+          "dim": 1,
+          "measure": 0.5
+        }
+      ],
+      "name": "bottom",
+      "tags": [
+        1,
+        11
+      ]
+    },
+    "cold": {
+      "dim": 1,
+      "fingerprints": [
+        {
+          "bbox": [
+            -1e-07,
+            -1e-07,
+            -1e-07,
+            1e-07,
+            0.5000001,
+            1e-07
+          ],
+          "center": [
+            0.0,
+            0.25,
+            0.0
+          ],
+          "dim": 1,
+          "measure": 0.5
+        },
+        {
+          "bbox": [
+            -1e-07,
+            0.4999999,
+            -1e-07,
+            1e-07,
+            0.7500001,
+            1e-07
+          ],
+          "center": [
+            0.0,
+            0.625,
+            0.0
+          ],
+          "dim": 1,
+          "measure": 0.25
+        },
+        {
+          "bbox": [
+            -1e-07,
+            0.7499999,
+            -1e-07,
+            1e-07,
+            1.0000001,
+            1e-07
+          ],
+          "center": [
+            0.0,
+            0.875,
+            0.0
+          ],
+          "dim": 1,
+          "measure": 0.25
+        },
+        {
+          "bbox": [
+            0.9999999,
+            -1e-07,
+            -1e-07,
+            1.0000001,
+            0.5000001,
+            1e-07
+          ],
+          "center": [
+            1.0,
+            0.25,
+            0.0
+          ],
+          "dim": 1,
+          "measure": 0.5
+        },
+        {
+          "bbox": [
+            0.9999999,
+            0.4999999,
+            -1e-07,
+            1.0000001,
+            0.7500001,
+            1e-07
+          ],
+          "center": [
+            1.0,
+            0.625,
+            0.0
+          ],
+          "dim": 1,
+          "measure": 0.25
+        },
+        {
+          "bbox": [
+            0.9999999,
+            0.7499999,
+            -1e-07,
+            1.0000001,
+            1.0000001,
+            1e-07
+          ],
+          "center": [
+            1.0,
+            0.875,
+            0.0
+          ],
+          "dim": 1,
+          "measure": 0.25
+        },
+        {
+          "bbox": [
+            -1e-07,
+            -1e-07,
+            -1e-07,
+            0.5000001,
+            1e-07,
+            1e-07
+          ],
+          "center": [
+            0.25,
+            0.0,
+            0.0
+          ],
+          "dim": 1,
+          "measure": 0.5
+        },
+        {
+          "bbox": [
+            0.4999999,
+            -1e-07,
+            -1e-07,
+            1.0000001,
+            1e-07,
+            1e-07
+          ],
+          "center": [
+            0.75,
+            0.0,
+            0.0
+          ],
+          "dim": 1,
+          "measure": 0.5
+        }
+      ],
+      "name": "cold",
+      "tags": [
+        4,
+        7,
+        10,
+        12,
+        14,
+        16,
+        1,
+        11
+      ]
+    },
+    "left": {
+      "dim": 1,
+      "fingerprints": [
+        {
+          "bbox": [
+            -1e-07,
+            -1e-07,
+            -1e-07,
+            1e-07,
+            0.5000001,
+            1e-07
+          ],
+          "center": [
+            0.0,
+            0.25,
+            0.0
+          ],
+          "dim": 1,
+          "measure": 0.5
+        },
+        {
+          "bbox": [
+            -1e-07,
+            0.4999999,
+            -1e-07,
+            1e-07,
+            0.7500001,
+            1e-07
+          ],
+          "center": [
+            0.0,
+            0.625,
+            0.0
+          ],
+          "dim": 1,
+          "measure": 0.25
+        },
+        {
+          "bbox": [
+            -1e-07,
+            0.7499999,
+            -1e-07,
+            1e-07,
+            1.0000001,
+            1e-07
+          ],
+          "center": [
+            0.0,
+            0.875,
+            0.0
+          ],
+          "dim": 1,
+          "measure": 0.25
+        }
+      ],
+      "name": "left",
+      "tags": [
+        4,
+        7,
+        10
+      ]
+    },
+    "right": {
+      "dim": 1,
+      "fingerprints": [
+        {
+          "bbox": [
+            0.9999999,
+            -1e-07,
+            -1e-07,
+            1.0000001,
+            0.5000001,
+            1e-07
+          ],
+          "center": [
+            1.0,
+            0.25,
+            0.0
+          ],
+          "dim": 1,
+          "measure": 0.5
+        },
+        {
+          "bbox": [
+            0.9999999,
+            0.4999999,
+            -1e-07,
+            1.0000001,
+            0.7500001,
+            1e-07
+          ],
+          "center": [
+            1.0,
+            0.625,
+            0.0
+          ],
+          "dim": 1,
+          "measure": 0.25
+        },
+        {
+          "bbox": [
+            0.9999999,
+            0.7499999,
+            -1e-07,
+            1.0000001,
+            1.0000001,
+            1e-07
+          ],
+          "center": [
+            1.0,
+            0.875,
+            0.0
+          ],
+          "dim": 1,
+          "measure": 0.25
+        }
+      ],
+      "name": "right",
+      "tags": [
+        12,
+        14,
+        16
+      ]
+    },
+    "top": {
+      "dim": 1,
+      "fingerprints": [
+        {
+          "bbox": [
+            -1e-07,
+            0.9999999,
+            -1e-07,
+            0.5000001,
+            1.0000001,
+            1e-07
+          ],
+          "center": [
+            0.25,
+            1.0,
+            0.0
+          ],
+          "dim": 1,
+          "measure": 0.5
+        },
+        {
+          "bbox": [
+            0.4999999,
+            0.9999999,
+            -1e-07,
+            1.0000001,
+            1.0000001,
+            1e-07
+          ],
+          "center": [
+            0.75,
+            1.0,
+            0.0
+          ],
+          "dim": 1,
+          "measure": 0.5
+        }
+      ],
+      "name": "top",
+      "tags": [
+        9,
+        17
+      ]
+    }
+  },
+  "solution": {
+    "auto_timestep": true,
+    "dt_max": null,
+    "dt_min": 1e-09,
+    "end_time": 1.0,
+    "initial_dt": null,
+    "kind": "steady",
+    "line_search": true,
+    "lumped_capacitance": false,
+    "max_dT_per_step": null,
+    "max_iterations": 30,
+    "output": "all",
+    "output_every": 1,
+    "output_times": [],
+    "rtol": 1e-06,
+    "theta": 1.0,
+    "time_tol": 0.02,
+    "ttol": 0.0001
+  },
+  "streams": []
+}
