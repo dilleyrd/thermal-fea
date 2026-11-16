@@ -380,6 +380,7 @@ Boundary Conditions, Flow (Streams, Network), Enclosures, Analysis Settings, Sol
   and all plot labels; SI m, SI mm, US customary presets.
 - [ ] **M10.5 [A] Report.** Self-contained HTML report: model summary, materials, mesh
   statistics, load tables, solver log summary, energy balance, chosen plots.
+  *(On hold by the owner since 2026-11-16: future to-do, skip for now.)*
 - [ ] **M10.6 [A] Restart.** Continue a transient run from the last stored step to a later
   end time, appending to the same results file.
 

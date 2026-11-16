@@ -98,6 +98,8 @@ and reasons are in the open questions cited.
 - On 2026-11-16 the owner put **M9 (enclosure radiation) and M10.2 (phase change) on
   hold** and asked for M10.1 (thermal contact) while they do the M8.G review. M10.1 is
   done (Q22). Do not start M9 or M10.2 until the owner says so.
+- On 2026-11-16 the owner also put **M10.5 (report) on hold** as a future to-do item.
+  Skip it; do not start it until the owner says so.
 - Awaiting the owner's confirmation, none blocking: Q11, Q14, Q17.2, Q18.2, Q20, Q21.
 - Known gaps, all recorded in Q21: no velocity or angle unit; contacts have no tree node
   or panel (M10.1); GIF export blocks the window; the stream "pick path points" toggle
