@@ -179,7 +179,7 @@ Details and acceptance tests are in [docs/tasks.md](docs/tasks.md).
 | M4 | Transient solver | Adaptive time stepping, HDF5 results | M3 | ☑ |
 | M5 | Post-processing (headless) | Contour, vector, history and path plots; export; animation | M4 | ☐ |
 | M6 | Convection library | Correlations and fluid properties as boundary conditions | M3 | ☑ |
-| M7 | Flow solver | Streams and networks coupled to the solid | M6 | ☐ |
+| M7 | Flow solver | Streams and networks coupled to the solid | M6 | ☑ |
 | M8 | GUI | Full interactive application | M5 (M6, M7 for their panels) | ☐ |
 | M9 | Enclosure radiation | View factors and radiosity | M3 | ☐ |
 | M10 | Extended features | Contact resistance, phase change, DXF, unit systems, report | M5 | ☐ |
