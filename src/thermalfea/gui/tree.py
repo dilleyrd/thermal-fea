@@ -117,6 +117,8 @@ class ModelTree(QTreeWidget):
         self._rebuilding = False
         self._expanded: dict[Any, bool] = {}
         self._actions: list[QAction] = []
+        #: Providers of view objects shown under the Solution node (see :meth:`add_provider`).
+        self.providers: list[Any] = []
         self.setHeaderHidden(True)
         # geometry operations replay in order: the history can never be reordered
         self.setDragDropMode(QAbstractItemView.DragDropMode.NoDragDrop)
@@ -130,6 +132,32 @@ class ModelTree(QTreeWidget):
         self.itemCollapsed.connect(lambda item: self._remember(item, False))
         document.model_changed.connect(self.rebuild)
         self.rebuild()
+
+    def add_provider(self, provider: Any) -> None:
+        """Let ``provider`` contribute objects under the Solution node and their actions.
+
+        These objects are view state, not part of the model (the result displays of
+        :mod:`thermalfea.gui.results_tools`). The provider offers:
+
+        * ``objects_changed`` -- a signal; the tree rebuilds when it fires;
+        * ``tree_items() -> list[(text, address, renameable)]`` -- the child items;
+        * ``owns(address) -> bool`` -- whether an address belongs to it;
+        * ``tree_actions(address or None) -> list[(text, slot, data)]`` -- the context-menu
+          actions of the Solution node (``None``) or of one of its objects;
+        * ``rename(address, new_name)`` -- inline rename; raises ``ModelError`` if refused.
+
+        Parameters
+        ----------
+        provider : object
+        """
+        self.providers.append(provider)
+        provider.objects_changed.connect(self.rebuild)
+        self.rebuild()
+
+    def _provider_of(self, address: Address | None) -> Any:
+        if address is None:
+            return None
+        return next((p for p in self.providers if p.owns(address)), None)
 
     # -------------------------------------------------------------------- building
     def _remember(self, item: QTreeWidgetItem, expanded: bool) -> None:
@@ -243,6 +271,12 @@ class ModelTree(QTreeWidget):
                 sections["enclosures"], enclosure.name,
                 NodeRef("enclosures", ("enclosures", i)), renameable=True,
             )  # fmt: skip
+        for provider in self.providers:
+            for text, address, renameable in provider.tree_items():
+                self._make_item(
+                    sections["solution"], text, NodeRef("solution", address),
+                    renameable=renameable,
+                )
 
     @staticmethod
     def _title_of(cls: type) -> str:
@@ -340,7 +374,15 @@ class ModelTree(QTreeWidget):
             out.append(action)
 
         model = self.document.model
-        if ref.address is None and ref.section == "loads":
+        provider = self._provider_of(ref.address)
+        if provider is None and ref.address is None and ref.section == "solution":
+            for p in self.providers:
+                for text, slot, data in p.tree_actions(None):
+                    add(text, slot, data)
+        elif provider is not None:
+            for text, slot, data in provider.tree_actions(ref.address):
+                add(text, slot, data)
+        elif ref.address is None and ref.section == "loads":
             for tag in registry.bc_tags():
                 title = self._title_of(registry.bc_info(tag).cls)
                 add(f"Add {title}", lambda t=tag: self.add_bc(t), ("add_bc", tag))
@@ -608,6 +650,14 @@ class ModelTree(QTreeWidget):
         if self._rebuilding:
             return
         address = self.address_of(item)
+        provider = self._provider_of(address)
+        if provider is not None:
+            try:
+                provider.rename(address, item.text(0))
+            except ModelError as exc:
+                self.error_occurred.emit(str(exc))
+            self.rebuild()
+            return
         if address is None or address[0] not in _NAMED_LISTS + ("materials",):
             return
         try:

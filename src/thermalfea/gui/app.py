@@ -19,6 +19,7 @@ from thermalfea.gui.main_window import MainWindow
 from thermalfea.gui.materials_tools import attach_materials
 from thermalfea.gui.mesh_tools import attach_mesh_tools
 from thermalfea.gui.panels import attach_tree
+from thermalfea.gui.results_tools import attach_results
 from thermalfea.gui.solve_tools import attach_solve
 from thermalfea.gui.viewport_mpl import attach_viewport
 from thermalfea.gui.worker import SerialWorker
@@ -125,6 +126,7 @@ def main(argv: list[str] | None = None) -> int:
     properties.generate_mesh = mesh_tools.generate
     attach_loads(window, document, view)
     properties.solve_controller = attach_solve(window, document, view)
+    attach_results(window, document, view)
     # gmsh is driven from one long-lived thread for the whole session (see gui/worker.py)
     gmsh_worker = SerialWorker(window, "gmsh-worker")
     geometry.worker = gmsh_worker

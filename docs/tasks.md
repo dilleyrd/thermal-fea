@@ -333,7 +333,7 @@ Boundary Conditions, Flow (Streams, Network), Enclosures, Analysis Settings, Sol
 - [x] **M8.9 [B] Solve.** Analysis-settings panel; validation issue list (double-click
   selects the offending object); `gui/worker.py` solve thread with progress dialog showing
   time, Δt, iterations and a live residual plot; Cancel uses the progress callback.
-- [ ] **M8.10 [B] Result display.** Contour and vector result objects in the tree with
+- [x] **M8.10 [B] Result display.** Contour and vector result objects in the tree with
   controls (field, step slider and time box, range, levels, smooth/banded, mesh overlay);
   click probe showing interpolated values (uses `post/path.py` point location); min/max
   markers; play animation.

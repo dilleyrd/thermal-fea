@@ -311,6 +311,85 @@ def contour_data(results: Results, step: int = -1, field: str = "T") -> ContourD
     )
 
 
+def contour_fields(results: Results) -> list[str]:
+    """The contour fields these results can show, in the order of :data:`FIELDS`.
+
+    A component field (``qx``, ``gradx``, ...) needs a mesh with that many dimensions.
+
+    Parameters
+    ----------
+    results : Results
+
+    Returns
+    -------
+    list of str
+        Keys of :data:`FIELDS`.
+    """
+    dim = results.mesh.dim
+    return [name for name, (_s, comp, _u, _t) in FIELDS.items() if comp is None or comp < dim]
+
+
+def field_range(results: Results, field: str = "T") -> tuple[float, float]:
+    """Smallest and largest value of a contour field over every stored step.
+
+    Parameters
+    ----------
+    results : Results
+    field : str
+        One of :data:`FIELDS`.
+
+    Returns
+    -------
+    vmin, vmax : float
+        In display units (those of :func:`contour_data`).
+    """
+    lows: list[float] = []
+    highs: list[float] = []
+    for step in range(results.n_steps):
+        data = contour_data(results, step, field)
+        lows.append(data.vmin)
+        highs.append(data.vmax)
+    if not lows:
+        raise ModelError("the results have no stored steps")
+    return min(lows), max(highs)
+
+
+def display_value(results: Results, field: str, value: float) -> tuple[float, str]:
+    """Convert an SI field value (as returned by ``path.value_at``) to display units.
+
+    Parameters
+    ----------
+    results : Results
+    field : str
+        One of :data:`FIELDS`.
+    value : float
+        SI value (K, W/m^2 or K/m); NaN stays NaN.
+
+    Returns
+    -------
+    value : float
+        In the display unit of the field (the unit :func:`contour_data` uses).
+    unit : str
+        Label of that unit.
+
+    Raises
+    ------
+    ModelError
+        For an unknown field.
+    """
+    if field not in FIELDS:
+        raise ModelError(f"unknown contour field {field!r}; choose from {', '.join(FIELDS)}")
+    source, component, si_unit, _name = FIELDS[field]
+    units = _unit_settings(results)
+    label = _TEMPERATURE_LABEL[units.temperature]
+    if source == "T":
+        return float(from_si(float(value), "temperature", units)), label
+    if source == "flux":
+        return float(value), si_unit
+    # a gradient component or magnitude is a temperature difference per metre
+    return float(from_si(float(value), "temperature_difference", units)), f"{label}/m"
+
+
 # ------------------------------------------------------------------------------- helpers
 
 

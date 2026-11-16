@@ -23,6 +23,7 @@ from thermalfea.gui.property_panels.correlation import CorrelationPanel
 from thermalfea.gui.property_panels.form import FormPanel
 from thermalfea.gui.property_panels.mesh import MeshPanel
 from thermalfea.gui.property_panels.region import RegionPanel
+from thermalfea.gui.property_panels.results import RESULT_ADDRESS, ResultPanel
 from thermalfea.gui.property_panels.solution import SolutionPanel
 from thermalfea.gui.scene import SceneView
 from thermalfea.gui.tree import ModelTree
@@ -106,6 +107,11 @@ class PropertyController:
         #: given to the analysis-settings panel (set by the application after
         #: ``attach_solve``).
         self.solve_controller: Any = None
+        #: The result-display controller (set by ``attach_results``); the objects under the
+        #: Solution node have addresses ``("result", name)`` and get a ``ResultPanel``.
+        self.results_controller: Any = None
+        #: The result panel currently shown, if any.
+        self.result_panel: QWidget | None = None
         self._installed: QWidget | None = None
         self._object_type: type | None = None
         tree.object_selected.connect(self.show_object)
@@ -114,6 +120,10 @@ class PropertyController:
     def show_object(self, address: Address) -> None:
         """Show the form of the object at ``address`` (a placeholder if there is none)."""
         model = self.document.model
+        results = self.results_controller
+        if address and address[0] == RESULT_ADDRESS and results is not None:
+            self._show_result(address)
+            return
         if not address or address[0] == "section" or not exists(model, address):
             self._install(self._placeholder(), None, None)
             return
@@ -128,6 +138,21 @@ class PropertyController:
         scroll.setWidget(panel)
         self._install(scroll, panel, address)
 
+    def _show_result(self, address: Address) -> None:
+        """Show the panel of a result object and make it the displayed one."""
+        results = self.results_controller
+        name = address[1] if len(address) > 1 else None
+        if results.get(name) is None:
+            self._install(self._placeholder(), None, None)
+            return
+        results.show(name)
+        panel = ResultPanel(results, name)
+        scroll = QScrollArea()
+        scroll.setWidgetResizable(True)
+        scroll.setWidget(panel)
+        self._install(scroll, None, None)
+        self.result_panel = panel
+
     def _placeholder(self) -> QWidget:
         label = QLabel(PLACEHOLDER_TEXT)
         label.setAlignment(Qt.AlignmentFlag.AlignCenter)
@@ -140,6 +165,7 @@ class PropertyController:
         previous = self._installed
         self.window.set_property_panel(widget)
         self._installed = widget
+        self.result_panel = None
         self.panel = panel
         self.current_address = address
         self._object_type = type(resolve(self.document.model, address)) if address else None
@@ -197,4 +223,5 @@ def attach_tree(
     window.set_tree(tree)
     tree.error_occurred.connect(lambda text: window.show_error("Model tree", text))
     controller = PropertyController(window, document, tree, view)
+    tree.property_controller = controller  # type: ignore[attr-defined]
     return tree, controller
