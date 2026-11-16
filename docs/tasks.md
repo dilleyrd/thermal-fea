@@ -280,7 +280,7 @@ All plotting functions take a `Results`, return a Matplotlib `Figure`, optionall
   is unsymmetric — confirm nothing downstream assumes symmetry. Write `/fluid/<stream>`
   results (Data §9); add the stream enthalpy term to the energy balance.
   Accept: V-29; a transient case with a time-varying flow rate runs and conserves energy.
-- [ ] **M7.5 [A] Flow post-processing.** Plot fluid and mean wall temperature against s;
+- [x] **M7.5 [A] Flow post-processing.** Plot fluid and mean wall temperature against s;
   stream summary table (ṁ, Re, regime, mean h, Δp, T_in, T_out, heat picked up).
 - [ ] **M7.G [C] Gate.** V-26 … V-31 and a review of M7.1 against Theory §9.1.
 
