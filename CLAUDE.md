@@ -6,5 +6,6 @@ Read `PLAN.md` first, then only the documents the task in `docs/tasks.md` names.
 5. Never weaken a test to make it pass. Tolerances are specification; a failing verification test means the code is wrong.
 6. Do not change public signatures in `docs/data-model.md` or the task text; if one cannot work, record why and stop.
 Plan §7 (no literal space dimension, registered elements, facets, `DofMap`, `Term`s) binds every task.
+Working method, machine pitfalls, mechanisms not in the plan, and notes on the remaining tasks: `docs/handover.md` (read it after `PLAN.md`).
 Check command (lint + all tests, project venv only): `.\scripts\check.ps1`
 Commit each task as `M<n>.<k>: <task title>` and push to `origin`; never force-push.
