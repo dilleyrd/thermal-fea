@@ -133,6 +133,7 @@ class Model:
         return self.analysis == "axisymmetric"
 
 
+from . import flow_forms as _flow_forms  # noqa: E402,F401  (registers the forms)
 from . import material_forms as _material_forms  # noqa: E402,F401  (registers the forms)
 from . import mesh_forms as _mesh_forms  # noqa: E402,F401  (registers the forms)
 from . import solution_forms as _solution_forms  # noqa: E402,F401  (registers the forms)

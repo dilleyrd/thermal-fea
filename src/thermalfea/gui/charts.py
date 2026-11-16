@@ -32,6 +32,7 @@ from PySide6.QtWidgets import QHBoxLayout, QPushButton, QVBoxLayout, QWidget
 from thermalfea.core.errors import ThermalFEAError
 from thermalfea.post import export as post_export
 from thermalfea.post import plots
+from thermalfea.post.flow import wall_temperature
 from thermalfea.post.results import Results
 
 _log = logging.getLogger(__name__)
@@ -132,6 +133,7 @@ class ChartWindow(QWidget):
         self.kind = ""
         self.data: plots.HistoryData | plots.PathData | None = None
         self.nodes: list[int] = []
+        self.stream_curves: dict[str, tuple[np.ndarray, np.ndarray]] = {}
         self.out_of_date = False
         self._title = "Chart"
         self.figure = Figure(figsize=(7.0, 4.5), layout="constrained")
@@ -229,6 +231,37 @@ class ChartWindow(QWidget):
         self._fresh_axes()
         plots.path(results, polyline, step, field, n, ax=self.axes)
         self._finish("path", data)
+
+    def show_stream(self, results: Results, stream: str, step: int = -1) -> None:
+        """Fluid and mean wall temperature of an in-plane stream against ``s``.
+
+        Draws the same two curves as ``post.flow.plot_stream``, from the data of
+        ``post.flow.wall_temperature`` and ``Results.fluid_temperature``. The curves are kept
+        in :attr:`stream_curves` (label -> (s, T)); :attr:`data` stays ``None`` (no CSV).
+
+        Parameters
+        ----------
+        results : Results
+        stream : str
+            Name of an in-plane stream in the results.
+        step : int
+            Stored step; negative counts from the end.
+        """
+        s_wall, t_wall = wall_temperature(results, stream, step)
+        s_fluid = np.asarray(results.stream(stream)["s"], dtype=float)
+        t_fluid = np.asarray(results.fluid_temperature(stream, step), dtype=float)
+        self._fresh_axes()
+        self.axes.plot(s_fluid, t_fluid, label="fluid")
+        self.axes.plot(s_wall, t_wall, label="mean wall")
+        self.axes.set_xlabel("s [m]")
+        self.axes.set_ylabel("T [K]")
+        self.axes.grid(True)
+        self.axes.legend()
+        self.stream_curves = {"fluid": (s_fluid, t_fluid), "mean wall": (s_wall, t_wall)}
+        self.kind = "stream"
+        self.out_of_date = False
+        self._set_title(f"Stream {stream}")
+        self.canvas.draw_idle()
 
     def mark_out_of_date(self) -> None:
         """Say in the title that the results this chart shows were replaced."""

@@ -421,6 +421,17 @@ None of these blocks the build. Please confirm, or say what to change.
     from settings that changed meanwhile is discarded. `theta` is checked by the model,
     not by a limit in the form.
 
+12. **Result display, charts, export and flow panels (M8.10 – M8.12).** Result objects
+    (contours, vector plots) are view state: not stored in the model file, not on the
+    undo stack. One object is displayed at a time. GIF export runs in the GUI thread, so
+    the window does not respond while a long animation is written. Open charts are
+    marked "(out of date)" when new results arrive; they are not redrawn. A new stream
+    copies the first existing stream, or asks for its required values in a dialog.
+    **Known limitation:** the probe, the chart path pick and the stream "pick path
+    points" toggle all listen to viewport clicks; the probe and the chart path pick
+    exclude each other, but the stream toggle does not switch the others off, and it
+    leaves the selection mode at "none" when turned off.
+
 ## Q13 — choices made in the verification examples — raised in M3.G
 
 - **Nodes at check points.** V-09 and V-10 check the temperature at given points. Point

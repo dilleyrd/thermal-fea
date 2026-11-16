@@ -15,6 +15,7 @@ from typing import Any
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import QLabel, QScrollArea, QWidget
 
+from thermalfea.core.errors import ModelError
 from thermalfea.core.forms import FormSpec, form_for
 from thermalfea.gui.addressing import Address, exists, resolve
 from thermalfea.gui.document import Document
@@ -22,12 +23,14 @@ from thermalfea.gui.main_window import MainWindow
 from thermalfea.gui.property_panels.correlation import CorrelationPanel
 from thermalfea.gui.property_panels.form import FormPanel
 from thermalfea.gui.property_panels.mesh import MeshPanel
+from thermalfea.gui.property_panels.network import NETWORK_ADDRESS, NetworkPanel
 from thermalfea.gui.property_panels.region import RegionPanel
 from thermalfea.gui.property_panels.results import RESULT_ADDRESS, ResultPanel
 from thermalfea.gui.property_panels.solution import SolutionPanel
+from thermalfea.gui.property_panels.stream import StreamPanel
 from thermalfea.gui.scene import SceneView
 from thermalfea.gui.tree import ModelTree
-from thermalfea.model.bcs import CorrelationConvection
+from thermalfea.model.bcs import CorrelationConvection, Stream
 from thermalfea.model.model import RegionAssignment
 from thermalfea.model.settings import MeshSettings, SolutionSettings
 
@@ -65,6 +68,14 @@ def panel_factory(cls: type) -> PanelFactory:
 
 def _plain_panel(controller: PropertyController, spec: FormSpec, address: Address) -> FormPanel:
     return FormPanel(spec, controller.document, address, controller.view)
+
+
+def _type_at(model: Any, address: Address) -> type | None:
+    """Class of the object at ``address``, ``None`` where there is no object."""
+    try:
+        return type(resolve(model, address))
+    except ModelError:
+        return None
 
 
 class PropertyController:
@@ -124,6 +135,12 @@ class PropertyController:
         if address and address[0] == RESULT_ADDRESS and results is not None:
             self._show_result(address)
             return
+        if address == NETWORK_ADDRESS:  # shown also without a network ("Create network")
+            scroll = QScrollArea()
+            scroll.setWidgetResizable(True)
+            scroll.setWidget(NetworkPanel(self.document))
+            self._install(scroll, None, NETWORK_ADDRESS)
+            return
         if not address or address[0] == "section" or not exists(model, address):
             self._install(self._placeholder(), None, None)
             return
@@ -168,7 +185,7 @@ class PropertyController:
         self.result_panel = None
         self.panel = panel
         self.current_address = address
-        self._object_type = type(resolve(self.document.model, address)) if address else None
+        self._object_type = _type_at(self.document.model, address) if address else None
         if previous is not None and previous is not widget:
             previous.deleteLater()
 
@@ -199,6 +216,9 @@ register_panel(
 register_panel(
     CorrelationConvection,
     lambda c, spec, address: CorrelationPanel(spec, c.document, address, c.view),
+)
+register_panel(
+    Stream, lambda c, spec, address: StreamPanel(spec, c.document, address, c.view)
 )
 
 

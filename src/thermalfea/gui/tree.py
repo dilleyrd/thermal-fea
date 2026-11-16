@@ -20,7 +20,7 @@ from __future__ import annotations
 
 import copy
 from collections.abc import Callable
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from typing import Any
 
 from PySide6.QtCore import QPoint, Qt, Signal
@@ -31,9 +31,11 @@ from thermalfea.core import registry
 from thermalfea.core.errors import ModelError
 from thermalfea.core.forms import copy_name, default_instance, form_for, unique_name
 from thermalfea.gui.addressing import Address, exists, resolve
+from thermalfea.gui.dialogs.new_stream import NewStreamDialog
 from thermalfea.gui.document import Document
 from thermalfea.materials import library
 from thermalfea.materials.material import Material
+from thermalfea.model.bcs import Stream
 from thermalfea.model.geometry_edit import dependents
 from thermalfea.model.model import Model, RegionAssignment
 
@@ -262,10 +264,7 @@ class ModelTree(QTreeWidget):
             self._make_item(
                 streams, stream.name, NodeRef("streams", ("streams", i)), renameable=True
             )
-        self._make_item(
-            sections["flow"], "Network",
-            NodeRef("network", ("network",) if model.network is not None else None),
-        )  # fmt: skip
+        self._make_item(sections["flow"], "Network", NodeRef("network", ("network",)))
         for i, enclosure in enumerate(model.enclosures):
             self._make_item(
                 sections["enclosures"], enclosure.name,
@@ -390,6 +389,8 @@ class ModelTree(QTreeWidget):
             add("Add material", self.add_material, ("add_material", None))
         elif ref.address is None and ref.section == "regions":
             add("Add region", self.add_region, ("add_region", None))
+        elif ref.address is None and ref.section == "streams":
+            add("Add stream", self.add_stream, ("add_stream", None))
         elif ref.address is not None and ref.address[0] in _NAMED_LISTS + ("materials",):
             address = ref.address
             add("Rename", lambda: self.begin_rename(address), ("rename", address))
@@ -520,6 +521,58 @@ class ModelTree(QTreeWidget):
 
         self.document.edit("Add region", mutate)
         address = ("regions", holder[0])
+        self.select_address(address)
+        return address
+
+    def add_stream(self) -> Address | None:
+        """Add an in-plane stream "Stream <n>" wetting no walls.
+
+        With a model that has a stream, the new stream copies every value of the first one
+        (path, fluid, flow area, ...). Otherwise the values are asked for in a non-modal
+        :class:`NewStreamDialog` (``self.stream_dialog``) and the stream is added when it is
+        accepted. One undo step.
+
+        Returns
+        -------
+        tuple or None
+            Address of the new stream; ``None`` while the dialog is open.
+        """
+        if not self.document.model.streams:
+            dialog = NewStreamDialog(self)
+            dialog.stream_requested.connect(self._add_new_stream)
+            self.stream_dialog = dialog
+            dialog.show()
+            dialog.raise_()
+            dialog.activateWindow()
+            return None
+        holder: list[int] = []
+
+        def mutate(model: Model) -> None:
+            template = model.streams[0]
+            name = unique_name("Stream", [s.name for s in model.streams])
+            stream = copy.deepcopy(template)
+            stream.name = name
+            stream.mode = "in_plane"
+            stream.walls = []
+            model.streams.append(stream)
+            holder.append(len(model.streams) - 1)
+
+        self.document.edit("Add stream", mutate)
+        address = ("streams", holder[0])
+        self.select_address(address)
+        return address
+
+    def _add_new_stream(self, template: Stream) -> Address:
+        """Add the stream a :class:`NewStreamDialog` built (one undo step)."""
+        holder: list[int] = []
+
+        def mutate(model: Model) -> None:
+            name = unique_name("Stream", [s.name for s in model.streams])
+            model.streams.append(replace(template, name=name, walls=[]))
+            holder.append(len(model.streams) - 1)
+
+        self.document.edit("Add stream", mutate)
+        address = ("streams", holder[0])
         self.select_address(address)
         return address
 
