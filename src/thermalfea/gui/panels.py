@@ -20,6 +20,7 @@ from thermalfea.core.forms import FormSpec, form_for
 from thermalfea.gui.addressing import Address, exists, resolve
 from thermalfea.gui.document import Document
 from thermalfea.gui.main_window import MainWindow
+from thermalfea.gui.property_panels.contact import ContactPanel
 from thermalfea.gui.property_panels.correlation import CorrelationPanel
 from thermalfea.gui.property_panels.form import FormPanel
 from thermalfea.gui.property_panels.mesh import MeshPanel
@@ -30,7 +31,7 @@ from thermalfea.gui.property_panels.solution import SolutionPanel
 from thermalfea.gui.property_panels.stream import StreamPanel
 from thermalfea.gui.scene import SceneView
 from thermalfea.gui.tree import ModelTree
-from thermalfea.model.bcs import CorrelationConvection, Stream
+from thermalfea.model.bcs import Contact, CorrelationConvection, Stream
 from thermalfea.model.model import RegionAssignment
 from thermalfea.model.settings import MeshSettings, SolutionSettings
 
@@ -219,6 +220,9 @@ register_panel(
 )
 register_panel(
     Stream, lambda c, spec, address: StreamPanel(spec, c.document, address, c.view)
+)
+register_panel(
+    Contact, lambda c, spec, address: ContactPanel(spec, c.document, address, c.view)
 )
 
 

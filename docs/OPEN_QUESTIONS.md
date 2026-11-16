@@ -464,6 +464,14 @@ and M10.2 (phase change), which are on hold. None of the points below blocks the
    in the energy balance; the term reports it as `contact_heat:<name>` (from the lower
    to the higher region id) [W].
 
+7. **GUI.** The model tree has an eleventh top-level node, "Contacts", after "Loads &
+   Boundary Conditions" (the M8 list of nodes does not mention contacts); the expected
+   list in `tests/gui/test_tree.py` was extended by that one entry. A new contact starts
+   with an empty selection and a conductance of 0 (the neutral default; no number is
+   invented), which the user must set. The panel refuses a temperature-dependent
+   conductance. Contact curves are drawn as load symbols of kind "contact". The V-35
+   model is in File > Examples.
+
 ## Q13 — choices made in the verification examples — raised in M3.G
 
 - **Nodes at check points.** V-09 and V-10 check the temperature at given points. Point

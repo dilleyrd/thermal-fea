@@ -15,6 +15,7 @@ Issue kind to tree address
 ``boundary condition``
 ``stream``      ``("streams", i)``
 ``enclosure``   ``("enclosures", i)``
+``contact``     ``("contacts", i)``
 ``material``    ``("materials", name)``
 ``region``      ``("regions", i)`` of the assignment whose selection is ``name``; with no
                 name (a surface without region) the *Regions* section node
@@ -24,7 +25,7 @@ Issue kind to tree address
                 otherwise nothing
 =============== ==========================================================================
 
-Kinds the tree has no node for (``selection``, ``contact``, anything unknown) map to
+Kinds the tree has no node for (``selection``, anything unknown) map to
 ``None``: activating such a row does nothing.
 """
 
@@ -54,6 +55,7 @@ _LISTS: dict[str, str] = {
     "boundary condition": "bcs",  # the kind validate uses for selection checks
     "stream": "streams",
     "enclosure": "enclosures",
+    "contact": "contacts",
 }
 REGIONS_SECTION = ("section", "regions")
 

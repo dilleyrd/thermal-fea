@@ -35,7 +35,7 @@ from thermalfea.gui.dialogs.new_stream import NewStreamDialog
 from thermalfea.gui.document import Document
 from thermalfea.materials import library
 from thermalfea.materials.material import Material
-from thermalfea.model.bcs import Stream
+from thermalfea.model.bcs import Contact, Stream
 from thermalfea.model.geometry_edit import dependents
 from thermalfea.model.model import Model, RegionAssignment
 
@@ -47,6 +47,7 @@ SECTIONS: tuple[tuple[str, str], ...] = (
     ("mesh", "Mesh"),
     ("initial", "Initial Condition"),
     ("loads", "Loads & Boundary Conditions"),
+    ("contacts", "Contacts"),
     ("flow", "Flow"),
     ("enclosures", "Enclosures"),
     ("analysis", "Analysis Settings"),
@@ -59,7 +60,7 @@ SECTION_OBJECTS: dict[str, Address] = {
     "analysis": ("solution",),
 }
 #: Model lists of objects that can be renamed, duplicated and deleted.
-_NAMED_LISTS = ("bcs", "streams", "enclosures")
+_NAMED_LISTS = ("bcs", "streams", "enclosures", "contacts")
 _SUPPRESSED_BRUSH = QBrush(QColor("#808080"))
 _ROLE = Qt.ItemDataRole.UserRole
 
@@ -259,6 +260,11 @@ class ModelTree(QTreeWidget):
                 sections["loads"], bc.name, NodeRef("loads", ("bcs", i)), tooltip=title,
                 renameable=True, suppressed=not bc.active,
             )  # fmt: skip
+        for i, contact in enumerate(model.contacts):
+            self._make_item(
+                sections["contacts"], contact.name,
+                NodeRef("contacts", ("contacts", i)), renameable=True,
+            )  # fmt: skip
         streams = self._make_item(sections["flow"], "Streams", NodeRef("streams"))
         for i, stream in enumerate(model.streams):
             self._make_item(
@@ -391,6 +397,8 @@ class ModelTree(QTreeWidget):
             add("Add region", self.add_region, ("add_region", None))
         elif ref.address is None and ref.section == "streams":
             add("Add stream", self.add_stream, ("add_stream", None))
+        elif ref.address is None and ref.section == "contacts":
+            add("Add contact", self.add_contact, ("add_contact", None))
         elif ref.address is not None and ref.address[0] in _NAMED_LISTS + ("materials",):
             address = ref.address
             add("Rename", lambda: self.begin_rename(address), ("rename", address))
@@ -521,6 +529,29 @@ class ModelTree(QTreeWidget):
 
         self.document.edit("Add region", mutate)
         address = ("regions", holder[0])
+        self.select_address(address)
+        return address
+
+    def add_contact(self) -> Address:
+        """Add a contact "Contact <n>" with an empty selection and conductance 0 (Constant).
+
+        The conductance is the neutral value of :func:`~thermalfea.core.forms.default_instance`
+        (no physical value is assumed); the user sets it in the contact panel. One undo step.
+
+        Returns
+        -------
+        tuple
+            Address of the new contact.
+        """
+        holder: list[int] = []
+
+        def mutate(model: Model) -> None:
+            name = unique_name("Contact", [c.name for c in model.contacts])
+            model.contacts.append(default_instance(Contact, name=name, selection=""))
+            holder.append(len(model.contacts) - 1)
+
+        self.document.edit("Add contact", mutate)
+        address = ("contacts", holder[0])
         self.select_address(address)
         return address
 

@@ -28,9 +28,12 @@ from thermalfea.gui.addressing import Address, exists, resolve
 from thermalfea.gui.document import Document
 from thermalfea.gui.main_window import MainWindow
 from thermalfea.gui.scene import LoadSymbol, SceneView, kind_color
-from thermalfea.model.bcs import BoundaryCondition
+from thermalfea.model.bcs import BoundaryCondition, Contact
 
 ACTION_ID = "view.load_symbols"
+#: Symbol kind of the thermal contacts (their interface curves).
+CONTACT_KIND = "contact"
+CURVE_DIM = 1
 _SELECTION_KINDS = ("selection", "selection_list")
 _GEOMETRY_DIMS = (0, 1, 2)
 
@@ -71,7 +74,12 @@ def color_of(kind: str) -> str:
 
 
 def symbols_of(document: Document) -> list[LoadSymbol]:
-    """The symbols of the document's active conditions (empty without a built geometry)."""
+    """The symbols of the document's active conditions and contacts.
+
+    Empty without a built geometry. Each contact whose interface curves resolve gets one
+    symbol of kind ``"contact"`` (its colour is the next free entry after the condition
+    kinds).
+    """
     if document.built is None:
         return []
     out: list[LoadSymbol] = []
@@ -81,13 +89,28 @@ def symbols_of(document: Document) -> list[LoadSymbol]:
         for dim, tags in entities_of(document, bc):
             kind = kind_of(bc)
             out.append(LoadSymbol(kind, bc.name, dim, tags, color_of(kind)))
+    for contact in document.model.contacts:
+        tags = dict(contact_entities(document, contact)).get(CURVE_DIM, [])
+        if tags:
+            color = color_of(CONTACT_KIND)
+            out.append(LoadSymbol(CONTACT_KIND, contact.name, CURVE_DIM, tags, color))
     return out
 
 
 def entities_of(document: Document, bc: BoundaryCondition) -> list[tuple[int, list[int]]]:
     """``(dim, tags)`` groups of the entities a condition's selections resolve to."""
+    return _groups_of(document, selection_names(bc))
+
+
+def contact_entities(document: Document, contact: Contact) -> list[tuple[int, list[int]]]:
+    """``(dim, tags)`` groups of the entities of a contact's interface selection."""
+    return _groups_of(document, [contact.selection] if contact.selection else [])
+
+
+def _groups_of(document: Document, names: list[str]) -> list[tuple[int, list[int]]]:
+    """``(dim, tags)`` groups of the built entities of the named selections."""
     groups: dict[int, list[int]] = {}
-    for name in selection_names(bc):
+    for name in names:
         sel = document.model.selections.get(name)
         if sel is None or sel.dim not in _GEOMETRY_DIMS or not sel.tags:
             continue
@@ -149,13 +172,16 @@ class LoadSymbolController(QObject):
     def highlight_address(self, address: Address) -> None:
         """Highlight the entities of the load at ``address`` (nothing for other objects)."""
         model = self.document.model
-        if not address or address[0] != "bcs" or not exists(model, address):
+        if not address or address[0] not in ("bcs", "contacts") or not exists(model, address):
             return
         try:
-            bc = resolve(model, address)
+            obj = resolve(model, address)
         except ModelError:  # pragma: no cover - exists() just said it is there
             return
-        groups = entities_of(self.document, bc)
+        if isinstance(obj, Contact):
+            groups = contact_entities(self.document, obj)
+        else:
+            groups = entities_of(self.document, obj)
         if groups:
             dim, tags = groups[-1]  # the highest dimension of the condition
             self.view.highlight(dim, tags)

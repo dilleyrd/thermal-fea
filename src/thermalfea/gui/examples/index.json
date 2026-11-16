@@ -98,5 +98,9 @@
   {
     "file": "v32_convergence.tfea",
     "title": "V-32 — mesh convergence on a manufactured solution."
+  },
+  {
+    "file": "v35_thermal_contact.tfea",
+    "title": "V-35 — thermal contact."
   }
 ]

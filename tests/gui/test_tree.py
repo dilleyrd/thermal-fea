@@ -48,7 +48,8 @@ def test_top_level_nodes(tree) -> None:
     titles = [tree.topLevelItem(i).text(0) for i in range(tree.topLevelItemCount())]
     assert titles == [
         "Geometry", "Materials", "Regions", "Mesh", "Initial Condition",
-        "Loads & Boundary Conditions", "Flow", "Enclosures", "Analysis Settings", "Solution",
+        "Loads & Boundary Conditions", "Contacts", "Flow", "Enclosures", "Analysis Settings",
+        "Solution",
     ]  # fmt: skip
     assert titles == [t for _, t in SECTIONS]
     assert texts(tree, "geometry") == ["plate"]
