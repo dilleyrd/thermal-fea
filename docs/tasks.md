@@ -325,7 +325,7 @@ Boundary Conditions, Flow (Streams, Network), Enclosures, Analysis Settings, Sol
   allowed). Rebuild after each change.
 - [x] **M8.6 [A] Materials and regions.** Material editor, library browser (copy into the
   model), user library; region assignment panel with thickness and material angle.
-- [ ] **M8.7 [B] Mesh panel.** All `MeshSettings`, Generate button, statistics, quality
+- [x] **M8.7 [B] Mesh panel.** All `MeshSettings`, Generate button, statistics, quality
   histogram, colour elements by quality.
 - [ ] **M8.8 [B] Load panels.** One panel per class in Data §8 through the form generator;
   load symbols in the viewport (colour per type plus legend); the correlation panel shows

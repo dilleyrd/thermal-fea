@@ -21,7 +21,11 @@ GUI_ALLOWED = ("gui",)
 #: GUI modules (relative to the package, POSIX) that may import Matplotlib. Only the model
 #: viewport and, as they are created, chart modules (history/path charts M8.11, the table
 #: preview plot M8.4) belong here: add each chart module to this list when it is written.
-MATPLOTLIB_GUI_ALLOWED = ("gui/viewport_mpl.py", "gui/property_panels/function_preview.py")
+MATPLOTLIB_GUI_ALLOWED = (
+    "gui/viewport_mpl.py",
+    "gui/property_panels/function_preview.py",
+    "gui/property_panels/quality_histogram.py",
+)
 #: The interface module: no Matplotlib, and PySide6 only through these modules.
 SCENE_MODULE = "gui/scene.py"
 SCENE_PYSIDE_ALLOWED = ("PySide6", "PySide6.QtCore", "PySide6.QtWidgets")

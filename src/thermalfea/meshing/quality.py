@@ -148,3 +148,40 @@ def report(mesh: Mesh) -> QualityReport:
         counts=counts,
         n_nodes=mesh.n_nodes,
     )
+
+
+#: Per-element measures of :class:`QualityReport`, by attribute name.
+MEASURES: tuple[str, ...] = ("min_angle", "aspect_ratio", "jacobian_ratio")
+
+
+def values_in_block_order(mesh: Mesh, quality: QualityReport, measure: str) -> ndarray:
+    """One measure per element, in the order of the concatenated element blocks.
+
+    :meth:`thermalfea.gui.scene.SceneView.set_mesh` takes ``color_by`` in this order, while
+    the report is ordered by global element id. Non-finite values (an invalid or degenerate
+    element) become NaN, which a colour map draws as "no value".
+
+    Parameters
+    ----------
+    mesh : Mesh
+        The mesh the report was made from.
+    quality : QualityReport
+        ``report(mesh)``.
+    measure : {"min_angle", "aspect_ratio", "jacobian_ratio"}
+        Attribute of the report to take.
+
+    Returns
+    -------
+    ndarray, shape (n_elements,)
+        Values in the element order of ``mesh.blocks``.
+    """
+    if measure not in MEASURES:
+        raise ValueError(f"unknown quality measure {measure!r}; use one of {MEASURES}")
+    values = np.asarray(getattr(quality, measure), dtype=float)
+    if not mesh.blocks:
+        return np.empty(0)
+    ids = np.concatenate([b.elem_ids for b in mesh.blocks])
+    if ids.size == 0:
+        return np.empty(0)
+    picked = values[np.searchsorted(quality.elem_ids, ids)]
+    return np.where(np.isfinite(picked), picked, np.nan)

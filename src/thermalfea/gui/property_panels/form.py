@@ -13,7 +13,7 @@ anything.
 
 from __future__ import annotations
 
-from typing import Any
+from typing import Any, get_args, get_type_hints
 
 from PySide6.QtCore import Signal
 from PySide6.QtWidgets import (
@@ -480,9 +480,26 @@ class FormPanel(QWidget):
             line.setToolTip(str(exc))
             self._set_error(name, str(exc))
             return
+        if self._dict_of_int(name):  # e.g. numbers of divisions: whole numbers, kept as int
+            if any(not float(v).is_integer() for v in value.values()):
+                message = "enter whole numbers"
+                line.setStyleSheet(_BAD_STYLE)
+                line.setToolTip(message)
+                self._set_error(name, message)
+                return
+            value = {key: int(v) for key, v in value.items()}
         line.setStyleSheet("")
         line.setToolTip(self.spec.field(name).tooltip)
         self._apply(name, value)
+
+    def _dict_of_int(self, name: str) -> bool:
+        """True when the dataclass declares the field as a mapping to ``int``."""
+        try:
+            hint = get_type_hints(type(resolve(self.document.model, self.address))).get(name)
+        except Exception:  # an unresolvable annotation: treat the values as numbers
+            return False
+        args = get_args(hint)
+        return bool(args) and args[-1] is int
 
     def _on_text_list(self, name: str, line: QLineEdit) -> None:
         parse = _TEXT_LISTS[self.spec.field(name).kind][1]

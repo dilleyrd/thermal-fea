@@ -134,3 +134,4 @@ class Model:
 
 
 from . import material_forms as _material_forms  # noqa: E402,F401  (registers the forms)
+from . import mesh_forms as _mesh_forms  # noqa: E402,F401  (registers the forms)

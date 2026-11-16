@@ -8,6 +8,8 @@ object is ``form_for(type(object))``, so any registered class has a panel.
 
 from __future__ import annotations
 
+from collections.abc import Callable
+
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import QLabel, QScrollArea, QWidget
 
@@ -16,10 +18,12 @@ from thermalfea.gui.addressing import Address, exists, resolve
 from thermalfea.gui.document import Document
 from thermalfea.gui.main_window import MainWindow
 from thermalfea.gui.property_panels.form import FormPanel
+from thermalfea.gui.property_panels.mesh import MeshPanel
 from thermalfea.gui.property_panels.region import RegionPanel
 from thermalfea.gui.scene import SceneView
 from thermalfea.gui.tree import ModelTree
 from thermalfea.model.model import RegionAssignment
+from thermalfea.model.settings import MeshSettings
 
 PLACEHOLDER_TEXT = "Select an object in the model tree to edit its properties."
 
@@ -57,6 +61,9 @@ class PropertyController:
         self.view = view
         self.panel: FormPanel | None = None
         self.current_address: Address | None = None
+        #: ``generate() -> bool`` of the mesh controller, given to the mesh panel (set by
+        #: the application after :func:`~thermalfea.gui.mesh_tools.attach_mesh_tools`).
+        self.generate_mesh: Callable[[], bool] | None = None
         self._installed: QWidget | None = None
         self._object_type: type | None = None
         tree.object_selected.connect(self.show_object)
@@ -72,8 +79,18 @@ class PropertyController:
         if not hasattr(obj, "__dataclass_fields__"):
             self._install(self._placeholder(), None, None)
             return
-        panel_cls = RegionPanel if isinstance(obj, RegionAssignment) else FormPanel
-        panel = panel_cls(form_for(type(obj)), self.document, address, self.view)
+        if isinstance(obj, MeshSettings):
+            panel: FormPanel = MeshPanel(
+                form_for(type(obj)),
+                self.document,
+                address,
+                self.view,
+                generate=self.generate_mesh,
+            )
+        elif isinstance(obj, RegionAssignment):
+            panel = RegionPanel(form_for(type(obj)), self.document, address, self.view)
+        else:
+            panel = FormPanel(form_for(type(obj)), self.document, address, self.view)
         scroll = QScrollArea()
         scroll.setWidgetResizable(True)
         scroll.setWidget(panel)

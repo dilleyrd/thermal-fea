@@ -106,11 +106,15 @@ def test_non_bc_classes_are_derived_and_can_be_registered() -> None:
     assert kinds["curve_sizes"] == "dict" and "refinements" not in kinds
     assert spec.category == "settings"
     custom = FormSpec("Mesh", [FieldSpec("global_size", "Size", "float", quantity="length")])
+    previous = forms._FORMS.get(MeshSettings)
     forms.register_form(MeshSettings, custom)
     try:
         assert form_for(MeshSettings) is custom
-    finally:
-        forms._FORMS.pop(MeshSettings)
+    finally:  # put back whatever was registered before (the built-in mesh form)
+        if previous is None:
+            forms._FORMS.pop(MeshSettings)
+        else:
+            forms._FORMS[MeshSettings] = previous
 
 
 def test_field_spec_validation() -> None:
