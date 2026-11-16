@@ -109,6 +109,20 @@ class FieldDisplay:
         self.values = np.asarray(self.values, dtype=float)
 
 
+#: The colours of load-symbol kinds; the one table of the GUI. A kind takes the colour at
+#: its position in the registry (modulo the length), the viewport falls back to the order of
+#: first appearance for a symbol without a colour.
+KIND_COLORS: tuple[str, ...] = (
+    "#d6336c", "#1c7ed6", "#2f9e44", "#f08c00", "#7048e8", "#0c8599", "#e03131",
+    "#868e96", "#74b816", "#e8590c", "#364fc7", "#a61e4d",
+)  # fmt: skip
+
+
+def kind_color(index: int) -> str:
+    """Return the colour of the ``index``-th kind (cycles through :data:`KIND_COLORS`)."""
+    return KIND_COLORS[index % len(KIND_COLORS)]
+
+
 @dataclass
 class LoadSymbol:
     """A boundary-condition or load marker attached to geometry entities.

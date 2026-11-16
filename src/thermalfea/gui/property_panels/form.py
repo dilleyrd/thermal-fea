@@ -244,6 +244,7 @@ class FormPanel(QWidget):
         self.view = view
         self.editors: dict[str, QWidget] = {}
         self._choices: dict[str, tuple] = {}
+        self._open_lists: set[str] = set()
         self._unit_labels: dict[str, QLabel] = {}
         self._errors: dict[str, str] = {}
         self._refreshing = False
@@ -300,6 +301,14 @@ class FormPanel(QWidget):
             box.toggled.connect(lambda v, n=name: self._apply(n, bool(v)))
             return box, None
         if f.kind == "str":
+            listed = self.field_choices(f)
+            if listed:
+                self._choices[name] = tuple(listed)
+                self._open_lists.add(name)
+                pick = QComboBox()
+                pick.addItems([str(c) for c in listed])
+                pick.activated.connect(lambda i, n=name: self._apply(n, self._choices[n][i]))
+                return pick, None
             line = QLineEdit()
             line.editingFinished.connect(lambda n=name, w=line: self._on_text(n, w.text()))
             return line, None
@@ -331,6 +340,25 @@ class FormPanel(QWidget):
             line.editingFinished.connect(lambda n=name, w=line: self._on_text_list(n, w))
             return line, None
         raise ModelError(f"unsupported form kind {f.kind!r}")  # pragma: no cover
+
+    def field_choices(self, field: FieldSpec) -> tuple[str, ...] | None:
+        """Closed list of values of a text (``str``) field, shown as a combo box.
+
+        The default offers none (a line edit). A subclass overrides it to supply a list
+        that lives in a layer the model may not import (for example the correlation
+        identifiers). A stored value outside the list is added to the combo box so it is
+        never silently replaced.
+
+        Parameters
+        ----------
+        field : FieldSpec
+            A field of kind ``"str"``.
+
+        Returns
+        -------
+        tuple of str or None
+        """
+        return None
 
     # ------------------------------------------------------------------- loading
     def current_object(self) -> Any:
@@ -377,6 +405,11 @@ class FormPanel(QWidget):
         elif isinstance(editor, QComboBox):
             editor.blockSignals(True)
             choices = self._choices[f.name]
+            if f.name in self._open_lists and value not in choices:
+                # a value that is not in the offered list stays visible, not replaced
+                choices = (*choices, value if value is not None else "")
+                self._choices[f.name] = choices
+                editor.addItem(str(choices[-1]))
             editor.setCurrentIndex(choices.index(value) if value in choices else 0)
             editor.blockSignals(False)
         elif isinstance(editor, FunctionEditor):

@@ -327,7 +327,7 @@ Boundary Conditions, Flow (Streams, Network), Enclosures, Analysis Settings, Sol
   model), user library; region assignment panel with thickness and material angle.
 - [x] **M8.7 [B] Mesh panel.** All `MeshSettings`, Generate button, statistics, quality
   histogram, colour elements by quality.
-- [ ] **M8.8 [B] Load panels.** One panel per class in Data §8 through the form generator;
+- [x] **M8.8 [B] Load panels.** One panel per class in Data §8 through the form generator;
   load symbols in the viewport (colour per type plus legend); the correlation panel shows
   the formula, validity range and a preview of h from `api.htc`.
 - [ ] **M8.9 [B] Solve.** Analysis-settings panel; validation issue list (double-click

@@ -2,7 +2,8 @@
 
 :class:`PropertyController` shows the :class:`~thermalfea.gui.property_panels.form.FormPanel`
 of the object selected in the :class:`~thermalfea.gui.tree.ModelTree`. The form of an
-object is ``form_for(type(object))``, so any registered class has a panel.
+object is ``form_for(type(object))``, so any registered class has a panel; a class that
+needs more than its form registers a panel class with :func:`register_panel`.
 :func:`attach_tree` installs tree and controller in a main window.
 """
 
@@ -13,19 +14,54 @@ from collections.abc import Callable
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import QLabel, QScrollArea, QWidget
 
-from thermalfea.core.forms import form_for
+from thermalfea.core.forms import FormSpec, form_for
 from thermalfea.gui.addressing import Address, exists, resolve
 from thermalfea.gui.document import Document
 from thermalfea.gui.main_window import MainWindow
+from thermalfea.gui.property_panels.correlation import CorrelationPanel
 from thermalfea.gui.property_panels.form import FormPanel
 from thermalfea.gui.property_panels.mesh import MeshPanel
 from thermalfea.gui.property_panels.region import RegionPanel
 from thermalfea.gui.scene import SceneView
 from thermalfea.gui.tree import ModelTree
+from thermalfea.model.bcs import CorrelationConvection
 from thermalfea.model.model import RegionAssignment
 from thermalfea.model.settings import MeshSettings
 
 PLACEHOLDER_TEXT = "Select an object in the model tree to edit its properties."
+
+#: ``factory(controller, spec, address) -> FormPanel``: builds the panel of one class.
+PanelFactory = Callable[["PropertyController", FormSpec, Address], FormPanel]
+
+_PANELS: dict[type, PanelFactory] = {}
+
+
+def register_panel(cls: type, factory: PanelFactory) -> None:
+    """Show a specialised panel for objects of ``cls`` (and its subclasses).
+
+    Classes without an entry get a plain :class:`FormPanel` generated from their form.
+
+    Parameters
+    ----------
+    cls : type
+        The model class (for example a boundary condition).
+    factory : callable
+        ``factory(controller, spec, address)`` returns the panel; ``controller`` gives
+        access to ``document``, ``view`` and ``generate_mesh``.
+    """
+    _PANELS[cls] = factory
+
+
+def panel_factory(cls: type) -> PanelFactory:
+    """Return the registered factory for ``cls`` (nearest base class), or the plain form."""
+    for base in cls.__mro__:
+        if base in _PANELS:
+            return _PANELS[base]
+    return _plain_panel
+
+
+def _plain_panel(controller: PropertyController, spec: FormSpec, address: Address) -> FormPanel:
+    return FormPanel(spec, controller.document, address, controller.view)
 
 
 class PropertyController:
@@ -79,18 +115,8 @@ class PropertyController:
         if not hasattr(obj, "__dataclass_fields__"):
             self._install(self._placeholder(), None, None)
             return
-        if isinstance(obj, MeshSettings):
-            panel: FormPanel = MeshPanel(
-                form_for(type(obj)),
-                self.document,
-                address,
-                self.view,
-                generate=self.generate_mesh,
-            )
-        elif isinstance(obj, RegionAssignment):
-            panel = RegionPanel(form_for(type(obj)), self.document, address, self.view)
-        else:
-            panel = FormPanel(form_for(type(obj)), self.document, address, self.view)
+        spec = form_for(type(obj))
+        panel = panel_factory(type(obj))(self, spec, address)
         scroll = QScrollArea()
         scroll.setWidgetResizable(True)
         scroll.setWidget(panel)
@@ -121,6 +147,21 @@ class PropertyController:
         model = self.document.model
         if not exists(model, address) or type(resolve(model, address)) is not self._object_type:
             self.show_object(("section", "none"))
+
+
+register_panel(
+    MeshSettings,
+    lambda c, spec, address: MeshPanel(
+        spec, c.document, address, c.view, generate=c.generate_mesh
+    ),
+)
+register_panel(
+    RegionAssignment, lambda c, spec, address: RegionPanel(spec, c.document, address, c.view)
+)
+register_panel(
+    CorrelationConvection,
+    lambda c, spec, address: CorrelationPanel(spec, c.document, address, c.view),
+)
 
 
 def attach_tree(

@@ -49,7 +49,14 @@ from scipy.spatial import cKDTree
 from thermalfea.core.mesh import Mesh
 from thermalfea.geometry.builder import BuiltGeometry
 from thermalfea.gui import picking
-from thermalfea.gui.scene import ELEMENT_DIM, MODE_DIM, NODE_DIM, FieldDisplay, LoadSymbol
+from thermalfea.gui.scene import (
+    ELEMENT_DIM,
+    MODE_DIM,
+    NODE_DIM,
+    FieldDisplay,
+    LoadSymbol,
+    kind_color,
+)
 from thermalfea.post.plots import DisplayMesh, display_triangulation
 
 if TYPE_CHECKING:
@@ -98,7 +105,6 @@ _SURFACE_FILL = "#adb5bd"
 _CURVE_COLOR = "#343a40"
 _POINT_COLOR = "#212529"
 _MESH_COLOR = "#495057"
-_KIND_COLORS = ("#d6336c", "#1c7ed6", "#2f9e44", "#f08c00", "#7048e8", "#0c8599", "#e03131")
 _LEFT, _MIDDLE = 1, 2
 _FEW_ELEMENTS = 32  # up to this many selected elements are looked up one by one
 _PLANE = 2  # coordinates of the viewport plane (x, y)
@@ -613,7 +619,7 @@ class MplSceneView(QObject):
         colors: dict[str, str] = {}
         for sym in symbols:
             color = sym.color or colors.setdefault(
-                sym.kind, _KIND_COLORS[len(colors) % len(_KIND_COLORS)]
+                sym.kind, kind_color(len(colors))
             )
             colors.setdefault(sym.kind, color)
             tags = [int(t) for t in sym.tags]

@@ -14,6 +14,7 @@ from PySide6.QtWidgets import QApplication
 from thermalfea.core.errors import ThermalFEAError
 from thermalfea.gui.document import Document
 from thermalfea.gui.geometry_tools import attach_geometry_tools
+from thermalfea.gui.load_symbols import attach_loads
 from thermalfea.gui.main_window import MainWindow
 from thermalfea.gui.materials_tools import attach_materials
 from thermalfea.gui.mesh_tools import attach_mesh_tools
@@ -120,6 +121,7 @@ def main(argv: list[str] | None = None) -> int:
     attach_materials(window, document)
     mesh_tools = attach_mesh_tools(window, document, view)
     properties.generate_mesh = mesh_tools.generate
+    attach_loads(window, document, view)
     install_exception_hook(window)
     window.show()
     return int(app.exec())
