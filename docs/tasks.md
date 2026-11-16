@@ -238,8 +238,8 @@ All plotting functions take a `Results`, return a Matplotlib `Figure`, optionall
   (Pillow writer) or MP4 if ffmpeg is present.
 - [x] **M5.6 [A] Text summary.** `post/summary.py`: min/max temperature with locations,
   heat flow per BC, energy balance, steps, iterations, warnings. Printed by the CLI.
-- [ ] **M5.G [C] Gate.** Produce every plot type for V-10 and V-17; a human looks at them.
-  _Plots produced (`examples/m5_gallery.py`); human review pending — see `docs/OPEN_QUESTIONS.md`._
+- [x] **M5.G [C] Gate.** Produce every plot type for V-10 and V-17; a human looks at them.
+  _Reviewed by the owner on 2026-11-16: images, animation and CSV files look fine._
 
 ## M6 — Convection library
 

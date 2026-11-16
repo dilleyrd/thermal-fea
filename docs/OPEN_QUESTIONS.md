@@ -8,17 +8,10 @@ Each entry says what was done in the meantime, so a reviewer can confirm or over
 Work that is finished but still needs a person to look at it. Until then the task box in
 `docs/tasks.md` stays unticked.
 
-- **M5.G — plots for V-10 and V-17 (pending since 2026-11-15).** The gate asks for a human
-  to look at every plot type. The owner reviewed what could be seen remotely and will
-  check the rest at their desk. By their instruction the build continued past this gate
-  with M6. To review: run `.venv\Scripts\python.exe examples\m5_gallery.py`, which writes
-  19 plots, an animation, CSV and VTU files and two text summaries to
-  `examples/output/m5_gallery`. Points already noted for judgement: arrows near the
-  singular corner of V-10 overshoot the model outline in the vector plot; the line at
-  y = 0.2 in V-10 is the seam of the two rectangles used to put a node at the NAFEMS check
-  point; V-17 is a 10:1 strip, so its contours are a narrow band. MP4 export is untested
-  because ffmpeg is not installed. When the review is done: tick M5.G, set M5 to ☑ in
-  `PLAN.md`, and remove this entry (or list the friction found).
+- _None open._ M5.G (plots for V-10 and V-17) was reviewed by the owner on 2026-11-16:
+  the images, the animation and the CSV files look fine. More testing of the
+  visualisation with a wider range of boundary conditions is planned by the owner after
+  the build is complete. Still untested: MP4 export (ffmpeg is not installed).
 
 ## Q1 — `Material` field order (Data §6) — raised in M1.8
 
