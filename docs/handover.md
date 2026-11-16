@@ -30,7 +30,7 @@ tasks are likely to go wrong. Update it when any of this changes.
      them is not evidence);
    - fix small defects directly; send larger ones back to the same subagent.
 5. Record every choice the documents leave open in `docs/OPEN_QUESTIONS.md` (next free
-   number is **Q22**; GUI choices are collected in Q21).
+   number is **Q23**; GUI choices are collected in Q21).
 6. Tick the box, commit as `M<n>.<k>: <task title>`, push to `origin` (never force-push),
    and give the owner a one-line status.
 
@@ -95,7 +95,9 @@ and reasons are in the open questions cited.
   `.venv\Scripts\python.exe -m thermalfea.gui.app`. Friction points already known are
   listed in section 4 of the walkthrough. `gui/app.py: build_application` builds the
   whole application without showing it; tests use it.
-- M9 may proceed in parallel with M8 (Plan §5).
+- On 2026-11-16 the owner put **M9 (enclosure radiation) and M10.2 (phase change) on
+  hold** and asked for M10.1 (thermal contact) while they do the M8.G review. M10.1 is
+  done (Q22). Do not start M9 or M10.2 until the owner says so.
 - Awaiting the owner's confirmation, none blocking: Q11, Q14, Q17.2, Q18.2, Q20, Q21.
 - Known gaps, all recorded in Q21: no velocity or angle unit; contacts have no tree node
   or panel (M10.1); GIF export blocks the window; the stream "pick path points" toggle

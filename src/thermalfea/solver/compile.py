@@ -11,6 +11,7 @@ import logging
 from typing import TYPE_CHECKING
 
 from ..core import registry
+from ..core.contact_split import split_interfaces
 from ..core.errors import ModelError
 from ..core.mesh import Mesh
 from ..model.bcs import BoundaryCondition, Stream
@@ -22,6 +23,7 @@ from ..physics import (
 )
 from ..physics.capacitance import CapacitanceTerm
 from ..physics.conduction import ConductionTerm
+from ..physics.contact import PARTNERS, ContactTerm
 from .dofs import DofMap
 from .problem import TEMPERATURE, CompiledProblem, RegionData
 
@@ -71,6 +73,24 @@ def _regions(model: Model, built: BuiltGeometry | None, mesh: Mesh) -> dict[int,
                 material, assignment.thickness, assignment.material_angle, assignment.selection
             )
     return regions
+
+
+def _contact_tags(model: Model, built: BuiltGeometry | None, mesh: Mesh) -> list[int]:
+    """Tags of every contact curve of the model."""
+    tags: list[int] = []
+    for contact in model.contacts:
+        selection = model.selections.get(contact.selection)
+        if selection is None:
+            raise ModelError(
+                f"contact {contact.name!r} refers to unknown selection {contact.selection!r}"
+            )
+        if selection.dim != mesh.dim - 1:
+            raise ModelError(
+                f"contact {contact.name!r}: selection {contact.selection!r} must contain "
+                "interface curves"
+            )
+        tags += _resolve(selection, built)
+    return tags
 
 
 def _setup(problem: CompiledProblem, item: object) -> None:
@@ -150,6 +170,11 @@ def compile(  # noqa: A001
     ModelError
         If the model is inconsistent (missing material, stale selection, ...).
     """
+    partners = None
+    if model.contacts:  # open the mesh along the contact curves (Theory §11)
+        split = split_interfaces(mesh, _contact_tags(model, built, mesh))
+        mesh, partners = split.mesh, split.partner
+        log.info("contact: %d node(s) duplicated along the contact curves", split.n_new)
     dofs = DofMap()
     dofs.add_field(TEMPERATURE, mesh.n_nodes)
     problem = CompiledProblem(
@@ -160,6 +185,8 @@ def compile(  # noqa: A001
         model=model,
         built=built,
     )
+    if partners is not None:
+        problem.cache[PARTNERS] = partners
     conduction = ConductionTerm()
     _setup(problem, conduction)
     problem.terms.append(conduction)
@@ -174,6 +201,10 @@ def compile(  # noqa: A001
         )
     for bc in model.bcs:
         attach(problem, bc)
+    for contact in model.contacts:
+        term = ContactTerm(contact)
+        _setup(problem, term)
+        problem.terms.append(term)
     if model.streams or model.network is not None:
         from ..flow.coupling import StreamNetworkProvider  # flow builds on the solver
 

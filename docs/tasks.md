@@ -368,7 +368,7 @@ Boundary Conditions, Flow (Streams, Network), Enclosures, Analysis Settings, Sol
 
 ## M10 — Extended features
 
-- [ ] **M10.1 [C] Thermal contact.** Mesh post-processing step that duplicates the nodes
+- [x] **M10.1 [C] Thermal contact.** Mesh post-processing step that duplicates the nodes
   along each contact curve (the side with the higher region id gets the new nodes; an end
   point of the curve is duplicated only if it lies on the outer boundary), then
   `physics/contact.py` (Theory §11). Accept: V-35.

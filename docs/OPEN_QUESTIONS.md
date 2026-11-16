@@ -432,6 +432,38 @@ None of these blocks the build. Please confirm, or say what to change.
     exclude each other, but the stream toggle does not switch the others off, and it
     leaves the selection mode at "none" when turned off.
 
+## Q22 — thermal contact (Theory §11, task M10.1) — raised in M10.1
+
+By the owner's instruction of 2026-11-16, M10.1 was done ahead of M9 (enclosure radiation)
+and M10.2 (phase change), which are on hold. None of the points below blocks the build.
+
+1. **When the mesh is opened.** The task calls node duplication a "mesh post-processing
+   step" without saying where it runs. **Done for now:** in `solver/compile.py`, on the
+   plain mesh (`core/contact_split.py`), not in the mesher. The mesh the user holds is
+   unchanged; the compiled problem and the results file hold the opened mesh. Original
+   nodes keep their numbers and the new nodes are appended, so node numbers picked on
+   the original mesh stay valid in the results. Adding or changing a contact therefore
+   makes only the results out of date, not the mesh.
+2. **The duplication rule, generalised.** The task gives two rules (the higher region id
+   gets the new nodes; an end point is duplicated only on the outer boundary). **Done for
+   now:** around each node of a contact facet the elements are grouped — two elements
+   are in one group when they share a side through the node that is not a contact facet
+   — each group gets its own copy, and the group with the lowest region id keeps the
+   original. This gives both rules of the task, and also defines what happens where
+   several contact curves meet (one copy per region) and where a contact ends inside the
+   body or continues as a bonded interface (no duplication there).
+3. **Conductance that depends on temperature** is refused: Theory §11 does not say which
+   side's temperature would be used. A function of time and position is accepted.
+4. **Geometry factor** (thickness, or 2πr) is taken on the side of the lower region id.
+   Two regions of different thickness meeting at a contact are not treated specially.
+5. **Node sets and geometry points** keep the original nodes, which lie on the side of
+   the lower region id. A fixed temperature on a geometry *point* at the end of a contact
+   curve therefore fixes that side only; on a boundary *curve* it fixes each side's own
+   nodes, as expected.
+6. **Reported heat.** The heat crossing a contact is internal to the body, so it is not
+   in the energy balance; the term reports it as `contact_heat:<name>` (from the lower
+   to the higher region id) [W].
+
 ## Q13 — choices made in the verification examples — raised in M3.G
 
 - **Nodes at check points.** V-09 and V-10 check the temperature at given points. Point
