@@ -10,6 +10,7 @@ needs more than its form registers a panel class with :func:`register_panel`.
 from __future__ import annotations
 
 from collections.abc import Callable
+from typing import Any
 
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import QLabel, QScrollArea, QWidget
@@ -22,11 +23,12 @@ from thermalfea.gui.property_panels.correlation import CorrelationPanel
 from thermalfea.gui.property_panels.form import FormPanel
 from thermalfea.gui.property_panels.mesh import MeshPanel
 from thermalfea.gui.property_panels.region import RegionPanel
+from thermalfea.gui.property_panels.solution import SolutionPanel
 from thermalfea.gui.scene import SceneView
 from thermalfea.gui.tree import ModelTree
 from thermalfea.model.bcs import CorrelationConvection
 from thermalfea.model.model import RegionAssignment
-from thermalfea.model.settings import MeshSettings
+from thermalfea.model.settings import MeshSettings, SolutionSettings
 
 PLACEHOLDER_TEXT = "Select an object in the model tree to edit its properties."
 
@@ -100,6 +102,10 @@ class PropertyController:
         #: ``generate() -> bool`` of the mesh controller, given to the mesh panel (set by
         #: the application after :func:`~thermalfea.gui.mesh_tools.attach_mesh_tools`).
         self.generate_mesh: Callable[[], bool] | None = None
+        #: The solve controller (validate, solve, can_solve, state_changed),
+        #: given to the analysis-settings panel (set by the application after
+        #: ``attach_solve``).
+        self.solve_controller: Any = None
         self._installed: QWidget | None = None
         self._object_type: type | None = None
         tree.object_selected.connect(self.show_object)
@@ -153,6 +159,12 @@ register_panel(
     MeshSettings,
     lambda c, spec, address: MeshPanel(
         spec, c.document, address, c.view, generate=c.generate_mesh
+    ),
+)
+register_panel(
+    SolutionSettings,
+    lambda c, spec, address: SolutionPanel(
+        spec, c.document, address, c.view, controller=c.solve_controller
     ),
 )
 register_panel(

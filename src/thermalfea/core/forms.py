@@ -30,11 +30,11 @@ from .units import QUANTITIES, UnitSettings
 
 FieldKind = Literal[
     "float", "int", "bool", "str", "choice", "function", "selection", "selection_list", "dict",
-    "str_list", "str_lists", "xy_list",
+    "str_list", "str_lists", "xy_list", "float_list",
 ]
 FIELD_KINDS: tuple[str, ...] = (
     "float", "int", "bool", "str", "choice", "function", "selection", "selection_list", "dict",
-    "str_list", "str_lists", "xy_list",
+    "str_list", "str_lists", "xy_list", "float_list",
 )
 
 #: Fields every object has that a form never shows.
@@ -92,7 +92,8 @@ class FieldSpec:
         Which editor is used. ``selection`` is the name of a model selection,
         ``selection_list`` a list of such names, ``dict`` a ``{str: float}`` mapping,
         ``str_list`` a list of words (``"a, b"``), ``str_lists`` a list of such lists
-        (``"a, b; c, d"``) and ``xy_list`` a list of ``(x, y)`` pairs (``"0,0; 1,0"``).
+        (``"a, b; c, d"``), ``xy_list`` a list of ``(x, y)`` pairs (``"0,0; 1,0"``) and
+        ``float_list`` a list of numbers (``"0.5, 1, 2"``).
     quantity : str, optional
         Quantity of :data:`thermalfea.core.units.QUANTITIES` for unit conversion (the
         value is stored in SI, shown in display units); ``None`` for none/dimensionless.
@@ -211,6 +212,33 @@ def parse_xy_list(text: str) -> list[tuple[float, float]]:
             out.append((float(parts[0]), float(parts[1])))
         except ValueError:
             raise ValueError(f"{item.strip()!r} is not 'x, y' with numbers") from None
+    return out
+
+
+def format_float_list(value: list[float] | None) -> str:
+    """Text ``"0.5, 1, 2"`` of a list of numbers."""
+    return ", ".join(f"{v:.10g}" for v in (value or []))
+
+
+def parse_float_list(text: str) -> list[float]:
+    """Parse ``"0.5, 1, 2"`` (commas or semicolons) into numbers.
+
+    Raises
+    ------
+    ValueError
+        If an item is not a finite number.
+    """
+    out: list[float] = []
+    for item in text.replace(";", ",").split(","):
+        if not item.strip():
+            continue
+        try:
+            value = float(item)
+        except ValueError:
+            raise ValueError(f"{item.strip()!r} is not a number") from None
+        if value != value or value in (float("inf"), float("-inf")):
+            raise ValueError(f"{item.strip()!r} is not a finite number")
+        out.append(value)
     return out
 
 

@@ -48,6 +48,7 @@ from thermalfea.gui.geometry_defs import TOOLS, ToolDef
 from thermalfea.gui.main_window import MainWindow
 from thermalfea.gui.scene import SceneView
 from thermalfea.gui.tree import ModelTree
+from thermalfea.gui.worker import BackgroundTask, SerialWorker
 from thermalfea.model import geometry_edit as edit
 from thermalfea.model.serialize import from_json, to_json
 
@@ -103,6 +104,9 @@ class GeometryController(QObject):
         Message of the last failed rebuild ("" after a successful one).
     active_dialog : GeometryOpDialog or None
     tree : ModelTree or None
+    worker : SerialWorker or None
+        When set, builds run on this long-lived thread (the application sets it; see
+        :meth:`rebuild`). ``None`` (the default) builds synchronously.
     """
 
     rebuilt = Signal(bool)
@@ -123,6 +127,8 @@ class GeometryController(QObject):
         self.selection: tuple[int, list[int]] = (_SURFACE_DIM, [])
         self.last_error = ""
         self.active_dialog: GeometryOpDialog | None = None
+        self.worker: SerialWorker | None = None
+        self._task: BackgroundTask | None = None
         self._busy = False
         self._failed_geometry: str | None = None
         self.actions: dict[str, QAction] = {}
@@ -302,16 +308,27 @@ class GeometryController(QObject):
     def rebuild(self) -> bool:
         """Build the geometry of the document's model and store it.
 
-        The single entry point of geometry builds (a worker thread can replace its body
-        later). Runs on a copy of the model and ignores a call made while one is running.
+        The single entry point of geometry builds. Runs on a copy of the model and ignores
+        a call made while one is running.
+
+        Without a :attr:`worker` the build is synchronous and the return value says whether
+        it succeeded and was stored. With a worker the build runs on its thread: the method
+        returns ``True`` as soon as the build was started, and :attr:`rebuilt` reports the
+        end (``True`` stored, ``False`` failed). A call made while a build runs is ignored;
+        when the build ends and the geometry operations changed meanwhile, the build is
+        repeated (the document marks the stored build stale, see
+        :meth:`Document.set_built`).
 
         Returns
         -------
         bool
-            ``True`` if the build succeeded and was stored.
+            ``True`` if the build succeeded and was stored (synchronous) or was started
+            (worker).
         """
         if self._busy:
             return False
+        if self.worker is not None:
+            return self._rebuild_async(self.worker)
         self._busy = True
         try:
             text = self._geometry_text()
@@ -329,6 +346,37 @@ class GeometryController(QObject):
             self._busy = False
         self.rebuilt.emit(True)
         return True
+
+    def _rebuild_async(self, worker: SerialWorker) -> bool:
+        text = self._geometry_text()
+        working = from_json(to_json(self.document.model))
+        task = BackgroundTask(
+            lambda _context: api.build(working), self, executor=worker, name="Geometry build"
+        )
+        task.finished.connect(lambda built: self._async_built(built, working))
+        task.failed.connect(lambda exc: self._async_failed(exc, text))
+        self._task = task
+        self._busy = True
+        task.start()
+        self.window.statusBar().showMessage("Building geometry...", 0)
+        return True
+
+    def _async_built(self, built: Any, working: Any) -> None:
+        self._busy = False
+        self._task = None
+        self._failed_geometry = None
+        self.last_error = ""
+        self.document.set_built(built, working)
+        self.window.statusBar().showMessage("Geometry rebuilt", 3000)
+        self.rebuilt.emit(True)
+        if self.auto_rebuild and self.document.geometry_stale:
+            self.rebuild()  # the operations changed while the build ran
+
+    def _async_failed(self, exc: Any, geometry_text: str) -> None:
+        self._busy = False
+        self._task = None
+        message = str(exc) if isinstance(exc, ThermalFEAError) else f"Unexpected error: {exc}"
+        self._fail(message, geometry_text)
 
     def _fail(self, message: str, geometry_text: str) -> None:
         _log.error("Geometry build failed: %s", message)

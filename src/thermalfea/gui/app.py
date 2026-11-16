@@ -19,7 +19,9 @@ from thermalfea.gui.main_window import MainWindow
 from thermalfea.gui.materials_tools import attach_materials
 from thermalfea.gui.mesh_tools import attach_mesh_tools
 from thermalfea.gui.panels import attach_tree
+from thermalfea.gui.solve_tools import attach_solve
 from thermalfea.gui.viewport_mpl import attach_viewport
+from thermalfea.gui.worker import SerialWorker
 
 ORGANIZATION = "ThermalFEA"
 APPLICATION = "ThermalFEA"
@@ -117,11 +119,18 @@ def main(argv: list[str] | None = None) -> int:
     window.set_document(document)
     view = attach_viewport(window, document)
     _, properties = attach_tree(window, document, view)
-    attach_geometry_tools(window, document, view)
+    geometry = attach_geometry_tools(window, document, view)
     attach_materials(window, document)
     mesh_tools = attach_mesh_tools(window, document, view)
     properties.generate_mesh = mesh_tools.generate
     attach_loads(window, document, view)
+    properties.solve_controller = attach_solve(window, document, view)
+    # gmsh is driven from one long-lived thread for the whole session (see gui/worker.py)
+    gmsh_worker = SerialWorker(window, "gmsh-worker")
+    geometry.worker = gmsh_worker
+    mesh_tools.worker = gmsh_worker
+    app.aboutToQuit.connect(gmsh_worker.shutdown)
+    window.restore_state()  # docks created after the window was constructed
     install_exception_hook(window)
     window.show()
     return int(app.exec())

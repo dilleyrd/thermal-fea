@@ -31,9 +31,11 @@ from thermalfea.core.errors import ModelError
 from thermalfea.core.forms import (
     FieldSpec,
     FormSpec,
+    format_float_list,
     format_str_list,
     format_str_lists,
     format_xy_list,
+    parse_float_list,
     parse_str_list,
     parse_str_lists,
     parse_xy_list,
@@ -198,6 +200,7 @@ _TEXT_LISTS: dict[str, tuple[Any, Any]] = {
     "str_list": (format_str_list, parse_str_list),
     "str_lists": (format_str_lists, parse_str_lists),
     "xy_list": (format_xy_list, parse_xy_list),
+    "float_list": (format_float_list, parse_float_list),
 }
 
 

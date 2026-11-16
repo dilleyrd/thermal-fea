@@ -330,7 +330,7 @@ Boundary Conditions, Flow (Streams, Network), Enclosures, Analysis Settings, Sol
 - [x] **M8.8 [B] Load panels.** One panel per class in Data §8 through the form generator;
   load symbols in the viewport (colour per type plus legend); the correlation panel shows
   the formula, validity range and a preview of h from `api.htc`.
-- [ ] **M8.9 [B] Solve.** Analysis-settings panel; validation issue list (double-click
+- [x] **M8.9 [B] Solve.** Analysis-settings panel; validation issue list (double-click
   selects the offending object); `gui/worker.py` solve thread with progress dialog showing
   time, Δt, iterations and a live residual plot; Cancel uses the progress callback.
 - [ ] **M8.10 [B] Result display.** Contour and vector result objects in the tree with

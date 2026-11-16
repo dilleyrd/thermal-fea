@@ -411,6 +411,16 @@ None of these blocks the build. Please confirm, or say what to change.
     operation that later operations refer to cannot be deleted. The rebuild runs in the
     GUI thread for now, behind one method, until the worker of M8.9 exists.
 
+11. **Solve and worker threads (M8.9).** The solve runs in a background thread on its
+    own copy of the model. If the model was edited meanwhile, the results are stored but
+    marked out of date; if the mesh or the build was replaced, they are discarded (the
+    file stays on disk). Cancel keeps the steps written so far. After a successful solve
+    the progress dialog stays open ("Finished") so the residual chart can be read.
+    Build and mesh run on one dedicated long-lived thread in the application (all gmsh
+    calls on a single thread; tried in three arrangements without a hang); a mesh made
+    from settings that changed meanwhile is discarded. `theta` is checked by the model,
+    not by a limit in the form.
+
 ## Q13 — choices made in the verification examples — raised in M3.G
 
 - **Nodes at check points.** V-09 and V-10 check the temperature at given points. Point

@@ -310,10 +310,18 @@ class Document(QObject):
         self._clear_stale(None, False, True)
         self.mesh_changed.emit()
 
-    def set_results(self, path: Path | str) -> None:
-        """Store the path of finished results and mark them current."""
+    def set_results(self, path: Path | str, stale: bool = False) -> None:
+        """Store the path of finished results.
+
+        Parameters
+        ----------
+        path : Path or str
+        stale : bool
+            True when the model changed while the results were computed (they belong
+            to an earlier model): the path is stored, but the results stay marked stale.
+        """
         self.results_path = Path(path)
-        self._clear_stale(None, None, False)
+        self._clear_stale(None, None, stale)
         self.results_changed.emit()
 
     # ------------------------------------------------------------ whole document

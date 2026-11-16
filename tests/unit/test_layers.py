@@ -25,6 +25,7 @@ MATPLOTLIB_GUI_ALLOWED = (
     "gui/viewport_mpl.py",
     "gui/property_panels/function_preview.py",
     "gui/property_panels/quality_histogram.py",
+    "gui/dialogs/residual_plot.py",
 )
 #: The interface module: no Matplotlib, and PySide6 only through these modules.
 SCENE_MODULE = "gui/scene.py"
