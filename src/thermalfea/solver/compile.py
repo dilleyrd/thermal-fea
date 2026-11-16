@@ -120,13 +120,9 @@ def attach_stream(problem: CompiledProblem, stream: Stream) -> None:
         Compiled from a model, or assembled by hand with ``named_entities``.
     stream : Stream
     """
-    from ..flow.stream import stream_items  # imported here: flow builds on the solver
+    from ..flow.coupling import provider_of  # imported here: flow builds on the solver
 
-    terms, constraints = stream_items(stream)
-    for target, items in ((problem.terms, terms), (problem.constraints, constraints)):
-        for item in items:
-            _setup(problem, item)
-            target.append(item)
+    provider_of(problem).add_stream(problem, stream)
 
 
 def compile(  # noqa: A001
@@ -178,8 +174,12 @@ def compile(  # noqa: A001
         )
     for bc in model.bcs:
         attach(problem, bc)
-    for stream in model.streams:
-        attach_stream(problem, stream)
+    if model.streams or model.network is not None:
+        from ..flow.coupling import StreamNetworkProvider  # flow builds on the solver
+
+        provider = StreamNetworkProvider(model.streams, model.network)
+        problem.providers.append(provider)
+        provider.setup(problem)
     log.debug(
         "compiled %d term(s), %d constraint(s); linear=%s",
         len(problem.terms), len(problem.constraints), problem.is_linear,

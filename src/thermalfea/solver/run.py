@@ -16,6 +16,7 @@ from ..post.reactions import term_heats
 from .problem import CompiledProblem
 from .results_writer import ResultsWriter
 from .steady import STEADY_TIME, steady_solution
+from .terms import State
 from .transient import StepRecord, TransientResult, initial_state, solve_transient
 
 log = logging.getLogger(__name__)
@@ -59,6 +60,33 @@ def log_balance(balance: EnergyBalance) -> None:
     log.info("energy balance [W], positive into the body:\n%s", balance.format())
 
 
+def flow_results(
+    problem: CompiledProblem, u: ndarray, t: float, u_prev: ndarray | None = None,
+    dt: float | None = None,
+) -> dict[str, ndarray]:
+    """Per-step results of every flow provider, keyed ``"<quantity>:<stream>"``.
+
+    Parameters
+    ----------
+    problem : CompiledProblem
+    u : ndarray, shape (n_dofs,)
+        Solution [K].
+    t : float
+        Time [s].
+    u_prev : ndarray, optional
+        Solution of the previous step; defaults to ``u``.
+    dt : float, optional
+        Time step [s].
+    """
+    if not problem.providers:
+        return {}
+    state = State(u=u, u_prev=u if u_prev is None else u_prev, t=t, dt=dt, dofs=problem.dofs)
+    out: dict[str, ndarray] = {}
+    for provider in problem.providers:
+        out.update(provider.results(state))
+    return out
+
+
 def run_steady(
     problem: CompiledProblem, path: str | Path, progress: ProgressCallback | None = None
 ) -> None:
@@ -84,6 +112,7 @@ def run_steady(
         writer.append_step(
             STEADY_TIME, result.T, dt=0.0, iterations=result.iterations,
             converged=result.converged, balance=balance,
+            extras=flow_results(problem, result.T, STEADY_TIME),
         )
     if progress is not None:
         progress(
@@ -177,13 +206,16 @@ def run_transient(
     last: dict[str, object] = {"balance": None}
 
     with ResultsWriter(path, problem) as writer:
-        writer.append_step(t0, start, dt=0.0, iterations=0, converged=True)
+        writer.append_step(
+            t0, start, dt=0.0, iterations=0, converged=True,
+            extras=flow_results(problem, start, t0),
+        )
         writer.flush()
 
-        def store(record: StepRecord, balance: EnergyBalance) -> None:
+        def store(record: StepRecord, balance: EnergyBalance, extras: dict) -> None:
             writer.append_step(
                 record.t, record.T, dt=record.dt, iterations=record.iterations,
-                converged=record.converged, balance=balance,
+                converged=record.converged, balance=balance, extras=extras,
             )
             if writer.n_steps % FLUSH_EVERY == 0:
                 writer.flush()
@@ -195,9 +227,11 @@ def run_transient(
                 record.system.residual(record.T), record.g_prev, record.capacitance_rate, heats,
             )
             stored = selector.wanted(record.step, record.t)
+            # taken now: the flow solution moves on with the next step
+            extras = flow_results(problem, record.T, record.t, record.T_prev, record.dt)
             if stored:
-                store(record, balance)
-            last.update(record=record, balance=balance, stored=stored)
+                store(record, balance, extras)
+            last.update(record=record, balance=balance, stored=stored, extras=extras)
             if progress is None:
                 return True
             keep_going = progress(
@@ -210,7 +244,7 @@ def run_transient(
         # temperature at the start
         result = solve_transient(problem, T0, on_step, t0=t0, store=False)
         if result.cancelled and not last.get("stored", True):
-            store(last["record"], last["balance"])  # type: ignore[arg-type]
+            store(last["record"], last["balance"], last["extras"])  # type: ignore[arg-type]
 
     if last["balance"] is not None:
         log_balance(last["balance"])  # type: ignore[arg-type]

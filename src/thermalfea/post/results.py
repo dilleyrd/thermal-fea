@@ -242,6 +242,52 @@ class Results:
             data = ds[()]
         return {name: data[:, i] for i, name in enumerate(columns)}
 
+    # ---------------------------------------------------------------------- streams
+
+    @cached_property
+    def _stream_keys(self) -> dict[str, str]:
+        with h5py.File(self.path, "r") as f:
+            if "fluid" not in f:  # a file written before streams were stored
+                return {}
+            return {str(g.attrs["name"]): key for key, g in f["fluid"].items()}
+
+    @property
+    def streams(self) -> list[str]:
+        """Names of the streams with stored results."""
+        return list(self._stream_keys)
+
+    def stream(self, name: str) -> dict[str, Any]:
+        """Everything stored for one stream.
+
+        Returns
+        -------
+        dict
+            ``mode``; for an in-plane stream ``s`` (path coordinate of the fluid nodes
+            [m]) and ``dofs``; and one array of shape (n_steps,) per quantity:
+            ``mass_flow`` [kg/s], ``h_mean`` [W/(m^2 K)], ``Re``, ``dp`` [Pa], ``T_in``,
+            ``T_out`` [K] and ``heat`` (heat picked up from the walls [W]). A quantity
+            that does not apply is NaN.
+        """
+        key = self._stream_keys.get(name)
+        if key is None:
+            raise ModelError(
+                f"no results stored for stream {name!r} (available: "
+                f"{', '.join(self.streams) or 'none'})"
+            )
+        with h5py.File(self.path, "r") as f:
+            group = f["fluid"][key]
+            out: dict[str, Any] = {"mode": str(group.attrs.get("mode", ""))}
+            out.update({k: ds[()] for k, ds in group.items()})
+        return out
+
+    def fluid_temperature(self, stream: str, step: int = -1) -> ndarray:
+        """Temperature of the fluid nodes of an in-plane stream at one step [K], inlet first."""
+        self.stream(stream)  # an unknown stream is reported as such
+        name = f"T_fluid:{stream}"
+        if name not in self.fields:
+            raise ModelError(f"stream {stream!r} has no fluid nodes (it is through-plane)")
+        return self.field(name, step)
+
     def __repr__(self) -> str:
         return f"Results({str(self.path)!r}, steps={self.n_steps})"
 

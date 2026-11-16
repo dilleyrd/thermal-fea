@@ -338,6 +338,42 @@ and may return `False` to cancel. A fixed-step run takes its step from
 5. **Typical cost:** 25–55 iterations with the prescribed under-relaxation of 0.5; the cap
    is 200.
 
+## Q20 — coupling of streams, network and solid (Theory §9, Data §9, §13) — raised in M7.4
+
+None of these blocks the build; each is a choice the documents leave open. Please confirm.
+
+1. **How the drivers reach the provider.** Data §13 gives `FlowProvider` four methods but
+   not where they are called. **Done for now:** `CompiledProblem.providers` (a list);
+   `solver/steady.py: assemble` calls `provider.update(state)` before every assembly (so at
+   most once per nonlinear iteration), and the run layer calls `provider.results(state)`
+   for each stored step. Two optional methods are used when a provider has them:
+   `initialize(u, t0)` (start values of its extra DOFs) and `static()` (step-independent
+   data for the results file).
+2. **Initial fluid temperatures of a transient.** The fluid is quasi-steady and has no
+   initial condition. **Done for now:** the fluid nodes start at the values that satisfy
+   the fluid energy equation for the initial wall temperatures (marched from the inlet).
+3. **A stream named by several branches.** `NetBranch.stream` supplies the flow area, so a
+   loss element must name a stream too. **Done for now:** a stream takes the flow of its
+   one duct branch (or of its only branch); two duct branches naming one stream is an
+   error. Every branch uses the mean temperature of its stream; for a through-plane
+   stream that is its bulk temperature.
+4. **Reversed flow.** A network solution that drives a stream against its path is refused
+   with a `ModelError` (the cell scheme of §9.1 has a fixed inlet).
+5. **Enthalpy term.** The heat flow reported for an in-plane stream is
+   `ṁ c_p (T_in − T_out)` (heat brought into solid + fluid; negative when the stream cools
+   the body), with the one `c_p` of Q18. The inlet constraint reports no heat flow.
+6. **Results file.** `/fluid/<i>` is keyed by index with the stream name in an attribute
+   (as `/reactions`), holds `mode`, and per step also `T_in`, `T_out` and `heat` besides
+   the `mass_flow, h_mean, Re, dp` of Data §9 (the M7.5 summary table needs them). For a
+   stream that is not on a network, `dp` is the §8.1 friction drop over the path length
+   with the Churchill factor at the mean Reynolds number; for a through-plane stream off
+   a network it is NaN (no length is known).
+7. **V-29** tightens the nonlinear tolerance (`rtol = 1e-10`) in its example, so that the
+   iteration error lies below the 1e-8 of the case; the scheme itself conserves to
+   round-off (errors of about 1e-13 are seen).
+8. **Symmetry.** Checked: `symmetric` is only an ordering hint to the linear solver
+   (`solver/linear.py`); nothing else assumes a symmetric matrix.
+
 ## Q13 — choices made in the verification examples — raised in M3.G
 
 - **Nodes at check points.** V-09 and V-10 check the temperature at given points. Point

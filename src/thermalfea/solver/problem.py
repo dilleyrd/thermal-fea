@@ -86,6 +86,9 @@ class CompiledProblem:
     #: Named entity sets for problems assembled by hand: name -> (dimension, tags).
     #: Looked up before the model's selections.
     named_entities: dict[str, tuple[int, list[int]]] = field(default_factory=dict)
+    #: Flow providers (Data §13): each supplies coupling terms, is updated by the drivers
+    #: before every assembly, and reports per-step results.
+    providers: list[Any] = field(default_factory=list)
     #: Hook ``suggest_dt(T) -> float``: a first time step [s] for the state ``T``
     #: (Theory §6.1); ``None`` when the problem cannot suggest one.
     suggest_dt: Callable[[ndarray], float] | None = None

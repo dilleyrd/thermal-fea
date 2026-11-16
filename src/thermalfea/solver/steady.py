@@ -48,6 +48,8 @@ def assemble(
     Assembled
     """
     state = State(u=u, u_prev=u if u_prev is None else u_prev, t=t, dt=dt, dofs=problem.dofs)
+    for provider in problem.providers:
+        provider.update(state)  # e.g. lagged hydraulics; the drivers know only this call
     asm = Assembler(problem.dofs.n_dofs)
     for term in problem.terms:
         term.conductance(state, asm)

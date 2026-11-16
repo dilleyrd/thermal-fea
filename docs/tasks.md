@@ -273,7 +273,7 @@ All plotting functions take a `Results`, return a Matplotlib `Figure`, optionall
 - [x] **M7.3 [B] Network hydraulics.** `flow/network.py: solve_network(network, streams,
   fluid_T) -> dict[branch, mass_flow], dict[node, pressure]` (Theory §9.2).
   Accept: V-30, V-31; mass is conserved at every node to 1e-10.
-- [ ] **M7.4 [C] Coupling.** `flow/provider.py` (`FlowProvider`, Data §13) and
+- [x] **M7.4 [C] Coupling.** `flow/provider.py` (`FlowProvider`, Data §13) and
   `flow/coupling.py: StreamNetworkProvider`; the drivers call only the provider interface.
   Inside each nonlinear iteration update h
   (lagged properties), then hydraulics when needed (Theory §9.2 last paragraph); the matrix

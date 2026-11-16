@@ -15,6 +15,10 @@ Layout::
     /steps/dt, /steps/iterations, /steps/converged
     /steps/energy    (n_steps, k); attr columns
     /reactions/<i>   (n_steps,) heat entering the body per boundary condition [W]; attr name
+    /fluid/<i>       one group per stream; attrs name, mode. In-plane streams: ``s`` (path
+                     coordinate of the fluid nodes [m]) and ``dofs``. Per step, (n_steps,):
+                     mass_flow, h_mean, Re, dp, T_in, T_out, heat
+    /steps/fields/T_fluid:<stream>  (n_steps, n_fluid_nodes); location ``extra:<stream>``
 
 Every per-step dataset is extendable and chunked by step, so steps can be appended one at
 a time and a file left by an interrupted run is still readable.
@@ -45,6 +49,10 @@ log = logging.getLogger(__name__)
 RESULTS_SCHEMA_VERSION = 1
 ENERGY_COLUMNS = ("heat_in", "heat_out", "net", "stored_rate", "imbalance", "relative_imbalance")
 _COMPRESSION = "gzip"
+#: Name of the per-stream fluid-temperature field, ``T_fluid:<stream>`` (Data §9).
+FLUID_FIELD = "T_fluid"
+#: Step-independent datasets of a stream group.
+STATIC_FLUID = ("s", "dofs")
 
 
 def model_hash(model_json: dict[str, Any]) -> str:
@@ -102,6 +110,7 @@ class ResultsWriter:
         self.problem = problem
         self._file: h5py.File | None = None
         self._names: list[str] = []
+        self._streams: list[str] = []
         self.n_steps = 0
 
     # ----------------------------------------------------------------- context manager
@@ -166,6 +175,60 @@ class ResultsWriter:
         temperature.attrs["location"] = "node"
         temperature.attrs["units"] = "K"
         f.create_group("reactions")
+        f.create_group("fluid")
+        for provider in problem.providers:
+            static = getattr(provider, "static", None)
+            for stream, data in (static() if static is not None else {}).items():
+                group = self._fluid_group(stream)
+                for key, value in data.items():
+                    if isinstance(value, str):
+                        group.attrs[key] = value
+                    else:
+                        group.create_dataset(key, data=np.asarray(value))
+
+    def _fluid_group(self, stream: str) -> h5py.Group:
+        """The group of one stream under ``/fluid`` (numbered; the name is an attribute)."""
+        if stream not in self._streams:
+            self._streams.append(stream)
+            group = self._file["fluid"].create_group(str(len(self._streams) - 1))
+            group.attrs["name"] = stream
+        return self._file["fluid"][str(self._streams.index(stream))]
+
+    def _append_extras(self, i: int, extras: dict[str, ndarray]) -> None:
+        """Store the per-step flow results, keyed ``"<quantity>:<stream>"``."""
+        fields = self._file["steps"]["fields"]
+        for key, value in extras.items():
+            quantity, _, stream = key.partition(":")
+            values = np.atleast_1d(np.asarray(value, dtype=float))
+            if quantity == FLUID_FIELD:
+                if key not in fields:
+                    ds = fields.create_dataset(
+                        key, shape=(i, values.size), maxshape=(None, values.size), dtype="f8",
+                        chunks=(1, max(values.size, 1)), compression=_COMPRESSION,
+                        fillvalue=np.nan,
+                    )
+                    ds.attrs["location"] = f"extra:{stream}"
+                    ds.attrs["units"] = "K"
+                ds = fields[key]
+                ds.resize((i + 1, ds.shape[1]))
+                ds[i] = values
+            else:
+                group = self._fluid_group(stream)
+                if quantity not in group:
+                    group.create_dataset(
+                        quantity, shape=(i,), maxshape=(None,), dtype="f8", chunks=(256,),
+                        fillvalue=np.nan,
+                    )
+                group[quantity].resize((i + 1,))
+                group[quantity][i] = values[0]
+        # keep every per-step flow dataset as long as the step list
+        for name, ds in fields.items():
+            if name != TEMPERATURE and ds.shape[0] < i + 1:
+                ds.resize((i + 1, ds.shape[1]))
+        for group in self._file["fluid"].values():
+            for name, ds in group.items():
+                if ds.maxshape == (None,) and name not in STATIC_FLUID and ds.shape[0] < i + 1:
+                    ds.resize((i + 1,))
 
     def close(self) -> None:
         """Flush and close the file."""
@@ -194,6 +257,7 @@ class ResultsWriter:
         iterations: int = 1,
         converged: bool = True,
         balance: EnergyBalance | None = None,
+        extras: dict[str, ndarray] | None = None,
     ) -> None:
         """Append one step.
 
@@ -211,6 +275,10 @@ class ResultsWriter:
             False marks a step stored although it did not converge.
         balance : EnergyBalance, optional
             Energy balance of the step; its flows fill ``/reactions``.
+        extras : dict of str to ndarray, optional
+            Flow results of the step, keyed ``"<quantity>:<stream>"`` (the output of
+            ``FlowProvider.results``): ``T_fluid`` becomes a field, every other quantity
+            a per-step scalar under ``/fluid``.
         """
         f = self._file
         if f is None:
@@ -237,6 +305,7 @@ class ResultsWriter:
             ds = f["reactions"][str(k)]
             ds.resize((i + 1,))
             ds[i] = balance.flows.get(name, np.nan) if balance is not None else np.nan
+        self._append_extras(i, extras or {})
         self.n_steps = i + 1
 
     def flush(self) -> None:

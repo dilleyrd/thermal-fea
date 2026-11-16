@@ -164,6 +164,9 @@ def cell_matrix(G: ndarray, weights: ndarray, m_cp: float) -> ndarray:
 class InletConstraint:
     """Prescribes the temperature of the inlet fluid node of a stream."""
 
+    #: The inlet node has no equation of its own, so no reaction heat flow is reported.
+    exchanges_heat = False
+
     def __init__(self, term: StreamTerm) -> None:
         self.name = f"{term.name}: inlet"
         self._term = term
@@ -395,8 +398,16 @@ class StreamTerm(_StreamCommon, BaseTerm):
         return G_cell * phi * (wall - U @ s.u)
 
     def boundary_heat(self, s: State) -> float:
-        """Heat entering the body from the stream [W] (negative when the stream cools it)."""
-        return -float(self.heat_to_fluid(s).sum())
+        """The stream's enthalpy term of the energy balance, ``m c_p (T_in - T_out)`` [W].
+
+        This is the heat the stream brings into the system of solid and fluid: negative
+        when the stream carries heat away. At a converged solution it equals minus the
+        heat passed from the walls to the fluid (:meth:`heat_to_fluid`); using the
+        enthalpy form makes the balance close to the residual of the whole system, fluid
+        equations included.
+        """
+        fluid = s.u[self.fluid_dofs]
+        return self.capacity_rate(s.t) * float(fluid[0] - fluid[-1])
 
     def fluid_temperature(self, u: ndarray) -> ndarray:
         """Temperature of the fluid nodes [K], inlet first, shape (N + 1,)."""

@@ -97,7 +97,8 @@ def heat_flows(
         idx, owner = problem.prescribed_owners(t)
         totals = np.bincount(owner, weights=reaction[idx], minlength=len(problem.constraints))
         for constraint, total in zip(problem.constraints, totals, strict=True):
-            flows[constraint.name] = flows.get(constraint.name, 0.0) + float(total)
+            if getattr(constraint, "exchanges_heat", True):
+                flows[constraint.name] = flows.get(constraint.name, 0.0) + float(total)
     return flows
 
 
@@ -146,5 +147,6 @@ def constraint_heats(problem: CompiledProblem, reaction: ndarray, t: float) -> d
     totals = np.bincount(owner, weights=reaction[idx], minlength=len(problem.constraints))
     heats: dict[str, float] = {}
     for constraint, total in zip(problem.constraints, totals, strict=True):
-        heats[constraint.name] = heats.get(constraint.name, 0.0) + float(total)
+        if getattr(constraint, "exchanges_heat", True):  # a stream inlet carries no reaction
+            heats[constraint.name] = heats.get(constraint.name, 0.0) + float(total)
     return heats
