@@ -292,7 +292,7 @@ buttons. Tree nodes: Geometry, Materials, Regions, Mesh, Initial Condition, Load
 Boundary Conditions, Flow (Streams, Network), Enclosures, Analysis Settings, Solution
 (Results objects). All long operations (build, mesh, solve) run in a worker thread.
 
-- [ ] **M8.1 [B] Application shell.** `gui/app.py`, `main_window.py`: docks, menus,
+- [x] **M8.1 [B] Application shell.** `gui/app.py`, `main_window.py`: docks, menus,
   toolbar, status bar, window-state persistence (`QSettings`), a `logging` handler that
   writes to the message panel, a global handler that shows `ThermalFEAError` messages in a
   dialog.
