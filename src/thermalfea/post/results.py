@@ -18,6 +18,7 @@ from numpy import ndarray
 
 from ..core.errors import ModelError
 from ..core.mesh import ElementBlock, FacetBlock, Mesh
+from ..core.units import UnitSettings
 from ..materials.material import Material
 from ..model.model import Model
 from ..model.serialize import from_json
@@ -70,6 +71,7 @@ class Results:
 
     def __init__(self, path: str | Path) -> None:
         self.path = Path(path)
+        self._display_units: UnitSettings | None = None
         if not self.path.is_file():
             raise ModelError(f"results file not found: {self.path}")
         try:
@@ -98,6 +100,23 @@ class Results:
         """The mesh the results were computed on."""
         with h5py.File(self.path, "r") as f:
             return read_mesh(f["mesh"])
+
+    @property
+    def display_units(self) -> UnitSettings:
+        """The units plots and read-outs of these results use.
+
+        Unless set, the display units of the model stored in the file (SI when the file
+        has none). The GUI sets them to the units chosen in the open document; the file
+        is never changed.
+        """
+        if self._display_units is not None:
+            return self._display_units
+        model = self.model
+        return model.display_units if model is not None else UnitSettings()
+
+    @display_units.setter
+    def display_units(self, settings: UnitSettings | None) -> None:
+        self._display_units = settings
 
     @cached_property
     def model(self) -> Model | None:

@@ -71,8 +71,8 @@ BC_FORMS: dict[str, FormSpec] = {
             FieldSpec("fluid", "Fluid", "str", tooltip="Name of a library fluid."),
             _temperature("T_inf", "Fluid temperature"),
             FieldSpec(
-                "velocity", "Velocity [m/s]", "function", optional=True,
-                tooltip="Free-stream velocity in m/s (SI, no unit conversion).",
+                "velocity", "Velocity", "function", quantity="velocity", optional=True,
+                tooltip="Free-stream velocity.",
             ),
             FieldSpec(
                 "char_length", "Characteristic length", "float", quantity="length",

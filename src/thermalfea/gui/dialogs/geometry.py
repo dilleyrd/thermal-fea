@@ -12,6 +12,7 @@ box of existing operations or from the current viewport selection.
 
 from __future__ import annotations
 
+import re
 from typing import TYPE_CHECKING, Any
 
 from PySide6.QtCore import Signal
@@ -35,9 +36,11 @@ from thermalfea.core.forms import (
     format_str_list,
     format_str_lists,
     format_xy_list,
+    from_display,
     parse_str_list,
     parse_str_lists,
     parse_xy_list,
+    to_display,
     unit_label,
 )
 from thermalfea.gui.geometry_defs import DEFAULTS, ToolDef, make_op
@@ -260,7 +263,11 @@ class GeometryOpDialog(QDialog):
         if spec.tooltip:
             editor.setToolTip(spec.tooltip)
         self.editors[name] = editor
-        self.form.addRow(QLabel(spec.label), editor)
+        label = spec.label
+        if spec.quantity:  # the unit comes from the display settings, never from the label
+            base = re.sub(r"\s*\[[^\]]*\]$", "", label)
+            label = f"{base} [{unit_label(spec.quantity, self._units)}]"
+        self.form.addRow(QLabel(label), editor)
 
     def _ref_rule(self, name: str) -> tuple[type, ...] | None:
         return edit.REF_RULES.get((self.tool.cls, name))
@@ -311,7 +318,8 @@ class GeometryOpDialog(QDialog):
         elif isinstance(editor, QComboBox):
             editor.setCurrentText(str(value))
         elif self.specs[name].kind == "xy_list":
-            editor.setText(format_xy_list(list(value)))  # type: ignore[attr-defined]
+            shown = to_display(self.specs[name], list(value), self._units)
+            editor.setText(format_xy_list(shown))  # type: ignore[attr-defined]
         else:
             editor.setText(str(value))  # type: ignore[attr-defined]
 
@@ -337,7 +345,7 @@ class GeometryOpDialog(QDialog):
             return editor.currentText()
         text = editor.text()  # type: ignore[attr-defined]
         if spec.kind == "xy_list":
-            return parse_xy_list(text)
+            return from_display(spec, parse_xy_list(text), self._units)
         return text.strip()
 
     def values(self) -> dict[str, Any]:

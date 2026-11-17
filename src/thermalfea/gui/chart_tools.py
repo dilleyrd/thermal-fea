@@ -68,6 +68,7 @@ from PySide6.QtWidgets import QMenu, QWidget
 
 from thermalfea import api
 from thermalfea.core.errors import ThermalFEAError
+from thermalfea.core.units import from_si
 from thermalfea.gui.charts import (
     CSV_FILTER,
     IMAGE_FILTER,
@@ -171,6 +172,8 @@ class ChartController(QObject):
         view.point_picked.connect(self._on_point_picked)
         window.actions[PROBE_ID].toggled.connect(self._on_probe_toggled)
         document.results_changed.connect(self._on_results_changed)
+        self._units = document.model.display_units
+        document.model_changed.connect(self._on_model_changed)
         for signal in (document.geometry_built, document.mesh_changed):
             signal.connect(self.update_actions)
         window.installEventFilter(self)
@@ -300,6 +303,7 @@ class ChartController(QObject):
             chart.deleteLater()
             self._error("Chart failed", str(exc))
             return None
+        chart.redraw = lambda: draw(chart)
         chart.show()
         chart.raise_()
         return chart
@@ -368,7 +372,12 @@ class ChartController(QObject):
         self.path_points.append((float(x), float(y)))
         shown = self.path_points[-_LISTED_POINTS:]
         more = "... " if len(self.path_points) > _LISTED_POINTS else ""
-        listing = more + "; ".join(f"({px:.6g}, {py:.6g})" for px, py in shown)
+        units = self.document.model.display_units
+        listing = more + "; ".join(
+            f"({float(from_si(px, 'length', units)):.6g}, "
+            f"{float(from_si(py, 'length', units)):.6g})"
+            for px, py in shown
+        )
         self._status(f"Path: {len(self.path_points)} vertex(es): {listing}", 30000)
 
     def _on_probe_toggled(self, on: bool) -> None:
@@ -423,6 +432,20 @@ class ChartController(QObject):
         return self._open(lambda w: w.show_energy_balance(results))
 
     # ------------------------------------------------------------ results change
+    def _on_model_changed(self) -> None:
+        """Draw the open charts again when the display units changed."""
+        units = self.document.model.display_units
+        if units == self._units:
+            return
+        self._units = units
+        for chart in self.windows:
+            if chart.redraw is None or chart.out_of_date:
+                continue
+            try:
+                chart.redraw()
+            except (ThermalFEAError, OSError, KeyError) as exc:
+                self._error("Chart failed", str(exc))
+
     def _on_results_changed(self) -> None:
         for chart in self.windows:
             chart.mark_out_of_date()

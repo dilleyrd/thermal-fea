@@ -74,7 +74,7 @@ class ToolDef:
         kind = self.fixed["kind"]
         specs = []
         for name, label in TRANSFORM_PARAMS[kind]:
-            quantity = None if name in ("angle", "factor") else "length"
+            quantity = {"angle": "angle", "factor": None}.get(name, "length")
             specs.append(FieldSpec(name, label, "float", quantity=quantity))
         return specs
 

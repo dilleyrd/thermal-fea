@@ -251,7 +251,9 @@ temperature `K | degC | degF`, length `m | mm | in`, and a consistent derived se
 Functions `to_si(value, quantity, settings)` and `from_si(...)` for quantities:
 `length, temperature, temperature_difference, conductivity, htc, heat_flux, heat_gen,
 power, density, specific_heat, time, mass_flow, pressure`. The `.tfea` file always stores SI.
-Until task M10.4, only the temperature unit is selectable; everything else is SI.
+Since task M10.4 every quantity has a selectable unit, with the presets `SI (m)`, `SI (mm)`
+and `US customary` (`UnitSettings.preset`); further quantities `velocity`, `area`, `angle`
+(OPEN_QUESTIONS Q24).
 
 ## §8 Boundary conditions
 

@@ -26,6 +26,7 @@ from thermalfea.gui.panels import PropertyController, attach_tree
 from thermalfea.gui.results_tools import ResultController, attach_results
 from thermalfea.gui.solve_tools import SolveController, attach_solve
 from thermalfea.gui.tree import ModelTree
+from thermalfea.gui.units_tools import UnitsController, attach_units
 from thermalfea.gui.viewport_mpl import MplSceneView, attach_viewport
 from thermalfea.gui.worker import JOIN_TIMEOUT_MS, SerialWorker
 
@@ -131,6 +132,8 @@ class AppContext:
         The long-lived thread of gmsh (build and mesh); ``None`` when not threaded.
     restore_hook : callable or None
         Restores ``sys.excepthook``; ``None`` when no hook was installed.
+    units : UnitsController or None
+        The Tools > Units... entry and dialog.
     """
 
     window: MainWindow
@@ -149,6 +152,7 @@ class AppContext:
     files: FileController
     gmsh_worker: SerialWorker | None = None
     restore_hook: Callable[[], None] | None = None
+    units: UnitsController | None = None
 
     def shutdown(self, timeout_ms: int = JOIN_TIMEOUT_MS) -> bool:
         """Stop the worker threads (bounded waits) and restore the exception hook.
@@ -209,6 +213,7 @@ def build_application(
     tree, properties = attach_tree(window, document, view)
     geometry = attach_geometry_tools(window, document, view)
     materials = attach_materials(window, document)
+    units = attach_units(window, document)
     mesh_tools = attach_mesh_tools(window, document, view)
     properties.generate_mesh = mesh_tools.generate
     loads = attach_loads(window, document, view)
@@ -244,6 +249,7 @@ def build_application(
         files=files,
         gmsh_worker=gmsh_worker,
         restore_hook=restore_hook,
+        units=units,
     )
 
 

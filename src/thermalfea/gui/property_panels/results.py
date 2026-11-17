@@ -31,6 +31,8 @@ from PySide6.QtWidgets import (
 )
 
 from thermalfea.core.errors import ModelError
+from thermalfea.core.forms import unit_label
+from thermalfea.core.units import from_si, to_si
 from thermalfea.post.plots import FIELDS
 
 if TYPE_CHECKING:
@@ -115,7 +117,7 @@ class ResultPanel(QWidget):
         self.step_spin.valueChanged.connect(self._on_step)
 
         self.time_edit = QLineEdit()
-        self.time_edit.setToolTip("Type a time [s]; the nearest stored step is shown")
+        self.time_edit.setToolTip("Type a time; the nearest stored step is shown")
         self.time_edit.editingFinished.connect(self._on_time)
         self.time_unit = QLabel("s")
         time_row = QHBoxLayout()
@@ -230,7 +232,8 @@ class ResultPanel(QWidget):
             self.message_label.setText(str(exc))
             self._sync()
             return
-        self._apply(step=self.controller.step_for_time(time))
+        units = self.controller.document.model.display_units
+        self._apply(step=self.controller.step_for_time(float(to_si(time, "time", units))))
 
     def _on_range_mode(self, _index: int) -> None:
         self._apply(range_mode=self.range_combo.currentData())
@@ -294,7 +297,10 @@ class ResultPanel(QWidget):
             self.step_spin.setValue(obj.step)
             self.step_slider.setEnabled(n > 1)
             self.step_spin.setEnabled(n > 1)
-            self.time_edit.setText(f"{controller.time_of(obj.step):.6g}")
+            units = controller.document.model.display_units
+            self.time_unit.setText(unit_label("time", units))
+            shown_time = float(from_si(controller.time_of(obj.step), "time", units))
+            self.time_edit.setText(f"{shown_time:.6g}")
             self.time_edit.setEnabled(n > 1)
             self.mesh_check.setChecked(obj.show_mesh)
 

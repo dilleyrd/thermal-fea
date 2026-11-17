@@ -2,8 +2,8 @@
 
 They give the property panel and the geometry-tool dialogs their fields. Coordinates and
 sizes are lengths (``quantity="length"``). The id of an operation is never editable: later
-operations refer to it. Angles have no quantity in :data:`thermalfea.core.units.QUANTITIES`;
-they are radians (Data §4).
+operations refer to it. The transform parameters mix lengths, angles and a factor in
+one mapping, so they stay in SI (m, rad) whatever the display units are.
 """
 
 from __future__ import annotations
@@ -75,8 +75,8 @@ FORMS: dict[type, FormSpec] = {
         "Polygon",
         [
             FieldSpec(
-                "vertices", "Vertices", "xy_list",
-                tooltip="Vertices in metres as 'x, y; x, y; ...'; the polygon closes itself.",
+                "vertices", "Vertices", "xy_list", quantity="length",
+                tooltip="Vertices as 'x, y; x, y; ...'; the polygon closes itself.",
             )  # fmt: skip
         ],
         _CATEGORY,
@@ -112,8 +112,8 @@ FORMS: dict[type, FormSpec] = {
             ),
             _refs("targets", "Targets", _IDS),
             FieldSpec(
-                "params", "Parameters", "dict",
-                tooltip="translate: dx, dy [m]; rotate: angle [rad], cx, cy [m]; "
+                "params", "Parameters [SI: m, rad]", "dict",
+                tooltip="Always in SI. translate: dx, dy [m]; rotate: angle [rad], cx, cy [m]; "
                 "mirror: x0, y0, x1, y1 [m]; scale: factor, cx, cy [m].",
             ),  # fmt: skip
             FieldSpec("copy", "Keep original (copy)", "bool"),

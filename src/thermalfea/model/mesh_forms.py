@@ -34,11 +34,11 @@ MESH_FORM = FormSpec(
             tooltip="Free-meshing algorithm.",
         ),  # fmt: skip
         FieldSpec(
-            "curve_sizes", "Curve sizes [m]", "dict",
+            "curve_sizes", "Curve sizes", "dict", quantity="length",
             tooltip="Curve selection and element size, as 'name=size, name=size'.",
         ),  # fmt: skip
         FieldSpec(
-            "point_sizes", "Point sizes [m]", "dict",
+            "point_sizes", "Point sizes", "dict", quantity="length",
             tooltip="Point selection and element size, as 'name=size, name=size'.",
         ),  # fmt: skip
         FieldSpec(

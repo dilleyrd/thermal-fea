@@ -5,7 +5,7 @@ from __future__ import annotations
 import dataclasses
 
 from thermalfea.core.forms import form_for
-from thermalfea.core.units import QUANTITIES
+from thermalfea.core.units import QUANTITIES, UnitSettings, unit_label
 from thermalfea.materials.material import Material
 from thermalfea.model import material_forms
 from thermalfea.model.model import RegionAssignment
@@ -53,5 +53,5 @@ def test_region_fields_kinds_and_quantities() -> None:
     thickness = spec.field("thickness")
     assert thickness.quantity == "length" and thickness.minimum == 0.0
     angle = spec.field("material_angle")
-    assert angle.quantity is None  # no angle quantity exists; radians
-    assert "rad" in angle.label
+    assert angle.quantity == "angle"  # M10.4; stored in radians
+    assert unit_label(angle.quantity, UnitSettings()) == "rad"  # the label shows the unit

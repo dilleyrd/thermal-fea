@@ -376,7 +376,7 @@ Boundary Conditions, Flow (Streams, Network), Enclosures, Analysis Settings, Sol
 - [x] **M10.3 [B] DXF import.** `ezdxf`: LINE, ARC, CIRCLE, LWPOLYLINE (with bulges),
   SPLINE → curves; join end points within tolerance; closed loops → surfaces, inner loops
   → holes.
-- [ ] **M10.4 [B] Unit systems.** Full `UnitSettings` (Data §7) through the form generator
+- [x] **M10.4 [B] Unit systems.** Full `UnitSettings` (Data §7) through the form generator
   and all plot labels; SI m, SI mm, US customary presets.
 - [ ] **M10.5 [A] Report.** Self-contained HTML report: model summary, materials, mesh
   statistics, load tables, solver log summary, energy balance, chosen plots.

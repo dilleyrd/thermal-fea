@@ -69,7 +69,7 @@ def _add_vectors(spec: FieldDisplay, vectors: VectorData) -> None:
     spec.vector_xy = vectors.xy
     spec.vector_uv = vectors.q
     spec.vector_values = vectors.magnitude
-    spec.vector_label = "Heat flux [W/m²]"
+    spec.vector_label = vectors.label
 
 
 def field_display_from_vectors(vectors: VectorData, show_mesh: bool = False) -> FieldDisplay:

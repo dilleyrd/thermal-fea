@@ -32,6 +32,8 @@ from PySide6.QtWidgets import (
 )
 
 from thermalfea.core.errors import ModelError
+from thermalfea.core.forms import unit_label
+from thermalfea.core.units import UnitSettings, from_si, to_si
 from thermalfea.gui.addressing import Address
 from thermalfea.gui.document import Document
 from thermalfea.model.bcs import FlowNetwork, NetBranch, NetNode
@@ -40,6 +42,10 @@ from thermalfea.model.bcs import FlowNetwork, NetBranch, NetNode
 NETWORK_ADDRESS: Address = ("network",)
 NODE_COLUMNS = ("Id", "Pressure [Pa]", "Inflow [kg/s]")
 BRANCH_COLUMNS = ("Id", "From", "To", "Kind", "Length [m]", "K minor", "Stream")
+#: Header text (without unit) and quantity of the numeric columns; the unit label of the
+#: display settings is appended.
+_NODE_UNITS = {1: ("Pressure", "pressure"), 2: ("Inflow", "mass_flow")}
+_BRANCH_UNITS = {4: ("Length", "length")}
 KINDS = ("duct", "loss")
 NONE_TEXT = "(none)"
 _BAD = QColor("#ffd0d0")
@@ -47,7 +53,12 @@ _GOOD = QColor("#ffffff")
 
 
 def parse_number(
-    text: str, *, optional: bool = False, minimum: float | None = None
+    text: str,
+    *,
+    optional: bool = False,
+    minimum: float | None = None,
+    quantity: str | None = None,
+    units: UnitSettings | None = None,
 ) -> float | None:
     """Parse one finite number of a table cell.
 
@@ -59,6 +70,10 @@ def parse_number(
         Whether a blank cell is allowed.
     minimum : float, optional
         Smallest accepted value (SI).
+    quantity : str, optional
+        Quantity of the cell; with ``units`` the typed number is converted to SI.
+    units : UnitSettings, optional
+        Display units of the typed number.
 
     Raises
     ------
@@ -76,6 +91,8 @@ def parse_number(
         raise ValueError(f"{stripped!r} is not a number") from None
     if not math.isfinite(value):
         raise ValueError(f"{stripped!r} is not a finite number")
+    if quantity is not None and units is not None:
+        value = float(to_si(value, quantity, units))
     if minimum is not None and value < minimum:
         raise ValueError(f"must be at least {minimum:g}")
     return value
@@ -187,6 +204,7 @@ class NetworkPanel(QWidget):
         network = self.network()
         self._loading = True
         try:
+            self._set_headers()
             has_network = network is not None
             self.empty_widget.setVisible(not has_network)
             self.editor_widget.setVisible(has_network)
@@ -199,13 +217,30 @@ class NetworkPanel(QWidget):
         finally:
             self._loading = False
 
+    def _shown(self, value: float | None, quantity: str) -> str:
+        """Cell text of an SI value in the display unit of ``quantity``."""
+        if value is None:
+            return ""
+        return _show(float(from_si(value, quantity, self.document.model.display_units)))
+
+    def _set_headers(self) -> None:
+        units = self.document.model.display_units
+        for table, columns, unit_columns in (
+            (self.node_table, NODE_COLUMNS, _NODE_UNITS),
+            (self.branch_table, BRANCH_COLUMNS, _BRANCH_UNITS),
+        ):
+            labels = list(columns)
+            for column, (text, quantity) in unit_columns.items():
+                labels[column] = f"{text} [{unit_label(quantity, units)}]"
+            table.setHorizontalHeaderLabels(labels)
+
     def _fill_nodes(self, network: FlowNetwork) -> None:
         table = self.node_table
         table.setRowCount(len(network.nodes))
         for row, node in enumerate(network.nodes):
             table.setItem(row, 0, QTableWidgetItem(node.id))
-            table.setItem(row, 1, QTableWidgetItem(_show(node.pressure)))
-            table.setItem(row, 2, QTableWidgetItem(_show(node.inflow)))
+            table.setItem(row, 1, QTableWidgetItem(self._shown(node.pressure, "pressure")))
+            table.setItem(row, 2, QTableWidgetItem(self._shown(node.inflow, "mass_flow")))
 
     def _fill_branches(self, network: FlowNetwork) -> None:
         table = self.branch_table
@@ -226,7 +261,7 @@ class NetworkPanel(QWidget):
                 list(KINDS), branch.kind,
                 lambda v, r=row: self._edit_branch(r, "kind", v),
             ))  # fmt: skip
-            table.setItem(row, 4, QTableWidgetItem(_show(branch.length)))
+            table.setItem(row, 4, QTableWidgetItem(self._shown(branch.length, "length")))
             table.setItem(row, 5, QTableWidgetItem(_show(branch.K_minor)))
             table.setCellWidget(row, 6, self._combo(
                 stream_names, branch.stream,
@@ -306,7 +341,10 @@ class NetworkPanel(QWidget):
             self._apply(item, "Rename node", rename)
             return
         try:
-            value = parse_number(item.text(), optional=True)
+            value = parse_number(
+                item.text(), optional=True, quantity=_NODE_UNITS[column][1],
+                units=self.document.model.display_units,
+            )
         except ValueError as exc:
             self._reject(item, str(exc))
             return
@@ -336,7 +374,11 @@ class NetworkPanel(QWidget):
             )  # fmt: skip
             return
         try:
-            value = parse_number(item.text(), minimum=0.0)
+            value = parse_number(
+                item.text(), minimum=0.0,
+                quantity="length" if column == 4 else None,
+                units=self.document.model.display_units,
+            )
         except ValueError as exc:
             self._reject(item, str(exc))
             return

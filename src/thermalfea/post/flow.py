@@ -17,13 +17,54 @@ from numpy import ndarray
 
 from ..convection.correlations import RE_LAMINAR, RE_TURBULENT
 from ..core.errors import ModelError
+from ..core.units import UnitSettings, from_si, unit_label
 from ..flow.stream import path_coordinate
 from ..model.bcs import Stream
-from .plots import _figure
+from .plots import _figure, _time_text
 from .results import Results
 
 _NO_STREAMS = "no streams"
 _EMPTY = "-"
+
+#: Numbers of a stream summary: (attribute of :class:`StreamSummary`, quantity or ``None``).
+SUMMARY_QUANTITIES: tuple[tuple[str, str | None], ...] = (
+    ("mass_flow", "mass_flow"), ("Re", None), ("h_mean", "htc"), ("dp", "pressure"),
+    ("T_in", "temperature"), ("T_out", "temperature"), ("heat", "power"),
+)
+
+
+def stream_curves(
+    results: Results, stream: str, step: int = -1
+) -> tuple[tuple[ndarray, ndarray], tuple[ndarray, ndarray], UnitSettings]:
+    """Fluid and mean wall temperature of an in-plane stream, in display units.
+
+    Parameters
+    ----------
+    results : Results
+    stream : str
+        Name of an in-plane stream.
+    step : int
+        Stored step; negative counts from the end.
+
+    Returns
+    -------
+    fluid, wall : tuple of ndarray
+        ``(s, T)`` in the display length and temperature units.
+    units : UnitSettings
+        The display units used (``results.display_units``).
+    """
+    units = results.display_units
+    s_wall, t_wall = wall_temperature(results, stream, step)
+    s_fluid = np.asarray(results.stream(stream)["s"], dtype=float)
+    t_fluid = results.fluid_temperature(stream, step)
+
+    def shown(s: ndarray, t: ndarray) -> tuple[ndarray, ndarray]:
+        return (
+            np.asarray(from_si(np.asarray(s, dtype=float), "length", units)),
+            np.asarray(from_si(np.asarray(t, dtype=float), "temperature", units)),
+        )
+
+    return shown(s_fluid, t_fluid), shown(s_wall, t_wall), units
 
 
 def _stream_definition(results: Results, stream: str) -> Stream:
@@ -110,16 +151,14 @@ def plot_stream(results: Results, stream: str, step: int = -1) -> Figure:
     ModelError
         See :func:`wall_temperature`; also for a through-plane stream.
     """
-    s_wall, t_wall = wall_temperature(results, stream, step)
-    s_fluid = np.asarray(results.stream(stream)["s"], dtype=float)
-    t_fluid = results.fluid_temperature(stream, step)
+    (s_fluid, t_fluid), (s_wall, t_wall), units = stream_curves(results, stream, step)
     index = results._step(step)
     fig, ax = _figure(None)
     ax.plot(s_fluid, t_fluid, label="fluid")
     ax.plot(s_wall, t_wall, label="mean wall")
-    ax.set_xlabel("s [m]")
-    ax.set_ylabel("T [K]")
-    ax.set_title(f"Stream {stream}, t = {float(results.times[index]):.6g} s")
+    ax.set_xlabel(f"s [{unit_label('length', units)}]")
+    ax.set_ylabel(f"T [{unit_label('temperature', units)}]")
+    ax.set_title(f"Stream {stream}, t = {_time_text(float(results.times[index]), units)}")
     ax.grid(True)
     ax.legend()
     return fig
@@ -222,12 +261,44 @@ def stream_summary(results: Results, step: int = -1) -> list[StreamSummary]:
     return rows
 
 
-def format_stream_summary(rows: list[StreamSummary]) -> str:
+def summary_headers(units: UnitSettings | None = None) -> list[str]:
+    """Column headers of the stream table (names with display units), in table order.
+
+    Parameters
+    ----------
+    units : UnitSettings, optional
+        Display units; default SI.
+    """
+    units = units if units is not None else UnitSettings()
+    names = {
+        "mass_flow": "m_dot", "Re": "Re", "h_mean": "h", "dp": "dp",
+        "T_in": "T_in", "T_out": "T_out", "heat": "heat",
+    }
+    out = []
+    for attr, quantity in SUMMARY_QUANTITIES:
+        unit = "" if quantity is None else f" [{unit_label(quantity, units)}]"
+        out.append(names[attr] + unit)
+    return out
+
+
+def summary_numbers(row: StreamSummary, units: UnitSettings | None = None) -> list[float]:
+    """The numbers of one stream summary in display units (NaN stays NaN), table order."""
+    units = units if units is not None else UnitSettings()
+    out = []
+    for attr, quantity in SUMMARY_QUANTITIES:
+        value = float(getattr(row, attr))
+        out.append(value if quantity is None else float(from_si(value, quantity, units)))
+    return out
+
+
+def format_stream_summary(rows: list[StreamSummary], units: UnitSettings | None = None) -> str:
     """Lay out stream summaries as a plain-text table.
 
     Parameters
     ----------
     rows : list of StreamSummary
+    units : UnitSettings, optional
+        Display units of the columns; default SI.
 
     Returns
     -------
@@ -238,13 +309,11 @@ def format_stream_summary(rows: list[StreamSummary]) -> str:
     """
     if not rows:
         return _NO_STREAMS
-    header = [
-        "stream", "m_dot [kg/s]", "Re", "regime", "h [W/(m^2 K)]",
-        "dp [Pa]", "T_in [K]", "T_out [K]", "heat [W]",
-    ]
+    heads = summary_headers(units)
+    header = ["stream", heads[0], heads[1], "regime", *heads[2:]]
     table = [header]
     for r in rows:
-        numbers = [r.mass_flow, r.Re, r.h_mean, r.dp, r.T_in, r.T_out, r.heat]
+        numbers = summary_numbers(r, units)
         cells = [f"{v:.6g}" if not math.isnan(v) else _EMPTY for v in numbers]
         table.append([r.name, cells[0], cells[1], r.regime or _EMPTY, *cells[2:]])
     widths = [max(len(row[i]) for row in table) for i in range(len(header))]

@@ -26,8 +26,9 @@ Surface, Node, Element) and a "Fit view" button.
 
 Things to know before you start:
 
-- **Temperatures are entered in kelvin.** The GUI has no temperature-unit setting yet (the
-  display unit is K; Plan M10.4). 100 degC is 373.15 K and 0 degC is 273.15 K.
+- **Temperatures are entered in kelvin** unless you change the units with Tools > Units...
+  (the steps below assume the default, SI with K). 100 degC is 373.15 K and 0 degC is
+  273.15 K.
 - **Press Enter after typing a number** in a property field. The value is applied when you
   press Enter or leave the field, and each applied change is one undo step (Edit > Undo).
 - Property fields that are physical functions (conductivity, temperature, heat-transfer

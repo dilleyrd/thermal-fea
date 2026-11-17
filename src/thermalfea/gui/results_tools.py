@@ -63,7 +63,8 @@ from PySide6.QtCore import QObject, QTimer, Signal
 from PySide6.QtGui import QAction
 
 from thermalfea.core.errors import ModelError, ThermalFEAError
-from thermalfea.core.forms import copy_name, unique_name
+from thermalfea.core.forms import copy_name, unique_name, unit_label
+from thermalfea.core.units import from_si
 from thermalfea.gui.document import Document
 from thermalfea.gui.field_display import field_display_from_contour, field_display_from_vectors
 from thermalfea.gui.main_window import MainWindow
@@ -75,7 +76,9 @@ from thermalfea.post.plots import (
     contour_data,
     contour_fields,
     display_value,
+    field_display_values,
     field_range,
+    field_si_values,
     vector_data,
 )
 from thermalfea.post.results import Results
@@ -254,11 +257,16 @@ class ResultController(QObject):
         self._results: Results | None = None
         self._times: np.ndarray = np.zeros(0)
         self._ranges: dict[str, tuple[float, float]] = {}
+        self._units = document.model.display_units
+        #: Results show the units of the model stored in their file until the user
+        #: changes the units of the document; from then on they follow the document.
+        self._follow_document_units = False
         self.timer = QTimer(self)
         self.timer.setInterval(self._interval_ms)
         self.timer.timeout.connect(self.tick)
         self._build_actions()
         document.results_changed.connect(self._on_results_changed)
+        document.model_changed.connect(self._on_model_changed)
         view.point_picked.connect(self._on_point_picked)
         self._on_results_changed()
 
@@ -338,6 +346,9 @@ class ResultController(QObject):
         if path is not None:
             try:
                 results = Results(path)
+                if self._follow_document_units:
+                    results.display_units = self.document.model.display_units
+                self._units = self.document.model.display_units
                 self._times = np.asarray(results.times, dtype=float)
                 self._results = results
             except (ThermalFEAError, OSError, KeyError) as exc:
@@ -350,6 +361,36 @@ class ResultController(QObject):
             self.objects = [self._clamped(obj) for obj in self.objects]
             if self.get(self.shown) is None:
                 self.shown = self.objects[0].name
+        self.objects_changed.emit()
+        self._refresh()
+
+    def _on_model_changed(self) -> None:
+        """Show the results again when the display units changed.
+
+        Manual colour ranges are typed in display units, so they are converted to the new
+        units (the same SI values); the cached ranges over all steps are dropped.
+        """
+        new = self.document.model.display_units
+        old = self._units
+        if new == old:
+            return
+        self._units = new
+        self._follow_document_units = True
+        if self._results is None:
+            return
+        self._results.display_units = new
+        self._ranges.clear()
+        converted: list[ResultObject] = []
+        for obj in self.objects:
+            if isinstance(obj, ContourObject) and obj.vmin is not None and obj.vmax is not None:
+                lo, hi = (
+                    float(field_display_values(
+                        obj.field, field_si_values(obj.field, v, old), new)[0])
+                    for v in (obj.vmin, obj.vmax)
+                )
+                obj = replace(obj, vmin=lo, vmax=hi)
+            converted.append(obj)
+        self.objects = converted
         self.objects_changed.emit()
         self._refresh()
 
@@ -728,7 +769,10 @@ class ResultController(QObject):
             return None
         label = FIELDS[field][3]
         inside = bool(np.isfinite(value))
-        where = f"x = {x:.6g} m, y = {y:.6g} m"
+        units = self.document.model.display_units
+        length = unit_label("length", units)
+        x_shown, y_shown = (float(from_si(v, "length", units)) for v in (x, y))
+        where = f"x = {x_shown:.6g} {length}, y = {y_shown:.6g} {length}"
         text = f"{where}: {label} = {value:.6g} {unit}" if inside else f"{where}: outside the model"
         reading = ProbeReading(x, y, value, unit, label, inside, obj.step, text)
         self.probes.append(reading)

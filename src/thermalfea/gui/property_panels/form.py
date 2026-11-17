@@ -35,10 +35,12 @@ from thermalfea.core.forms import (
     format_str_list,
     format_str_lists,
     format_xy_list,
+    from_display,
     parse_float_list,
     parse_str_list,
     parse_str_lists,
     parse_xy_list,
+    to_display,
     unit_label,
 )
 from thermalfea.core.units import UnitSettings, from_si, to_si
@@ -337,12 +339,16 @@ class FormPanel(QWidget):
         if f.kind == "dict":
             line = QLineEdit()
             line.editingFinished.connect(lambda n=name, w=line: self._on_dict(n, w))
-            return line, None
+            return line, self._unit_label_for(f)
         if f.kind in _TEXT_LISTS:
             line = QLineEdit()
             line.editingFinished.connect(lambda n=name, w=line: self._on_text_list(n, w))
-            return line, None
+            return line, self._unit_label_for(f)
         raise ModelError(f"unsupported form kind {f.kind!r}")  # pragma: no cover
+
+    def _unit_label_for(self, f: FieldSpec) -> QLabel | None:
+        """Unit label beside a list or mapping field of a quantity (``None`` otherwise)."""
+        return QLabel(unit_label(f.quantity, self._units)) if f.quantity else None
 
     def field_choices(self, field: FieldSpec) -> tuple[str, ...] | None:
         """Closed list of values of a text (``str``) field, shown as a combo box.
@@ -385,9 +391,11 @@ class FormPanel(QWidget):
                     editor = self.editors[field.name]
                     if isinstance(editor, NumberEdit):
                         editor.set_settings(units)
-                        self._unit_labels[field.name].setText(unit_label(field.quantity, units))
                     elif isinstance(editor, FunctionEditor):
                         editor.set_units(units)
+                    unit = self._unit_labels.get(field.name)
+                    if unit is not None:
+                        unit.setText(unit_label(field.quantity, units))
             name = getattr(obj, "name", "") or getattr(obj, "id", "")
             self.title_label.setText(f"{self.spec.title}: {name}" if name else self.spec.title)
             for field in self.spec.fields:
@@ -426,9 +434,9 @@ class FormPanel(QWidget):
         elif isinstance(editor, QLineEdit):
             editor.setStyleSheet("")
             if f.kind == "dict":
-                editor.setText(format_dict(value))
+                editor.setText(format_dict(to_display(f, value, self._units)))
             elif f.kind in _TEXT_LISTS:
-                editor.setText(_TEXT_LISTS[f.kind][0](value))
+                editor.setText(_TEXT_LISTS[f.kind][0](to_display(f, value, self._units)))
             else:
                 editor.setText(str(value or ""))
         self._show_error()
@@ -528,7 +536,7 @@ class FormPanel(QWidget):
             value = {key: int(v) for key, v in value.items()}
         line.setStyleSheet("")
         line.setToolTip(self.spec.field(name).tooltip)
-        self._apply(name, value)
+        self._apply(name, from_display(self.spec.field(name), value, self._units))
 
     def _dict_of_int(self, name: str) -> bool:
         """True when the dataclass declares the field as a mapping to ``int``."""
@@ -550,4 +558,4 @@ class FormPanel(QWidget):
             return
         line.setStyleSheet("")
         line.setToolTip(self.spec.field(name).tooltip)
-        self._apply(name, value)
+        self._apply(name, from_display(self.spec.field(name), value, self._units))

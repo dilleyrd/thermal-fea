@@ -48,7 +48,7 @@ from thermalfea.core.functions import (
     Table,
     function_to_json,
 )
-from thermalfea.core.units import UnitSettings, from_si, to_si
+from thermalfea.core.units import UnitSettings, from_si, is_si, si_label, to_si
 from thermalfea.gui.property_panels.function_preview import FunctionPreview
 
 MODES = ("constant", "table", "expression", "none")
@@ -250,6 +250,10 @@ class FunctionEditor(QWidget):
         self.expr_edit.setPlaceholderText("e.g. 300 + 20*sin(2*pi*t/60)")
         self.expr_edit.setToolTip(_EXPRESSION_TIP)
         col.addWidget(self.expr_edit)
+        self.si_note = QLabel("")
+        self.si_note.setWordWrap(True)
+        self.si_note.setStyleSheet("color: #805000;")
+        col.addWidget(self.si_note)
         self.expr_edit.textChanged.connect(self._check_live)
         self.expr_edit.editingFinished.connect(self.commit)
         self.stack.addWidget(page)
@@ -262,6 +266,7 @@ class FunctionEditor(QWidget):
         self.settings = settings
         unit = unit_label(self.quantity, settings)
         self.unit_label.setText(unit)
+        self._update_si_note()
         self._loading = True
         try:
             if old_value is not None:
@@ -271,6 +276,20 @@ class FunctionEditor(QWidget):
         finally:
             self._loading = False
         self._update_headers()
+
+    def _update_si_note(self) -> None:
+        """Say, when the display units are not SI, that expressions are written in SI."""
+        settings = self.settings
+        used = [q for q in (self.quantity, "time", "length", "temperature") if q is not None]
+        if all(is_si(q, settings) for q in used):
+            self.si_note.setText("")
+            self.si_note.setVisible(False)
+            return
+        result = f" Result in {si_label(self.quantity)}." if self.quantity else ""
+        self.si_note.setText(
+            f"Expressions are always in SI: t [s], x, y [m], T [K].{result}"
+        )
+        self.si_note.setVisible(True)
 
     def _y_to_si(self, value: float) -> float:
         return float(to_si(value, self.quantity, self.settings)) if self.quantity else value

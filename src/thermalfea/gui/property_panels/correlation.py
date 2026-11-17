@@ -60,8 +60,8 @@ _PREVIEW_FIELDS: dict[str, FieldSpec] = {
         optional=True, tooltip="Distance x along the flow direction.",
     ),
     "velocity": FieldSpec(
-        "velocity", "Velocity [m/s]", "float", minimum=0.0, optional=True,
-        tooltip="Free-stream velocity in m/s (SI).",
+        "velocity", "Velocity", "float", quantity="velocity", minimum=0.0, optional=True,
+        tooltip="Free-stream velocity.",
     ),
     "theta_deg": FieldSpec(
         "theta_deg", "Inclination from vertical [deg]", "float", optional=True,
@@ -74,8 +74,8 @@ _PREVIEW_FIELDS: dict[str, FieldSpec] = {
         tooltip="Mass flow rate through the duct.",
     ),
     "area": FieldSpec(
-        "area", "Flow area [m^2]", "float", minimum=0.0, optional=True,
-        tooltip="Flow cross-section in m^2 (SI).",
+        "area", "Flow area", "float", quantity="area", minimum=0.0, optional=True,
+        tooltip="Flow cross-section.",
     ),
     "wetted_perimeter": FieldSpec(
         "wetted_perimeter", "Wetted perimeter", "float", quantity="length", minimum=0.0,
@@ -332,7 +332,8 @@ class CorrelationPanel(FormPanel):
     def _format(self, result: HtcResult) -> str:
         units = self.document.model.display_units
         T_film = float(from_si(result.T_film, "temperature", units))
-        lines = [f"h = {_g(result.h)} W/(m^2 K)"]
+        h = float(from_si(result.h, "htc", units))
+        lines = [f"h = {_g(h)} {unit_label('htc', units)}"]
         for name, value in (
             ("Nu", result.Nu), ("Re", result.Re), ("Ra", result.Ra), ("Pr", result.Pr)
         ):
@@ -341,6 +342,7 @@ class CorrelationPanel(FormPanel):
         lines.append(f"Regime: {result.regime}")
         lines.append(f"T_film = {_g(T_film)} {unit_label('temperature', units)}")
         if result.length is not None:
-            lines.append(f"Length used = {_g(result.length)} m")
+            length = float(from_si(result.length, "length", units))
+            lines.append(f"Length used = {_g(length)} {unit_label('length', units)}")
         lines.extend(f"Warning: {w}" for w in result.warnings)
         return "\n".join(lines)

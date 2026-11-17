@@ -22,6 +22,8 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
+from thermalfea.core.forms import unit_label
+from thermalfea.core.units import UnitSettings
 from thermalfea.gui.property_panels.network import parse_number
 from thermalfea.materials import library
 from thermalfea.model.bcs import Stream
@@ -35,6 +37,9 @@ class NewStreamDialog(QDialog):
     Parameters
     ----------
     parent : QWidget, optional
+    units : UnitSettings, optional
+        Display units of the entries (flow area, wetted perimeter, inlet temperature);
+        default SI.
 
     Signals
     -------
@@ -48,15 +53,16 @@ class NewStreamDialog(QDialog):
     cross_box : QComboBox
         Cross-sections; the first entry is empty.
     flow_area_edit, wetted_edit, inlet_edit : QLineEdit
-        Flow area [m^2], wetted perimeter [m] and inlet temperature [K] as typed.
+        Flow area, wetted perimeter and inlet temperature as typed, in the display units.
     message_label : QLabel
         The last complaint about the entry ("" when none).
     """
 
     stream_requested = Signal(object)
 
-    def __init__(self, parent: QWidget | None = None) -> None:
+    def __init__(self, parent: QWidget | None = None, units: UnitSettings | None = None) -> None:
         super().__init__(parent, Qt.WindowType.Window)
+        self.units = units if units is not None else UnitSettings()
         self.setWindowTitle("New stream")
         self.fluid_box = QComboBox()
         self.fluid_box.addItem("")
@@ -73,10 +79,12 @@ class NewStreamDialog(QDialog):
 
         form = QFormLayout()
         form.addRow("Fluid", self.fluid_box)
-        form.addRow("Flow area [m^2]", self.flow_area_edit)
-        form.addRow("Wetted perimeter [m]", self.wetted_edit)
+        form.addRow(f"Flow area [{unit_label('area', self.units)}]", self.flow_area_edit)
+        form.addRow(f"Wetted perimeter [{unit_label('length', self.units)}]", self.wetted_edit)
         form.addRow("Cross-section", self.cross_box)
-        form.addRow("Inlet temperature [K]", self.inlet_edit)
+        form.addRow(
+            f"Inlet temperature [{unit_label('temperature', self.units)}]", self.inlet_edit
+        )
         buttons = QDialogButtonBox(
             QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel
         )
@@ -109,12 +117,19 @@ class NewStreamDialog(QDialog):
             fluid=fluid,
             mode="in_plane",
             walls=[],
-            flow_area=parse_number(self._text(self.flow_area_edit, "flow area"), minimum=0.0),
+            flow_area=parse_number(
+                self._text(self.flow_area_edit, "flow area"), minimum=0.0,
+                quantity="area", units=self.units,
+            ),
             wetted_perimeter=parse_number(
-                self._text(self.wetted_edit, "wetted perimeter"), minimum=0.0
+                self._text(self.wetted_edit, "wetted perimeter"), minimum=0.0,
+                quantity="length", units=self.units,
             ),
             cross_section=cross,  # type: ignore[arg-type]
-            T_inlet=parse_number(self._text(self.inlet_edit, "inlet temperature"), minimum=0.0),
+            T_inlet=parse_number(
+                self._text(self.inlet_edit, "inlet temperature"), minimum=0.0,
+                quantity="temperature", units=self.units,
+            ),
         )
 
     @staticmethod

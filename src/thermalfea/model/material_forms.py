@@ -9,7 +9,7 @@ any GUI code. Quantities come from :data:`thermalfea.core.units.QUANTITIES`:
 * specific heat ``cp`` -> ``specific_heat`` [J/(kg K)];
 * thickness -> ``length`` [m].
 
-The material angle has no quantity in ``QUANTITIES``; it is in radians (Data §4).
+The material angle is stored in radians (Data §4) and has the quantity ``angle``.
 The ``material`` field of a region is a name of a model material; the region panel
 (:class:`thermalfea.gui.property_panels.region.RegionPanel`) offers the names in a combo box.
 """
@@ -63,7 +63,7 @@ REGION_FORM = FormSpec(
             tooltip="Thickness of a planar model; ignored for axisymmetric models.",
         ),  # fmt: skip
         FieldSpec(
-            "material_angle", "Material angle (rad)", "float",
+            "material_angle", "Material angle", "float", quantity="angle",
             tooltip="Angle of the material axis, counter-clockwise from x; orthotropic only.",
         ),  # fmt: skip
     ],

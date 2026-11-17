@@ -46,7 +46,9 @@ from PySide6.QtCore import QObject, Signal
 from PySide6.QtWidgets import QWidget
 from scipy.spatial import cKDTree
 
+from thermalfea.core.forms import unit_label
 from thermalfea.core.mesh import Mesh
+from thermalfea.core.units import from_si
 from thermalfea.geometry.builder import BuiltGeometry
 from thermalfea.gui import picking
 from thermalfea.gui.scene import (
@@ -1051,9 +1053,16 @@ def attach_viewport(window: MainWindow, document: Document) -> MplSceneView:
     fit = window.actions["view.fit"]
     fit.setEnabled(True)
     fit.triggered.connect(lambda _checked=False: view.fit())
-    view.coordinates_changed.connect(
-        lambda x, y: window.show_status(f"x = {x:.6g} m    y = {y:.6g} m")
-    )
+
+    def show_coordinates(x: float, y: float) -> None:
+        units = document.model.display_units
+        unit = unit_label("length", units)
+        window.show_status(
+            f"x = {float(from_si(x, 'length', units)):.6g} {unit}    "
+            f"y = {float(from_si(y, 'length', units)):.6g} {unit}"
+        )
+
+    view.coordinates_changed.connect(show_coordinates)
     document.geometry_built.connect(lambda: view.set_geometry(document.built))
     document.mesh_changed.connect(lambda: view.set_mesh(document.mesh))
     view.set_geometry(document.built)

@@ -26,7 +26,8 @@ from typing import Any, Literal, Union, get_args, get_origin, get_type_hints
 from . import registry
 from .errors import ModelError
 from .functions import Constant, Function
-from .units import QUANTITIES, UnitSettings
+from .units import QUANTITIES, UnitSettings, from_si, to_si
+from .units import unit_label as unit_label  # re-exported: forms and panels import it here
 
 FieldKind = Literal[
     "float", "int", "bool", "str", "choice", "function", "selection", "selection_list", "dict",
@@ -39,43 +40,6 @@ FIELD_KINDS: tuple[str, ...] = (
 
 #: Fields every object has that a form never shows.
 EXCLUDED_FIELDS = ("name", "active")
-
-_SI_LABELS: dict[str, str] = {
-    "length": "m",
-    "temperature": "K",
-    "temperature_difference": "K",
-    "conductivity": "W/(m K)",
-    "htc": "W/(m^2 K)",
-    "heat_flux": "W/m^2",
-    "heat_gen": "W/m^3",
-    "power": "W",
-    "density": "kg/m^3",
-    "specific_heat": "J/(kg K)",
-    "time": "s",
-    "mass_flow": "kg/s",
-    "pressure": "Pa",
-}
-_TEMPERATURE_LABELS = {"K": "K", "degC": "°C", "degF": "°F"}
-
-
-def unit_label(quantity: str | None, settings: UnitSettings) -> str:
-    """Return the display-unit label of a quantity (empty for ``None``).
-
-    Parameters
-    ----------
-    quantity : str or None
-        One of :data:`thermalfea.core.units.QUANTITIES`.
-    settings : UnitSettings
-        Display-unit choices.
-    """
-    if quantity is None:
-        return ""
-    if quantity not in QUANTITIES:
-        raise ModelError(f"unknown quantity {quantity!r}")
-    if quantity in ("temperature", "temperature_difference"):
-        return _TEMPERATURE_LABELS[settings.temperature]
-    return _SI_LABELS[quantity]
-
 
 @dataclass(frozen=True)
 class FieldSpec:
@@ -128,6 +92,36 @@ class FieldSpec:
             raise ModelError(f"field {self.name!r}: unknown quantity {self.quantity!r}")
         if self.kind == "choice" and not self.choices:
             raise ModelError(f"field {self.name!r}: a choice field needs choices")
+
+
+def _convert_value(spec: FieldSpec, value: Any, convert: Any) -> Any:
+    """Apply ``convert(number)`` to the numbers of a field value of a quantity."""
+    if spec.quantity is None or value is None:
+        return value
+    if spec.kind == "dict":
+        return {k: float(convert(float(v))) for k, v in value.items()}
+    if spec.kind == "float_list":
+        return [float(convert(float(v))) for v in value]
+    if spec.kind == "xy_list":
+        return [(float(convert(float(x))), float(convert(float(y)))) for x, y in value]
+    return float(convert(float(value)))
+
+
+def to_display(spec: FieldSpec, value: Any, settings: UnitSettings) -> Any:
+    """Convert a stored (SI) field value to display units.
+
+    Works for ``float`` and ``int`` values and for the numbers inside ``dict`` (values),
+    ``float_list`` and ``xy_list`` (both columns) fields of a quantity; a field without a
+    quantity, and ``None``, are returned unchanged.
+    """
+    quantity = spec.quantity
+    return _convert_value(spec, value, lambda v: from_si(v, quantity, settings))  # type: ignore[arg-type]
+
+
+def from_display(spec: FieldSpec, value: Any, settings: UnitSettings) -> Any:
+    """Convert a field value typed in display units to SI (inverse of :func:`to_display`)."""
+    quantity = spec.quantity
+    return _convert_value(spec, value, lambda v: to_si(v, quantity, settings))  # type: ignore[arg-type]
 
 
 @dataclass

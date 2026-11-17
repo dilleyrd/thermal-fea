@@ -569,7 +569,7 @@ class ModelTree(QTreeWidget):
             Address of the new stream; ``None`` while the dialog is open.
         """
         if not self.document.model.streams:
-            dialog = NewStreamDialog(self)
+            dialog = NewStreamDialog(self, self.document.model.display_units)
             dialog.stream_requested.connect(self._add_new_stream)
             self.stream_dialog = dialog
             dialog.show()

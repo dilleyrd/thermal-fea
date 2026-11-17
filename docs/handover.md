@@ -100,9 +100,12 @@ and reasons are in the open questions cited.
   done (Q22). Do not start M9 or M10.2 until the owner says so.
 - On 2026-11-16 the owner also put **M10.5 (report) on hold** as a future to-do item.
   Skip it; do not start it until the owner says so.
-- Awaiting the owner's confirmation, none blocking: Q11, Q14, Q17.2, Q18.2, Q20, Q21, Q22, Q23.
-- Known gaps, all recorded in Q21: no velocity or angle unit; contacts have no tree node
-  or panel (M10.1); GIF export blocks the window; the stream "pick path points" toggle
+- On 2026-11-16 the owner said **not to implement anything associated with scripting**
+  for now (ideas discussed: export of a GUI model as a Python script, `api.add_*`
+  wrappers for loads, a parameter-sweep helper, public access to the system matrices).
+  None of these is a task; do not add them without the owner asking.
+- Awaiting the owner's confirmation, none blocking: Q11, Q14, Q17.2, Q18.2, Q20, Q21, Q22, Q23, Q24.
+- Known gaps, recorded in Q21 and Q24: a few read-outs are still SI only (Q24.5); GIF export blocks the window; the stream "pick path points" toggle
   does not exclude the probe and the chart path pick; MP4 export is untested (no ffmpeg).
 
 ## 4. Notes on the remaining tasks
@@ -148,10 +151,11 @@ not nearest-neighbour within a loose tolerance.
 backward Euler, `max_dT_per_step`) must be applied by the compiler and visible to the
 user, not silently; the capacitance term is in `physics/capacitance.py`.
 
-**M10.4 unit systems.** `core/units.py` has no velocity or angle quantity yet, and the
-GUI shows several quantities in SI with the unit in the label (flow area, wetted
-perimeter, angles in radians). A search for `quantity=None` in `model/*_forms.py` lists
-them.
+**M10.4 unit systems (done, Q24).** `core/units.py` holds one unit per quantity and the
+presets; forms convert through `to_display`/`from_display` in `core/forms.py`; plots and
+read-outs take `Results.display_units`. Tools > Units... changes them (undoable, nothing
+goes stale). A new form field with a dimension needs a `quantity`; a new quantity is one
+entry in `_TABLE` plus a field of `UnitSettings`.
 
 **M10.6 restart.** The results writer always creates a new file
 (`solver/results_writer.py: open`); appending needs a second way to open it, and the

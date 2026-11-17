@@ -22,6 +22,7 @@ from matplotlib.cm import ScalarMappable
 from matplotlib.collections import LineCollection
 from matplotlib.colors import Normalize
 from matplotlib.figure import Figure
+from matplotlib.ticker import AutoLocator, FuncFormatter, MaxNLocator, ScalarFormatter
 from matplotlib.tri import Triangulation
 from numpy import ndarray
 from scipy.spatial import cKDTree
@@ -29,7 +30,7 @@ from scipy.spatial import cKDTree
 from ..core.errors import ModelError
 from ..core.mesh import Mesh
 from ..core.registry import element
-from ..core.units import UnitSettings, from_si
+from ..core.units import UnitSettings, from_si, is_si, to_si, unit_label
 from .path import sample as sample_path
 from .results import Results
 
@@ -203,8 +204,8 @@ class ContourData:
 
 
 def _unit_settings(results: Results) -> UnitSettings:
-    model = results.model
-    return model.display_units if model is not None else UnitSettings()
+    """The display units of the results (``Results.display_units``)."""
+    return results.display_units
 
 
 def _display_temperature(results: Results, kelvin: ndarray) -> tuple[ndarray, str]:
@@ -212,6 +213,112 @@ def _display_temperature(results: Results, kelvin: ndarray) -> tuple[ndarray, st
     units = _unit_settings(results)
     values = np.asarray(from_si(np.asarray(kelvin, dtype=float), "temperature", units), float)
     return values, _TEMPERATURE_LABEL[units.temperature]
+
+
+def _gradient_label(units: UnitSettings) -> str:
+    """Unit label of a temperature gradient: temperature difference per length."""
+    return f"{unit_label('temperature_difference', units)}/{unit_label('length', units)}"
+
+
+def field_display_values(
+    field: str, si_values: ndarray | float, units: UnitSettings
+) -> tuple[ndarray, str]:
+    """Convert SI values of a contour field to display units.
+
+    Parameters
+    ----------
+    field : str
+        One of :data:`FIELDS`.
+    si_values : float or ndarray
+        Temperature [K], heat flux [W/m^2] or temperature gradient [K/m].
+    units : UnitSettings
+        Display units: temperature, heat flux and (for gradients) temperature
+        difference per length.
+
+    Returns
+    -------
+    values : ndarray
+    unit : str
+        Label of the display unit.
+
+    Raises
+    ------
+    ModelError
+        For an unknown field.
+    """
+    if field not in FIELDS:
+        raise ModelError(f"unknown contour field {field!r}; choose from {', '.join(FIELDS)}")
+    source = FIELDS[field][0]
+    v = np.asarray(si_values, dtype=float)
+    if source == "T":
+        shown = np.asarray(from_si(v, "temperature", units), float)
+        return shown, unit_label("temperature", units)
+    if source == "flux":
+        return np.asarray(from_si(v, "heat_flux", units), float), unit_label("heat_flux", units)
+    per_length = float(to_si(1.0, "length", units))  # metres in one display length unit
+    shown = np.asarray(from_si(v, "temperature_difference", units), float) * per_length
+    return shown, _gradient_label(units)
+
+
+def field_si_values(field: str, shown: ndarray | float, units: UnitSettings) -> ndarray:
+    """Convert values of a contour field in display units back to SI.
+
+    The inverse of :func:`field_display_values`.
+    """
+    if field not in FIELDS:
+        raise ModelError(f"unknown contour field {field!r}; choose from {', '.join(FIELDS)}")
+    source = FIELDS[field][0]
+    v = np.asarray(shown, dtype=float)
+    if source == "T":
+        return np.asarray(to_si(v, "temperature", units), float)
+    if source == "flux":
+        return np.asarray(to_si(v, "heat_flux", units), float)
+    per_length = float(to_si(1.0, "length", units))
+    return np.asarray(to_si(v / per_length, "temperature_difference", units), float)
+
+
+def _time_text(time: float, units: UnitSettings) -> str:
+    """A time [s] as ``"1.5 min"`` in the display time unit."""
+    return f"{float(from_si(float(time), 'time', units)):.6g} {unit_label('time', units)}"
+
+
+class _ScaledLocator(MaxNLocator):
+    """Tick positions that are round numbers of a display length unit, not of metres."""
+
+    def __init__(self, scale: float) -> None:
+        super().__init__(nbins="auto", steps=[1, 2, 2.5, 5, 10])
+        self._scale = scale
+
+    def tick_values(self, vmin: float, vmax: float) -> ndarray:  # noqa: D102
+        return super().tick_values(vmin / self._scale, vmax / self._scale) * self._scale
+
+
+def length_axes(ax: Axes, units: UnitSettings) -> None:
+    """Show the coordinates of axes drawn in metres in the display length unit.
+
+    Nothing changes when the length unit is metre. The data stay in metres; only tick
+    positions and tick labels follow the display unit.
+
+    Parameters
+    ----------
+    ax : Axes
+        Axes whose x and y coordinates are in m.
+    units : UnitSettings
+    """
+    if is_si("length", units):
+        if getattr(ax, "_tfea_length_scaled", False):  # back to metres: default ticks
+            ax.xaxis.set_major_locator(AutoLocator())
+            ax.yaxis.set_major_locator(AutoLocator())
+            ax.xaxis.set_major_formatter(ScalarFormatter())
+            ax.yaxis.set_major_formatter(ScalarFormatter())
+            ax._tfea_length_scaled = False  # type: ignore[attr-defined]
+        return
+    ax._tfea_length_scaled = True  # type: ignore[attr-defined]
+    scale = float(to_si(1.0, "length", units))
+    formatter = FuncFormatter(lambda v, _pos: f"{v / scale:.6g}")
+    for axis in (ax.xaxis, ax.yaxis):
+        axis.set_major_locator(_ScaledLocator(scale))
+        axis.set_major_formatter(formatter)
 
 
 def contour_data(results: Results, step: int = -1, field: str = "T") -> ContourData:
@@ -230,8 +337,8 @@ def contour_data(results: Results, step: int = -1, field: str = "T") -> ContourD
     Returns
     -------
     ContourData
-        Values are in display units (temperature in the model's unit; flux in W/m^2;
-        gradient in K/m, or degF/m when the model displays degF).
+        Values are in the display units (``Results.display_units``): temperature, heat
+        flux, and temperature difference per length for gradients. ``xy`` stays in metres.
 
     Raises
     ------
@@ -240,7 +347,7 @@ def contour_data(results: Results, step: int = -1, field: str = "T") -> ContourD
     """
     if field not in FIELDS:
         raise ModelError(f"unknown contour field {field!r}; choose from {', '.join(FIELDS)}")
-    source, component, si_unit, name = FIELDS[field]
+    source, component, _si_unit, name = FIELDS[field]
     mesh = results.mesh
     if component is not None and component >= mesh.dim:
         raise ModelError(f"field {field!r} needs a {component + 1}D mesh")
@@ -252,21 +359,17 @@ def contour_data(results: Results, step: int = -1, field: str = "T") -> ContourD
     time = float(times[step])
 
     if source == "T":
-        T, unit = _display_temperature(results, results.temperature(step))
+        T, unit = field_display_values(field, results.temperature(step), units)
         groups: list[tuple[int | None, ndarray, ndarray]] = [(None, np.arange(mesh.n_nodes), T)]
     else:
         raw = results.flux(step) if source == "flux" else results.gradient(step)
         groups = []
+        unit = field_display_values(field, 0.0, units)[1]
         for region_id in sorted(raw):
             nodes, vec = raw[region_id]
             vals = np.linalg.norm(vec, axis=1) if component is None else vec[:, component]
-            if source == "grad":
-                vals = np.asarray(from_si(vals, "temperature_difference", units))
-            groups.append((region_id, np.asarray(nodes), vals))
-        if source == "flux":
-            unit = si_unit
-        else:
-            unit = f"{_TEMPERATURE_LABEL[units.temperature]}/m"
+            shown, _unit = field_display_values(field, vals, units)
+            groups.append((region_id, np.asarray(nodes), shown))
 
     parts: list[ContourPart] = []
     lookup = np.full(mesh.n_nodes, -1, dtype=int)
@@ -306,7 +409,7 @@ def contour_data(results: Results, step: int = -1, field: str = "T") -> ContourD
         xy_max=np.asarray(xy_max),
         unit=unit,
         label=f"{name} [{unit}]",
-        title=f"{name}, t = {time:.6g} s",
+        title=f"{name}, t = {_time_text(time, units)}",
         time=time,
     )
 
@@ -379,15 +482,8 @@ def display_value(results: Results, field: str, value: float) -> tuple[float, st
     """
     if field not in FIELDS:
         raise ModelError(f"unknown contour field {field!r}; choose from {', '.join(FIELDS)}")
-    source, component, si_unit, _name = FIELDS[field]
-    units = _unit_settings(results)
-    label = _TEMPERATURE_LABEL[units.temperature]
-    if source == "T":
-        return float(from_si(float(value), "temperature", units)), label
-    if source == "flux":
-        return float(value), si_unit
-    # a gradient component or magnitude is a temperature difference per metre
-    return float(from_si(float(value), "temperature_difference", units)), f"{label}/m"
+    shown, unit = field_display_values(field, float(value), _unit_settings(results))
+    return float(shown), unit
 
 
 # ------------------------------------------------------------------------------- helpers
@@ -445,16 +541,23 @@ def _frame(
     label: str,
     title: str,
     bounds: tuple[float, float, float, float] | None = None,
+    units: UnitSettings | None = None,
 ) -> None:
-    """Colour bar, equal aspect, view limits, axis labels and title of a model view."""
+    """Colour bar, equal aspect, view limits, axis labels and title of a model view.
+
+    ``units`` gives the length unit of the axis labels and ticks (the data are in m).
+    """
+    units = units if units is not None else UnitSettings()
     wide = bounds is not None and _ratio(bounds) < _WIDE_MODEL
     fig.colorbar(
         mappable, ax=ax, label=label, orientation="horizontal" if wide else "vertical",
         shrink=0.9, pad=0.03,
     )
     ax.set_aspect("equal")
-    ax.set_xlabel("x [m]")
-    ax.set_ylabel("y [m]")
+    length = unit_label("length", units)
+    ax.set_xlabel(f"x [{length}]")
+    ax.set_ylabel(f"y [{length}]")
+    length_axes(ax, units)
     ax.set_title(title)
     if bounds is None:
         ax.autoscale_view()
@@ -565,7 +668,7 @@ def contour(
             ha="left" if right else "right", va="bottom" if up else "top", fontsize=8,
             bbox={"boxstyle": "round,pad=0.2", "fc": "white", "alpha": 0.8, "lw": 0.3},
         )
-    _frame(fig, ax, mappable, data.label, data.title, bounds)
+    _frame(fig, ax, mappable, data.label, data.title, bounds, _unit_settings(results))
     _save(fig, path, "contour plot")
     return fig
 
@@ -582,15 +685,17 @@ class VectorData:
     xy : ndarray, shape (n, 2)
         Arrow positions: element centroids [m].
     q : ndarray, shape (n, 2)
-        Heat flux at the arrows [W/m^2].
+        Heat flux at the arrows, in the display unit of heat flux (W/m^2 by default).
     magnitude : ndarray, shape (n,)
-        Heat-flux magnitude [W/m^2]; colours the arrows.
+        Heat-flux magnitude in the same unit; colours the arrows.
     elements : ndarray of int, shape (n,)
         Global element ids of the kept elements.
     time : float
         Time of the step [s].
     title : str
         Plot title, including the time of the step.
+    label : str
+        Colour-bar label of the arrows: name and display unit.
     """
 
     xy: ndarray
@@ -599,6 +704,7 @@ class VectorData:
     elements: ndarray
     time: float
     title: str
+    label: str = "Heat flux [W/m²]"
 
 
 def _thin(xy: ndarray, density: int) -> ndarray:
@@ -636,7 +742,7 @@ def vector_data(results: Results, step: int = -1, density: int = 30) -> VectorDa
     Returns
     -------
     VectorData
-        Positions in metres, heat flux in W/m^2.
+        Positions in metres, heat flux in the display unit of heat flux.
 
     Raises
     ------
@@ -654,14 +760,18 @@ def vector_data(results: Results, step: int = -1, density: int = 30) -> VectorDa
     xy = centroids[ids, :2]
     chosen = _thin(xy, density)
     ids = ids[chosen]
-    q = flux[ids, :2]
+    units = _unit_settings(results)
+    q = np.asarray(from_si(flux[ids, :2], "heat_flux", units), dtype=float)
+    # "W/m²" (superscript) is what the plots always showed for the default unit
+    unit = "W/m²" if is_si("heat_flux", units) else unit_label("heat_flux", units)
     return VectorData(
         xy=xy[chosen],
         q=q,
         magnitude=np.linalg.norm(q, axis=1),
         elements=ids,
         time=time,
-        title=f"Heat flux, t = {time:.6g} s",
+        title=f"Heat flux, t = {_time_text(time, units)}",
+        label=f"Heat flux [{unit}]",
     )
 
 
@@ -683,7 +793,7 @@ def vectors(
     density : int
         About this many arrows across the larger model dimension; see :func:`vector_data`.
     scale : float, optional
-        Arrow length in units of the plotted flux [W/m^2] per axis unit, as Matplotlib's
+        Arrow length in units of the plotted flux (display unit) per axis unit, as Matplotlib's
         ``quiver``; ``None`` lets Matplotlib choose.
     ax : Axes, optional
         Draw into these axes (the colour bar is added to their figure); otherwise a new
@@ -714,7 +824,7 @@ def vectors(
         ax.add_collection(
             LineCollection(nodes[facets.conn[:, :2]], colors="0.6", linewidths=0.6, zorder=0)
         )
-    _frame(fig, ax, arrows, "Heat flux [W/m²]", data.title, bounds)
+    _frame(fig, ax, arrows, data.label, data.title, bounds, _unit_settings(results))
     _save(fig, path, "vector plot")
     return fig
 
@@ -735,7 +845,7 @@ class HistoryData:
     Attributes
     ----------
     times : ndarray, shape (n_steps,)
-        Time of every stored step [s].
+        Time of every stored step, in the display time unit (s by default).
     series : dict of str to ndarray
         Label -> values, each of shape (n_steps,), in the units of ``ylabel``.
     ylabel : str
@@ -748,6 +858,20 @@ class HistoryData:
     series: dict[str, ndarray]
     ylabel: str
     title: str
+    xlabel: str = "Time [s]"
+
+
+def _time_label(units: UnitSettings) -> str:
+    """Axis label of a time axis in the display time unit."""
+    return f"Time [{unit_label('time', units)}]"
+
+
+def _display_times(results: Results) -> ndarray:
+    """The times of the stored steps in the display time unit."""
+    return np.asarray(
+        from_si(np.asarray(results.times, dtype=float), "time", _unit_settings(results)),
+        dtype=float,
+    )
 
 
 def _points_array(points: Sequence[tuple[float, float]]) -> ndarray:
@@ -824,16 +948,18 @@ def history_data(
     if index.min() < 0 or index.max() >= mesh.n_nodes:
         raise ModelError(f"node index out of range; the mesh has {mesh.n_nodes} nodes")
     values, unit = _display_temperature(results, _selected_temperatures(results, index))
-    xy = mesh.nodes[index, :2]
+    units = _unit_settings(results)
+    xy = np.asarray(from_si(mesh.nodes[index, :2], "length", units), dtype=float)
     series = {
         f"node {int(node)} ({x:g}, {y:g})": values[:, k].copy()
         for k, (node, (x, y)) in enumerate(zip(index, xy.tolist(), strict=True))
     }
     return HistoryData(
-        times=np.asarray(results.times, dtype=float),
+        times=_display_times(results),
         series=series,
         ylabel=f"Temperature [{unit}]",
         title="Temperature history",
+        xlabel=_time_label(units),
     )
 
 
@@ -869,10 +995,11 @@ def history_stat_data(results: Results, selection: str, stat: str = "mean") -> H
         raise ModelError(f"node set {selection!r} has no nodes")
     values, unit = _display_temperature(results, _selected_temperatures(results, index))
     return HistoryData(
-        times=np.asarray(results.times, dtype=float),
+        times=_display_times(results),
         series={f"{stat} of {selection}": STATS[stat](values, axis=1)},
         ylabel=f"Temperature [{unit}]",
         title=f"{stat} temperature over {selection}",
+        xlabel=_time_label(_unit_settings(results)),
     )
 
 
@@ -888,7 +1015,8 @@ def heat_flow_history_data(results: Results, bc_names: Sequence[str] | None = No
     Returns
     -------
     HistoryData
-        One series per name, in watts, positive when heat enters the body.
+        One series per name, in the display power unit (W by default), positive when
+        heat enters the body.
 
     Raises
     ------
@@ -898,11 +1026,17 @@ def heat_flow_history_data(results: Results, bc_names: Sequence[str] | None = No
     names = results.heat_flow_names if bc_names is None else list(bc_names)
     if not names:
         raise ModelError("the results store no heat flow to plot")
+    units = _unit_settings(results)
     return HistoryData(
-        times=np.asarray(results.times, dtype=float),
-        series={name: np.asarray(results.heat_flow(name), dtype=float) for name in names},
-        ylabel="Heat flow into the body [W]",
+        times=_display_times(results),
+        series={
+            name: np.asarray(from_si(np.asarray(results.heat_flow(name), dtype=float), "power",
+                                     units), dtype=float)
+            for name in names
+        },
+        ylabel=f"Heat flow into the body [{unit_label('power', units)}]",
         title="Heat flow through boundary conditions",
+        xlabel=_time_label(units),
     )
 
 
@@ -912,7 +1046,7 @@ def _draw_history(data: HistoryData, ax: Axes | None, path: str | Path | None, w
     marker = "o" if data.times.size < _MARKER_LIMIT else None
     for label, values in data.series.items():
         ax.plot(data.times, values, marker=marker, ms=3.5, label=label)
-    ax.set_xlabel("Time [s]")
+    ax.set_xlabel(data.xlabel)
     ax.set_ylabel(data.ylabel)
     ax.set_title(data.title)
     ax.grid(True)
@@ -955,7 +1089,7 @@ class PathData:
     Attributes
     ----------
     s : ndarray, shape (n,)
-        Arc length along the path [m].
+        Arc length along the path, in the display length unit (m by default).
     values : ndarray, shape (n,)
         Field in display units (``ylabel``); NaN where the path leaves the mesh.
     xlabel, ylabel, title : str
@@ -988,8 +1122,8 @@ def path_data(
     n : int
         Number of sample points.
     field : str
-        One of :data:`FIELDS`. Temperature is in the model's display unit, flux in W/m^2,
-        gradient in K/m (degF/m when the model displays degF).
+        One of :data:`FIELDS`. Values are in the display units (temperature, heat flux,
+        temperature difference per length).
 
     Raises
     ------
@@ -998,24 +1132,19 @@ def path_data(
     """
     if field not in FIELDS:
         raise ModelError(f"unknown path field {field!r}; choose from {', '.join(FIELDS)}")
-    source, _, si_unit, name = FIELDS[field]
+    name = FIELDS[field][3]
     times = results.times
     if not -times.size <= step < times.size:
         raise ModelError(f"step {step} is out of range; the file has {times.size} step(s)")
     s, values = sample_path(results, step, polyline, n, field)
-    if source == "T":
-        values, unit = _display_temperature(results, values)
-    elif source == "flux":
-        unit = si_unit
-    else:
-        units = _unit_settings(results)
-        values = np.asarray(from_si(values, "temperature_difference", units))
-        unit = f"{_TEMPERATURE_LABEL[units.temperature]}/m"
+    units = _unit_settings(results)
+    values, unit = field_display_values(field, values, units)
     return PathData(
-        s=s,
+        s=np.asarray(from_si(s, "length", units), dtype=float),
         values=np.asarray(values, dtype=float),
         ylabel=f"{name} [{unit}]",
-        title=f"{name} along path, t = {float(times[step]):.6g} s",
+        title=f"{name} along path, t = {_time_text(float(times[step]), units)}",
+        xlabel=f"Distance along path [{unit_label('length', units)}]",
     )
 
 

@@ -7,10 +7,10 @@ Quantities come from :data:`thermalfea.core.units.QUANTITIES`:
 * roughness -> ``length`` [m];
 * inlet temperature -> ``temperature`` [K];
 * mass flow -> ``mass_flow`` [kg/s];
-* film coefficient override -> ``htc`` [W/(m^2 K)].
+* film coefficient override -> ``htc`` [W/(m^2 K)];
+* flow area -> ``area`` [m^2]; wetted perimeter and path -> ``length`` [m].
 
-The flow area [m^2] and the wetted perimeter [m] have no quantity in ``QUANTITIES``; they are
-shown in SI without unit conversion. The name is never part of a form.
+The name is never part of a form.
 """
 
 from __future__ import annotations
@@ -39,12 +39,12 @@ STREAM_FORM = FormSpec(
             tooltip="Curve selections wetted by the stream.",
         ),  # fmt: skip
         FieldSpec(
-            "flow_area", "Flow area [m^2]", "float", minimum=0.0,
-            tooltip="Flow cross-section in m^2 (SI, no unit conversion).",
+            "flow_area", "Flow area", "float", quantity="area", minimum=0.0,
+            tooltip="Flow cross-section.",
         ),  # fmt: skip
         FieldSpec(
-            "wetted_perimeter", "Wetted perimeter [m]", "float", minimum=0.0,
-            tooltip="Wetted perimeter in m (SI, no unit conversion).",
+            "wetted_perimeter", "Wetted perimeter", "float", quantity="length", minimum=0.0,
+            tooltip="Wetted perimeter.",
         ),  # fmt: skip
         FieldSpec(
             "cross_section", "Cross-section", "choice", choices=_CROSS_SECTIONS,
@@ -64,7 +64,7 @@ STREAM_FORM = FormSpec(
             tooltip="Empty: the mass flow comes from a network branch.",
         ),  # fmt: skip
         FieldSpec(
-            "path", "Path [m]", "xy_list",
+            "path", "Path", "xy_list", quantity="length",
             tooltip="Polyline from inlet to outlet as 'x, y; x, y' (in-plane streams).",
         ),  # fmt: skip
         FieldSpec(

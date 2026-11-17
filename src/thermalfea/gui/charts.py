@@ -30,9 +30,11 @@ from PySide6.QtGui import QCloseEvent
 from PySide6.QtWidgets import QHBoxLayout, QPushButton, QVBoxLayout, QWidget
 
 from thermalfea.core.errors import ThermalFEAError
+from thermalfea.core.forms import unit_label
+from thermalfea.core.units import from_si
 from thermalfea.post import export as post_export
 from thermalfea.post import plots
-from thermalfea.post.flow import wall_temperature
+from thermalfea.post.flow import stream_curves
 from thermalfea.post.results import Results
 
 _log = logging.getLogger(__name__)
@@ -68,16 +70,24 @@ def energy_data(results: Results) -> plots.HistoryData:
     Returns
     -------
     thermalfea.post.plots.HistoryData
-        One series per power column (:data:`ENERGY_POWER_COLUMNS` that the file has) [W].
+        One series per power column (:data:`ENERGY_POWER_COLUMNS` that the file has), in the
+        display power unit of the results (W by default), against time in the display unit.
     """
+    units = results.display_units
     columns = results.energy_balance()
-    series = {name: np.asarray(columns[name], dtype=float) for name in ENERGY_POWER_COLUMNS
-              if name in columns}
+    series = {
+        name: np.asarray(from_si(np.asarray(columns[name], dtype=float), "power", units),
+                         dtype=float)
+        for name in ENERGY_POWER_COLUMNS
+        if name in columns
+    }
     return plots.HistoryData(
-        times=np.asarray(results.times, dtype=float),
+        times=np.asarray(from_si(np.asarray(results.times, dtype=float), "time", units),
+                         dtype=float),
         series=series,
-        ylabel="Power [W]",
+        ylabel=f"Power [{unit_label('power', units)}]",
         title="Energy balance",
+        xlabel=f"Time [{unit_label('time', units)}]",
     )
 
 
@@ -134,6 +144,9 @@ class ChartWindow(QWidget):
         self.data: plots.HistoryData | plots.PathData | None = None
         self.nodes: list[int] = []
         self.stream_curves: dict[str, tuple[np.ndarray, np.ndarray]] = {}
+        #: Redraws the chart from the same results with the current display units; set by
+        #: the owner (``None``: the chart cannot be redrawn).
+        self.redraw: Callable[[], None] | None = None
         self.out_of_date = False
         self._title = "Chart"
         self.figure = Figure(figsize=(7.0, 4.5), layout="constrained")
@@ -237,7 +250,8 @@ class ChartWindow(QWidget):
 
         Draws the same two curves as ``post.flow.plot_stream``, from the data of
         ``post.flow.wall_temperature`` and ``Results.fluid_temperature``. The curves are kept
-        in :attr:`stream_curves` (label -> (s, T)); :attr:`data` stays ``None`` (no CSV).
+        in :attr:`stream_curves` (label -> (s, T), in display units); :attr:`data` stays
+        ``None`` (no CSV).
 
         Parameters
         ----------
@@ -247,14 +261,12 @@ class ChartWindow(QWidget):
         step : int
             Stored step; negative counts from the end.
         """
-        s_wall, t_wall = wall_temperature(results, stream, step)
-        s_fluid = np.asarray(results.stream(stream)["s"], dtype=float)
-        t_fluid = np.asarray(results.fluid_temperature(stream, step), dtype=float)
+        (s_fluid, t_fluid), (s_wall, t_wall), units = stream_curves(results, stream, step)
         self._fresh_axes()
         self.axes.plot(s_fluid, t_fluid, label="fluid")
         self.axes.plot(s_wall, t_wall, label="mean wall")
-        self.axes.set_xlabel("s [m]")
-        self.axes.set_ylabel("T [K]")
+        self.axes.set_xlabel(f"s [{unit_label('length', units)}]")
+        self.axes.set_ylabel(f"T [{unit_label('temperature', units)}]")
         self.axes.grid(True)
         self.axes.legend()
         self.stream_curves = {"fluid": (s_fluid, t_fluid), "mean wall": (s_wall, t_wall)}
@@ -329,7 +341,7 @@ class ChartWindow(QWidget):
                     target, data.xlabel, data.s, {data.ylabel: data.values}
                 )
             else:
-                written = post_export.series_csv(target, "Time [s]", data.times, data.series)
+                written = post_export.series_csv(target, data.xlabel, data.times, data.series)
         except (ThermalFEAError, OSError) as exc:
             self.failed.emit("Export CSV failed", str(exc))
             return None

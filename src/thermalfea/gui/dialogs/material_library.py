@@ -37,7 +37,7 @@ from PySide6.QtWidgets import (
 from thermalfea.core.errors import ModelError
 from thermalfea.core.forms import copy_name, form_for, unit_label
 from thermalfea.core.functions import Constant
-from thermalfea.core.units import UnitSettings
+from thermalfea.core.units import UnitSettings, from_si
 from thermalfea.gui.document import Document
 from thermalfea.materials import library
 from thermalfea.materials.material import Material
@@ -48,9 +48,10 @@ _USER = "user"
 _ERROR_STYLE = "color: #b00020;"
 
 
-def _value_text(value: object) -> str:
+def _value_text(value: object, quantity: str | None, settings: UnitSettings) -> str:
     if isinstance(value, Constant):
-        return f"{value.value:.6g}"
+        shown = value.value if quantity is None else from_si(value.value, quantity, settings)
+        return f"{float(shown):.6g}"
     if value is None:
         return "-"
     return "tabulated or expression"
@@ -68,11 +69,14 @@ def describe(material: Material, settings: UnitSettings) -> str:
     lines = [material.name]
     for spec in form_for(Material).fields:
         unit = unit_label(spec.quantity, settings)
-        text = _value_text(getattr(material, spec.name))
+        text = _value_text(getattr(material, spec.name), spec.quantity, settings)
         lines.append(f"{spec.label}: {text} {unit}".rstrip())
     if material.phase_change is not None:
         pc = material.phase_change
-        lines.append(f"Phase change: {pc.T_sol:.6g} K to {pc.T_liq:.6g} K")
+        t_sol = float(from_si(pc.T_sol, "temperature", settings))
+        t_liq = float(from_si(pc.T_liq, "temperature", settings))
+        unit = unit_label("temperature", settings)
+        lines.append(f"Phase change: {t_sol:.6g} {unit} to {t_liq:.6g} {unit}")
     return "\n".join(lines)
 
 

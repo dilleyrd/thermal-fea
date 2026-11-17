@@ -37,7 +37,8 @@ from PySide6.QtWidgets import (
 )
 
 from thermalfea.core.errors import ModelError
-from thermalfea.core.forms import FormSpec
+from thermalfea.core.forms import FormSpec, unit_label
+from thermalfea.core.units import UnitSettings, from_si, to_si
 from thermalfea.gui.addressing import Address, resolve
 from thermalfea.gui.document import Document
 from thermalfea.gui.mesh_tools import can_generate
@@ -55,10 +56,10 @@ NO_MESH_TEXT = "No mesh"
 #: Refinement table columns: (attribute of :class:`Refinement`, header).
 REFINEMENT_COLUMNS: tuple[tuple[str, str], ...] = (
     ("selection", "Selection"),
-    ("size_min", "Size min [m]"),
-    ("size_max", "Size max [m]"),
-    ("dist_min", "Dist min [m]"),
-    ("dist_max", "Dist max [m]"),
+    ("size_min", "Size min"),
+    ("size_max", "Size max"),
+    ("dist_min", "Dist min"),
+    ("dist_max", "Dist max"),
 )
 
 #: Human names of the quality measures (attribute names of the quality report).
@@ -79,13 +80,15 @@ SUMMARY_LABELS: dict[str, str] = {
 }
 
 
-def parse_refinement(cells: list[str]) -> Refinement:
-    """Parse the cells of one refinement row (selection, then four numbers in metres).
+def parse_refinement(cells: list[str], units: UnitSettings | None = None) -> Refinement:
+    """Parse the cells of one refinement row (selection, then four lengths).
 
     Parameters
     ----------
     cells : list of str
         Text of the columns of :data:`REFINEMENT_COLUMNS`.
+    units : UnitSettings, optional
+        The lengths are typed in its length unit; default: metres. The result is in m.
 
     Raises
     ------
@@ -104,7 +107,7 @@ def parse_refinement(cells: list[str]) -> Refinement:
             raise ValueError(f"{text.strip()!r} is not a number") from None
         if not math.isfinite(value):
             raise ValueError(f"{text.strip()!r} is not a finite number")
-        numbers.append(float(value))
+        numbers.append(float(to_si(value, "length", units)) if units else float(value))
     size_min, size_max, dist_min, dist_max = numbers
     if not 0.0 < size_min <= size_max:
         raise ValueError("sizes need 0 < size min <= size max")
@@ -187,7 +190,7 @@ class MeshPanel(FormPanel):
 
         section.addWidget(self._heading("Refinements"))
         self.table = QTableWidget(0, len(REFINEMENT_COLUMNS))
-        self.table.setHorizontalHeaderLabels([header for _, header in REFINEMENT_COLUMNS])
+        self._set_table_headers()
         self.table.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
         self.table.setSelectionMode(QAbstractItemView.SelectionMode.SingleSelection)
         self.table.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Stretch)
@@ -303,7 +306,15 @@ class MeshPanel(FormPanel):
         assert isinstance(settings, MeshSettings)
         return settings
 
+    def _set_table_headers(self) -> None:
+        unit = unit_label("length", self._units)
+        self.table.setHorizontalHeaderLabels(
+            [header if i == 0 else f"{header} [{unit}]" for i, (_, header) in
+             enumerate(REFINEMENT_COLUMNS)]
+        )
+
     def _load_table(self) -> None:
+        self._set_table_headers()
         try:
             refinements = list(self._settings(self.document.model).refinements)
         except ModelError:
@@ -314,7 +325,10 @@ class MeshPanel(FormPanel):
         for row, refinement in enumerate(refinements):
             cells = [
                 refinement.selection,
-                *(f"{getattr(refinement, name):.10g}" for name, _ in REFINEMENT_COLUMNS[1:]),
+                *(
+                    f"{float(from_si(getattr(refinement, name), 'length', self._units)):.10g}"
+                    for name, _ in REFINEMENT_COLUMNS[1:]
+                ),
             ]
             for col, text in enumerate(cells):
                 self.table.setItem(row, col, QTableWidgetItem(text))
@@ -351,7 +365,7 @@ class MeshPanel(FormPanel):
     def _on_item_changed(self, item: QTableWidgetItem) -> None:
         row = item.row()
         try:
-            refinement = parse_refinement(self._cells(row))
+            refinement = parse_refinement(self._cells(row), self._units)
         except ValueError as exc:
             self._mark(item, bad=True)
             self._show_refinement_error(str(exc))

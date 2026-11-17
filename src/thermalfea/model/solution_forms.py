@@ -81,8 +81,8 @@ SOLUTION_FORM = FormSpec(
             tooltip="Used when the output is 'every_n'.",
         ),  # fmt: skip
         FieldSpec(
-            OUTPUT_TIMES_FIELD, "Output times [s]", "float_list",
-            tooltip="Used when the output is 'times': comma-separated times in seconds.",
+            OUTPUT_TIMES_FIELD, "Output times", "float_list", quantity="time",
+            tooltip="Used when the output is 'times': comma-separated times.",
         ),  # fmt: skip
         FieldSpec(
             "rtol", "Residual tolerance", "float", minimum=0.0,
@@ -119,8 +119,8 @@ INITIAL_CONDITION_FORM = FormSpec(
             tooltip="Initial temperature for 'uniform' and 'expression'.",
         ),  # fmt: skip
         FieldSpec(
-            "per_region", "Temperature per region [K]", "dict",
-            tooltip="Region selection and temperature in kelvin, as 'name=T, name=T'.",
+            "per_region", "Temperature per region", "dict", quantity="temperature",
+            tooltip="Region selection and temperature, as 'name=T, name=T'.",
         ),  # fmt: skip
         FieldSpec(
             "results_path", "Results file", "str", optional=True,

@@ -32,13 +32,15 @@ from PySide6.QtWidgets import (
 )
 
 from thermalfea.core.errors import ThermalFEAError
+from thermalfea.core.forms import unit_label
+from thermalfea.core.units import UnitSettings, from_si
 from thermalfea.gui.charts import ChartWindow
 from thermalfea.gui.dialogs.htc_calculator import HtcCalculator
 from thermalfea.gui.document import Document
 from thermalfea.gui.main_window import MainWindow
 from thermalfea.gui.results_tools import ResultController
 from thermalfea.gui.scene import SceneView
-from thermalfea.post.flow import StreamSummary, stream_summary
+from thermalfea.post.flow import StreamSummary, stream_summary, summary_numbers
 from thermalfea.post.results import Results
 
 FLOW_ACTION_ID = "results.flow"
@@ -49,6 +51,20 @@ COLUMNS = (
     "Stream", "Mode", "Mass flow [kg/s]", "Re", "Regime", "Mean h [W/(m^2 K)]", "dp [Pa]",
     "T_in [K]", "T_out [K]", "Heat [W]",
 )  # fmt: skip
+#: The quantity of each column of :data:`COLUMNS` (``None``: text or dimensionless).
+COLUMN_QUANTITIES = (
+    None, None, "mass_flow", None, None, "htc", "pressure", "temperature", "temperature", "power",
+)
+
+
+def column_headers(units: UnitSettings | None = None) -> list[str]:
+    """The table headers with the unit labels of the display units (default: SI)."""
+    units = units if units is not None else UnitSettings()
+    out = []
+    for header, quantity in zip(COLUMNS, COLUMN_QUANTITIES, strict=True):
+        out.append(header if quantity is None else
+                   f"{header.partition(' [')[0]} [{unit_label(quantity, units)}]")
+    return out
 _BLANK = "-"
 
 
@@ -125,7 +141,9 @@ class FlowResultsWindow(QWidget):
 
         self.step_spin.valueChanged.connect(lambda _v: self.fill())
         self.plot_button.clicked.connect(lambda _c=False: self.plot_selected())
+        self._shown_units = document.model.display_units
         document.results_changed.connect(self.on_results_changed)
+        document.model_changed.connect(self._on_model_changed)
         self.on_results_changed()
 
     # ------------------------------------------------------------------ results
@@ -146,39 +164,49 @@ class FlowResultsWindow(QWidget):
             self.step_spin.blockSignals(False)
         self.fill()
 
+    def _on_model_changed(self) -> None:
+        """Show the table again when the display units changed."""
+        if self.document.model.display_units != self._shown_units:
+            self.fill()
+
     def fill(self) -> None:
         """Fill the table with the stream summaries of the chosen step."""
         self.status_label.setText("")
         results = self.results()
+        units = self.document.model.display_units
+        self._shown_units = units
+        self.table.setHorizontalHeaderLabels(column_headers(units))
         self.rows = []
         if results is not None:
             try:
                 self.rows = stream_summary(results, self.step_spin.value())
-                self.step_label.setText(f"t = {float(results.times[self.step_spin.value()]):.6g} s")
+                time = float(from_si(float(results.times[self.step_spin.value()]), "time", units))
+                self.step_label.setText(f"t = {time:.6g} {unit_label('time', units)}")
             except (ThermalFEAError, OSError, KeyError) as exc:
                 self.status_label.setText(f"Results cannot be read: {exc}")
         else:
             self.step_label.setText("No results")
         self.table.setRowCount(len(self.rows))
         for row, summary in enumerate(self.rows):
-            for column, text in enumerate(self.row_texts(summary)):
+            for column, text in enumerate(self.row_texts(summary, units)):
                 self.table.setItem(row, column, QTableWidgetItem(text))
         self.plot_button.setEnabled(results is not None)
 
     @staticmethod
-    def row_texts(summary: StreamSummary) -> list[str]:
-        """The cell texts of one stream, in the order of :data:`COLUMNS`."""
+    def row_texts(summary: StreamSummary, units: UnitSettings | None = None) -> list[str]:
+        """The cell texts of one stream, in the order of :data:`COLUMNS` (display units)."""
+        mass_flow, Re, h_mean, dp, T_in, T_out, heat = summary_numbers(summary, units)
         return [
             summary.name,
             summary.mode,
-            cell_text(summary.mass_flow),
-            cell_text(summary.Re),
+            cell_text(mass_flow),
+            cell_text(Re),
             summary.regime or _BLANK,
-            cell_text(summary.h_mean),
-            cell_text(summary.dp),
-            cell_text(summary.T_in),
-            cell_text(summary.T_out),
-            cell_text(summary.heat),
+            cell_text(h_mean),
+            cell_text(dp),
+            cell_text(T_in),
+            cell_text(T_out),
+            cell_text(heat),
         ]
 
     # --------------------------------------------------------------------- plot

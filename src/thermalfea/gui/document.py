@@ -56,8 +56,10 @@ def _dumps(data: dict[str, Any]) -> str:
 
 
 def _comparable(data: dict[str, Any]) -> dict[str, Any]:
-    """Model JSON without the build-derived selection caches (tags, ``"all"``)."""
+    """Model JSON without the build-derived selection caches (tags, ``"all"``) and without
+    the display units (they change how numbers are shown, never what is computed)."""
     out = dict(data)
+    out.pop("display_units", None)
     selections = {
         name: {k: v for k, v in sel.items() if k != "tags"}
         for name, sel in data.get("selections", {}).items()

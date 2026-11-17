@@ -28,10 +28,11 @@ def test_quantities_are_known_or_none() -> None:
         assert spec.quantity is None or spec.quantity in QUANTITIES, spec.name
 
 
-def test_flow_area_and_perimeter_have_no_quantity() -> None:
-    # no quantity for an area or a perimeter exists in QUANTITIES
-    assert STREAM_FORM.field("flow_area").quantity is None
-    assert STREAM_FORM.field("wetted_perimeter").quantity is None
+def test_flow_area_and_perimeter_quantities() -> None:
+    # M10.4 added the quantity "area"; before it these two were shown in SI without one
+    assert STREAM_FORM.field("flow_area").quantity == "area"
+    assert STREAM_FORM.field("wetted_perimeter").quantity == "length"
+    assert STREAM_FORM.field("path").quantity == "length"
 
 
 def test_stream_form_is_registered_for_the_class() -> None:

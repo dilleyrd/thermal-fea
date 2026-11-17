@@ -500,6 +500,42 @@ The task text is one sentence; these choices fill it in. None blocks anything.
    extra `dxf`). Without it the DXF tests are skipped and the import raises an error that
    says how to install it.
 
+## Q24 — unit systems (Data §7, task M10.4) — raised in M10.4
+
+Data §7 names the temperature and length units and "a consistent derived set"; the task
+names three presets. Everything else here is a choice. None blocks anything.
+
+1. **One unit per quantity.** `UnitSettings` has a field for every quantity, each with a
+   short list of units (`core/units.py: _TABLE`); a preset only fills them in, and any
+   single one can be changed in Tools > Units.... All factors are computed from the exact
+   definitions of the inch, foot, pound, International Table BTU and pound-force.
+2. **The presets.** *SI (mm)*: mm, W/(mm K), W/(mm^2 K), W/mm^2, W/mm^3, kg/mm^3, MPa,
+   mm/s, mm^2, degrees; power W, specific heat J/(kg K), time s, mass flow kg/s.
+   *US customary*: degF, in, BTU/(h ft degF), BTU/(h ft^2 degF), BTU/(h ft^2),
+   BTU/(h ft^3), BTU/h, lbm/ft^3, BTU/(lbm degF), s, lbm/s, psi, ft/s, in^2, degrees (the
+   textbook units; lengths in inches but feet inside the heat-transfer units). The SI
+   presets keep K or degC as it is. **To confirm with the owner.**
+3. **New quantities** beyond the Data §7 list: `velocity`, `area`, `angle`.
+4. **Expressions stay SI.** A function given as an expression is evaluated with t [s],
+   x, y [m], T [K] and returns the SI unit whatever the display units; the function editor
+   says so when a display unit is not SI. Constants and tables convert.
+5. **Still SI only:** the parameters of a geometry `Transform` (label says so), the HTC
+   calculator window, the solve-progress dialog and solver messages, the extra parameters
+   of a correlation, CSV and VTU export, and the `api.summary` text. The `.tfea` and
+   results files store SI, as before; no schema change (missing unit keys take the SI
+   default).
+6. **Units of a results display.** Results are shown in the units of the model stored in
+   the results file until the units are changed in the session, after which they follow
+   the document (`Results.display_units`, in memory only). So a model file whose units
+   differ from those its results were solved with shows the results in the latter until
+   Units is used once.
+7. **Two existing assertions changed**, both of which asserted the limitation this task
+   removes: `test_flow_forms.py` (flow area and wetted perimeter "have no quantity") and
+   `test_material_forms.py` (the material angle has no quantity). They now assert the
+   quantities `area`, `length` and `angle`.
+8. **The chart CSV** writes the chart's own axis values and headings, so it follows the
+   display units; the results CSV export stays SI.
+
 ## Q13 — choices made in the verification examples — raised in M3.G
 
 - **Nodes at check points.** V-09 and V-10 check the temperature at given points. Point
