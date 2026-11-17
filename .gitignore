@@ -9,3 +9,4 @@ build/
 dist/
 *.h5
 examples/output/
+site/

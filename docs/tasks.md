@@ -394,7 +394,7 @@ Boundary Conditions, Flow (Streams, Network), Enclosures, Analysis Settings, Sol
 - [ ] **M11.3 [B] Performance.** Benchmark test for Plan §6 item 6; profile; cache the
   sparsity pattern and element geometry; reuse factorisations; consider `pypardiso` as an
   optional faster solver behind the `Factorization` wrapper.
-- [ ] **M11.4 [B] User guide.** MkDocs site: installation, three tutorials (NAFEMS T4
+- [x] **M11.4 [B] User guide.** MkDocs site: installation, three tutorials (NAFEMS T4
   steady plate; transient quench of a fin with natural convection and radiation; cold
   plate with a water stream), theory manual generated from `docs/theory.md`, correlation
   reference with validity ranges, stated limitations.

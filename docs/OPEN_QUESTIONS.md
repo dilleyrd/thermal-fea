@@ -571,6 +571,39 @@ end time, appending to the same results file"). These choices fill it in.
 6. **The step at which a run was stopped stays in the file** even when the output rule of
    an uninterrupted run would not have stored it (the last step is always stored).
 
+## Q26 — user guide (task M11.4, Plan §6 item 7) — raised in M11.4
+
+1. **Where it is.** A MkDocs site (`mkdocs.yml`, sources in `guide/`, built-in
+   `readthedocs` theme, no plugins beyond search). `mkdocs` was installed into the project
+   venv and added as the optional dependency group `docs`.
+2. **Sources of the correlations and the property tables are not in the guide.** Plan §6
+   item 7 asks for the source of every correlation. The project documents record none
+   (Q17.6 left the citations to M11.1), so the guide says "source not yet recorded; to be
+   confirmed in the release check, task M11.1" for every correlation and for the material
+   tables, and names only what the theory text names (Churchill-Bernstein, Churchill-Chu,
+   Gnielinski, Dittus-Boelter, Churchill 1977). **This release criterion is not met until
+   the owner does M11.1**; then add the references to `docs/theory.md` / the data files and
+   regenerate.
+3. **Tutorial inputs** (dimensions, temperatures, emissivity 0.8, flow rates) are example
+   values chosen for the tutorials; materials, fluid properties and correlations are the
+   built-in ones. The GUI steps of tutorials 2 and 3 are exercised by offscreen tests that
+   drive the same dialogs and panels, but no tutorial has been followed on a real screen
+   (as M8.G).
+4. **Defects met while writing the guide, not fixed here** (each is stated in the guide
+   where it matters): (a) the window has no control to make a model axisymmetric — only
+   the examples and the API can; (b) in the stream panel an unset mass flow is shown as
+   "Constant 0" (`FormPanel._load` does not show `None`); (c) the HTC calculator window has
+   no cross-section input, so it cannot reproduce the h of a non-circular stream; (d) a
+   new correlation convection or radiation condition starts with an empty correlation and
+   fluid, T_inf = 0 and emissivity 0; (e) the first time step suggested by Theory §6.1 can
+   trigger the "may oscillate" warning for a uniform start (the fin tutorial sets 1 s);
+   (f) a steady solve is reported as "t = 0 s".
+5. **One defect fixed with this task.** A model with an enclosure (M9, on hold) or with a
+   region whose material has a phase change (M10.2, on hold) used to solve with that part
+   silently left out. Validation now reports the error `not-implemented` and the compiler
+   refuses such a model. When M9 or M10.2 is built, remove the corresponding entry of
+   `model/validate.py: not_implemented`.
+
 ## Q13 — choices made in the verification examples — raised in M3.G
 
 - **Nodes at check points.** V-09 and V-10 check the temperature at given points. Point

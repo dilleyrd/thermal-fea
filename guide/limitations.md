@@ -1,0 +1,177 @@
+# Limitations
+
+Each entry says what is not available or not as you might expect, and, where the project
+documents give one, what to do instead. Entries come from the plan, the handover notes and
+the list of open questions (`docs/OPEN_QUESTIONS.md`) of the project.
+
+## Not in this version
+
+- **Two dimensions only.** There is no 3D analysis and no 3D viewport.
+- **No flow simulation.** The flow solver is a one-dimensional stream and pipe-network
+  model; it is not CFD (no Navier-Stokes solution).
+- **No coupled physics.** No structural or thermal-stress coupling and no other physics.
+- **No participating-media radiation.**
+- **No parallel or distributed solving.**
+- **No packaged Windows installer.** Install from source ([Installation](installation.md)).
+  The installer is planned (task M11.5).
+
+## Features on hold
+
+The owner has put these on hold. The theory is written down ([Theory](theory.md), §10 and
+§12), but the program does not use it. A model that contains an enclosure, or a region
+whose material has a phase change, is refused by the validation and by the solver with a
+message that says so; it is never solved with that part left out.
+
+- **Enclosure (surface-to-surface) radiation** (milestone M9). The model has an
+  "Enclosures" node and an enclosure class, but no solver module evaluates enclosures, so
+  a model with an enclosure is not solved. Use radiation to ambient where the
+  surroundings can be treated as a single ambient temperature. When it is built, it will
+  come for planar models first; the axisymmetric version (task M9.5) is the hardest task
+  of the plan and may come later. The verification cases V-22a to V-24 are not active.
+- **Phase change (latent heat)** (task M10.2). A material has a phase-change field in its
+  data, but the solver does not use it; a region with such a material is not solved.
+  The verification case V-36 is not active.
+- **HTML report** (task M10.5). For a record of a solution use the text summary
+  (`api.summary`, or the output of `thermalfea solve`), the CSV and ParaView (VTU) exports
+  and the plot exports.
+
+## Not yet reviewed or checked
+
+- **The window has not been reviewed on a real screen.** The human gate M8.G (build two
+  verification cases in the window and list every point of friction) is not done. Every
+  window test so far ran without a screen. Expect findings in layout and usability.
+- **The property tables and the correlations are not yet checked against a reference
+  text.** The material tables are "from standard heat-transfer textbook tables" and no
+  reference or edition is recorded. For the correlations the project records only the
+  names it gives in the theory text (Churchill-Bernstein, Churchill-Chu, Gnielinski,
+  Dittus-Boelter, Churchill 1977). The check is task M11.1, a human task. Until then
+  [Materials](materials.md) and [Correlations](correlations.md) say "source not yet
+  recorded".
+- **Not yet done:** the verification report (task M11.2), the performance benchmark
+  (M11.3) and the release review (M11.6).
+- **Several choices await the owner's confirmation** (open questions Q11, Q14, Q17.2,
+  Q18.2, Q20, Q21, Q22, Q23, Q24, Q25). The entries below say which.
+
+## Modelling
+
+- **A new model is planar.** The window has no control to change a model to axisymmetric
+  (the examples V-05 and V-07 are axisymmetric; from Python, `api.new_model` takes the
+  type).
+- **Free points and curves inside a surface are not part of the mesh.** After the geometry
+  is built, points and curves that bound no surface are removed. A point load or a probe
+  line cannot be made this way.
+- **The selection named "all" is reserved.** Every build recreates it.
+- **A mesh node cannot be placed at a given point in the window.** To read a value at a
+  point, draw the geometry so that the point is a vertex (the verification cases do this
+  with two rectangles) and read the value from the CSV export.
+- **The mesh quality report only measures.** It applies no pass or fail threshold.
+- **A total heat flow or power, and a fixed temperature, cannot depend on temperature.**
+  Use a flux, a convection condition or a time function instead.
+- **A steady analysis evaluates time-dependent loads at t = 0.**
+- **The nonlinear iteration is a modified Newton method.** Derivatives of properties and of
+  coefficients with respect to temperature are deliberately left out of the tangent, so
+  strongly nonlinear problems may need more iterations. A solution that does not converge
+  raises an error (command line exit code 2); it is never returned silently.
+
+## Thermal contact
+
+- **A temperature-dependent contact conductance is refused.** A function of time and
+  position is accepted.
+- **Results have duplicated nodes along a contact.** The program splits the mesh along the
+  contact when it solves. The original nodes keep their numbers and the new nodes are added
+  at the end, so node numbers picked on the mesh stay valid.
+- **Heat crossing a contact is not in the energy balance,** because it is internal to the
+  body. It is reported separately as `contact_heat:<name>` in watts, from the lower to the
+  higher region number.
+- **The geometry factor (thickness or 2πr) is taken from the side with the lower region
+  number.** Two regions of different thickness meeting at a contact are not treated
+  specially.
+- **A fixed temperature on a geometry point at the end of a contact curve fixes one side
+  only** (the side of the lower region number). On a curve it fixes each side's own nodes.
+
+## DXF import
+
+- Only LINE, ARC, CIRCLE, LWPOLYLINE (with bulges) and SPLINE entities are used. Other
+  entity types (for example ELLIPSE, old-style POLYLINE, HATCH, INSERT, TEXT) are ignored,
+  with one warning.
+- Chains that do not close are ignored, with a warning. A drawing with no closed outline,
+  a point where more than two segment ends meet, and anything outside the plane z = 0 are
+  errors.
+- Outlines are assumed not to cross each other; crossing outlines are not detected. A
+  closed outline inside an even number of other outlines becomes a surface; one inside an
+  odd number becomes a hole.
+- The units header of the file (`$INSUNITS`) is not read. Give the scale on import, as for
+  STEP and BREP files.
+- End points closer than 1e-6 of the largest extent of the drawing are treated as one
+  point. This tolerance cannot be changed.
+- An arc is split into pieces of at most 120 degrees, so a semicircle becomes two curves.
+- DXF import needs the optional `ezdxf` package.
+
+## Units
+
+- **Expressions are always evaluated in SI,** whatever the display units. See
+  [Units](units.md).
+- **These places still show SI only:** the parameters of a geometry transform, the HTC
+  calculator window, the solve-progress dialog and the solver messages, the extra
+  parameters of a correlation, the CSV and VTU exports (the chart CSV follows the display
+  units) and the `api.summary` text.
+- Results are shown in the units of the model stored in the results file until you change
+  the units in the session. A model whose file units differ from those its results were
+  solved with therefore shows the results in the older units until you use Tools > Units...
+  once.
+
+## Convection and flow
+
+- **A correlation outside its validity range is still evaluated.** One warning is logged
+  for each boundary condition and solve. Check the range on the
+  [Correlations](correlations.md) page.
+- **The characteristic length of a plate is the length of the selection** in this version,
+  not area divided by perimeter, which the theory table lists for horizontal plates (open
+  question Q17.2, awaiting confirmation). An explicit characteristic length always wins.
+  Cylinders need one.
+- **Internal duct flow is not a convection boundary condition.** Use a stream.
+- **The Dittus-Boelter option** replaces Gnielinski for turbulent flow; its range
+  (Re at least 1e4) is not enforced in the transition region.
+- **Fluid properties outside the table** keep the end values and log one warning for each
+  fluid. For an ideal gas the expansion coefficient is still 1/T.
+- **Fluid thermal storage is neglected:** the fluid in a stream is quasi-steady. A stream
+  has no initial condition; its starting temperatures follow from the initial wall
+  temperatures.
+- **One specific heat per stream,** taken at its inlet temperature (open question Q18.2,
+  awaiting confirmation).
+- **Flow must run along the path.** A stream needs a positive mass flow, and a network
+  solution that drives a stream against its path is refused.
+- **Every network branch needs a stream,** which supplies its flow area, hydraulic
+  diameter, roughness and fluid. Two duct branches may not name one stream.
+- **Through-plane streams are refused in axisymmetric models.**
+
+## Time stepping and restart
+
+- **The first step uses backward Euler (theta = 1)** when the start is out of equilibrium
+  with the loads or the initial temperature differs from a prescribed value. Later jumps
+  are detected only at the start of a step; a jump that falls strictly inside a step is
+  not seen.
+- **Restart checks only the mesh.** Loads, materials and settings are not compared, and
+  the model stored in the results file is replaced. Whether a changed model should be
+  refused or warned about awaits the owner (Q25.4).
+- **Restart with automatic stepping** does not reproduce an uninterrupted run exactly: the
+  controller's history is not stored, so the steps differ within the time-stepping
+  tolerance. With a fixed step the runs agree to round-off (linear case) or to the
+  iteration tolerance (nonlinear).
+- **A restart is refused** for a steady solution, for a last step that did not converge and
+  for an end time the file already reached.
+
+## The window
+
+- **Animation export to GIF blocks the window** while a long animation is written.
+- **Animation export to MP4 is untested** because ffmpeg is not installed on the
+  development machine.
+- **Probe, chart path pick and the stream "pick path points" toggle all listen to
+  viewport clicks.** The probe and the chart path pick exclude each other, but the stream
+  toggle does not switch the others off, and it leaves the selection mode at "None" when
+  turned off.
+- **Probe reads the pixel you click,** not a coordinate. For exact values use the CSV
+  export.
+- **Selections are named after the field that created them** ("Convection 1 selection"),
+  and the tree does not offer to rename a selection.
+- **Open charts are not redrawn** when new results arrive. They are marked "(out of date)".

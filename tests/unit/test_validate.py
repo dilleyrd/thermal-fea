@@ -280,3 +280,32 @@ def test_raise_if_errors_lists_every_error() -> None:
     with pytest.raises(ModelError, match="2 error") as info:
         raise_if_errors(issues)
     assert "no region assignment" in str(info.value) and "'missing'" in str(info.value)
+
+
+def test_features_without_a_solver_term_are_refused_not_ignored() -> None:
+    """Enclosures (M9) and phase change (M10.2) exist in the model but not in the solver."""
+    from thermalfea.materials.material import PhaseChange
+    from thermalfea.solver.compile import compile as compile_problem
+
+    model, built, mesh = good()
+    model.enclosures.append(bcs.Enclosure("cavity", [bcs.EnclosureSurface("east", 0.8)]))
+    issue = only(validate(model, built, mesh), "not-implemented")
+    assert issue.severity == "error" and (issue.kind, issue.name) == ("enclosure", "cavity")
+    assert "not available in this version" in issue.message
+    with pytest.raises(ModelError, match="surface-to-surface radiation is not available"):
+        compile_problem(model, built, mesh)  # also without validation (api.solve without built)
+    with pytest.raises(ModelError, match="not available in this version"):
+        api.solve(model, mesh)
+
+    model, built, mesh = good()
+    copper = model.materials["Copper (pure)"]
+    copper.phase_change = PhaseChange(T_sol=1350.0, T_liq=1360.0, latent_heat=2.0e5)
+    issue = only(validate(model, built, mesh), "not-implemented")
+    assert (issue.kind, issue.name) == ("material", "Copper (pure)")
+    with pytest.raises(ModelError, match="phase change"):
+        compile_problem(model, built, mesh)
+    # a material with a phase change that no region uses does not matter
+    model, built, mesh = good()
+    model.materials["spare"] = Material("spare", 1.0, 1.0, 1.0,
+                                        phase_change=PhaseChange(300.0, 310.0, 1.0e5))
+    assert "not-implemented" not in codes(validate(model, built, mesh))

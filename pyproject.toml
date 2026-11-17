@@ -20,6 +20,7 @@ dependencies = [
 [project.optional-dependencies]
 dev = ["pytest", "pytest-qt", "ruff"]
 dxf = ["ezdxf"]
+docs = ["mkdocs"]
 
 [project.scripts]
 thermalfea = "thermalfea.cli:main"

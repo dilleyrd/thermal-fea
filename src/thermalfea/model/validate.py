@@ -316,6 +316,33 @@ class _Checker:
                                "exactly two", "contact", contact.name)
 
 
+def not_implemented(model: Model) -> list[tuple[str, str, str]]:
+    """Parts of a model that this version cannot solve: ``(kind, name, message)``.
+
+    The model classes and the file format already hold surface-to-surface radiation
+    enclosures (tasks M9) and phase change (task M10.2), but no solver term exists for
+    them yet. Solving such a model would silently leave them out, so it is refused.
+    """
+    found: list[tuple[str, str, str]] = []
+    for enclosure in model.enclosures:
+        found.append((
+            "enclosure", enclosure.name,
+            f"enclosure {enclosure.name!r}: surface-to-surface radiation is not available "
+            "in this version; remove the enclosure (radiation to ambient is available as a "
+            "boundary condition)",
+        ))
+    used = {assignment.material for assignment in model.regions}
+    for name in sorted(used):
+        material = model.materials.get(name)
+        if material is not None and material.phase_change is not None:
+            found.append((
+                "material", name,
+                f"material {name!r} has a phase change, which is not available in this "
+                "version; remove the phase change from the material",
+            ))
+    return found
+
+
 def validate(model: Model, built: BuiltGeometry, mesh: Mesh | None = None) -> list[Issue]:
     """Check a model before solving.
 
@@ -333,6 +360,8 @@ def validate(model: Model, built: BuiltGeometry, mesh: Mesh | None = None) -> li
         Errors (which block the solve) and warnings, in the order of the checks.
     """
     check = _Checker(model, built, mesh)
+    for kind, name, message in not_implemented(model):
+        check.error("not-implemented", message, kind, name)
     check.selections()
     check.regions()
     check.boundary_conditions()

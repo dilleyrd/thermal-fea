@@ -265,7 +265,8 @@ picking off):
 - **Name a selection.** Scripts name curves `left`, `right`, ... The GUI names each selection
   after the field that created it ("Convection 1 selection"; for a region "selection
   selection"). Renaming selections is not offered in the tree.
-- **Enter temperatures in degC.** Scripts use `100.0 + 273.15`; the GUI takes kelvin only.
+- **Enter temperatures in degC.** Scripts use `100.0 + 273.15`; in the GUI choose degC with
+  Tools > Units... first (added in M10.4), otherwise enter kelvin.
 - **Set per-curve element counts without a load.** "Curve divisions" takes names of existing
   selections, and the only way to make a curve selection is a field that picks one, hence the
   extra Adiabatic condition in V-17.
@@ -274,7 +275,7 @@ picking off):
 
 Found by the scripted runs and by reading the code; none confirmed on a real screen.
 
-1. No temperature unit setting: every temperature is entered and shown in kelvin.
+1. (Resolved in M10.4: Tools > Units... sets the temperature and all other units.)
 2. "Pick in viewport" starts in the first dimension the field allows (Point for a fixed
    temperature), not Curve; the toolbar mode has to be set by hand. After picking is
    switched off the toolbar still shows the last mode as checked while the viewport no longer

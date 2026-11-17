@@ -17,6 +17,7 @@ from ..core.mesh import Mesh
 from ..model.bcs import BoundaryCondition, Stream
 from ..model.model import Model
 from ..model.selections import Selection, StaleSelectionError, resolve
+from ..model.validate import not_implemented
 from ..physics import (
     builtin,  # noqa: F401  (registers the built-in term factories)
     timescales,
@@ -170,6 +171,9 @@ def compile(  # noqa: A001
     ModelError
         If the model is inconsistent (missing material, stale selection, ...).
     """
+    missing = not_implemented(model)
+    if missing:  # never solve a model while silently leaving part of it out
+        raise ModelError("; ".join(message for _, _, message in missing))
     partners = None
     if model.contacts:  # open the mesh along the contact curves (Theory §11)
         split = split_interfaces(mesh, _contact_tags(model, built, mesh))
