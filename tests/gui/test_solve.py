@@ -509,6 +509,43 @@ def test_progress_redraws_are_coalesced_but_the_last_state_is_shown(qtbot) -> No
     assert dialog.message_label.text() == "done" and dialog.button.text() == "Close"
 
 
+# --------------------------------------------------------------------- continue a run
+def test_continue_adds_steps_to_the_same_results_file(window, qtbot, dialogs) -> None:
+    from thermalfea.gui.solve_tools import CONTINUE_ID
+
+    shell = make_shell(window, make_document("transient", steps=10, end_time=100.0))
+    action = window.actions[CONTINUE_ID]
+    assert not action.isEnabled()  # nothing to continue yet
+    assert not shell.solve.continue_run()
+    assert run_to_end(qtbot, shell) == "finished"
+    path = shell.doc.results_path
+    assert Results(path).n_steps == 11 and action.isEnabled()
+
+    # the end time is reached: the run is refused, the results stay
+    with qtbot.waitSignal(shell.solve.solve_finished, timeout=WAIT) as blocker:
+        assert shell.solve.continue_run()
+    assert blocker.args == ["failed"] and "Set a later end time" in shell.solve.message
+    assert shell.doc.results_path == path and Results(path).n_steps == 11
+
+    shell.doc.edit("End time", lambda m: setattr(m.solution, "end_time", 160.0))
+    infos: list[Any] = []
+    shell.solve.progress.connect(infos.append)
+    with qtbot.waitSignal(shell.solve.solve_finished, timeout=WAIT) as blocker:
+        action.trigger()
+    assert blocker.args == ["finished"]
+    assert [i.step for i in infos] == list(range(11, 17))
+    results = Results(shell.doc.results_path)
+    assert shell.doc.results_path == path and not shell.doc.results_stale
+    assert results.n_steps == 17 and results.times[-1] == pytest.approx(160.0)
+
+
+def test_continue_needs_a_transient_analysis(window, qtbot) -> None:
+    shell = make_shell(window, make_document())
+    assert run_to_end(qtbot, shell) == "finished"
+    assert not shell.solve.continue_run()
+    assert "transient" in window.statusBar().currentMessage()
+
+
 # ------------------------------------------------------------------------------ cancel
 def test_cancel_keeps_the_results_written_so_far(window, qtbot) -> None:
     shell = make_shell(

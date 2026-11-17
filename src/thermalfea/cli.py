@@ -46,7 +46,9 @@ def _solve(args: argparse.Namespace) -> int:
         sys.stdout.flush()
         return True
 
-    results = api.solve(model, mesh, progress=progress, built=built, path=path)
+    results = api.solve(
+        model, mesh, progress=progress, built=built, path=path, restart=args.restart
+    )
     out(text_summary(results) + "\n")
     out(f"Results:  {results.path}\n")
     return EXIT_OK
@@ -95,6 +97,10 @@ def _parser() -> argparse.ArgumentParser:
     solve.add_argument(
         "-o", "--output", metavar="RESULTS", default=None,
         help="results file to write (default: <model>.h5 beside the model)",
+    )
+    solve.add_argument(
+        "--restart", action="store_true",
+        help="continue the transient run in the results file to the end time of the model",
     )
     solve.set_defaults(func=_solve)
     return parser

@@ -536,6 +536,41 @@ names three presets. Everything else here is a choice. None blocks anything.
 8. **The chart CSV** writes the chart's own axis values and headings, so it follows the
    display units; the results CSV export stays SI.
 
+## Q25 — restart of a transient run (task M10.6) — raised in M10.6
+
+The task is one sentence ("continue a transient run from the last stored step to a later
+end time, appending to the same results file"). These choices fill it in.
+
+1. **How it is asked for.** `api.solve(..., path=..., restart=True)` (a new keyword with a
+   default, so the Data §11 signature still works), `thermalfea solve model.tfea --restart`,
+   and Solve > Continue transient run in the GUI. The end time is the one of the model:
+   raise it, then continue. A cancelled run is continued the same way without raising it.
+2. **What is the same as an uninterrupted run.** With a fixed step the continued run
+   repeats the uninterrupted one to round-off in the linear case (tested at 1e-12, also
+   with a stream at 1e-9) and to the iteration tolerance in the nonlinear case: Theory §6
+   keeps g(T_n, t_n) from the previous step, and on a restart it is recomputed from the
+   stored T_n, which is the same value up to the convergence of that step. The theta = 1
+   start-up step is not repeated.
+3. **Automatic stepping.** The controller's history is not stored. The continued run
+   starts with the larger of the last two stored step sizes (the last one is usually cut
+   short to land on the end time) and without an error estimate for its first step, as at
+   the start of any run. Its steps therefore differ from those of an uninterrupted run
+   within the time-stepping tolerance.
+4. **What may change between the runs.** The mesh must be the same (same nodes), or the
+   restart is refused; so is a file of a steady solution, a last step that did not
+   converge, and an end time the file has already reached. Loads, materials and settings
+   are *not* compared: the continued steps use the current model, and the model embedded
+   in the results file is replaced by it. A load changed between the runs takes effect
+   from the restart time, without the theta = 1 step that a jump inside a run gets.
+   **To confirm with the owner** whether a changed model should be refused or warned about.
+5. **File layout.** One addition to Data §9: the attribute `last_step` on `/steps` (the
+   number of the time step of the last stored step), so that step numbers and "every
+   n-th step" output carry on correctly when not every step is stored. No dataset was
+   added and the schema version is unchanged; a file without the attribute counts its
+   stored steps instead.
+6. **The step at which a run was stopped stays in the file** even when the output rule of
+   an uninterrupted run would not have stored it (the last step is always stored).
+
 ## Q13 — choices made in the verification examples — raised in M3.G
 
 - **Nodes at check points.** V-09 and V-10 check the temperature at given points. Point

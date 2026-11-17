@@ -336,6 +336,7 @@ Errors block the solve; warnings do not. Minimum checks:
                  Today the only stored field is `T` (location node) plus one
                  `T_fluid:<stream>` per in-plane stream (location extra:<stream>).
 /steps/dt, /steps/iterations, /steps/converged
+/steps           attr last_step: time-step number of the last stored step (M10.6, Q25)
 /steps/energy    (n_steps, k) columns named in attr `columns`
 /fluid/<stream>  node s-coordinates, dof indices; per step: mass_flow, h_mean, Re, dp
 /reactions/<bc>  (n_steps,) total heat flow per boundary condition [W]

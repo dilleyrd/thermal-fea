@@ -434,6 +434,7 @@ def solve(
     *,
     built: BuiltGeometry | None = None,
     path: str | Path | None = None,
+    restart: bool = False,
 ) -> Results:
     """Solve a model on a mesh and return its results.
 
@@ -452,6 +453,10 @@ def solve(
     path : str or Path, keyword-only, optional
         Results file to write. By default a file named after the model in the system's
         temporary folder; use :func:`results_path` to store it beside a model file.
+    restart : bool, keyword-only
+        Continue the transient run stored in ``path`` from its last stored step to the
+        (later) end time of the model, adding the new steps to that file. The mesh must
+        be the one the run was started on.
 
     Returns
     -------
@@ -460,13 +465,20 @@ def solve(
     Raises
     ------
     ModelError
-        If validation finds errors.
+        If validation finds errors, or the run in ``path`` cannot be continued.
     ConvergenceError, SolverError
         If the solution fails.
     """
     if built is not None:
         raise_if_errors(validate(model, built, mesh))
     problem = compile_problem(model, built, mesh)
+    if restart:
+        if path is None:
+            raise ModelError("restart needs the path of the results file to continue")
+        if model.solution.kind != "transient":
+            raise ModelError("only a transient analysis can be continued")
+        run_transient(problem, path, progress, restart=True)
+        return Results(path)
     if path is None:
         folder = Path(tempfile.mkdtemp(prefix="thermalfea-"))
         safe = "".join(c if c.isalnum() or c in "-_ " else "_" for c in model.name) or "model"

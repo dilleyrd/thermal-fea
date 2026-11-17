@@ -13,6 +13,8 @@ Layout::
     /steps/time      (n_steps,)
     /steps/fields/<name>  (n_steps, n_values); attrs location, units
     /steps/dt, /steps/iterations, /steps/converged
+    /steps           attr last_step: number of the time step the last stored step is (not
+                     every step is stored; a continued run numbers its steps from it)
     /steps/energy    (n_steps, k); attr columns
     /reactions/<i>   (n_steps,) heat entering the body per boundary condition [W]; attr name
     /fluid/<i>       one group per stream; attrs name, mode. In-plane streams: ``s`` (path
@@ -21,7 +23,8 @@ Layout::
     /steps/fields/T_fluid:<stream>  (n_steps, n_fluid_nodes); location ``extra:<stream>``
 
 Every per-step dataset is extendable and chunked by step, so steps can be appended one at
-a time and a file left by an interrupted run is still readable.
+a time and a file left by an interrupted run is still readable. A writer opened with
+``append=True`` continues an existing file of a transient run (task M10.6).
 """
 
 from __future__ import annotations
@@ -39,6 +42,7 @@ import h5py
 import numpy as np
 from numpy import ndarray
 
+from ..core.errors import ModelError
 from ..core.mesh import Mesh
 from ..model.serialize import to_json
 from ..post.energy import EnergyBalance
@@ -53,6 +57,10 @@ _COMPRESSION = "gzip"
 FLUID_FIELD = "T_fluid"
 #: Step-independent datasets of a stream group.
 STATIC_FLUID = ("s", "dofs")
+#: Attribute of ``/steps``: the number of the time step of the last stored step.
+LAST_STEP = "last_step"
+#: Two meshes are the same when their nodes agree to this fraction of the mesh size.
+_NODE_TOL = 1e-12
 
 
 def model_hash(model_json: dict[str, Any]) -> str:
@@ -88,6 +96,42 @@ def write_mesh(group: h5py.Group, mesh: Mesh) -> None:
         ds.attrs["name"] = name
 
 
+def check_same_mesh(path: str | Path, problem: CompiledProblem) -> None:
+    """Raise unless a results file holds a transient run on the mesh of ``problem``.
+
+    Raises
+    ------
+    ModelError
+        If the file is unreadable, holds a steady solution, or was computed on another
+        mesh (different nodes).
+    """
+    try:
+        with h5py.File(path, "r") as f:
+            analysis = str(f["meta"].attrs["analysis"])
+            nodes = f["mesh"]["nodes"][...]
+            width = f["steps"]["fields"][TEMPERATURE].shape[1]
+    except (OSError, KeyError) as exc:
+        raise ModelError(f"cannot continue {Path(path).name}: not a results file ({exc})") from exc
+    if not analysis.endswith("transient"):
+        raise ModelError(f"cannot continue {Path(path).name}: it holds a steady solution")
+    mesh = problem.mesh
+    same = (
+        nodes.shape == mesh.nodes.shape
+        and width == problem.dofs.n_nodes(TEMPERATURE)
+        and np.allclose(nodes, mesh.nodes, rtol=0.0, atol=_NODE_TOL * _extent(mesh.nodes))
+    )
+    if not same:
+        raise ModelError(
+            f"cannot continue {Path(path).name}: it was computed on a different mesh. "
+            "A run can only be continued on the mesh it was started on; solve again "
+            "from the start instead"
+        )
+
+
+def _extent(nodes: ndarray) -> float:
+    return float(np.ptp(nodes, axis=0).max()) if nodes.size else 1.0
+
+
 class ResultsWriter:
     """Streams the steps of one solve into a results file.
 
@@ -99,15 +143,20 @@ class ResultsWriter:
     Parameters
     ----------
     path : str or Path
-        File to create (an existing file is replaced).
+        File to create (an existing file is replaced), or to continue with ``append``.
     problem : CompiledProblem
         Supplies the mesh, the DOF map, the region properties and, when it was compiled
         from a model, the model that is embedded in the file.
+    append : bool
+        Continue the existing file of a transient run on the same mesh: its steps are
+        kept and new ones are added after them. The embedded model and settings are
+        replaced by those of ``problem``.
     """
 
-    def __init__(self, path: str | Path, problem: CompiledProblem) -> None:
+    def __init__(self, path: str | Path, problem: CompiledProblem, append: bool = False) -> None:
         self.path = Path(path)
         self.problem = problem
+        self.append = append
         self._file: h5py.File | None = None
         self._names: list[str] = []
         self._streams: list[str] = []
@@ -128,24 +177,16 @@ class ResultsWriter:
         self.close()
 
     def open(self) -> None:
-        """Create the file and write the header (meta data and mesh)."""
+        """Create the file and write the header (meta data and mesh), or reopen it."""
+        if self.append:
+            self._reopen()
+            return
         problem = self.problem
         self._file = f = h5py.File(self.path, "w")
         meta = f.create_group("meta")
         meta.attrs["schema_version"] = RESULTS_SCHEMA_VERSION
         meta.attrs["created"] = datetime.now(UTC).isoformat(timespec="seconds")
-        meta.attrs["settings"] = json.dumps(asdict(problem.settings), sort_keys=True)
-        model = problem.model
-        if model is not None:
-            data = to_json(model)
-            meta.attrs["model"] = json.dumps(data, sort_keys=True)
-            meta.attrs["model_hash"] = model_hash(data)
-            meta.attrs["analysis"] = f"{model.analysis}, {model.solution.kind}"
-        else:
-            meta.attrs["model"] = ""
-            meta.attrs["model_hash"] = ""
-            geometry = "axisymmetric" if problem.mesh.axisymmetric else "planar"
-            meta.attrs["analysis"] = f"{geometry}, {problem.settings.kind}"
+        self._write_model(meta)
         regions = {
             str(region_id): {
                 "name": r.name,
@@ -185,6 +226,36 @@ class ResultsWriter:
                         group.attrs[key] = value
                     else:
                         group.create_dataset(key, data=np.asarray(value))
+
+    def _write_model(self, meta: h5py.Group) -> None:
+        """Store the settings and the model of the problem in ``/meta``."""
+        problem = self.problem
+        meta.attrs["settings"] = json.dumps(asdict(problem.settings), sort_keys=True)
+        model = problem.model
+        if model is not None:
+            data = to_json(model)
+            meta.attrs["model"] = json.dumps(data, sort_keys=True)
+            meta.attrs["model_hash"] = model_hash(data)
+            meta.attrs["analysis"] = f"{model.analysis}, {model.solution.kind}"
+        else:
+            meta.attrs["model"] = ""
+            meta.attrs["model_hash"] = ""
+            geometry = "axisymmetric" if problem.mesh.axisymmetric else "planar"
+            meta.attrs["analysis"] = f"{geometry}, {problem.settings.kind}"
+
+    def _reopen(self) -> None:
+        """Open an existing file to add steps after those it holds."""
+        problem = self.problem
+        if not self.path.is_file():
+            raise ModelError(f"results file not found: {self.path}")
+        check_same_mesh(self.path, problem)
+        self._file = f = h5py.File(self.path, "r+")
+        self.n_steps = int(f["steps"]["time"].shape[0])
+        reactions = f["reactions"]
+        self._names = [str(reactions[str(k)].attrs["name"]) for k in range(len(reactions))]
+        fluid = f["fluid"]
+        self._streams = [str(fluid[str(k)].attrs["name"]) for k in range(len(fluid))]
+        self._write_model(f["meta"])
 
     def _fluid_group(self, stream: str) -> h5py.Group:
         """The group of one stream under ``/fluid`` (numbered; the name is an attribute)."""
@@ -258,6 +329,7 @@ class ResultsWriter:
         converged: bool = True,
         balance: EnergyBalance | None = None,
         extras: dict[str, ndarray] | None = None,
+        step: int | None = None,
     ) -> None:
         """Append one step.
 
@@ -279,6 +351,9 @@ class ResultsWriter:
             Flow results of the step, keyed ``"<quantity>:<stream>"`` (the output of
             ``FlowProvider.results``): ``T_fluid`` becomes a field, every other quantity
             a per-step scalar under ``/fluid``.
+        step : int, optional
+            Number of the time step (not every step is stored); by default the number
+            of steps stored before it.
         """
         f = self._file
         if f is None:
@@ -289,6 +364,7 @@ class ResultsWriter:
                             ("converged", converged)):
             steps[name].resize((i + 1,))
             steps[name][i] = value
+        steps.attrs[LAST_STEP] = int(i if step is None else step)
         temperature = steps["fields"][TEMPERATURE]
         temperature.resize((i + 1, temperature.shape[1]))
         temperature[i] = np.asarray(u, dtype=float)[self.problem.dofs.field_dofs(TEMPERATURE)]

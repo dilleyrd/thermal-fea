@@ -104,7 +104,7 @@ and reasons are in the open questions cited.
   for now (ideas discussed: export of a GUI model as a Python script, `api.add_*`
   wrappers for loads, a parameter-sweep helper, public access to the system matrices).
   None of these is a task; do not add them without the owner asking.
-- Awaiting the owner's confirmation, none blocking: Q11, Q14, Q17.2, Q18.2, Q20, Q21, Q22, Q23, Q24.
+- Awaiting the owner's confirmation, none blocking: Q11, Q14, Q17.2, Q18.2, Q20, Q21, Q22, Q23, Q24, Q25.
 - Known gaps, recorded in Q21 and Q24: a few read-outs are still SI only (Q24.5); GIF export blocks the window; the stream "pick path points" toggle
   does not exclude the probe and the chart path pick; MP4 export is untested (no ffmpeg).
 
@@ -157,10 +157,13 @@ read-outs take `Results.display_units`. Tools > Units... changes them (undoable,
 goes stale). A new form field with a dimension needs a `quantity`; a new quantity is one
 entry in `_TABLE` plus a field of `UnitSettings`.
 
-**M10.6 restart.** The results writer always creates a new file
-(`solver/results_writer.py: open`); appending needs a second way to open it, and the
-θ-method needs g(T_n, t_n) of the last stored step (`solver/transient.py`), which is
-recomputed, not stored.
+**M10.6 restart (done, Q25).** `ResultsWriter(..., append=True)` reopens a file;
+`run.read_restart_state` rebuilds the full solution (node temperatures plus the fluid
+unknowns of the streams) from the last stored step; `solve_transient(resume=True)` skips
+the start-up step and recomputes g(T_n, t_n). Entry points: `api.solve(restart=True)`,
+`thermalfea solve --restart`, Solve > Continue transient run. A new extra-DOF group
+(M9 or later) must be restorable from the file in the same way, or restart must refuse
+it: `read_restart_state` raises when a DOF is left unfilled.
 
 **M11.3 performance.** Element geometry is cached per problem (`problem.cache`); the
 transient driver already reuses the factorisation in the linear case with constant Δt.

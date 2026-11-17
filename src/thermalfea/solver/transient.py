@@ -213,8 +213,21 @@ class StepSystem:
         )
 
 
-def initial_state(problem: CompiledProblem, T0: ndarray | float | None, t0: float) -> tuple:
+def initial_state(
+    problem: CompiledProblem, T0: ndarray | float | None, t0: float, resume: bool = False
+) -> tuple:
     """Initial solution with the prescribed values of ``t0`` applied.
+
+    Parameters
+    ----------
+    problem : CompiledProblem
+    T0 : ndarray or float, optional
+        Initial values [K]; by default the model's initial condition.
+    t0 : float
+        Start time [s].
+    resume : bool
+        ``T0`` is the full solution of an earlier run at ``t0``: the flow providers do
+        not reset their unknowns to the start values.
 
     Returns
     -------
@@ -229,7 +242,7 @@ def initial_state(problem: CompiledProblem, T0: ndarray | float | None, t0: floa
         T = initial_temperature(problem)
     else:
         T = np.broadcast_to(np.asarray(T0, dtype=float), (n,)).copy()
-    for provider in problem.providers:
+    for provider in () if resume else problem.providers:
         initialize = getattr(provider, "initialize", None)
         if initialize is not None:
             initialize(T, t0)  # e.g. fluid nodes start at their inlet temperature
@@ -312,6 +325,9 @@ def solve_transient(
     t0: float = 0.0,
     store: bool = True,
     solver: LinearSolver | None = None,
+    resume: bool = False,
+    dt0: float | None = None,
+    first_step: int = 0,
 ) -> TransientResult:
     """Integrate in time with the theta-method (Theory §6, §6.1).
 
@@ -334,6 +350,16 @@ def solve_transient(
     store : bool, keyword-only
         Keep the solution of every step in the result.
     solver : LinearSolver, keyword-only, optional
+    resume : bool, keyword-only
+        Continue an earlier run: ``T0`` is its full solution at ``t0``. The state is then
+        not treated as the switching-on of the loads (no ``theta = 1`` start-up step
+        unless a prescribed temperature differs from ``T0``), and ``g(T0, t0)`` is
+        recomputed from ``T0``, which is what the earlier run kept.
+    dt0 : float, keyword-only, optional
+        Size of the first step [s] of an automatically stepped run, instead of
+        ``settings.initial_dt`` or the suggestion of Theory §6.1.
+    first_step : int, keyword-only
+        Number of steps already taken; the first step is numbered ``first_step + 1``.
 
     Returns
     -------
@@ -354,8 +380,9 @@ def solve_transient(
     symmetric = problem.symmetric
     linear = problem.is_linear
 
-    T, shock = initial_state(problem, T0, t0)
-    controller = StepController(settings, t0, mandatory_times(problem), first_step_size(problem, T))
+    T, shock = initial_state(problem, T0, t0, resume)
+    first_dt = dt0 if dt0 is not None and settings.auto_timestep else first_step_size(problem, T)
+    controller = StepController(settings, t0, mandatory_times(problem), first_dt)
     if problem.check_dt is not None:
         problem.check_dt(T, controller.dt)
     system = assemble(problem, T, t0)
@@ -370,7 +397,8 @@ def solve_transient(
         float(np.linalg.norm(abs(system.K) @ np.abs(T))),
         F_REF_FLOOR,
     )
-    startup = shock or bool(np.linalg.norm(g[free0]) > JUMP_TOL * scale)
+    # a resumed run is in the middle of its history: an imbalance is no switching-on
+    startup = shock or (not resume and bool(np.linalg.norm(g[free0]) > JUMP_TOL * scale))
 
     result = TransientResult(times=[t0], T=T.copy())
     if store:
@@ -423,13 +451,13 @@ def solve_transient(
         return (outcome.T, outcome.iterations, outcome.converged, outcome.residual,
                 step_system, step_system.base)  # type: ignore[union-attr]
 
-    step = 0
+    step = int(first_step)
     T_before: ndarray | None = None  # the solution one step before T
     dt_before: float | None = None
     while not controller.finished:
         t = controller.t
         dt = controller.propose()
-        discontinuous = (step == 0 and startup) or (
+        discontinuous = (step == first_step and startup) or (
             settings.theta < 1.0 and _jumps(problem, T, t, dt, system)
         )
         theta = 1.0 if discontinuous else float(settings.theta)

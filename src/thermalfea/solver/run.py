@@ -7,14 +7,16 @@ from collections.abc import Callable
 from dataclasses import dataclass
 from pathlib import Path
 
+import h5py
 import numpy as np
 from numpy import ndarray
 
+from ..core.errors import ModelError
 from ..model.settings import SolutionSettings
 from ..post.energy import EnergyBalance, energy_balance, step_energy_balance
 from ..post.reactions import term_heats
-from .problem import CompiledProblem
-from .results_writer import ResultsWriter
+from .problem import TEMPERATURE, CompiledProblem
+from .results_writer import FLUID_FIELD, LAST_STEP, ResultsWriter, check_same_mesh
 from .steady import STEADY_TIME, steady_solution
 from .terms import State
 from .transient import StepRecord, TransientResult, initial_state, solve_transient
@@ -162,12 +164,106 @@ class OutputSelector:
         return self._is(t, float(nearest))
 
 
+@dataclass
+class RestartState:
+    """The last stored step of a results file, from which a run is continued.
+
+    Attributes
+    ----------
+    t : float
+        Its time [s].
+    u : ndarray, shape (n_dofs,)
+        Its full solution [K]: node temperatures and the fluid unknowns of the streams.
+    dt : float or None
+        Step size to continue with [s] when stepping is automatic (``None``: no step
+        has been taken yet).
+    steps : int
+        Number of time steps taken so far (the number of the last stored step).
+    """
+
+    t: float
+    u: ndarray
+    dt: float | None
+    steps: int
+
+
+def read_restart_state(problem: CompiledProblem, path: str | Path) -> RestartState:
+    """Read the state a transient run is continued from (task M10.6).
+
+    Parameters
+    ----------
+    problem : CompiledProblem
+        The problem to continue; it must use the mesh the file was computed on.
+    path : str or Path
+        Results file of the earlier run.
+
+    Raises
+    ------
+    ModelError
+        If the file cannot be continued: not found, a steady solution, another mesh,
+        streams that do not match, a last step that did not converge, or an end time
+        that the file has already reached.
+    """
+    path = Path(path)
+    if not path.is_file():
+        raise ModelError(f"results file not found: {path}")
+    check_same_mesh(path, problem)
+    dofs = problem.dofs
+    u = np.zeros(dofs.n_dofs)
+    filled = np.zeros(dofs.n_dofs, dtype=bool)
+    with h5py.File(path, "r") as f:
+        steps = f["steps"]
+        times = steps["time"][...]
+        if times.size == 0:
+            raise ModelError(f"cannot continue {path.name}: it holds no steps")
+        last = times.size - 1
+        if not bool(steps["converged"][last]):
+            raise ModelError(
+                f"cannot continue {path.name}: its last step (t = {times[last]:g} s) did not "
+                "converge"
+            )
+        nodal = dofs.field_dofs(TEMPERATURE)
+        u[nodal] = steps["fields"][TEMPERATURE][last]
+        filled[nodal] = True
+        for group in f["fluid"].values():
+            name = str(group.attrs["name"])
+            key = f"{FLUID_FIELD}:{name}"
+            if "dofs" not in group or key not in steps["fields"]:
+                continue
+            index = group["dofs"][...]
+            if index.size and index.max() >= dofs.n_dofs:
+                raise ModelError(f"cannot continue {path.name}: stream {name!r} does not match")
+            u[index] = steps["fields"][key][last]
+            filled[index] = True
+        stored = steps["dt"][...]
+        # files written before the step number was stored: count the stored steps
+        taken = int(steps.attrs.get(LAST_STEP, last))
+    if not filled.all() or not np.isfinite(u).all():
+        raise ModelError(
+            f"cannot continue {path.name}: the streams of the model are not those of the "
+            "results file"
+        )
+    t = float(times[last])
+    end = float(problem.settings.end_time)
+    if not end - t > _TIME_TOL * max(1.0, abs(t)):
+        raise ModelError(
+            f"cannot continue {path.name}: its results already reach t = {t:g} s and the "
+            f"end time of the analysis is {end:g} s. Set a later end time"
+        )
+    # the last step is often shortened to land on the end time: take the larger of the
+    # last two steps
+    recent = stored[max(1, last - 1) : last + 1]
+    dt = float(recent.max()) if recent.size and recent.max() > 0.0 else None
+    return RestartState(t, u, dt, taken)
+
+
 def run_transient(
     problem: CompiledProblem,
     path: str | Path,
     progress: ProgressCallback | None = None,
     T0: ndarray | float | None = None,
     t0: float = 0.0,
+    restart: bool = False,
 ) -> TransientResult:
     """Solve a transient problem, streaming the selected steps to a results file.
 
@@ -188,6 +284,10 @@ def run_transient(
         Initial temperatures [K]; by default the model's initial condition.
     t0 : float
         Start time [s].
+    restart : bool
+        Continue the run stored in ``path`` from its last stored step to the end time of
+        the settings, adding the new steps to the file (``T0`` and ``t0`` are then taken
+        from the file). The file must hold a transient run on the same mesh.
 
     Returns
     -------
@@ -201,21 +301,30 @@ def run_transient(
     """
     settings = problem.settings
     selector = OutputSelector(settings)
-    start, _ = initial_state(problem, T0, t0)
+    resumed: RestartState | None = None
+    if restart:
+        resumed = read_restart_state(problem, path)
+        T0, t0 = resumed.u, resumed.t
+        log.info(
+            "continuing %s from t = %.6g s to t = %.6g s",
+            Path(path).name, t0, float(settings.end_time),
+        )
+    start, _ = initial_state(problem, T0, t0, resume=restart)
     heats = term_heats(problem, start, t0)
     last: dict[str, object] = {"balance": None}
 
-    with ResultsWriter(path, problem) as writer:
-        writer.append_step(
-            t0, start, dt=0.0, iterations=0, converged=True,
-            extras=flow_results(problem, start, t0),
-        )
-        writer.flush()
+    with ResultsWriter(path, problem, append=restart) as writer:
+        if not restart:
+            writer.append_step(
+                t0, start, dt=0.0, iterations=0, converged=True,
+                extras=flow_results(problem, start, t0),
+            )
+            writer.flush()
 
         def store(record: StepRecord, balance: EnergyBalance, extras: dict) -> None:
             writer.append_step(
                 record.t, record.T, dt=record.dt, iterations=record.iterations,
-                converged=record.converged, balance=balance, extras=extras,
+                converged=record.converged, balance=balance, extras=extras, step=record.step,
             )
             if writer.n_steps % FLUSH_EVERY == 0:
                 writer.flush()
@@ -242,7 +351,11 @@ def run_transient(
 
         # the driver gets the original T0, so that it can see a jump of a prescribed
         # temperature at the start
-        result = solve_transient(problem, T0, on_step, t0=t0, store=False)
+        result = solve_transient(
+            problem, T0, on_step, t0=t0, store=False, resume=restart,
+            dt0=resumed.dt if resumed is not None else None,
+            first_step=resumed.steps if resumed is not None else 0,
+        )
         if result.cancelled and not last.get("stored", True):
             store(last["record"], last["balance"], last["extras"])  # type: ignore[arg-type]
 

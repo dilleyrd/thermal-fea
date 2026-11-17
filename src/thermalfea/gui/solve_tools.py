@@ -76,6 +76,7 @@ _log = logging.getLogger(__name__)
 VALIDATE_ID = "solve.validate"
 RUN_ID = "solve.run"
 CANCEL_ID = "solve.cancel"
+CONTINUE_ID = "solve.continue"
 #: Relative tolerance of "the run had reached the end time".
 _END_TOL = 1e-9
 
@@ -172,6 +173,7 @@ class SolveController(QObject):
         for key, text, slot in (
             (VALIDATE_ID, "Validate", self.validate),
             (RUN_ID, "Solve", self.solve),
+            (CONTINUE_ID, "Continue transient run", self.continue_run),
             (CANCEL_ID, "Cancel solve", self.cancel),
         ):
             action = QAction(text, window)
@@ -179,7 +181,8 @@ class SolveController(QObject):
             window.actions[key] = action
             self.actions[key] = action
             menu.addAction(action)
-        for signal in (document.mesh_changed, document.geometry_built, document.stale_changed):
+        for signal in (document.mesh_changed, document.geometry_built, document.stale_changed,
+                       document.results_changed):
             signal.connect(self.update_actions)
         self.state_changed.connect(self.update_actions)
         window.installEventFilter(self)
@@ -194,6 +197,9 @@ class SolveController(QObject):
         """Set the enabled state of the Solve menu actions."""
         self.actions[VALIDATE_ID].setEnabled(True)
         self.actions[RUN_ID].setEnabled(self.can_solve())
+        self.actions[CONTINUE_ID].setEnabled(
+            self.can_solve() and self.document.results_path is not None
+        )
         self.actions[CANCEL_ID].setEnabled(self.running and not self._cancel_requested())
 
     def _cancel_requested(self) -> bool:
@@ -242,8 +248,24 @@ class SolveController(QObject):
         return found
 
     # ------------------------------------------------------------------- solve
-    def solve(self) -> bool:
+    def continue_run(self) -> bool:
+        """Continue the transient run of the current results to the end time of the model.
+
+        The new steps are added to the results file (task M10.6). Returns ``True`` if
+        the run was started; a run that cannot be continued (the end time is already
+        reached, another mesh, ...) ends as a failed solve with the reason, and the
+        results stay as they were.
+        """
+        return self.solve(restart=True)
+
+    def solve(self, restart: bool = False) -> bool:
         """Validate, then solve in a worker thread.
+
+        Parameters
+        ----------
+        restart : bool
+            Continue the transient run stored in the current results file instead of
+            starting again.
 
         Returns
         -------
@@ -254,6 +276,12 @@ class SolveController(QObject):
         if self.running:
             return False
         document = self.document
+        if restart and (document.results_path is None or not document.results_path.is_file()):
+            self._status("There are no results to continue; use Solve")
+            return False
+        if restart and document.model.solution.kind != "transient":
+            self._status("Only a transient analysis can be continued")
+            return False
         if document.built is None or document.mesh is None:
             self._status("Generate the mesh before solving")
             return False
@@ -270,11 +298,14 @@ class SolveController(QObject):
         model = from_json(to_json(document.model))
         self._snapshot = to_json(document.model)
         self._mesh, self._built = document.mesh, document.built
-        path = api.results_path(document.path) if document.path is not None else None
+        if restart:
+            path = document.results_path
+        else:
+            path = api.results_path(document.path) if document.path is not None else None
         mesh, built = document.mesh, document.built
 
         def work(context: TaskContext) -> Results:
-            return api.solve(model, mesh, context.report, built=built, path=path)
+            return api.solve(model, mesh, context.report, built=built, path=path, restart=restart)
 
         self._open_dialog(model.solution.kind == "transient")
         self._last_info = None
