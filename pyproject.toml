@@ -15,6 +15,7 @@ dependencies = [
     "matplotlib",
     "h5py",
     "meshio",
+    "pandas",
 ]
 
 [project.optional-dependencies]
