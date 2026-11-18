@@ -8,5 +8,7 @@ __pycache__/
 build/
 dist/
 *.h5
+# the pump-closure demonstration ships its results
+!examples/pump_closure/out/*.h5
 examples/output/
 site/
