@@ -111,6 +111,9 @@ and reasons are in the open questions cited.
   window has no control to make a model axisymmetric; the stream panel shows "Constant 0"
   for an unset mass flow; the HTC calculator has no cross-section input; a new correlation
   or radiation load starts with blank or zero fields.
+  Their fixes are tasks M11.7–M11.10, added on 2026-11-17 with the owner's choices in
+  Q27; the owner said not to build them yet. M11.10 also waits for the owner to confirm
+  the Theory §6.1 sentence in Q27.3.
 
 ## 4. Notes on the remaining tasks
 

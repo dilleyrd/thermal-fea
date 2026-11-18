@@ -400,5 +400,31 @@ Boundary Conditions, Flow (Streams, Network), Enclosures, Analysis Settings, Sol
   reference with validity ranges, stated limitations.
 - [ ] **M11.5 [B] Windows build.** PyInstaller spec (gmsh DLL and Qt plugins included);
   smoke test that the built executable opens, solves an example, and exits.
+- [ ] **M11.7 [B] Axisymmetric control in the GUI.** Defect Q26.4(a); owner's choices in
+  Q27. A "Geometry type: Planar / Axisymmetric" choice at the top of the Analysis Settings
+  panel sets `Model.analysis`, through the undo stack; changing it marks the mesh and the
+  results out of date. The region "Thickness" field is hidden for an axisymmetric model,
+  and the viewport draws the axis x = 0 (through `SceneView`). Tests: switching, undo and
+  out-of-date mesh; V-05 built from scratch in the window meets its own verification
+  target. Remove the limitation from `guide/limitations.md`, `guide/getting-started.md`
+  and `docs/gui-walkthrough.md`.
+- [ ] **M11.8 [A] Display fixes.** Defects Q26.4(b), (c), (f). (b) An unset optional
+  function (stream mass flow) is shown as unset, not "Constant 0"; reproduce with a
+  failing GUI test first. (c) The HTC calculator offers the cross-section type for the
+  duct correlation and passes it to `api.htc`; test: it reproduces the h pinned by the
+  cold-plate tutorial. (f) A steady solution is reported as "steady state", not
+  "t = 0 s", in plot titles, the summary and the status bar (read `/meta` `analysis`).
+  Update the guide pages that describe these defects.
+- [ ] **M11.9 [B] Inputs for new loads.** Defect Q26.4(d); owner's choices in Q27. Adding
+  a correlation convection or a radiation condition in the GUI opens a dialog that asks
+  for the correlation, the fluid, the ambient temperature and the emissivity (as New
+  stream does); no value is filled in by the program. Validation also reports an error
+  for an empty correlation or fluid and a warning for an ambient temperature of 0 K or an
+  emissivity of 0, for models from files and scripts. Update the guide.
+- [ ] **M11.10 [B] First time step without a false warning.** Defect Q26.4(e); owner's
+  choice (ii) in Q27. The oscillation warning of Theory §6.1 is not logged for a step the
+  program suggested itself; it still applies to a first step set by the user. Add the
+  rule to Theory §6.1 in the wording of Q27.3 once the owner confirms it, regenerate the
+  guide, and test both cases.
 - [ ] **M11.6 [C] Release review.** Check every item of Plan §6; resolve or document every
-  entry in `docs/OPEN_QUESTIONS.md`.
+  entry in `docs/OPEN_QUESTIONS.md`. Depends on M11.7–M11.10.

@@ -603,6 +603,27 @@ end time, appending to the same results file"). These choices fill it in.
    silently left out. Validation now reports the error `not-implemented` and the compiler
    refuses such a model. When M9 or M10.2 is built, remove the corresponding entry of
    `model/validate.py: not_implemented`.
+6. **Fixes planned** as tasks M11.7–M11.10 (added 2026-11-17); the owner's choices are in
+   Q27.
+
+## Q27 — fixing the defects of Q26.4 (tasks M11.7–M11.10) — raised 2026-11-17
+
+The owner decided on 2026-11-17 (not built yet):
+
+1. **Axisymmetric control (M11.7):** in the Analysis Settings panel, not in File > New.
+2. **New loads (M11.9):** both. A dialog asks for the correlation, the fluid, the ambient
+   temperature and the emissivity when the load is added, and validation catches blank or
+   zero values in models from files and scripts. No default value is invented.
+3. **First time step (M11.10):** option (ii), keep the suggestion Δt₀ = h_min²/(4 α_max)
+   and do not log the oscillation warning for a step the program suggested itself. The
+   cause: the suggestion uses the smallest edge and the largest diffusivity of the whole
+   model, while the warning tests h² ρc/(6k) per element, so on a graded mesh or with mixed
+   materials the suggestion fails the test in most elements. Proposed sentence for Theory
+   §6.1, after "Oscillation warning: ...", **to be confirmed by the owner before M11.10 is
+   built**: "The warning is not logged when Δt is the suggested initial step Δt₀; it
+   applies to a step set by the user and to steps chosen by the step control."
+   Still open for the owner: whether a later step chosen by the automatic step control
+   should be warned about (the proposed sentence says yes, as now).
 
 ## Q13 — choices made in the verification examples — raised in M3.G
 
