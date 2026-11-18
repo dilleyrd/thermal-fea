@@ -1,0 +1,56 @@
+{
+  "_comment": [
+    "Inputs of the canned-motor pump main-closure demonstration (AP1000_Closure_Thermal_Sketches.pdf, sheets 2-5).",
+    "All dimensions and numerical inputs are illustrative. Lengths in mm, temperatures in degC, film and contact coefficients in W/(m^2 K), times in s.",
+    "Axisymmetric: x = r (radius), y = z (elevation); the joint datum is z = 0."
+  ],
+  "geometry": {
+    "casing_vertices": [[550, 0], [550, 90], [630, 160], [656, 300], [716, 300], [704, 186], [800, 142], [800, 82], [685, 82], [685, 0]],
+    "barrier": {"bore_r": 120, "top_z": 90, "web_thickness": 42, "skirt_r_in": 490, "skirt_r_out": 550},
+    "passage": {"r": 460, "z": 68, "diameter": 16},
+    "flange": {"r_in": 340, "r_out": 800, "thickness": 150, "band_r_in": 720, "band_r_out": 760},
+    "seal_land_r_out": 565,
+    "liner": {"r_in": 260, "r_out": 375},
+    "shell": {"r_in": 375, "r_out": 435},
+    "extension_below_flange": 180,
+    "studs": {"count": 24, "shank_diameter": 40, "bolt_circle_r": 740, "grip": 82},
+    "nut": {"equivalent_od": 68, "height": 28}
+  },
+  "fluids": {
+    "H": {"description": "hot primary water", "h": 3000, "T_start": 40, "T_end": 180, "ramp_time": 1800},
+    "M": {"description": "cooled motor-cavity water", "h": 800, "T": 55},
+    "Cw": {"description": "barrier cooling passage", "h": 1500, "T": 35},
+    "J": {"description": "jacket cooling water", "h": 1500, "T": 35},
+    "A": {"description": "exposed metal / ambient", "h": 8, "T": 30}
+  },
+  "contacts": {
+    "main_seat": 3000,
+    "barrier_foot": 3000,
+    "vertical_fit": 3000,
+    "seal_land": 500,
+    "stud_anchor": 5000,
+    "nut_bearing": 5000
+  },
+  "materials": {
+    "bodies": "Stainless steel 304",
+    "liner": "Stainless steel 304",
+    "studs_and_nuts": "Carbon steel AISI 1010"
+  },
+  "initial_T": 40,
+  "run": {
+    "_comment": "Run controls chosen for this exercise (not given on the sheets).",
+    "end_time": 21600,
+    "output_interval": 300,
+    "initial_dt": 1.0
+  },
+  "mesh": {
+    "_comment": "Element sizes chosen for this exercise; check them with seat_study.py --mesh-check.",
+    "global_size": 10.0,
+    "fine_size": 1.5,
+    "order": 2
+  },
+  "study": {
+    "_comment": "Sheet 5: steady hot case with H at a constant 180 degC; main-seat conductance scaled by these factors.",
+    "seat_factors": [0.1, 0.3, 1.0, 3.0, 10.0]
+  }
+}
