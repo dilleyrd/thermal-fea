@@ -10,4 +10,3 @@ dist/
 *.h5
 examples/output/
 site/
-examples/pump_closure/out/

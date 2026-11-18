@@ -32,7 +32,9 @@ From the project folder:
 .venv\Scripts\python.exe examples\pump_closure\seat_study.py --mesh-check
 ```
 
-Results go to `examples/pump_closure/out/`, which git ignores. Each run takes a few seconds.
+Results go to `examples/pump_closure/out/`. The repository includes a complete set from the
+scripts above, so the case can be shown without running anything. Rerunning a script
+overwrites its files there; each run takes a few seconds.
 
 To look at a case in the GUI:
 1. Use File > Open... to open `out/closure_transient.tfea`.
