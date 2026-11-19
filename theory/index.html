@@ -1,0 +1,642 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><link rel="canonical" href="https://dilleyrd.github.io/thermal-fea/theory/" />
+      <link rel="shortcut icon" href="../img/favicon.ico" />
+    <title>Theory - ThermalFEA user guide</title>
+    <link rel="stylesheet" href="../css/theme.css" />
+    <link rel="stylesheet" href="../css/theme_extra.css" />
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" />
+    
+      <script>
+        // Current page data
+        var mkdocs_page_name = "Theory";
+        var mkdocs_page_input_path = "theory.md";
+        var mkdocs_page_url = "/thermal-fea/theory/";
+      </script>
+    
+    <!--[if lt IE 9]>
+      <script src="../js/html5shiv.min.js"></script>
+    <![endif]-->
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
+      <script>hljs.highlightAll();</script> 
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side stickynav">
+    <div class="wy-side-scroll">
+      <div class="wy-side-nav-search">
+          <a href=".." class="icon icon-home"> ThermalFEA user guide
+        </a><div role="search">
+  <form id ="rtd-search-form" class="wy-form" action="../search.html" method="get">
+      <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" title="Type search term here" />
+  </form>
+</div>
+      </div>
+
+      <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="..">Home</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../installation/">Installation</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../getting-started/">Getting started</a>
+                </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Tutorials</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../tutorials/t4-plate/">NAFEMS T4 steady plate</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../tutorials/fin-quench/">Transient quench of a fin</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../tutorials/cold-plate/">Cold plate with a water stream</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Reference</span></p>
+              <ul class="current">
+                  <li class="toctree-l1"><a class="reference internal" href="../units/">Units</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../materials/">Materials</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../correlations/">Correlations</a>
+                  </li>
+                  <li class="toctree-l1 current"><a class="reference internal current" href="#">Theory</a>
+    <ul class="current">
+    <li class="toctree-l2"><a class="reference internal" href="#sec-1">§1 Governing equation and weak form</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#sec-2">§2 Element matrices</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#boundary-edge-element-terms">Boundary (edge) element terms</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#sec-3">§3 Shape functions and quadrature</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#lumped-capacitance-option">Lumped capacitance (option)</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#sec-4">§4 Fixed temperatures</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#sec-5">§5 Nonlinear steady solution</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#sec-6">§6 Transient solution (θ-method)</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#sec-6-1">§6.1 Automatic time stepping</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#sec-7">§7 Recovered quantities</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#sec-8">§8 Convection from correlations</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#sec-8-1">§8.1 Internal duct flow</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#sec-9">§9 Flow solver</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#sec-9-1">§9.1 Stream (fluid temperature along a wall)</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#sec-9-2">§9.2 Network (flow distribution)</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#sec-10">§10 Enclosure radiation (grey, diffuse)</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#sec-10-1">§10.1 View factors, planar</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#sec-10-2">§10.2 View factors, axisymmetric (task M9.5)</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#sec-11">§11 Thermal contact resistance</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#sec-12">§12 Phase change (apparent heat capacity)</a>
+    </li>
+    </ul>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../verification/">Verification</a>
+                  </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../limitations/">Limitations</a>
+                </li>
+              </ul>
+      </div>
+    </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+      <nav class="wy-nav-top" role="navigation" aria-label="Mobile navigation menu">
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="..">ThermalFEA user guide</a>
+        
+      </nav>
+      <div class="wy-nav-content">
+        <div class="rst-content"><div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href=".." class="icon icon-home" aria-label="Docs"></a></li>
+          <li class="breadcrumb-item">Reference</li>
+      <li class="breadcrumb-item active">Theory</li>
+    <li class="wy-breadcrumbs-aside">
+    </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+            <div class="section" itemprop="articleBody">
+              
+                <h1 id="theory-reference">Theory reference<a class="headerlink" href="#theory-reference" title="Permanent link">&para;</a></h1>
+<div class="admonition info">
+<p class="admonition-title">Generated page</p>
+<p>This page is generated from <code>docs/theory.md</code> by <code>scripts/build_guide.py</code>.
+Do not edit it here: change the source and run the script again.</p>
+</div>
+<p>Every equation the code implements. Implement these exactly; do not re-derive.
+Symbols: T temperature [K], t time [s], k conductivity [W/m·K], ρ density [kg/m³],
+c specific heat [J/kg·K], Q volumetric heat generation [W/m³], q heat flux [W/m²],
+h heat-transfer coefficient [W/m²·K], ε emissivity, σ = 5.670374419e-8 W/m²·K⁴.</p>
+<h2 id="sec-1">§1 Governing equation and weak form<a class="headerlink" href="#sec-1" title="Permanent link">&para;</a></h2>
+<p>ρc ∂T/∂t = ∇·(D ∇T) + Q in the domain, with D the 2×2 conductivity matrix.</p>
+<p>Boundary conditions on the boundary Γ (n = outward normal, q_n = −n·D∇T = heat leaving):</p>
+<ul>
+<li>Fixed temperature: T = T̄</li>
+<li>Heat flux into the body: −q_n = q̄</li>
+<li>Convection: q_n = h (T − T∞)</li>
+<li>Radiation to ambient: q_n = ε σ (T⁴ − T∞⁴)</li>
+</ul>
+<p>Discretised with T ≈ N(ξ,η)·T_e the semi-discrete system is</p>
+<p><strong>C Ṫ + K T = F</strong></p>
+<p>All integrals carry the <strong>geometry factor g</strong>:</p>
+<ul>
+<li>planar: g = thickness of the region [m] (default 1)</li>
+<li>axisymmetric: g = 2π r, with r = the x coordinate at the integration point</li>
+</ul>
+<p>so that every assembled force term is in watts.</p>
+<h2 id="sec-2">§2 Element matrices<a class="headerlink" href="#sec-2" title="Permanent link">&para;</a></h2>
+<p>For each element, with B = the 2×n matrix of ∂N/∂x, ∂N/∂y and |J| the Jacobian determinant:</p>
+<ul>
+<li>Conduction: K_e = Σ_gp Bᵀ D B · g · |J| · w</li>
+<li>Capacitance: C_e = Σ_gp ρc · NᵀN · g · |J| · w</li>
+<li>Heat generation: F_e = Σ_gp Q · Nᵀ · g · |J| · w</li>
+</ul>
+<p>Orthotropic D with principal conductivities k1, k2 and material angle θ (radians,
+counter-clockwise from x): D = R diag(k1, k2) Rᵀ, R = [[cosθ, −sinθ],[sinθ, cosθ]].
+Isotropic: D = k I.</p>
+<p>Temperature-dependent properties are evaluated <strong>at each integration point</strong> from the
+interpolated temperature N·T_e.</p>
+<h3 id="boundary-edge-element-terms">Boundary (edge) element terms<a class="headerlink" href="#boundary-edge-element-terms" title="Permanent link">&para;</a></h3>
+<p>For an edge with shape functions N (1D), |J_s| = ds/dξ:</p>
+<ul>
+<li>Flux: F_e = Σ_gp q̄ · Nᵀ · g · |J_s| · w</li>
+<li>Convection: K_e = Σ_gp h · NᵀN · g · |J_s| · w ;  F_e = Σ_gp h T∞ · Nᵀ · g · |J_s| · w</li>
+<li>Total heat flow P [W] applied to a boundary set: convert to uniform flux
+  q̄ = P / A, where A = Σ over the set of ∫ g ds.</li>
+<li>Total power P [W] applied to a region: Q = P / V, V = ∫ g dA.</li>
+</ul>
+<h2 id="sec-3">§3 Shape functions and quadrature<a class="headerlink" href="#sec-3" title="Permanent link">&para;</a></h2>
+<p>Node ordering is <strong>gmsh ordering</strong>: corners counter-clockwise, then mid-side nodes in the
+order (0-1, 1-2, 2-0) for triangles and (0-1, 1-2, 2-3, 3-0) for quads.</p>
+<p><strong>T3</strong> (ξ,η ∈ unit triangle): N = [1−ξ−η, ξ, η]</p>
+<p><strong>T6</strong> with L1 = 1−ξ−η, L2 = ξ, L3 = η:
+N = [L1(2L1−1), L2(2L2−1), L3(2L3−1), 4L1L2, 4L2L3, 4L3L1]</p>
+<p><strong>Q4</strong> (ξ,η ∈ [−1,1]), corner signs (ξi,ηi) = (−1,−1),(1,−1),(1,1),(−1,1):
+N_i = ¼(1+ξξi)(1+ηηi)</p>
+<p><strong>Q8</strong> (serendipity): corners N_i = ¼(1+ξξi)(1+ηηi)(ξξi+ηηi−1);
+mid-sides with ξi = 0: N_i = ½(1−ξ²)(1+ηηi); with ηi = 0: N_i = ½(1+ξξi)(1−η²).
+Mid-side positions: (0,−1),(1,0),(0,1),(−1,0).</p>
+<p><strong>L2</strong> edge (ξ ∈ [−1,1]): N = [½(1−ξ), ½(1+ξ)]</p>
+<p><strong>L3</strong> edge, gmsh order (end, end, middle): N = [½ξ(ξ−1), ½ξ(ξ+1), 1−ξ²]</p>
+<p>Quadrature (weights sum to the reference area: ½ for triangles, 4 for quads, 2 for lines):</p>
+<table>
+<thead>
+<tr>
+<th>Element</th>
+<th>Rule</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>T3</td>
+<td>3-point: (1/6,1/6), (2/3,1/6), (1/6,2/3), each w = 1/6</td>
+</tr>
+<tr>
+<td>T6</td>
+<td>6-point degree-4 rule (Dunavant)</td>
+</tr>
+<tr>
+<td>Q4</td>
+<td>2×2 Gauss</td>
+</tr>
+<tr>
+<td>Q8</td>
+<td>3×3 Gauss</td>
+</tr>
+<tr>
+<td>L2</td>
+<td>2-point Gauss</td>
+</tr>
+<tr>
+<td>L3</td>
+<td>3-point Gauss</td>
+</tr>
+</tbody>
+</table>
+<p>Dunavant degree 4, in area coordinates, weights given for reference area ½:</p>
+<ul>
+<li>a = 0.445948490915965, b = 0.108103018168070, w = 0.223381589678011 / 2;
+  points (a,a),(a,b),(b,a) as (ξ,η)</li>
+<li>a = 0.091576213509771, b = 0.816847572980459, w = 0.109951743655322 / 2;
+  points (a,a),(a,b),(b,a)</li>
+</ul>
+<p>Use the same rule for K, C and F of an element type (keeps the code simple and is exact or
+better for all terms on straight-sided elements).</p>
+<h3 id="lumped-capacitance-option">Lumped capacitance (option)<a class="headerlink" href="#lumped-capacitance-option" title="Permanent link">&para;</a></h3>
+<ul>
+<li>T3, Q4: row-sum, C_ii = Σ_j C_ij.</li>
+<li>T6, Q8: HRZ lumping, C_ii = C_ii(consistent) · (Σ_ij C_ij) / (Σ_k C_kk).
+  Never use row-sum for quadratic elements (gives zero or negative corner terms).</li>
+</ul>
+<h2 id="sec-4">§4 Fixed temperatures<a class="headerlink" href="#sec-4" title="Permanent link">&para;</a></h2>
+<p>Partition DOFs into free (f) and prescribed (p). Solve
+K_ff T_f = F_f − K_fp T̄_p. Never use the penalty method.
+Reaction heat flow at prescribed nodes (positive = heat entering the body through the
+constraint) for the transient system:</p>
+<p>R_p = (C Ṫ + K T − F)_p</p>
+<h2 id="sec-5">§5 Nonlinear steady solution<a class="headerlink" href="#sec-5" title="Permanent link">&para;</a></h2>
+<p>Residual at free DOFs: <strong>r(T) = F(T) − K(T) T</strong> (K includes convection and radiation
+tangent-free parts; F includes all load vectors). Radiation to ambient contributes to r</p>
+<p>r_rad = −Σ_gp ε σ ((N·T)⁴ − T∞⁴) Nᵀ g |J_s| w</p>
+<p>and to the tangent</p>
+<p>K_rad = Σ_gp 4 ε σ (N·T)³ NᵀN g |J_s| w</p>
+<p>Iteration (modified Newton — property derivatives dk/dT, dh/dT are deliberately omitted
+from the tangent):</p>
+<ol>
+<li>Assemble K(Tⁱ), F(Tⁱ), K_rad(Tⁱ), r(Tⁱ) with properties and coefficients at Tⁱ.</li>
+<li>Solve (K + K_rad)_ff ΔT_f = r_f.</li>
+<li>Line search: s = 1; while ‖r(Tⁱ + sΔT)‖ &gt; (1 − 1e-4·s)‖r(Tⁱ)‖ and s &gt; 1/32: s ← s/2.</li>
+<li>Tⁱ⁺¹ = Tⁱ + sΔT.</li>
+<li>Converged when ‖r_f‖₂ ≤ rtol · F_ref <strong>and</strong> ‖sΔT‖∞ ≤ ttol.
+   F_ref = max(‖F‖₂, ‖K T‖₂, 1e-12). Defaults rtol = 1e-6, ttol = 1e-4 K, max 30 iterations.</li>
+<li>Not converged after the limit → raise <code>ConvergenceError</code> (steady) or cut the step (transient).</li>
+</ol>
+<p>A problem is <strong>linear</strong> when no property, coefficient or load depends on T and there is no
+radiation. Detect this once; a linear problem takes exactly one solve with no iteration.</p>
+<p>If any temperature becomes ≤ 0 K during iteration, treat the iteration as failed
+(halve the line-search step; if that fails, raise).</p>
+<h2 id="sec-6">§6 Transient solution (θ-method)<a class="headerlink" href="#sec-6" title="Permanent link">&para;</a></h2>
+<p>With g(T, t) = F(T, t) − K(T) T − (radiation term) the "heat-flow imbalance", the step from
+t_n to t_{n+1} = t_n + Δt solves for T_{n+1}:</p>
+<p><strong>R(T_{n+1}) = C(T_θ) (T_{n+1} − T_n)/Δt − θ g(T_{n+1}, t_{n+1}) − (1−θ) g(T_n, t_n) = 0</strong></p>
+<p>with T_θ = θ T_{n+1} + (1−θ) T_n used only to evaluate ρc.
+Tangent: <strong>A = C/Δt + θ (K + K_rad)</strong> evaluated at the current iterate.
+Newton update: A_ff ΔT_f = −R_f. Line search and convergence test as in §5, with
+F_ref = max(‖C(T_{n+1}−T_n)/Δt‖₂, ‖F‖₂, ‖K T‖₂, 1e-12).</p>
+<ul>
+<li>θ = 1 backward Euler (<strong>default</strong>; unconditionally stable, no oscillation)</li>
+<li>θ = 2/3 Galerkin</li>
+<li>θ = 1/2 Crank–Nicolson (second order; may oscillate after a thermal shock)</li>
+</ul>
+<p>g(T_n, t_n) is stored from the end of the previous step, not recomputed. At a step where a
+prescribed temperature or a load jumps discontinuously, use θ = 1 for that one step.</p>
+<p>Prescribed temperatures: set T_{n+1,p} = T̄(t_{n+1}) before the first iteration.</p>
+<p>Linear case: A is constant while Δt is constant — factorise once and reuse (<code>splu</code> object
+cached, keyed on Δt).</p>
+<h3 id="sec-6-1">§6.1 Automatic time stepping<a class="headerlink" href="#sec-6-1" title="Permanent link">&para;</a></h3>
+<p>After a converged step compute the predictor T_pred = T_n + (Δt/Δt_prev)(T_n − T_{n−1})
+(for the first step skip the error test) and the error</p>
+<p>e = ‖T_{n+1} − T_pred‖∞ / max(T_range, 1 K),  T_range = max(T) − min(T) over the model</p>
+<ul>
+<li>If e &gt; 4·tol: reject the step, Δt ← Δt/2, redo.</li>
+<li>Otherwise accept and set Δt_next = Δt · clip(0.9 √(tol/e), 0.5, 2.0).</li>
+<li>Default tol = 0.02. Clamp to [Δt_min, Δt_max].</li>
+<li>Newton failure: Δt ← Δt/4, redo. If Δt &lt; Δt_min: raise <code>ConvergenceError</code>.</li>
+<li>Always shorten a step so that it lands exactly on the next <strong>mandatory time</strong>: every
+  requested output time, every breakpoint of every load table, and the end time.</li>
+<li>Also limit the step so the largest nodal change ≤ <code>max_dT_per_step</code> if the user set it.</li>
+</ul>
+<p>Suggested initial step (shown in the GUI): Δt₀ = h_min² / (4 α_max), α = k/(ρc),
+h_min = smallest element edge length.</p>
+<p>Oscillation warning: if consistent capacitance is used and Δt &lt; h² ρc /(6k) for more than
+5% of elements, log a warning recommending lumped capacitance or a finer mesh.</p>
+<h2 id="sec-7">§7 Recovered quantities<a class="headerlink" href="#sec-7" title="Permanent link">&para;</a></h2>
+<ul>
+<li>Gradient at any element point: ∇T = B T_e. Flux q = −D ∇T.</li>
+<li>Nodal flux: evaluate q at each element's own nodes (B at the node's local coordinates),
+  then average the contributions of all elements sharing the node <strong>that belong to the same
+  region</strong>. A node on a material interface therefore has one flux value per region.</li>
+<li>Element flux: value at the element centroid.</li>
+<li>Heat flow through a boundary set [W] (positive out of the body):<ul>
+<li>convection set: Σ_gp h (T − T∞) g |J_s| w</li>
+<li>radiation set: Σ_gp εσ(T⁴ − T∞⁴) g |J_s| w</li>
+<li>flux set: −Σ_gp q̄ g |J_s| w</li>
+<li>fixed-temperature set: −Σ R_p over its nodes (§4)</li>
+</ul>
+</li>
+<li>Stored energy rate: Ė = Σ (C Ṫ), with Ṫ = (T_{n+1} − T_n)/Δt.</li>
+<li><strong>Energy balance:</strong> (generation + heat in through all boundaries) − Ė = imbalance.
+  Report imbalance / max(|terms|).</li>
+</ul>
+<h2 id="sec-8">§8 Convection from correlations<a class="headerlink" href="#sec-8" title="Permanent link">&para;</a></h2>
+<p>h = Nu · k_f / L_c. Fluid properties at the <strong>film temperature</strong> T_film = (T_s + T∞)/2
+unless the correlation states otherwise. T_s is the wall temperature of the <em>previous
+nonlinear iteration</em> (lagged), either local (at each integration point; default) or the
+area average over the boundary set (option).</p>
+<p>Re = ρ V L/μ, Pr = μ c_p/k_f, Ra = g β |T_s − T∞| L³ Pr ρ²/μ², g = 9.80665 m/s².
+For ideal gases β = 1/T_film; for liquids β comes from the property table.</p>
+<table>
+<thead>
+<tr>
+<th>ID</th>
+<th>Situation</th>
+<th>Formula</th>
+<th>L_c</th>
+<th>Validity</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>plate_forced_avg</code></td>
+<td>Flat plate, parallel flow, average</td>
+<td>Re ≤ 5e5: Nu = 0.664 Re^½ Pr^⅓; else Nu = (0.037 Re^0.8 − 871) Pr^⅓</td>
+<td>plate length</td>
+<td>Pr ≥ 0.6, Re ≤ 1e8</td>
+</tr>
+<tr>
+<td><code>plate_forced_local</code></td>
+<td>Flat plate, local at distance x from leading edge</td>
+<td>Re_x ≤ 5e5: Nu_x = 0.332 Re_x^½ Pr^⅓; else Nu_x = 0.0296 Re_x^0.8 Pr^⅓</td>
+<td>x</td>
+<td>Pr ≥ 0.6</td>
+</tr>
+<tr>
+<td><code>cylinder_crossflow</code></td>
+<td>Cylinder in cross flow (Churchill–Bernstein)</td>
+<td>Nu = 0.3 + 0.62 Re^½ Pr^⅓ [1+(0.4/Pr)^⅔]^(−¼) [1+(Re/282000)^⅝]^(⅘)</td>
+<td>diameter</td>
+<td>Re·Pr ≥ 0.2</td>
+</tr>
+<tr>
+<td><code>duct_internal</code></td>
+<td>Internal flow, circular or by hydraulic diameter</td>
+<td>see §8.1</td>
+<td>D_h</td>
+<td></td>
+</tr>
+<tr>
+<td><code>vplate_natural</code></td>
+<td>Vertical plate (Churchill–Chu)</td>
+<td>Nu = {0.825 + 0.387 Ra^(1/6) / [1+(0.492/Pr)^(9/16)]^(8/27)}²</td>
+<td>height</td>
+<td>all Ra</td>
+</tr>
+<tr>
+<td><code>inclined_natural</code></td>
+<td>Plate inclined θ from vertical</td>
+<td>as <code>vplate_natural</code> with g → g cos θ</td>
+<td>length</td>
+<td>θ ≤ 60°</td>
+</tr>
+<tr>
+<td><code>hplate_up_natural</code></td>
+<td>Horizontal, hot face up or cold face down</td>
+<td>Ra ≤ 1e7: Nu = 0.54 Ra^¼; else Nu = 0.15 Ra^⅓</td>
+<td>area/perimeter</td>
+<td>1e4 ≤ Ra ≤ 1e11</td>
+</tr>
+<tr>
+<td><code>hplate_down_natural</code></td>
+<td>Horizontal, hot face down or cold face up</td>
+<td>Nu = 0.27 Ra^¼</td>
+<td>area/perimeter</td>
+<td>1e5 ≤ Ra ≤ 1e10</td>
+</tr>
+<tr>
+<td><code>hcyl_natural</code></td>
+<td>Horizontal cylinder (Churchill–Chu)</td>
+<td>Nu = {0.60 + 0.387 Ra^(1/6) / [1+(0.559/Pr)^(9/16)]^(8/27)}²</td>
+<td>diameter</td>
+<td>Ra ≤ 1e12</td>
+</tr>
+<tr>
+<td><code>power_law</code></td>
+<td>User form</td>
+<td>h = C · |T_s − T∞|ⁿ</td>
+<td>—</td>
+<td>—</td>
+</tr>
+</tbody>
+</table>
+<p>For the horizontal-plate pair, pick "up" or "down" automatically at run time from the sign
+of (T_s − T∞) and the declared face direction. Outside a validity range: still evaluate,
+and emit one warning per boundary condition per solve.
+<code>plate_forced_local</code> needs the leading-edge point and flow direction; x is the distance of
+the integration point from the leading edge along the flow direction (minimum x = 1e-6 m).</p>
+<h3 id="sec-8-1">§8.1 Internal duct flow<a class="headerlink" href="#sec-8-1" title="Permanent link">&para;</a></h3>
+<p>Re = ṁ D_h /(A μ), D_h = 4A/P_wet. Properties at the bulk fluid temperature.</p>
+<ul>
+<li>Laminar (Re ≤ 2300): Nu_lam from the table below.</li>
+<li>Turbulent (Re ≥ 4000): Gnielinski
+  Nu = (f/8)(Re − 1000) Pr / [1 + 12.7 (f/8)^½ (Pr^⅔ − 1)], f = (0.790 ln Re − 1.64)⁻²
+  (valid 0.5 ≤ Pr ≤ 2000, Re ≤ 5e6).</li>
+<li>Transition (2300 &lt; Re &lt; 4000): linear interpolation in Re between Nu_lam and
+  Nu_Gnielinski(Re = 4000).</li>
+</ul>
+<table>
+<thead>
+<tr>
+<th>Cross-section</th>
+<th>Nu_lam, constant wall T</th>
+<th>Nu_lam, constant flux</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Circular</td>
+<td>3.66</td>
+<td>4.36</td>
+</tr>
+<tr>
+<td>Parallel plates, both heated</td>
+<td>7.54</td>
+<td>8.23</td>
+</tr>
+<tr>
+<td>Parallel plates, one side insulated</td>
+<td>4.86</td>
+<td>5.39</td>
+</tr>
+<tr>
+<td>Square</td>
+<td>2.98</td>
+<td>3.61</td>
+</tr>
+</tbody>
+</table>
+<p>Default is the constant-wall-temperature value. Optional user selection: Dittus–Boelter,
+Nu = 0.023 Re^0.8 Pr^n, n = 0.4 if wall hotter than fluid, else 0.3 (Re ≥ 1e4).</p>
+<p>Friction factor, all regimes (Churchill 1977), roughness e:
+f = 8 [ (8/Re)¹² + (A + B)^(−1.5) ]^(1/12),
+A = [2.457 ln( 1 / ((7/Re)^0.9 + 0.27 e/D_h) )]¹⁶, B = (37530/Re)¹⁶</p>
+<p>Pressure drop of a duct of length L with minor-loss coefficient K_minor:
+Δp = (f L/D_h + K_minor) · ρ V²/2, V = ṁ/(ρ A).</p>
+<h2 id="sec-9">§9 Flow solver<a class="headerlink" href="#sec-9" title="Permanent link">&para;</a></h2>
+<h3 id="sec-9-1">§9.1 Stream (fluid temperature along a wall)<a class="headerlink" href="#sec-9-1" title="Permanent link">&para;</a></h3>
+<p>A stream is a 1D fluid path with mass flow ṁ [kg/s], inlet temperature T_in, flow area A,
+wetted perimeter P_wet (for D_h), fluid, and one or more <strong>wall boundary sets</strong> that it
+cools or heats. The stream is divided into N cells along its path coordinate s. Fluid node
+0 is the inlet (prescribed T_in); fluid node j is the outlet of cell j−1. Fluid nodes are
+extra DOFs appended after the mesh nodes.</p>
+<p>Each wall edge element i belongs to the cell containing the s-coordinate of its midpoint
+(s = projection of the midpoint onto the stream path polyline). Per edge element:</p>
+<ul>
+<li>conductance G_i = h_i · ∫ g ds over the edge (h from §8.1 using the cell's upstream
+  fluid-node temperature for properties, lagged)</li>
+<li>wall temperature T_w,i = Σ_j w_j T_j with w_j = ∫ N_j g ds / ∫ g ds</li>
+</ul>
+<p>Per cell with upstream fluid node u and downstream node d:</p>
+<ul>
+<li>G = Σ G_i, T̄_w = Σ G_i T_w,i / G, NTU = G /(ṁ c_p)</li>
+<li>φ = (1 − e^(−NTU)) / NTU  (φ = 1 when NTU &lt; 1e-8)</li>
+<li>Effective fluid temperature seen by the wall: <strong>T_f* = (1 − φ) T̄_w + φ T_u</strong></li>
+<li>Heat from wall edge i to fluid: Q_i = G_i (T_w,i − T_f*)</li>
+<li>Fluid energy equation: ṁ c_p (T_d − T_u) − Σ_i Q_i = 0</li>
+</ul>
+<p>Q_i is removed from the wall nodes of edge i with the same weights w_j. This scheme is
+exact for a constant wall temperature per cell, cannot oscillate for any NTU, and conserves
+energy exactly. The resulting matrix rows are linear in the unknown temperatures (for
+frozen h and c_p) and <strong>unsymmetric</strong>. Fluid thermal storage is neglected (quasi-steady
+fluid) — state this in the user guide.</p>
+<p>Matrix contributions for one cell, written as a conductance-type matrix K_s such that the
+heat <em>leaving</em> each DOF is K_s·T: for wall DOF a (weight w_a,i on edge i):
+row a gets Σ_i w_a,i G_i (T_w,i − (1−φ) T̄_w − φ T_u), and row d gets
+ṁ c_p (T_d − T_u) − Σ_i G_i (T_w,i − (1−φ) T̄_w − φ T_u). Expand T_w,i and T̄_w into nodal
+weights to obtain the coefficients. Implement this by building the small dense cell matrix
+with NumPy and scattering it.</p>
+<p>A stream may also be <strong>through-plane</strong> (planar models: flow perpendicular to the model
+plane, such as a cooling hole seen in cross-section). Then the fluid temperature is uniform
+on the boundary set and equals the specified bulk temperature; the stream only supplies h
+from §8.1. No fluid DOFs are created.</p>
+<h3 id="sec-9-2">§9.2 Network (flow distribution)<a class="headerlink" href="#sec-9-2" title="Permanent link">&para;</a></h3>
+<p>Nodes carry pressure; branches are ducts (§8.1 pressure drop), minor-loss elements, or
+fixed-flow sources. Boundary conditions: prescribed pressure at a node, or prescribed mass
+flow into a node. Unknowns: nodal pressures.</p>
+<p>Branch law: ṁ = sign(Δp) · A √( 2 ρ |Δp| / (f L/D_h + K_minor) ).
+Linearise as ṁ = c (p_i − p_j) with c = ṁ/Δp from the previous iterate (start with
+laminar f = 64/Re assumption at Re = 1000). Iterate: assemble Σ c (p_i − p_j) = source at
+each node, solve, update ṁ and f, under-relax c with factor 0.5, until the largest relative
+change in any ṁ &lt; 1e-6 (max 200 iterations). Each branch's ṁ then feeds the stream
+attached to it. Fluid properties in the network use each branch's mean stream temperature;
+the hydraulic and thermal solutions are alternated inside the nonlinear loop
+(hydraulics updated at most once per nonlinear iteration, and only when a branch's mean
+temperature has changed by more than 1 K).</p>
+<h2 id="sec-10">§10 Enclosure radiation (grey, diffuse)<a class="headerlink" href="#sec-10" title="Permanent link">&para;</a></h2>
+<div class="admonition warning">
+<p class="admonition-title">Not available in this version</p>
+<p>Enclosure radiation (surface-to-surface radiation, §10 to §10.2) is not implemented in this version (milestone M9 is on hold). The theory is kept
+here for completeness; no solver module uses it yet.</p>
+</div>
+<p>Faces = boundary edge elements of the enclosure, i = 1…n, length-based area A_i = ∫ g ds,
+emissivity ε_i, face temperature T_i = Σ w_j T_j (weights as in §9.1), E_b,i = σ T_i⁴.
+View-factor matrix F (n×n). Open enclosures: F_i∞ = 1 − Σ_j F_ij radiates to a black
+ambient at T_∞.</p>
+<p>With E = diag(ε): solve <strong>(I − (I − E) F) J = E·E_b + (I − E) F_∞ σT_∞⁴</strong> for radiosity J.
+Net flux leaving face i: q_i = J_i − Σ_j F_ij J_j − F_i∞ σ T_∞⁴.</p>
+<p>Precompute once per mesh: M = (I − F)(I − (I−E)F)⁻¹ E and the ambient vector. Then
+q = M E_b + q_∞, heat Q_i = A_i q_i, distributed to the face's nodes with weights w_j.
+Residual contribution: −Q. Tangent: ∂Q_i/∂T_j = A_i M_ij 4σT_j³ (dense block; insert it
+fully when n ≤ 3000, otherwise only its diagonal).</p>
+<h3 id="sec-10-1">§10.1 View factors, planar<a class="headerlink" href="#sec-10-1" title="Permanent link">&para;</a></h3>
+<p>For two straight segments i (endpoints a1,a2) and j (endpoints b1,b2) that fully see each
+other (Hottel crossed strings):</p>
+<p>F_ij = [ |a1b2| + |a2b1| − |a1b1| − |a2b2| ] / (2 L_i)   (use the absolute value;
+  "crossed" strings are the two that intersect)</p>
+<p>Visibility: a pair is <em>facing</em> if each midpoint lies on the outward-normal side of the
+other. A pair is <em>fully visible</em> if facing and none of the four end-to-end sight lines
+intersects any other enclosure segment. If facing but not fully visible, subdivide both
+segments into m = 8 sub-segments, apply crossed strings to each fully visible sub-pair
+(testing sight lines between sub-segment endpoints), and sum:
+F_ij = Σ_sub L_sub,i F_sub / L_i. Use a uniform grid or <code>shapely.STRtree</code>-free hand-written
+segment-intersection test vectorised with NumPy.</p>
+<p>Afterwards enforce reciprocity (A_i F_ij ← ½(A_i F_ij + A_j F_ji)) and, for closed
+enclosures, scale rows so Σ_j F_ij = 1 (repeat both steps 5 times).</p>
+<h3 id="sec-10-2">§10.2 View factors, axisymmetric (task M9.5)<a class="headerlink" href="#sec-10-2" title="Permanent link">&para;</a></h3>
+<p>Each face is a conical ring. Compute F_ij by numerical integration of the 3D kernel
+cosθ_i cosθ_j /(π r²) over the azimuth of ring j (and sub-divisions of both generators),
+with blockage tested by intersecting each ray with every other ring's cone frustum.
+Validate against concentric-cylinder and coaxial-disk closed forms (V-22).</p>
+<h2 id="sec-11">§11 Thermal contact resistance<a class="headerlink" href="#sec-11" title="Permanent link">&para;</a></h2>
+<p>Along an interface curve the mesh has duplicated nodes (one set per side). For each pair of
+matching edge elements with contact conductance h_c [W/m²·K] add, over the 2n interface
+DOFs [side A; side B]:</p>
+<p>K_c = Σ_gp h_c g |J_s| w · [[NᵀN, −NᵀN], [−NᵀN, NᵀN]]</p>
+<h2 id="sec-12">§12 Phase change (apparent heat capacity)<a class="headerlink" href="#sec-12" title="Permanent link">&para;</a></h2>
+<div class="admonition warning">
+<p class="admonition-title">Not available in this version</p>
+<p>Phase change (apparent heat capacity) is not implemented in this version (task M10.2 is on hold). The theory is kept
+here for completeness; no solver module uses it yet.</p>
+</div>
+<p>Latent heat L released between T_sol and T_liq is modelled by replacing ρc with
+ρc + ρL/(T_liq − T_sol) for T_sol ≤ T ≤ T_liq. Require T_liq − T_sol ≥ 1 K, force lumped
+capacitance and backward Euler, and limit max_dT_per_step to (T_liq − T_sol)/2.</p>
+              
+            </div>
+          </div><footer>
+    <div class="rst-footer-buttons" role="navigation" aria-label="Footer Navigation">
+        <a href="../correlations/" class="btn btn-neutral float-left" title="Correlations"><span class="icon icon-circle-arrow-left"></span> Previous</a>
+        <a href="../verification/" class="btn btn-neutral float-right" title="Verification">Next <span class="icon icon-circle-arrow-right"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <!-- Copyright etc -->
+  </div>
+
+  Built with <a href="https://www.mkdocs.org/">MkDocs</a> using a <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>.
+</footer>
+          
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+
+  <div class="rst-versions" role="note" aria-label="Versions">
+  <span class="rst-current-version" data-toggle="rst-current-version">
+    
+        <span>
+          <a href="https://github.com/dilleyrd/thermal-fea" class="fa fa-github" style="color: #fcfcfc"> GitHub</a>
+        </span>
+    
+    
+      <span><a href="../correlations/" style="color: #fcfcfc">&laquo; Previous</a></span>
+    
+    
+      <span><a href="../verification/" style="color: #fcfcfc">Next &raquo;</a></span>
+    
+  </span>
+</div>
+    <script src="../js/jquery-3.6.0.min.js"></script>
+    <script>var base_url = "..";</script>
+    <script src="../js/theme_extra.js"></script>
+    <script src="../js/theme.js"></script>
+      <script src="../search/main.js"></script>
+    <script>
+        jQuery(function () {
+            SphinxRtdTheme.Navigation.enable(true);
+        });
+    </script>
+
+</body>
+</html>

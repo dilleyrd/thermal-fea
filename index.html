@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="description" content="User guide of ThermalFEA, a 2D steady-state and transient thermal finite-element program." /><link rel="canonical" href="https://dilleyrd.github.io/thermal-fea/" />
+      <link rel="shortcut icon" href="img/favicon.ico" />
+    <title>ThermalFEA user guide</title>
+    <link rel="stylesheet" href="css/theme.css" />
+    <link rel="stylesheet" href="css/theme_extra.css" />
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" />
+    
+      <script>
+        // Current page data
+        var mkdocs_page_name = "Home";
+        var mkdocs_page_input_path = "index.md";
+        var mkdocs_page_url = "/thermal-fea/";
+      </script>
+    
+    <!--[if lt IE 9]>
+      <script src="js/html5shiv.min.js"></script>
+    <![endif]-->
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
+      <script>hljs.highlightAll();</script> 
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side stickynav">
+    <div class="wy-side-scroll">
+      <div class="wy-side-nav-search">
+          <a href="." class="icon icon-home"> ThermalFEA user guide
+        </a><div role="search">
+  <form id ="rtd-search-form" class="wy-form" action="./search.html" method="get">
+      <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" title="Type search term here" />
+  </form>
+</div>
+      </div>
+
+      <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul class="current">
+                <li class="toctree-l1 current"><a class="reference internal current" href="#">Home</a>
+    <ul class="current">
+    <li class="toctree-l2"><a class="reference internal" href="#what-the-program-does">What the program does</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#what-the-program-does-not-do">What the program does not do</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#map-of-the-guide">Map of the guide</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#conventions-in-this-guide">Conventions in this guide</a>
+    </li>
+    </ul>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="installation/">Installation</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="getting-started/">Getting started</a>
+                </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Tutorials</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="tutorials/t4-plate/">NAFEMS T4 steady plate</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="tutorials/fin-quench/">Transient quench of a fin</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="tutorials/cold-plate/">Cold plate with a water stream</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Reference</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="units/">Units</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="materials/">Materials</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="correlations/">Correlations</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="theory/">Theory</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="verification/">Verification</a>
+                  </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="limitations/">Limitations</a>
+                </li>
+              </ul>
+      </div>
+    </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+      <nav class="wy-nav-top" role="navigation" aria-label="Mobile navigation menu">
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href=".">ThermalFEA user guide</a>
+        
+      </nav>
+      <div class="wy-nav-content">
+        <div class="rst-content"><div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="." class="icon icon-home" aria-label="Docs"></a></li>
+      <li class="breadcrumb-item active">Home</li>
+    <li class="wy-breadcrumbs-aside">
+    </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+            <div class="section" itemprop="articleBody">
+              
+                <h1 id="thermalfea">ThermalFEA<a class="headerlink" href="#thermalfea" title="Permanent link">&para;</a></h1>
+<p>ThermalFEA is a desktop program for two-dimensional steady-state and transient heat
+conduction by the finite-element method. You draw or import a geometry, mesh it, apply
+loads and boundary conditions, solve, and look at the results. Everything the program does
+in the window can also be done from a Python script or the command line.</p>
+<p>This guide is for an engineer who has used a finite-element program before but has not
+seen this one.</p>
+<h2 id="what-the-program-does">What the program does<a class="headerlink" href="#what-the-program-does" title="Permanent link">&para;</a></h2>
+<ul>
+<li><strong>Analysis:</strong> steady-state and transient, linear and nonlinear (temperature-dependent
+  properties, radiation, convection correlations).</li>
+<li><strong>Models:</strong> planar models (with a thickness per region) and axisymmetric models
+  (x is the radius, y is the axis).</li>
+<li><strong>Elements:</strong> 3-node and 6-node triangles, 4-node and 8-node quadrilaterals.</li>
+<li><strong>Materials:</strong> isotropic or orthotropic conductivity, density and specific heat, each
+  constant or a table against temperature. A built-in library of solids and fluids is
+  included (<a href="materials/">Materials</a>).</li>
+<li><strong>Geometry:</strong> points, lines, arcs, circles, rectangles, polygons and splines; union,
+  cut and intersect; translate, rotate, mirror and scale; import of STEP, BREP and DXF
+  files.</li>
+<li><strong>Meshing:</strong> free meshing with triangles or quad-dominant meshes, structured meshing,
+  size control, linear or quadratic elements and a quality report. Meshing uses gmsh.</li>
+<li><strong>Loads and boundary conditions:</strong> fixed temperature, heat flux, heat flow in watts,
+  volumetric heat generation, convection (a given coefficient, or a coefficient from a
+  correlation), radiation to the ambient, thermal contact resistance and initial
+  conditions. A load value may be a constant, a table against time, or an expression of
+  time, position and temperature.</li>
+<li><strong>Convection library:</strong> forced and natural convection correlations for plates,
+  cylinders and ducts, with temperature-dependent fluid properties
+  (<a href="correlations/">Correlations</a>).</li>
+<li><strong>Flow solver:</strong> one-dimensional streams and pipe networks. From a given flow rate the
+  program computes velocity, Reynolds number, heat-transfer coefficient, pressure drop and
+  the rise of the fluid temperature along the wall, coupled to the solid.</li>
+<li><strong>Post-processing:</strong> contour and vector plots, nodal temperature against time, plots
+  along a path, probes, minimum and maximum, reaction heat flows, the energy balance,
+  animation, and export to CSV, VTK (ParaView) and PNG.</li>
+<li><strong>Files:</strong> the model is a JSON file (<code>.tfea</code>); results are stored beside it in an HDF5
+  file (<code>&lt;model&gt;.tfea.h5</code>).</li>
+</ul>
+<h2 id="what-the-program-does-not-do">What the program does not do<a class="headerlink" href="#what-the-program-does-not-do" title="Permanent link">&para;</a></h2>
+<ul>
+<li>No three-dimensional analysis, no flow simulation (CFD), no structural or thermal-stress
+  coupling, no other physics, no radiation through participating media, no parallel
+  solving.</li>
+<li>Enclosure (surface-to-surface) radiation, phase change (latent heat) and the HTML report
+  are not available in this version; they are on hold.</li>
+<li>There is no packaged Windows installer yet.</li>
+</ul>
+<p><a href="limitations/">Limitations</a> lists these and the smaller known gaps in one place.</p>
+<h2 id="map-of-the-guide">Map of the guide<a class="headerlink" href="#map-of-the-guide" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>Page</th>
+<th>What it holds</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><a href="installation/">Installation</a></td>
+<td>Requirements, installing, starting the program, the command line</td>
+</tr>
+<tr>
+<td><a href="getting-started/">Getting started</a></td>
+<td>The workflow in the window and from the command line</td>
+</tr>
+<tr>
+<td>Tutorials</td>
+<td><a href="tutorials/t4-plate/">NAFEMS T4 steady plate</a>, <a href="tutorials/fin-quench/">transient quench of a fin</a>, <a href="tutorials/cold-plate/">cold plate with a water stream</a></td>
+</tr>
+<tr>
+<td><a href="units/">Units</a></td>
+<td>The unit systems and what they change</td>
+</tr>
+<tr>
+<td><a href="materials/">Materials</a></td>
+<td>The built-in material library</td>
+</tr>
+<tr>
+<td><a href="correlations/">Correlations</a></td>
+<td>Every convection correlation, with its validity range</td>
+</tr>
+<tr>
+<td><a href="theory/">Theory</a></td>
+<td>Every equation the program implements</td>
+</tr>
+<tr>
+<td><a href="verification/">Verification</a></td>
+<td>The benchmark cases the program is checked against and their tolerances</td>
+</tr>
+<tr>
+<td><a href="limitations/">Limitations</a></td>
+<td>What is not available or not yet reviewed</td>
+</tr>
+</tbody>
+</table>
+<p>The pages Units, Materials, Correlations, Theory and Verification are generated from the
+project's own documents and code, so they cannot drift from what the program does.</p>
+<h2 id="conventions-in-this-guide">Conventions in this guide<a class="headerlink" href="#conventions-in-this-guide" title="Permanent link">&para;</a></h2>
+<ul>
+<li>Values are SI (metres, seconds, kelvin, watts) unless a page says otherwise. The program
+  can show other units; see <a href="units/">Units</a>. Files always store SI.</li>
+<li>A heat flow is reported as positive when heat enters the body.</li>
+<li>Menu entries are written as in the program, for example File &gt; Examples.</li>
+</ul>
+              
+            </div>
+          </div><footer>
+    <div class="rst-footer-buttons" role="navigation" aria-label="Footer Navigation">
+        <a href="installation/" class="btn btn-neutral float-right" title="Installation">Next <span class="icon icon-circle-arrow-right"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <!-- Copyright etc -->
+  </div>
+
+  Built with <a href="https://www.mkdocs.org/">MkDocs</a> using a <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>.
+</footer>
+          
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+
+  <div class="rst-versions" role="note" aria-label="Versions">
+  <span class="rst-current-version" data-toggle="rst-current-version">
+    
+        <span>
+          <a href="https://github.com/dilleyrd/thermal-fea" class="fa fa-github" style="color: #fcfcfc"> GitHub</a>
+        </span>
+    
+    
+    
+      <span><a href="installation/" style="color: #fcfcfc">Next &raquo;</a></span>
+    
+  </span>
+</div>
+    <script src="js/jquery-3.6.0.min.js"></script>
+    <script>var base_url = ".";</script>
+    <script src="js/theme_extra.js"></script>
+    <script src="js/theme.js"></script>
+      <script src="search/main.js"></script>
+    <script>
+        jQuery(function () {
+            SphinxRtdTheme.Navigation.enable(true);
+        });
+    </script>
+
+</body>
+</html>
+
+<!--
+MkDocs version : 1.6.1
+Build Date UTC : 2026-11-19 04:21:18.665376+00:00
+-->

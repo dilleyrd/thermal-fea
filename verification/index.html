@@ -1,0 +1,550 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><link rel="canonical" href="https://dilleyrd.github.io/thermal-fea/verification/" />
+      <link rel="shortcut icon" href="../img/favicon.ico" />
+    <title>Verification - ThermalFEA user guide</title>
+    <link rel="stylesheet" href="../css/theme.css" />
+    <link rel="stylesheet" href="../css/theme_extra.css" />
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" />
+    
+      <script>
+        // Current page data
+        var mkdocs_page_name = "Verification";
+        var mkdocs_page_input_path = "verification.md";
+        var mkdocs_page_url = "/thermal-fea/verification/";
+      </script>
+    
+    <!--[if lt IE 9]>
+      <script src="../js/html5shiv.min.js"></script>
+    <![endif]-->
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
+      <script>hljs.highlightAll();</script> 
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side stickynav">
+    <div class="wy-side-scroll">
+      <div class="wy-side-nav-search">
+          <a href=".." class="icon icon-home"> ThermalFEA user guide
+        </a><div role="search">
+  <form id ="rtd-search-form" class="wy-form" action="../search.html" method="get">
+      <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" title="Type search term here" />
+  </form>
+</div>
+      </div>
+
+      <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="..">Home</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../installation/">Installation</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../getting-started/">Getting started</a>
+                </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Tutorials</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../tutorials/t4-plate/">NAFEMS T4 steady plate</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../tutorials/fin-quench/">Transient quench of a fin</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../tutorials/cold-plate/">Cold plate with a water stream</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Reference</span></p>
+              <ul class="current">
+                  <li class="toctree-l1"><a class="reference internal" href="../units/">Units</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../materials/">Materials</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../correlations/">Correlations</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../theory/">Theory</a>
+                  </li>
+                  <li class="toctree-l1 current"><a class="reference internal current" href="#">Verification</a>
+    <ul class="current">
+    <li class="toctree-l2"><a class="reference internal" href="#which-cases-are-active">Which cases are active</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#the-cases">The cases</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#steady-conduction">Steady conduction</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#nonlinear-steady">Nonlinear steady</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#transient">Transient</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#enclosure-radiation">Enclosure radiation</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#flow-and-convection">Flow and convection</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#mesh-convergence-and-robustness">Mesh convergence and robustness</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#extensibility-guard">Extensibility guard</a>
+    </li>
+    </ul>
+                  </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../limitations/">Limitations</a>
+                </li>
+              </ul>
+      </div>
+    </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+      <nav class="wy-nav-top" role="navigation" aria-label="Mobile navigation menu">
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="..">ThermalFEA user guide</a>
+        
+      </nav>
+      <div class="wy-nav-content">
+        <div class="rst-content"><div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href=".." class="icon icon-home" aria-label="Docs"></a></li>
+          <li class="breadcrumb-item">Reference</li>
+      <li class="breadcrumb-item active">Verification</li>
+    <li class="wy-breadcrumbs-aside">
+    </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+            <div class="section" itemprop="articleBody">
+              
+                <h1 id="verification-cases">Verification cases<a class="headerlink" href="#verification-cases" title="Permanent link">&para;</a></h1>
+<div class="admonition info">
+<p class="admonition-title">Generated page</p>
+<p>This page is generated from <code>docs/verification.md</code> by <code>scripts/build_guide.py</code>.
+Do not edit it here: change the source and run the script again.</p>
+</div>
+<h2 id="which-cases-are-active">Which cases are active<a class="headerlink" href="#which-cases-are-active" title="Permanent link">&para;</a></h2>
+<p>The program is checked against the cases below: each has an analytic or published answer and a tolerance. The tolerances are part of the specification and are never loosened to make a case pass. The computed results are not part of this page.</p>
+<p>These cases are specified but <strong>not active in this version</strong>, because the feature they check is on hold:</p>
+<ul>
+<li>V-22a to V-22d: enclosure radiation (milestone M9, on hold)</li>
+<li>V-23: enclosure radiation (milestone M9, on hold)</li>
+<li>V-24: enclosure radiation (milestone M9, on hold)</li>
+<li>V-36: phase change (task M10.2, on hold)</li>
+</ul>
+<p>All other cases are active in this version. The cases V-33 and V-37 have no runnable script in <code>examples/</code>; they are built inside their tests. V-25 and V-26 are checks of functions, not of a model.</p>
+<h2 id="the-cases">The cases<a class="headerlink" href="#the-cases" title="Permanent link">&para;</a></h2>
+<p>Each case becomes one test in <code>tests/verification/test_vNN_*.py</code> and one runnable script in
+<code>examples/</code>. Tests compute the analytic answer from the formula given here — do not paste
+in pre-computed numbers, except the published NAFEMS targets.</p>
+<p>Unless stated: planar, thickness 1 m, k = 50 W/m·K, ρ = 7800, c = 500, temperatures in K.
+"1D" cases are modelled as a 2D strip (length L in x, height L/10) with the long sides
+adiabatic. Run every case with <strong>all four element types</strong> unless noted. Tolerance is on the
+relative error against the analytic value, with the mesh size given.</p>
+<h2 id="steady-conduction">Steady conduction<a class="headerlink" href="#steady-conduction" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>ID</th>
+<th>Problem</th>
+<th>Analytic answer</th>
+<th>Mesh</th>
+<th>Tol</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>V-01</td>
+<td>Slab L = 0.1, T(0) = 400, T(L) = 300</td>
+<td>T(x) linear; flux q = k ΔT/L everywhere</td>
+<td>10 elements along x</td>
+<td>1e-10</td>
+</tr>
+<tr>
+<td>V-02</td>
+<td>Slab, T(0) = 400, convection at x = L: h = 100, T∞ = 300</td>
+<td>T(L) = T∞ + (T0 − T∞)/(1 + hL/k); heat flow = k (T0 − T(L))/L</td>
+<td>10</td>
+<td>1e-10</td>
+</tr>
+<tr>
+<td>V-03</td>
+<td>Slab, both faces 300 K, Q = 1e6 W/m³</td>
+<td>T(x) = 300 + Q/(2k) · x (L − x)</td>
+<td>20</td>
+<td>linear 1e-3, quadratic 1e-10</td>
+</tr>
+<tr>
+<td>V-04</td>
+<td>Slab, flux q̄ = 5000 W/m² in at x = 0, T(L) = 300</td>
+<td>T(0) = 300 + q̄ L/k</td>
+<td>10</td>
+<td>1e-10</td>
+</tr>
+<tr>
+<td>V-05</td>
+<td>Hollow cylinder, axisymmetric, r_i = 0.05, r_o = 0.1, T_i = 400, T_o = 300</td>
+<td>T(r) = T_i − (T_i − T_o) ln(r/r_i)/ln(r_o/r_i); heat flow per height = 2πk (T_i − T_o)/ln(r_o/r_i)</td>
+<td>40 radial</td>
+<td>linear 1e-3, quadratic 1e-5</td>
+</tr>
+<tr>
+<td>V-06</td>
+<td>Same cylinder modelled <strong>planar</strong> as a quarter annulus (symmetry on the cut edges)</td>
+<td>same T(r); heat flow ×¼</td>
+<td>size 0.004</td>
+<td>2e-3</td>
+</tr>
+<tr>
+<td>V-07</td>
+<td>Solid cylinder, axisymmetric, radius R = 0.05, Q = 1e6, surface convection h = 500, T∞ = 300</td>
+<td>T(r) = T∞ + QR/(2h) + Q (R² − r²)/(4k)</td>
+<td>20 radial</td>
+<td>linear 1e-3</td>
+</tr>
+<tr>
+<td>V-08</td>
+<td>Straight fin, L = 0.1, thickness 0.004, base 400 K, h = 50 on both long faces and tip, T∞ = 300, k = 200. Model the fin in 2D with its real thickness.</td>
+<td>1D fin with convecting tip: θ/θ_b = [cosh m(L−x) + (h/mk) sinh m(L−x)] / [cosh mL + (h/mk) sinh mL], m = √(2h/(k·thickness))</td>
+<td>size 0.001</td>
+<td>5e-3 (1D theory is approximate; Bi is small)</td>
+</tr>
+<tr>
+<td>V-09</td>
+<td>Rectangle a × b = 1 × 1, three sides at 300 K, top side at 400 K</td>
+<td>θ(x,y) = (2/π) Σ_{n=1..199} [((−1)^{n+1} + 1)/n] sin(nπx/a) sinh(nπy/a)/sinh(nπb/a), T = 300 + 100 θ. Check at (0.5, 0.5) (θ = 0.25) and (0.5, 0.75)</td>
+<td>size 0.02</td>
+<td>1e-3 at interior points</td>
+</tr>
+<tr>
+<td>V-10</td>
+<td><strong>NAFEMS T4.</strong> Rectangle 0.6 (x) × 1.0 (y), k = 52. Bottom edge 100 °C; left edge adiabatic; right and top edges convection h = 750, T∞ = 0 °C</td>
+<td>T at (0.6, 0.2) = <strong>18.3 °C</strong></td>
+<td>size 0.05, then 0.025</td>
+<td>within 0.15 °C at the fine mesh</td>
+</tr>
+<tr>
+<td>V-11</td>
+<td>Two-layer slab, layers 0.05 m each, k1 = 50, k2 = 5, T(0) = 400, T(L) = 300</td>
+<td>Series resistance; interface T = 400 − 100·(L1/k1)/(L1/k1 + L2/k2); nodal flux has one value per region at the interface and both equal q</td>
+<td>10 per layer</td>
+<td>1e-10</td>
+</tr>
+<tr>
+<td>V-12</td>
+<td>Orthotropic square 1 × 1, k1 = 50, k2 = 5, material angle 30°, manufactured solution T = 300 + 50 x² + 30 xy + 20 y² imposed on all edges, with Q = −∇·(D∇T) (a constant; compute it from D)</td>
+<td>the manufactured T</td>
+<td>size 0.05, quadratic elements</td>
+<td>1e-9</td>
+</tr>
+</tbody>
+</table>
+<h2 id="nonlinear-steady">Nonlinear steady<a class="headerlink" href="#nonlinear-steady" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>ID</th>
+<th>Problem</th>
+<th>Analytic answer</th>
+<th>Tol</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>V-13</td>
+<td>Slab L = 0.1, T(0) = 400, T(L) = 300, k(T) = k0 (1 + β (T − 300)), k0 = 50, β = 0.01</td>
+<td>Kirchhoff: with U(T) = (T−300) + β (T−300)²/2, U is linear in x. Solve the quadratic for T(x). Flux = k0 (U(400) − U(300))/L</td>
+<td>1e-4, 40 elements</td>
+</tr>
+<tr>
+<td>V-14</td>
+<td><strong>NAFEMS T2.</strong> Bar L = 0.1, k = 55.6, T(0) = 1000 K, far end radiates to 300 K with ε = 0.98, σ = 5.67e-8</td>
+<td>T at radiating end = <strong>927.0 K</strong> (also the root of k (1000 − T)/L = εσ (T⁴ − 300⁴))</td>
+<td>0.1 K</td>
+</tr>
+<tr>
+<td>V-15</td>
+<td>Slab with natural convection: T(0) = 400, face x = L uses <code>vplate_natural</code>, air, T∞ = 300, height 0.5</td>
+<td>Solve the scalar equation k (400 − T_s)/L = h(T_s)(T_s − T∞) with <code>scipy.optimize.brentq</code> using the same correlation function</td>
+<td>1e-5</td>
+</tr>
+</tbody>
+</table>
+<h2 id="transient">Transient<a class="headerlink" href="#transient" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>ID</th>
+<th>Problem</th>
+<th>Analytic answer</th>
+<th>Settings</th>
+<th>Tol</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>V-16</td>
+<td>Lumped body: square 0.01 × 0.01, k = 400, initial 400 K, convection on all four edges h = 20, T∞ = 300 (Bi ≪ 0.1)</td>
+<td>T(t) = T∞ + (T_i − T∞) exp(−h A t /(ρ c V)), A = 0.04·1, V = 1e-4·1; check at t = τ and 3τ, τ = ρcV/(hA)</td>
+<td>fixed Δt = τ/200, θ = 1 then ½</td>
+<td>5e-3 (θ=1), 1e-4 (θ=½)</td>
+</tr>
+<tr>
+<td>V-17</td>
+<td>Slab half-thickness L = 0.05 (symmetry at x = 0), initial 400, convection at x = L: h = 500, T∞ = 300</td>
+<td>θ* = Σ_{n=1..20} C_n exp(−ζ_n² Fo) cos(ζ_n x/L); ζ_n tan ζ_n = Bi (roots by <code>brentq</code> in ((n−1)π, (n−½)π)); C_n = 4 sin ζ_n /(2ζ_n + sin 2ζ_n); Fo = αt/L². Check centre and surface at Fo = 0.2 and 1.0</td>
+<td>40 elements, auto time step</td>
+<td>2e-3</td>
+</tr>
+<tr>
+<td>V-18</td>
+<td>Semi-infinite solid: slab L = 0.5, initial 300, T(0) steps to 400 at t = 0⁺</td>
+<td>T(x,t) = 400 − 100 erf(x / (2√(αt))); check x = 0.01, 0.02 at t = 30 s (far end stays undisturbed)</td>
+<td>graded mesh (size 0.001 near x = 0), lumped capacitance, auto time step</td>
+<td>1e-2</td>
+</tr>
+<tr>
+<td>V-19</td>
+<td><strong>NAFEMS T3.</strong> Bar L = 0.1, k = 35.0, c = 440.5, ρ = 7200. T(0,t) = 0 °C, T(L,t) = 100 sin(πt/40) °C, initial 0 °C</td>
+<td>T at x = 0.08, t = 32 s = <strong>36.60 °C</strong></td>
+<td>20 quadratic elements, Δt = 0.5, θ = ½ and θ = 1</td>
+<td>0.3 °C (θ=½), 1.0 °C (θ=1)</td>
+</tr>
+<tr>
+<td>V-20</td>
+<td>Radiative cooling of a lumped body: as V-16 but radiation ε = 0.8 to 300 K instead of convection, initial 800 K</td>
+<td>Integrate ρcV dT/dt = −εσA (T⁴ − T∞⁴) with <code>scipy.integrate.solve_ivp</code> (rtol 1e-10)</td>
+<td>auto time step, time_tol = 0.005</td>
+<td>2e-3</td>
+</tr>
+<tr>
+<td>V-21</td>
+<td>Time-stepping order: V-16 with Δt, Δt/2, Δt/4</td>
+<td>observed order ≈ 1 (θ = 1), ≈ 2 (θ = ½)</td>
+<td>fixed steps</td>
+<td>order within ±0.15</td>
+</tr>
+</tbody>
+</table>
+<h2 id="enclosure-radiation">Enclosure radiation<a class="headerlink" href="#enclosure-radiation" title="Permanent link">&para;</a></h2>
+<div class="admonition warning">
+<p class="admonition-title">Not active in this version</p>
+<p>Enclosure radiation is on hold (milestone M9). The cases V-22a to V-24 below are
+specified but not run in this version.</p>
+</div>
+<table>
+<thead>
+<tr>
+<th>ID</th>
+<th>Problem</th>
+<th>Analytic answer</th>
+<th>Tol</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>V-22a</td>
+<td>View factors: two parallel segments, width w = 1, gap d = 0.5, directly opposed</td>
+<td>F = √(1 + (d/w)²) − d/w</td>
+<td>1e-10 (single segment each); 1e-6 summed over a 20-element mesh</td>
+</tr>
+<tr>
+<td>V-22b</td>
+<td>Two perpendicular segments of equal width sharing an edge</td>
+<td>F = 1 − √2/2</td>
+<td>1e-6</td>
+</tr>
+<tr>
+<td>V-22c</td>
+<td>Closed square cavity, 10 elements per side</td>
+<td>every row sums to 1; reciprocity error &lt; 1e-12</td>
+<td>—</td>
+</tr>
+<tr>
+<td>V-22d</td>
+<td>Parallel plates with a blocking strip between them covering the middle half</td>
+<td>compare with crossed-strings applied by hand to the unblocked strips</td>
+<td>2e-2</td>
+</tr>
+<tr>
+<td>V-23</td>
+<td>Two long parallel plates separated by a narrow gap (geometry in the note below the table), outer faces held at 600 K and 300 K, ε1 = 0.8, ε2 = 0.5</td>
+<td>q = σ (T1⁴ − T2⁴)/(1/ε1 + 1/ε2 − 1) between the gap-facing surface temperatures; solve the 1D series network (conduction–radiation–conduction) with <code>brentq</code></td>
+<td>5e-3 on heat flux at the centre</td>
+</tr>
+<tr>
+<td>V-24</td>
+<td>Concentric cylinders, planar cross-section, r1 = 0.05 (outer surface of a solid rod at 600 K core), r2 = 0.1 (inner surface of a ring whose outside is 300 K)</td>
+<td>q1 = σ (T1⁴ − T2⁴)/(1/ε1 + (1 − ε2)/ε2 · r1/r2)</td>
+<td>1e-2</td>
+</tr>
+</tbody>
+</table>
+<h2 id="flow-and-convection">Flow and convection<a class="headerlink" href="#flow-and-convection" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>ID</th>
+<th>Problem</th>
+<th>Analytic answer</th>
+<th>Tol</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>V-25</td>
+<td>Correlation spot checks: each correlation function against values computed by hand in the test from the Theory §8 formula with fixed property inputs (pure-function test; Pr = 0.7, several Re / Ra spanning each branch)</td>
+<td>formula</td>
+<td>1e-12</td>
+</tr>
+<tr>
+<td>V-26</td>
+<td>Churchill friction factor</td>
+<td>Laminar: f → 64/Re at Re = 500 (1e-3). Smooth turbulent Re = 1e5: within 3% of (0.790 ln Re − 1.64)⁻²</td>
+<td>as stated</td>
+</tr>
+<tr>
+<td>V-27</td>
+<td>Stream, constant wall temperature: wall is a fixed-temperature edge at 350 K, length 1 m, water, T_in = 300, ṁ chosen so NTU ≈ 1, constant h override</td>
+<td>T_out = T_w − (T_w − T_in) exp(−hA/(ṁ c_p))</td>
+<td>1e-6 (the scheme is exact here), for 1 cell and for 20 cells</td>
+</tr>
+<tr>
+<td>V-28</td>
+<td>Stream, constant heat flux: thin wall strip with flux q̄ on the outside, stream inside</td>
+<td>T_out = T_in + q̄ A /(ṁ c_p); wall-to-fluid ΔT = q̄/h far from the inlet</td>
+<td>1e-6 on T_out, 1e-2 on ΔT</td>
+</tr>
+<tr>
+<td>V-29</td>
+<td>Energy conservation with a stream: any model; Σ boundary heat flows + ṁ c_p (T_in − T_out) = 0</td>
+<td>—</td>
+<td>1e-8 relative</td>
+</tr>
+<tr>
+<td>V-30</td>
+<td>Network: two identical parallel ducts between two pressure nodes</td>
+<td>equal split; total flow matches the single-duct law. Laminar single duct: Δp = 32 μ L V/D²</td>
+<td>1e-5</td>
+</tr>
+<tr>
+<td>V-31</td>
+<td>Network: two parallel ducts, one twice as long, turbulent</td>
+<td>flows satisfy equal Δp using the Churchill f; check by evaluating Δp for each branch</td>
+<td>1e-5</td>
+</tr>
+</tbody>
+</table>
+<h2 id="mesh-convergence-and-robustness">Mesh convergence and robustness<a class="headerlink" href="#mesh-convergence-and-robustness" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>ID</th>
+<th>Problem</th>
+<th>Requirement</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>V-32</td>
+<td>Manufactured solution T = 300 + 50 sin(πx) sin(πy) on the unit square, Q = 2π²·k·50 sin(πx) sin(πy) (given to the solver as an <code>Expression</code>), T = 300 on all edges; sizes 0.1, 0.05, 0.025</td>
+<td>L2 error order ≥ 1.9 (T3, Q4), ≥ 2.8 (T6, Q8)</td>
+</tr>
+<tr>
+<td>V-33</td>
+<td>Patch test: irregular 8-element patch, linear temperature field imposed on the boundary</td>
+<td>interior nodes exact to 1e-12; flux constant to 1e-10; all element types</td>
+</tr>
+<tr>
+<td>V-34</td>
+<td>Energy balance on every case above</td>
+<td>imbalance &lt; 1e-3 of throughput (&lt; 1e-8 for linear steady cases)</td>
+</tr>
+<tr>
+<td>V-35</td>
+<td>Thermal contact: V-11 with a contact conductance h_c = 2000 at the interface</td>
+<td>temperature jump = q/h_c; q from series resistance including 1/h_c; 1e-9</td>
+</tr>
+<tr>
+<td>V-36</td>
+<td>Phase change (Stefan problem, one phase): semi-infinite slab initially at T_m = 300 (liquid at its freezing point), surface dropped to 280 K; L = 1e5 J/kg, T_liq − T_sol = 1 K centred on T_m</td>
+<td>interface position X(t) = 2λ√(αt), λ from λ e^{λ²} erf(λ) = c (T_m − T_s)/(L √π) by <code>brentq</code></td>
+</tr>
+</tbody>
+</table>
+<h2 id="extensibility-guard">Extensibility guard<a class="headerlink" href="#extensibility-guard" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>ID</th>
+<th>Problem</th>
+<th>Requirement</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>V-37</td>
+<td>3D patch test. Inside the test only: register a 4-node tetrahedron <code>Tet4</code> (N = [1−ξ−η−ζ, ξ, η, ζ], 1-point rule at (¼,¼,¼) with w = 1/6, facet type <code>T3</code>) and build a <code>Mesh</code> with <code>dim = 3</code> of a unit cube split into 6 tetrahedra plus one interior node arrangement of your choice. Impose T = 300 + 10x + 20y + 30z on all boundary nodes, k = 50, and solve with the unmodified kernel, <code>ConductionTerm</code> and steady driver. Also integrate a unit flux over one cube face using <code>facet_geometry</code> on T3 facets.</td>
+<td>Interior temperatures exact to 1e-10; flux = (−500, −1000, −1500) in every element; face integral = 1.0. The test must pass <strong>without any change to library code that mentions <code>Tet4</code> or dim = 3</strong>.</td>
+</tr>
+</tbody>
+</table>
+<p>Note on V-23: model two solid slabs each 1 m wide (x) and 0.02 m thick (y), separated by a 0.01 m gap, enclosure
+= the two gap-facing edges, <code>open_to_ambient = True</code> with T_ambient = 300 K (the open ends
+are 1% of the view and are ignored by sampling only |x − 0.5| &lt; 0.1).</p>
+              
+            </div>
+          </div><footer>
+    <div class="rst-footer-buttons" role="navigation" aria-label="Footer Navigation">
+        <a href="../theory/" class="btn btn-neutral float-left" title="Theory"><span class="icon icon-circle-arrow-left"></span> Previous</a>
+        <a href="../limitations/" class="btn btn-neutral float-right" title="Limitations">Next <span class="icon icon-circle-arrow-right"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <!-- Copyright etc -->
+  </div>
+
+  Built with <a href="https://www.mkdocs.org/">MkDocs</a> using a <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>.
+</footer>
+          
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+
+  <div class="rst-versions" role="note" aria-label="Versions">
+  <span class="rst-current-version" data-toggle="rst-current-version">
+    
+        <span>
+          <a href="https://github.com/dilleyrd/thermal-fea" class="fa fa-github" style="color: #fcfcfc"> GitHub</a>
+        </span>
+    
+    
+      <span><a href="../theory/" style="color: #fcfcfc">&laquo; Previous</a></span>
+    
+    
+      <span><a href="../limitations/" style="color: #fcfcfc">Next &raquo;</a></span>
+    
+  </span>
+</div>
+    <script src="../js/jquery-3.6.0.min.js"></script>
+    <script>var base_url = "..";</script>
+    <script src="../js/theme_extra.js"></script>
+    <script src="../js/theme.js"></script>
+      <script src="../search/main.js"></script>
+    <script>
+        jQuery(function () {
+            SphinxRtdTheme.Navigation.enable(true);
+        });
+    </script>
+
+</body>
+</html>

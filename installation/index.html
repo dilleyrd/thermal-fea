@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><link rel="canonical" href="https://dilleyrd.github.io/thermal-fea/installation/" />
+      <link rel="shortcut icon" href="../img/favicon.ico" />
+    <title>Installation - ThermalFEA user guide</title>
+    <link rel="stylesheet" href="../css/theme.css" />
+    <link rel="stylesheet" href="../css/theme_extra.css" />
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" />
+    
+      <script>
+        // Current page data
+        var mkdocs_page_name = "Installation";
+        var mkdocs_page_input_path = "installation.md";
+        var mkdocs_page_url = "/thermal-fea/installation/";
+      </script>
+    
+    <!--[if lt IE 9]>
+      <script src="../js/html5shiv.min.js"></script>
+    <![endif]-->
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
+      <script>hljs.highlightAll();</script> 
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side stickynav">
+    <div class="wy-side-scroll">
+      <div class="wy-side-nav-search">
+          <a href=".." class="icon icon-home"> ThermalFEA user guide
+        </a><div role="search">
+  <form id ="rtd-search-form" class="wy-form" action="../search.html" method="get">
+      <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" title="Type search term here" />
+  </form>
+</div>
+      </div>
+
+      <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="..">Home</a>
+                </li>
+              </ul>
+              <ul class="current">
+                <li class="toctree-l1 current"><a class="reference internal current" href="#">Installation</a>
+    <ul class="current">
+    <li class="toctree-l2"><a class="reference internal" href="#requirements">Requirements</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#get-the-source">Get the source</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#install">Install</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#optional-extras">Optional extras</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#start-the-program">Start the program</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#the-command-line">The command line</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#run-the-tests">Run the tests</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#build-this-guide">Build this guide</a>
+    </li>
+    </ul>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../getting-started/">Getting started</a>
+                </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Tutorials</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../tutorials/t4-plate/">NAFEMS T4 steady plate</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../tutorials/fin-quench/">Transient quench of a fin</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../tutorials/cold-plate/">Cold plate with a water stream</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Reference</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../units/">Units</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../materials/">Materials</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../correlations/">Correlations</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../theory/">Theory</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../verification/">Verification</a>
+                  </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../limitations/">Limitations</a>
+                </li>
+              </ul>
+      </div>
+    </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+      <nav class="wy-nav-top" role="navigation" aria-label="Mobile navigation menu">
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="..">ThermalFEA user guide</a>
+        
+      </nav>
+      <div class="wy-nav-content">
+        <div class="rst-content"><div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href=".." class="icon icon-home" aria-label="Docs"></a></li>
+      <li class="breadcrumb-item active">Installation</li>
+    <li class="wy-breadcrumbs-aside">
+    </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+            <div class="section" itemprop="articleBody">
+              
+                <h1 id="installation">Installation<a class="headerlink" href="#installation" title="Permanent link">&para;</a></h1>
+<p>ThermalFEA is installed from its source folder into a Python virtual environment. A
+packaged Windows installer does not exist yet; it is planned (task M11.5).</p>
+<h2 id="requirements">Requirements<a class="headerlink" href="#requirements" title="Permanent link">&para;</a></h2>
+<ul>
+<li>Python 3.11 or newer (the project is developed with Python 3.13).</li>
+<li>The packages the program depends on are installed automatically: NumPy, SciPy, gmsh,
+  PySide6, Matplotlib, h5py, meshio and pandas.</li>
+</ul>
+<h2 id="get-the-source">Get the source<a class="headerlink" href="#get-the-source" title="Permanent link">&para;</a></h2>
+<p>The source is on GitHub at <a href="https://github.com/dilleyrd/thermal-fea">https://github.com/dilleyrd/thermal-fea</a>. Clone it with Git:</p>
+<pre><code>git clone https://github.com/dilleyrd/thermal-fea.git
+cd thermal-fea
+</code></pre>
+<p>or download it as a zip file from that page (Code &gt; Download ZIP) and unpack it.</p>
+<h2 id="install">Install<a class="headerlink" href="#install" title="Permanent link">&para;</a></h2>
+<p>From the project folder (the one with <code>pyproject.toml</code>), create a virtual environment and
+install the package in it. On Windows, in a terminal:</p>
+<pre><code>python -m venv .venv
+.venv\Scripts\python.exe -m pip install -e .
+</code></pre>
+<p>Use the virtual environment's Python for everything below. Do not install into the
+system Python.</p>
+<h3 id="optional-extras">Optional extras<a class="headerlink" href="#optional-extras" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Extra</th>
+<th>Installs</th>
+<th>Needed for</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>dxf</code></td>
+<td><code>ezdxf</code></td>
+<td>importing DXF files. Without it a DXF import stops with a message that says how to install it.</td>
+</tr>
+<tr>
+<td><code>dev</code></td>
+<td><code>pytest</code>, <code>pytest-qt</code>, <code>ruff</code></td>
+<td>running the tests and the style check</td>
+</tr>
+<tr>
+<td><code>docs</code></td>
+<td><code>mkdocs</code></td>
+<td>building this guide</td>
+</tr>
+</tbody>
+</table>
+<p>Install an extra by naming it in brackets:</p>
+<pre><code>.venv\Scripts\python.exe -m pip install -e &quot;.[dxf]&quot;
+.venv\Scripts\python.exe -m pip install -e &quot;.[dev,docs]&quot;
+</code></pre>
+<h2 id="start-the-program">Start the program<a class="headerlink" href="#start-the-program" title="Permanent link">&para;</a></h2>
+<pre><code>.venv\Scripts\python.exe -m thermalfea.gui.app
+</code></pre>
+<p>The main window has a model tree ("Model", top left), a property panel ("Properties",
+below it), the viewport in the middle and a "Messages" dock at the bottom. The next page,
+<a href="../getting-started/">Getting started</a>, walks through them.</p>
+<h2 id="the-command-line">The command line<a class="headerlink" href="#the-command-line" title="Permanent link">&para;</a></h2>
+<p>The installation adds a <code>thermalfea</code> command to the virtual environment (run it as
+<code>.venv\Scripts\thermalfea.exe</code>, or <code>.venv\Scripts\python.exe -m thermalfea.cli</code>).</p>
+<pre><code>thermalfea info model.tfea
+thermalfea solve model.tfea
+thermalfea solve model.tfea -o results.h5
+thermalfea solve model.tfea --restart
+</code></pre>
+<ul>
+<li><code>thermalfea info model.tfea</code> builds and meshes the model and prints the number of
+  surfaces, curves and points, the materials, regions and loads, the mesh size and a short
+  quality line.</li>
+<li><code>thermalfea solve model.tfea</code> builds, meshes and solves the model. It prints one
+  progress line per step and then a text summary. The results go to <code>model.tfea.h5</code> beside
+  the model.</li>
+<li><code>-o RESULTS</code>, <code>--output RESULTS</code> writes the results to the file you name instead.</li>
+<li><code>--restart</code> continues the transient run stored in the results file, from its last
+  stored step to the end time of the model, and adds the new steps to the same file. See
+  <a href="../getting-started/#continuing-a-transient-run">Getting started</a>.</li>
+<li><code>-v</code>, <code>--verbose</code> (given before the command name) shows the log messages.</li>
+</ul>
+<p>Exit codes:</p>
+<table>
+<thead>
+<tr>
+<th>Code</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>0</td>
+<td>success</td>
+</tr>
+<tr>
+<td>1</td>
+<td>a ThermalFEA error: a bad model, a geometry or mesh failure, a model that fails validation</td>
+</tr>
+<tr>
+<td>2</td>
+<td>the solution did not converge</td>
+</tr>
+</tbody>
+</table>
+<p>Called with no command, <code>thermalfea</code> prints its usage and exits with 0.</p>
+<h2 id="run-the-tests">Run the tests<a class="headerlink" href="#run-the-tests" title="Permanent link">&para;</a></h2>
+<p>The check script runs the style check and then the whole test suite, and stops at the first
+failure:</p>
+<pre><code>.\scripts\check.ps1
+</code></pre>
+<h2 id="build-this-guide">Build this guide<a class="headerlink" href="#build-this-guide" title="Permanent link">&para;</a></h2>
+<p>The reference pages of the guide are generated from the project's documents and code.
+From the project folder:</p>
+<pre><code>.venv\Scripts\python.exe scripts\build_guide.py
+.venv\Scripts\python.exe -m mkdocs build --strict
+</code></pre>
+<p>The first command rewrites the generated pages in <code>guide/</code> (with <code>--check</code> it only reports
+whether they are out of date). The second builds the site into <code>site/</code>.</p>
+              
+            </div>
+          </div><footer>
+    <div class="rst-footer-buttons" role="navigation" aria-label="Footer Navigation">
+        <a href=".." class="btn btn-neutral float-left" title="Home"><span class="icon icon-circle-arrow-left"></span> Previous</a>
+        <a href="../getting-started/" class="btn btn-neutral float-right" title="Getting started">Next <span class="icon icon-circle-arrow-right"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <!-- Copyright etc -->
+  </div>
+
+  Built with <a href="https://www.mkdocs.org/">MkDocs</a> using a <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>.
+</footer>
+          
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+
+  <div class="rst-versions" role="note" aria-label="Versions">
+  <span class="rst-current-version" data-toggle="rst-current-version">
+    
+        <span>
+          <a href="https://github.com/dilleyrd/thermal-fea" class="fa fa-github" style="color: #fcfcfc"> GitHub</a>
+        </span>
+    
+    
+      <span><a href=".." style="color: #fcfcfc">&laquo; Previous</a></span>
+    
+    
+      <span><a href="../getting-started/" style="color: #fcfcfc">Next &raquo;</a></span>
+    
+  </span>
+</div>
+    <script src="../js/jquery-3.6.0.min.js"></script>
+    <script>var base_url = "..";</script>
+    <script src="../js/theme_extra.js"></script>
+    <script src="../js/theme.js"></script>
+      <script src="../search/main.js"></script>
+    <script>
+        jQuery(function () {
+            SphinxRtdTheme.Navigation.enable(true);
+        });
+    </script>
+
+</body>
+</html>

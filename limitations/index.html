@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><link rel="canonical" href="https://dilleyrd.github.io/thermal-fea/limitations/" />
+      <link rel="shortcut icon" href="../img/favicon.ico" />
+    <title>Limitations - ThermalFEA user guide</title>
+    <link rel="stylesheet" href="../css/theme.css" />
+    <link rel="stylesheet" href="../css/theme_extra.css" />
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" />
+    
+      <script>
+        // Current page data
+        var mkdocs_page_name = "Limitations";
+        var mkdocs_page_input_path = "limitations.md";
+        var mkdocs_page_url = "/thermal-fea/limitations/";
+      </script>
+    
+    <!--[if lt IE 9]>
+      <script src="../js/html5shiv.min.js"></script>
+    <![endif]-->
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
+      <script>hljs.highlightAll();</script> 
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side stickynav">
+    <div class="wy-side-scroll">
+      <div class="wy-side-nav-search">
+          <a href=".." class="icon icon-home"> ThermalFEA user guide
+        </a><div role="search">
+  <form id ="rtd-search-form" class="wy-form" action="../search.html" method="get">
+      <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" title="Type search term here" />
+  </form>
+</div>
+      </div>
+
+      <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="..">Home</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../installation/">Installation</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../getting-started/">Getting started</a>
+                </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Tutorials</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../tutorials/t4-plate/">NAFEMS T4 steady plate</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../tutorials/fin-quench/">Transient quench of a fin</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../tutorials/cold-plate/">Cold plate with a water stream</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Reference</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../units/">Units</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../materials/">Materials</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../correlations/">Correlations</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../theory/">Theory</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../verification/">Verification</a>
+                  </li>
+              </ul>
+              <ul class="current">
+                <li class="toctree-l1 current"><a class="reference internal current" href="#">Limitations</a>
+    <ul class="current">
+    <li class="toctree-l2"><a class="reference internal" href="#not-in-this-version">Not in this version</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#features-on-hold">Features on hold</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#not-yet-reviewed-or-checked">Not yet reviewed or checked</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#modelling">Modelling</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#thermal-contact">Thermal contact</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#dxf-import">DXF import</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#units">Units</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#convection-and-flow">Convection and flow</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#time-stepping-and-restart">Time stepping and restart</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#the-window">The window</a>
+    </li>
+    </ul>
+                </li>
+              </ul>
+      </div>
+    </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+      <nav class="wy-nav-top" role="navigation" aria-label="Mobile navigation menu">
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="..">ThermalFEA user guide</a>
+        
+      </nav>
+      <div class="wy-nav-content">
+        <div class="rst-content"><div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href=".." class="icon icon-home" aria-label="Docs"></a></li>
+      <li class="breadcrumb-item active">Limitations</li>
+    <li class="wy-breadcrumbs-aside">
+    </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+            <div class="section" itemprop="articleBody">
+              
+                <h1 id="limitations">Limitations<a class="headerlink" href="#limitations" title="Permanent link">&para;</a></h1>
+<p>Each entry says what is not available or not as you might expect, and, where the project
+documents give one, what to do instead. Entries come from the plan, the handover notes and
+the list of open questions (<code>docs/OPEN_QUESTIONS.md</code>) of the project.</p>
+<h2 id="not-in-this-version">Not in this version<a class="headerlink" href="#not-in-this-version" title="Permanent link">&para;</a></h2>
+<ul>
+<li><strong>Two dimensions only.</strong> There is no 3D analysis and no 3D viewport.</li>
+<li><strong>No flow simulation.</strong> The flow solver is a one-dimensional stream and pipe-network
+  model; it is not CFD (no Navier-Stokes solution).</li>
+<li><strong>No coupled physics.</strong> No structural or thermal-stress coupling and no other physics.</li>
+<li><strong>No participating-media radiation.</strong></li>
+<li><strong>No parallel or distributed solving.</strong></li>
+<li><strong>No packaged Windows installer.</strong> Install from source (<a href="../installation/">Installation</a>).
+  The installer is planned (task M11.5).</li>
+</ul>
+<h2 id="features-on-hold">Features on hold<a class="headerlink" href="#features-on-hold" title="Permanent link">&para;</a></h2>
+<p>The owner has put these on hold. The theory is written down (<a href="../theory/">Theory</a>, §10 and
+§12), but the program does not use it. A model that contains an enclosure, or a region
+whose material has a phase change, is refused by the validation and by the solver with a
+message that says so; it is never solved with that part left out.</p>
+<ul>
+<li><strong>Enclosure (surface-to-surface) radiation</strong> (milestone M9). The model has an
+  "Enclosures" node and an enclosure class, but no solver module evaluates enclosures, so
+  a model with an enclosure is not solved. Use radiation to ambient where the
+  surroundings can be treated as a single ambient temperature. When it is built, it will
+  come for planar models first; the axisymmetric version (task M9.5) is the hardest task
+  of the plan and may come later. The verification cases V-22a to V-24 are not active.</li>
+<li><strong>Phase change (latent heat)</strong> (task M10.2). A material has a phase-change field in its
+  data, but the solver does not use it; a region with such a material is not solved.
+  The verification case V-36 is not active.</li>
+<li><strong>HTML report</strong> (task M10.5). For a record of a solution use the text summary
+  (<code>api.summary</code>, or the output of <code>thermalfea solve</code>), the CSV and ParaView (VTU) exports
+  and the plot exports.</li>
+</ul>
+<h2 id="not-yet-reviewed-or-checked">Not yet reviewed or checked<a class="headerlink" href="#not-yet-reviewed-or-checked" title="Permanent link">&para;</a></h2>
+<ul>
+<li><strong>The window has not been reviewed on a real screen.</strong> The human gate M8.G (build two
+  verification cases in the window and list every point of friction) is not done. Every
+  window test so far ran without a screen. Expect findings in layout and usability.</li>
+<li><strong>The property tables and the correlations are not yet checked against a reference
+  text.</strong> The material tables are "from standard heat-transfer textbook tables" and no
+  reference or edition is recorded. For the correlations the project records only the
+  names it gives in the theory text (Churchill-Bernstein, Churchill-Chu, Gnielinski,
+  Dittus-Boelter, Churchill 1977). The check is task M11.1, a human task. Until then
+  <a href="../materials/">Materials</a> and <a href="../correlations/">Correlations</a> say "source not yet
+  recorded".</li>
+<li><strong>Not yet done:</strong> the verification report (task M11.2), the performance benchmark
+  (M11.3) and the release review (M11.6).</li>
+<li><strong>Several choices await the owner's confirmation</strong> (open questions Q11, Q14, Q17.2,
+  Q18.2, Q20, Q21, Q22, Q23, Q24, Q25). The entries below say which.</li>
+</ul>
+<h2 id="modelling">Modelling<a class="headerlink" href="#modelling" title="Permanent link">&para;</a></h2>
+<ul>
+<li><strong>A new model is planar.</strong> The window has no control to change a model to axisymmetric
+  (the examples V-05 and V-07 are axisymmetric; from Python, <code>api.new_model</code> takes the
+  type).</li>
+<li><strong>Free points and curves inside a surface are not part of the mesh.</strong> After the geometry
+  is built, points and curves that bound no surface are removed. A point load or a probe
+  line cannot be made this way.</li>
+<li><strong>The selection named "all" is reserved.</strong> Every build recreates it.</li>
+<li><strong>A mesh node cannot be placed at a given point in the window.</strong> To read a value at a
+  point, draw the geometry so that the point is a vertex (the verification cases do this
+  with two rectangles) and read the value from the CSV export.</li>
+<li><strong>The mesh quality report only measures.</strong> It applies no pass or fail threshold.</li>
+<li><strong>A total heat flow or power, and a fixed temperature, cannot depend on temperature.</strong>
+  Use a flux, a convection condition or a time function instead.</li>
+<li><strong>A steady analysis evaluates time-dependent loads at t = 0.</strong></li>
+<li><strong>The nonlinear iteration is a modified Newton method.</strong> Derivatives of properties and of
+  coefficients with respect to temperature are deliberately left out of the tangent, so
+  strongly nonlinear problems may need more iterations. A solution that does not converge
+  raises an error (command line exit code 2); it is never returned silently.</li>
+</ul>
+<h2 id="thermal-contact">Thermal contact<a class="headerlink" href="#thermal-contact" title="Permanent link">&para;</a></h2>
+<ul>
+<li><strong>A temperature-dependent contact conductance is refused.</strong> A function of time and
+  position is accepted.</li>
+<li><strong>Results have duplicated nodes along a contact.</strong> The program splits the mesh along the
+  contact when it solves. The original nodes keep their numbers and the new nodes are added
+  at the end, so node numbers picked on the mesh stay valid.</li>
+<li><strong>Heat crossing a contact is not in the energy balance,</strong> because it is internal to the
+  body. The solver computes it (in watts, from the lower to the higher region number), but
+  it is not yet written to the results file or shown in the program. The pump-closure
+  example (<code>examples/pump_closure</code>) shows how to compute it from a script.</li>
+<li><strong>The geometry factor (thickness or 2πr) is taken from the side with the lower region
+  number.</strong> Two regions of different thickness meeting at a contact are not treated
+  specially.</li>
+<li><strong>A fixed temperature on a geometry point at the end of a contact curve fixes one side
+  only</strong> (the side of the lower region number). On a curve it fixes each side's own nodes.</li>
+</ul>
+<h2 id="dxf-import">DXF import<a class="headerlink" href="#dxf-import" title="Permanent link">&para;</a></h2>
+<ul>
+<li>Only LINE, ARC, CIRCLE, LWPOLYLINE (with bulges) and SPLINE entities are used. Other
+  entity types (for example ELLIPSE, old-style POLYLINE, HATCH, INSERT, TEXT) are ignored,
+  with one warning.</li>
+<li>Chains that do not close are ignored, with a warning. A drawing with no closed outline,
+  a point where more than two segment ends meet, and anything outside the plane z = 0 are
+  errors.</li>
+<li>Outlines are assumed not to cross each other; crossing outlines are not detected. A
+  closed outline inside an even number of other outlines becomes a surface; one inside an
+  odd number becomes a hole.</li>
+<li>The units header of the file (<code>$INSUNITS</code>) is not read. Give the scale on import, as for
+  STEP and BREP files.</li>
+<li>End points closer than 1e-6 of the largest extent of the drawing are treated as one
+  point. This tolerance cannot be changed.</li>
+<li>An arc is split into pieces of at most 120 degrees, so a semicircle becomes two curves.</li>
+<li>DXF import needs the optional <code>ezdxf</code> package.</li>
+</ul>
+<h2 id="units">Units<a class="headerlink" href="#units" title="Permanent link">&para;</a></h2>
+<ul>
+<li><strong>Expressions are always evaluated in SI,</strong> whatever the display units. See
+  <a href="../units/">Units</a>.</li>
+<li><strong>These places still show SI only:</strong> the parameters of a geometry transform, the HTC
+  calculator window, the solve-progress dialog and the solver messages, the extra
+  parameters of a correlation, the CSV and VTU exports (the chart CSV follows the display
+  units) and the <code>api.summary</code> text.</li>
+<li>Results are shown in the units of the model stored in the results file until you change
+  the units in the session. A model whose file units differ from those its results were
+  solved with therefore shows the results in the older units until you use Tools &gt; Units...
+  once.</li>
+</ul>
+<h2 id="convection-and-flow">Convection and flow<a class="headerlink" href="#convection-and-flow" title="Permanent link">&para;</a></h2>
+<ul>
+<li><strong>A correlation outside its validity range is still evaluated.</strong> One warning is logged
+  for each boundary condition and solve. Check the range on the
+  <a href="../correlations/">Correlations</a> page.</li>
+<li><strong>The characteristic length of a plate is the length of the selection</strong> in this version,
+  not area divided by perimeter, which the theory table lists for horizontal plates (open
+  question Q17.2, awaiting confirmation). An explicit characteristic length always wins.
+  Cylinders need one.</li>
+<li><strong>Internal duct flow is not a convection boundary condition.</strong> Use a stream.</li>
+<li><strong>The Dittus-Boelter option</strong> replaces Gnielinski for turbulent flow; its range
+  (Re at least 1e4) is not enforced in the transition region.</li>
+<li><strong>Fluid properties outside the table</strong> keep the end values and log one warning for each
+  fluid. For an ideal gas the expansion coefficient is still 1/T.</li>
+<li><strong>Fluid thermal storage is neglected:</strong> the fluid in a stream is quasi-steady. A stream
+  has no initial condition; its starting temperatures follow from the initial wall
+  temperatures.</li>
+<li><strong>One specific heat per stream,</strong> taken at its inlet temperature (open question Q18.2,
+  awaiting confirmation).</li>
+<li><strong>Flow must run along the path.</strong> A stream needs a positive mass flow, and a network
+  solution that drives a stream against its path is refused.</li>
+<li><strong>Every network branch needs a stream,</strong> which supplies its flow area, hydraulic
+  diameter, roughness and fluid. Two duct branches may not name one stream.</li>
+<li><strong>Through-plane streams are refused in axisymmetric models.</strong></li>
+</ul>
+<h2 id="time-stepping-and-restart">Time stepping and restart<a class="headerlink" href="#time-stepping-and-restart" title="Permanent link">&para;</a></h2>
+<ul>
+<li><strong>The first step uses backward Euler (theta = 1)</strong> when the start is out of equilibrium
+  with the loads or the initial temperature differs from a prescribed value. Later jumps
+  are detected only at the start of a step; a jump that falls strictly inside a step is
+  not seen.</li>
+<li><strong>Restart checks only the mesh.</strong> Loads, materials and settings are not compared, and
+  the model stored in the results file is replaced. Whether a changed model should be
+  refused or warned about awaits the owner (Q25.4).</li>
+<li><strong>Restart with automatic stepping</strong> does not reproduce an uninterrupted run exactly: the
+  controller's history is not stored, so the steps differ within the time-stepping
+  tolerance. With a fixed step the runs agree to round-off (linear case) or to the
+  iteration tolerance (nonlinear).</li>
+<li><strong>A restart is refused</strong> for a steady solution, for a last step that did not converge and
+  for an end time the file already reached.</li>
+</ul>
+<h2 id="the-window">The window<a class="headerlink" href="#the-window" title="Permanent link">&para;</a></h2>
+<ul>
+<li><strong>Animation export to GIF blocks the window</strong> while a long animation is written.</li>
+<li><strong>Animation export to MP4 is untested</strong> because ffmpeg is not installed on the
+  development machine.</li>
+<li><strong>Probe, chart path pick and the stream "pick path points" toggle all listen to
+  viewport clicks.</strong> The probe and the chart path pick exclude each other, but the stream
+  toggle does not switch the others off, and it leaves the selection mode at "None" when
+  turned off.</li>
+<li><strong>Probe reads the pixel you click,</strong> not a coordinate. For exact values use the CSV
+  export.</li>
+<li><strong>Selections are named after the field that created them</strong> ("Convection 1 selection"),
+  and the tree does not offer to rename a selection.</li>
+<li><strong>Open charts are not redrawn</strong> when new results arrive. They are marked "(out of date)".</li>
+</ul>
+              
+            </div>
+          </div><footer>
+    <div class="rst-footer-buttons" role="navigation" aria-label="Footer Navigation">
+        <a href="../verification/" class="btn btn-neutral float-left" title="Verification"><span class="icon icon-circle-arrow-left"></span> Previous</a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <!-- Copyright etc -->
+  </div>
+
+  Built with <a href="https://www.mkdocs.org/">MkDocs</a> using a <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>.
+</footer>
+          
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+
+  <div class="rst-versions" role="note" aria-label="Versions">
+  <span class="rst-current-version" data-toggle="rst-current-version">
+    
+        <span>
+          <a href="https://github.com/dilleyrd/thermal-fea" class="fa fa-github" style="color: #fcfcfc"> GitHub</a>
+        </span>
+    
+    
+      <span><a href="../verification/" style="color: #fcfcfc">&laquo; Previous</a></span>
+    
+    
+  </span>
+</div>
+    <script src="../js/jquery-3.6.0.min.js"></script>
+    <script>var base_url = "..";</script>
+    <script src="../js/theme_extra.js"></script>
+    <script src="../js/theme.js"></script>
+      <script src="../search/main.js"></script>
+    <script>
+        jQuery(function () {
+            SphinxRtdTheme.Navigation.enable(true);
+        });
+    </script>
+
+</body>
+</html>

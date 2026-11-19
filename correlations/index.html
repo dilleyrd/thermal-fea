@@ -1,0 +1,462 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><link rel="canonical" href="https://dilleyrd.github.io/thermal-fea/correlations/" />
+      <link rel="shortcut icon" href="../img/favicon.ico" />
+    <title>Correlations - ThermalFEA user guide</title>
+    <link rel="stylesheet" href="../css/theme.css" />
+    <link rel="stylesheet" href="../css/theme_extra.css" />
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" />
+    
+      <script>
+        // Current page data
+        var mkdocs_page_name = "Correlations";
+        var mkdocs_page_input_path = "correlations.md";
+        var mkdocs_page_url = "/thermal-fea/correlations/";
+      </script>
+    
+    <!--[if lt IE 9]>
+      <script src="../js/html5shiv.min.js"></script>
+    <![endif]-->
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
+      <script>hljs.highlightAll();</script> 
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side stickynav">
+    <div class="wy-side-scroll">
+      <div class="wy-side-nav-search">
+          <a href=".." class="icon icon-home"> ThermalFEA user guide
+        </a><div role="search">
+  <form id ="rtd-search-form" class="wy-form" action="../search.html" method="get">
+      <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" title="Type search term here" />
+  </form>
+</div>
+      </div>
+
+      <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="..">Home</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../installation/">Installation</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../getting-started/">Getting started</a>
+                </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Tutorials</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../tutorials/t4-plate/">NAFEMS T4 steady plate</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../tutorials/fin-quench/">Transient quench of a fin</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../tutorials/cold-plate/">Cold plate with a water stream</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Reference</span></p>
+              <ul class="current">
+                  <li class="toctree-l1"><a class="reference internal" href="../units/">Units</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../materials/">Materials</a>
+                  </li>
+                  <li class="toctree-l1 current"><a class="reference internal current" href="#">Correlations</a>
+    <ul class="current">
+    <li class="toctree-l2"><a class="reference internal" href="#corr-common">Common relations (Theory §8)</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#summary">Summary</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#correlations">Correlations</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#corr-plate-forced-avg">plate_forced_avg: Flat plate, parallel flow, average</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#corr-plate-forced-local">plate_forced_local: Flat plate, local at distance x from leading edge</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#corr-cylinder-crossflow">cylinder_crossflow: Cylinder in cross flow (Churchill–Bernstein)</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#corr-duct-internal">duct_internal: Internal flow, circular or by hydraulic diameter</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#corr-vplate-natural">vplate_natural: Vertical plate (Churchill–Chu)</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#corr-inclined-natural">inclined_natural: Plate inclined θ from vertical</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#corr-hplate-up-natural">hplate_up_natural: Horizontal, hot face up or cold face down</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#corr-hplate-down-natural">hplate_down_natural: Horizontal, hot face down or cold face up</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#corr-hcyl-natural">hcyl_natural: Horizontal cylinder (Churchill–Chu)</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#corr-power-law">power_law: User form</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#validity-ranges-and-warnings">Validity ranges and warnings</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#internal-duct-flow-friction-factor-and-pressure-drop-theory-81">Internal duct flow, friction factor and pressure drop (Theory §8.1)</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#literature-sources">Literature sources</a>
+    </li>
+    </ul>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../theory/">Theory</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../verification/">Verification</a>
+                  </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../limitations/">Limitations</a>
+                </li>
+              </ul>
+      </div>
+    </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+      <nav class="wy-nav-top" role="navigation" aria-label="Mobile navigation menu">
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="..">ThermalFEA user guide</a>
+        
+      </nav>
+      <div class="wy-nav-content">
+        <div class="rst-content"><div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href=".." class="icon icon-home" aria-label="Docs"></a></li>
+          <li class="breadcrumb-item">Reference</li>
+      <li class="breadcrumb-item active">Correlations</li>
+    <li class="wy-breadcrumbs-aside">
+    </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+            <div class="section" itemprop="articleBody">
+              
+                <h1 id="correlation-reference">Correlation reference<a class="headerlink" href="#correlation-reference" title="Permanent link">&para;</a></h1>
+<div class="admonition info">
+<p class="admonition-title">Generated page</p>
+<p>This page is generated from <code>src/thermalfea/convection/correlation_info.py</code> and <code>docs/theory.md</code> §8 by <code>scripts/build_guide.py</code>.
+Do not edit it here: change the source and run the script again.</p>
+</div>
+<p>Every convection correlation of the program, with its formula, characteristic length, inputs, validity range and the place in the <a href="../theory/">theory manual</a> it comes from. The texts are copied from the project documents; nothing on this page is computed.</p>
+<h2 id="corr-common">Common relations (Theory §8)<a class="headerlink" href="#corr-common" title="Permanent link">&para;</a></h2>
+<p>h = Nu · k_f / L_c. Fluid properties at the <strong>film temperature</strong> T_film = (T_s + T∞)/2
+unless the correlation states otherwise. T_s is the wall temperature of the <em>previous
+nonlinear iteration</em> (lagged), either local (at each integration point; default) or the
+area average over the boundary set (option).</p>
+<p>Re = ρ V L/μ, Pr = μ c_p/k_f, Ra = g β |T_s − T∞| L³ Pr ρ²/μ², g = 9.80665 m/s².
+For ideal gases β = 1/T_film; for liquids β comes from the property table.</p>
+<h2 id="summary">Summary<a class="headerlink" href="#summary" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>ID</th>
+<th>Situation</th>
+<th>Characteristic length</th>
+<th>Validity</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><a href="#corr-plate-forced-avg"><code>plate_forced_avg</code></a></td>
+<td>Flat plate, parallel flow, average</td>
+<td>plate length</td>
+<td>Pr ≥ 0.6, Re ≤ 1e8</td>
+</tr>
+<tr>
+<td><a href="#corr-plate-forced-local"><code>plate_forced_local</code></a></td>
+<td>Flat plate, local at distance x from leading edge</td>
+<td>x</td>
+<td>Pr ≥ 0.6</td>
+</tr>
+<tr>
+<td><a href="#corr-cylinder-crossflow"><code>cylinder_crossflow</code></a></td>
+<td>Cylinder in cross flow (Churchill–Bernstein)</td>
+<td>diameter</td>
+<td>Re·Pr ≥ 0.2</td>
+</tr>
+<tr>
+<td><a href="#corr-duct-internal"><code>duct_internal</code></a></td>
+<td>Internal flow, circular or by hydraulic diameter</td>
+<td>D_h</td>
+<td>Gnielinski: 0.5 ≤ Pr ≤ 2000, Re ≤ 5e6. Dittus–Boelter: Re ≥ 1e4. (The validity column of the §8 table is empty for this entry; the ranges are those stated in §8.1.)</td>
+</tr>
+<tr>
+<td><a href="#corr-vplate-natural"><code>vplate_natural</code></a></td>
+<td>Vertical plate (Churchill–Chu)</td>
+<td>height</td>
+<td>all Ra</td>
+</tr>
+<tr>
+<td><a href="#corr-inclined-natural"><code>inclined_natural</code></a></td>
+<td>Plate inclined θ from vertical</td>
+<td>length</td>
+<td>θ ≤ 60°</td>
+</tr>
+<tr>
+<td><a href="#corr-hplate-up-natural"><code>hplate_up_natural</code></a></td>
+<td>Horizontal, hot face up or cold face down</td>
+<td>area/perimeter</td>
+<td>1e4 ≤ Ra ≤ 1e11</td>
+</tr>
+<tr>
+<td><a href="#corr-hplate-down-natural"><code>hplate_down_natural</code></a></td>
+<td>Horizontal, hot face down or cold face up</td>
+<td>area/perimeter</td>
+<td>1e5 ≤ Ra ≤ 1e10</td>
+</tr>
+<tr>
+<td><a href="#corr-hcyl-natural"><code>hcyl_natural</code></a></td>
+<td>Horizontal cylinder (Churchill–Chu)</td>
+<td>diameter</td>
+<td>Ra ≤ 1e12</td>
+</tr>
+<tr>
+<td><a href="#corr-power-law"><code>power_law</code></a></td>
+<td>User form</td>
+<td>—</td>
+<td>Not stated in the theory document.</td>
+</tr>
+</tbody>
+</table>
+<h2 id="correlations">Correlations<a class="headerlink" href="#correlations" title="Permanent link">&para;</a></h2>
+<h3 id="corr-plate-forced-avg"><code>plate_forced_avg</code>: Flat plate, parallel flow, average<a class="headerlink" href="#corr-plate-forced-avg" title="Permanent link">&para;</a></h3>
+<p>Formula (copied from the theory document):</p>
+<pre><code class="language-text">Re ≤ 5e5: Nu = 0.664 Re^½ Pr^⅓; else Nu = (0.037 Re^0.8 − 871) Pr^⅓
+</code></pre>
+<ul>
+<li><strong>Characteristic length L_c:</strong> plate length</li>
+<li><strong>Inputs:</strong> <code>length</code>, <code>velocity</code>, the surface and fluid temperatures, and the fluid (the keyword inputs of <code>thermalfea.api.htc</code>).</li>
+<li><strong>Fluid properties evaluated at:</strong> Fluid properties at the film temperature T_film = (T_s + T∞)/2.</li>
+<li><strong>Validity range (as recorded):</strong> Pr ≥ 0.6, Re ≤ 1e8</li>
+<li><strong>Theory section:</strong> <a href="../theory/#sec-8">Theory §8</a></li>
+<li><strong>Literature source:</strong> source not yet recorded; to be confirmed in the release check, task M11.1.</li>
+</ul>
+<h3 id="corr-plate-forced-local"><code>plate_forced_local</code>: Flat plate, local at distance x from leading edge<a class="headerlink" href="#corr-plate-forced-local" title="Permanent link">&para;</a></h3>
+<p>Formula (copied from the theory document):</p>
+<pre><code class="language-text">Re_x ≤ 5e5: Nu_x = 0.332 Re_x^½ Pr^⅓; else Nu_x = 0.0296 Re_x^0.8 Pr^⅓
+</code></pre>
+<ul>
+<li><strong>Characteristic length L_c:</strong> x</li>
+<li><strong>Inputs:</strong> <code>x</code>, <code>velocity</code>, the surface and fluid temperatures, and the fluid (the keyword inputs of <code>thermalfea.api.htc</code>).</li>
+<li><strong>Fluid properties evaluated at:</strong> Fluid properties at the film temperature T_film = (T_s + T∞)/2.</li>
+<li><strong>Validity range (as recorded):</strong> Pr ≥ 0.6</li>
+<li><strong>Theory section:</strong> <a href="../theory/#sec-8">Theory §8</a></li>
+<li><strong>Literature source:</strong> source not yet recorded; to be confirmed in the release check, task M11.1.</li>
+</ul>
+<h3 id="corr-cylinder-crossflow"><code>cylinder_crossflow</code>: Cylinder in cross flow (Churchill–Bernstein)<a class="headerlink" href="#corr-cylinder-crossflow" title="Permanent link">&para;</a></h3>
+<p>Formula (copied from the theory document):</p>
+<pre><code class="language-text">Nu = 0.3 + 0.62 Re^½ Pr^⅓ [1+(0.4/Pr)^⅔]^(−¼) [1+(Re/282000)^⅝]^(⅘)
+</code></pre>
+<ul>
+<li><strong>Characteristic length L_c:</strong> diameter</li>
+<li><strong>Inputs:</strong> <code>length</code>, <code>velocity</code>, the surface and fluid temperatures, and the fluid (the keyword inputs of <code>thermalfea.api.htc</code>).</li>
+<li><strong>Fluid properties evaluated at:</strong> Fluid properties at the film temperature T_film = (T_s + T∞)/2.</li>
+<li><strong>Validity range (as recorded):</strong> Re·Pr ≥ 0.2</li>
+<li><strong>Theory section:</strong> <a href="../theory/#sec-8">Theory §8</a></li>
+<li><strong>Literature source:</strong> source not yet recorded; to be confirmed in the release check, task M11.1.</li>
+</ul>
+<h3 id="corr-duct-internal"><code>duct_internal</code>: Internal flow, circular or by hydraulic diameter<a class="headerlink" href="#corr-duct-internal" title="Permanent link">&para;</a></h3>
+<p>Formula (copied from the theory document):</p>
+<pre><code class="language-text">Re = ṁ D_h /(A μ), D_h = 4A/P_wet. Properties at the bulk fluid temperature.
+Laminar (Re ≤ 2300): Nu_lam from the table (constant wall T: circular 3.66, parallel plates both heated 7.54, parallel plates one side insulated 4.86, square 2.98; constant flux: 4.36, 8.23, 5.39, 3.61).
+Turbulent (Re ≥ 4000): Gnielinski Nu = (f/8)(Re − 1000) Pr / [1 + 12.7 (f/8)^½ (Pr^⅔ − 1)], f = (0.790 ln Re − 1.64)⁻².
+Transition (2300 &lt; Re &lt; 4000): linear interpolation in Re between Nu_lam and Nu_Gnielinski(Re = 4000).
+Optional: Dittus–Boelter, Nu = 0.023 Re^0.8 Pr^n, n = 0.4 if wall hotter than fluid, else 0.3.
+</code></pre>
+<ul>
+<li><strong>Characteristic length L_c:</strong> D_h</li>
+<li><strong>Inputs:</strong> <code>mass_flow</code>, <code>area</code>, <code>wetted_perimeter</code>, the surface and fluid temperatures, and the fluid (the keyword inputs of <code>thermalfea.api.htc</code>).</li>
+<li><strong>Fluid properties evaluated at:</strong> The bulk fluid temperature (Theory §8.1).</li>
+<li><strong>Validity range (as recorded):</strong> Gnielinski: 0.5 ≤ Pr ≤ 2000, Re ≤ 5e6. Dittus–Boelter: Re ≥ 1e4. (The validity column of the §8 table is empty for this entry; the ranges are those stated in §8.1.)</li>
+<li><strong>Theory section:</strong> <a href="../theory/#sec-8">Theory §8</a>, <a href="../theory/#sec-8-1">Theory §8.1</a></li>
+<li><strong>Literature source:</strong> source not yet recorded; to be confirmed in the release check, task M11.1.</li>
+<li><strong>Note:</strong> Not offered as a convection boundary condition: internal flow belongs to streams (see <a href="../theory/#sec-9">Theory §9</a>).</li>
+</ul>
+<h3 id="corr-vplate-natural"><code>vplate_natural</code>: Vertical plate (Churchill–Chu)<a class="headerlink" href="#corr-vplate-natural" title="Permanent link">&para;</a></h3>
+<p>Formula (copied from the theory document):</p>
+<pre><code class="language-text">Nu = {0.825 + 0.387 Ra^(1/6) / [1+(0.492/Pr)^(9/16)]^(8/27)}²
+</code></pre>
+<ul>
+<li><strong>Characteristic length L_c:</strong> height</li>
+<li><strong>Inputs:</strong> <code>length</code>, the surface and fluid temperatures, and the fluid (the keyword inputs of <code>thermalfea.api.htc</code>).</li>
+<li><strong>Fluid properties evaluated at:</strong> Fluid properties at the film temperature T_film = (T_s + T∞)/2.</li>
+<li><strong>Validity range (as recorded):</strong> all Ra</li>
+<li><strong>Theory section:</strong> <a href="../theory/#sec-8">Theory §8</a></li>
+<li><strong>Literature source:</strong> source not yet recorded; to be confirmed in the release check, task M11.1.</li>
+</ul>
+<h3 id="corr-inclined-natural"><code>inclined_natural</code>: Plate inclined θ from vertical<a class="headerlink" href="#corr-inclined-natural" title="Permanent link">&para;</a></h3>
+<p>Formula (copied from the theory document):</p>
+<pre><code class="language-text">as `vplate_natural` with g → g cos θ
+</code></pre>
+<ul>
+<li><strong>Characteristic length L_c:</strong> length</li>
+<li><strong>Inputs:</strong> <code>length</code>, <code>theta_deg</code>, the surface and fluid temperatures, and the fluid (the keyword inputs of <code>thermalfea.api.htc</code>).</li>
+<li><strong>Fluid properties evaluated at:</strong> Fluid properties at the film temperature T_film = (T_s + T∞)/2.</li>
+<li><strong>Validity range (as recorded):</strong> θ ≤ 60°</li>
+<li><strong>Theory section:</strong> <a href="../theory/#sec-8">Theory §8</a></li>
+<li><strong>Literature source:</strong> source not yet recorded; to be confirmed in the release check, task M11.1.</li>
+</ul>
+<h3 id="corr-hplate-up-natural"><code>hplate_up_natural</code>: Horizontal, hot face up or cold face down<a class="headerlink" href="#corr-hplate-up-natural" title="Permanent link">&para;</a></h3>
+<p>Formula (copied from the theory document):</p>
+<pre><code class="language-text">Ra ≤ 1e7: Nu = 0.54 Ra^¼; else Nu = 0.15 Ra^⅓
+</code></pre>
+<ul>
+<li><strong>Characteristic length L_c:</strong> area/perimeter</li>
+<li><strong>Inputs:</strong> <code>length</code>, the surface and fluid temperatures, and the fluid (the keyword inputs of <code>thermalfea.api.htc</code>).</li>
+<li><strong>Fluid properties evaluated at:</strong> Fluid properties at the film temperature T_film = (T_s + T∞)/2.</li>
+<li><strong>Validity range (as recorded):</strong> 1e4 ≤ Ra ≤ 1e11</li>
+<li><strong>Theory section:</strong> <a href="../theory/#sec-8">Theory §8</a></li>
+<li><strong>Literature source:</strong> source not yet recorded; to be confirmed in the release check, task M11.1.</li>
+</ul>
+<h3 id="corr-hplate-down-natural"><code>hplate_down_natural</code>: Horizontal, hot face down or cold face up<a class="headerlink" href="#corr-hplate-down-natural" title="Permanent link">&para;</a></h3>
+<p>Formula (copied from the theory document):</p>
+<pre><code class="language-text">Nu = 0.27 Ra^¼
+</code></pre>
+<ul>
+<li><strong>Characteristic length L_c:</strong> area/perimeter</li>
+<li><strong>Inputs:</strong> <code>length</code>, the surface and fluid temperatures, and the fluid (the keyword inputs of <code>thermalfea.api.htc</code>).</li>
+<li><strong>Fluid properties evaluated at:</strong> Fluid properties at the film temperature T_film = (T_s + T∞)/2.</li>
+<li><strong>Validity range (as recorded):</strong> 1e5 ≤ Ra ≤ 1e10</li>
+<li><strong>Theory section:</strong> <a href="../theory/#sec-8">Theory §8</a></li>
+<li><strong>Literature source:</strong> source not yet recorded; to be confirmed in the release check, task M11.1.</li>
+</ul>
+<h3 id="corr-hcyl-natural"><code>hcyl_natural</code>: Horizontal cylinder (Churchill–Chu)<a class="headerlink" href="#corr-hcyl-natural" title="Permanent link">&para;</a></h3>
+<p>Formula (copied from the theory document):</p>
+<pre><code class="language-text">Nu = {0.60 + 0.387 Ra^(1/6) / [1+(0.559/Pr)^(9/16)]^(8/27)}²
+</code></pre>
+<ul>
+<li><strong>Characteristic length L_c:</strong> diameter</li>
+<li><strong>Inputs:</strong> <code>length</code>, the surface and fluid temperatures, and the fluid (the keyword inputs of <code>thermalfea.api.htc</code>).</li>
+<li><strong>Fluid properties evaluated at:</strong> Fluid properties at the film temperature T_film = (T_s + T∞)/2.</li>
+<li><strong>Validity range (as recorded):</strong> Ra ≤ 1e12</li>
+<li><strong>Theory section:</strong> <a href="../theory/#sec-8">Theory §8</a></li>
+<li><strong>Literature source:</strong> source not yet recorded; to be confirmed in the release check, task M11.1.</li>
+</ul>
+<h3 id="corr-power-law"><code>power_law</code>: User form<a class="headerlink" href="#corr-power-law" title="Permanent link">&para;</a></h3>
+<p>Formula (copied from the theory document):</p>
+<pre><code class="language-text">h = C · |T_s − T∞|ⁿ
+</code></pre>
+<ul>
+<li><strong>Characteristic length L_c:</strong> —</li>
+<li><strong>Inputs:</strong> <code>C</code>, <code>n</code>, and the surface and fluid temperatures. No fluid is used.</li>
+<li><strong>Fluid properties evaluated at:</strong> None: the correlation does not use fluid properties.</li>
+<li><strong>Validity range (as recorded):</strong> Not stated in the theory document.</li>
+<li><strong>Theory section:</strong> <a href="../theory/#sec-8">Theory §8</a></li>
+<li><strong>Literature source:</strong> source not yet recorded; to be confirmed in the release check, task M11.1.</li>
+</ul>
+<h2 id="validity-ranges-and-warnings">Validity ranges and warnings<a class="headerlink" href="#validity-ranges-and-warnings" title="Permanent link">&para;</a></h2>
+<p>For the horizontal-plate pair, pick "up" or "down" automatically at run time from the sign
+of (T_s − T∞) and the declared face direction. Outside a validity range: still evaluate,
+and emit one warning per boundary condition per solve.
+<code>plate_forced_local</code> needs the leading-edge point and flow direction; x is the distance of
+the integration point from the leading edge along the flow direction (minimum x = 1e-6 m).</p>
+<h2 id="internal-duct-flow-friction-factor-and-pressure-drop-theory-81">Internal duct flow, friction factor and pressure drop (Theory §8.1)<a class="headerlink" href="#internal-duct-flow-friction-factor-and-pressure-drop-theory-81" title="Permanent link">&para;</a></h2>
+<p>This is the text of §8.1 of the theory document, unchanged. It holds the laminar Nusselt numbers, the turbulent and transition relations, the optional Dittus–Boelter relation, the Churchill friction factor and the pressure drop of a duct.</p>
+<p>Re = ṁ D_h /(A μ), D_h = 4A/P_wet. Properties at the bulk fluid temperature.</p>
+<ul>
+<li>Laminar (Re ≤ 2300): Nu_lam from the table below.</li>
+<li>Turbulent (Re ≥ 4000): Gnielinski
+  Nu = (f/8)(Re − 1000) Pr / [1 + 12.7 (f/8)^½ (Pr^⅔ − 1)], f = (0.790 ln Re − 1.64)⁻²
+  (valid 0.5 ≤ Pr ≤ 2000, Re ≤ 5e6).</li>
+<li>Transition (2300 &lt; Re &lt; 4000): linear interpolation in Re between Nu_lam and
+  Nu_Gnielinski(Re = 4000).</li>
+</ul>
+<table>
+<thead>
+<tr>
+<th>Cross-section</th>
+<th>Nu_lam, constant wall T</th>
+<th>Nu_lam, constant flux</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Circular</td>
+<td>3.66</td>
+<td>4.36</td>
+</tr>
+<tr>
+<td>Parallel plates, both heated</td>
+<td>7.54</td>
+<td>8.23</td>
+</tr>
+<tr>
+<td>Parallel plates, one side insulated</td>
+<td>4.86</td>
+<td>5.39</td>
+</tr>
+<tr>
+<td>Square</td>
+<td>2.98</td>
+<td>3.61</td>
+</tr>
+</tbody>
+</table>
+<p>Default is the constant-wall-temperature value. Optional user selection: Dittus–Boelter,
+Nu = 0.023 Re^0.8 Pr^n, n = 0.4 if wall hotter than fluid, else 0.3 (Re ≥ 1e4).</p>
+<p>Friction factor, all regimes (Churchill 1977), roughness e:
+f = 8 [ (8/Re)¹² + (A + B)^(−1.5) ]^(1/12),
+A = [2.457 ln( 1 / ((7/Re)^0.9 + 0.27 e/D_h) )]¹⁶, B = (37530/Re)¹⁶</p>
+<p>Pressure drop of a duct of length L with minor-loss coefficient K_minor:
+Δp = (f L/D_h + K_minor) · ρ V²/2, V = ṁ/(ρ A).</p>
+<p>The stream and network equations that use these relations are in <a href="../theory/#sec-9">Theory §9</a>.</p>
+<h2 id="literature-sources">Literature sources<a class="headerlink" href="#literature-sources" title="Permanent link">&para;</a></h2>
+<p>The theory document names the Churchill–Bernstein, Churchill–Chu, Gnielinski and Dittus–Boelter relations and gives the year of the Churchill friction factor (1977). It gives no reference text or edition for any correlation. For every entry the literature source is: source not yet recorded; to be confirmed in the release check, task M11.1.</p>
+              
+            </div>
+          </div><footer>
+    <div class="rst-footer-buttons" role="navigation" aria-label="Footer Navigation">
+        <a href="../materials/" class="btn btn-neutral float-left" title="Materials"><span class="icon icon-circle-arrow-left"></span> Previous</a>
+        <a href="../theory/" class="btn btn-neutral float-right" title="Theory">Next <span class="icon icon-circle-arrow-right"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <!-- Copyright etc -->
+  </div>
+
+  Built with <a href="https://www.mkdocs.org/">MkDocs</a> using a <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>.
+</footer>
+          
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+
+  <div class="rst-versions" role="note" aria-label="Versions">
+  <span class="rst-current-version" data-toggle="rst-current-version">
+    
+        <span>
+          <a href="https://github.com/dilleyrd/thermal-fea" class="fa fa-github" style="color: #fcfcfc"> GitHub</a>
+        </span>
+    
+    
+      <span><a href="../materials/" style="color: #fcfcfc">&laquo; Previous</a></span>
+    
+    
+      <span><a href="../theory/" style="color: #fcfcfc">Next &raquo;</a></span>
+    
+  </span>
+</div>
+    <script src="../js/jquery-3.6.0.min.js"></script>
+    <script>var base_url = "..";</script>
+    <script src="../js/theme_extra.js"></script>
+    <script src="../js/theme.js"></script>
+      <script src="../search/main.js"></script>
+    <script>
+        jQuery(function () {
+            SphinxRtdTheme.Navigation.enable(true);
+        });
+    </script>
+
+</body>
+</html>

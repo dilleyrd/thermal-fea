@@ -1,0 +1,485 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><link rel="canonical" href="https://dilleyrd.github.io/thermal-fea/getting-started/" />
+      <link rel="shortcut icon" href="../img/favicon.ico" />
+    <title>Getting started - ThermalFEA user guide</title>
+    <link rel="stylesheet" href="../css/theme.css" />
+    <link rel="stylesheet" href="../css/theme_extra.css" />
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" />
+    
+      <script>
+        // Current page data
+        var mkdocs_page_name = "Getting started";
+        var mkdocs_page_input_path = "getting-started.md";
+        var mkdocs_page_url = "/thermal-fea/getting-started/";
+      </script>
+    
+    <!--[if lt IE 9]>
+      <script src="../js/html5shiv.min.js"></script>
+    <![endif]-->
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
+      <script>hljs.highlightAll();</script> 
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side stickynav">
+    <div class="wy-side-scroll">
+      <div class="wy-side-nav-search">
+          <a href=".." class="icon icon-home"> ThermalFEA user guide
+        </a><div role="search">
+  <form id ="rtd-search-form" class="wy-form" action="../search.html" method="get">
+      <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" title="Type search term here" />
+  </form>
+</div>
+      </div>
+
+      <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="..">Home</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../installation/">Installation</a>
+                </li>
+              </ul>
+              <ul class="current">
+                <li class="toctree-l1 current"><a class="reference internal current" href="#">Getting started</a>
+    <ul class="current">
+    <li class="toctree-l2"><a class="reference internal" href="#the-window">The window</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#selecting-in-the-viewport">Selecting in the viewport</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#the-workflow">The workflow</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#1-geometry">1. Geometry</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#2-materials-and-regions">2. Materials and regions</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#3-loads-and-boundary-conditions">3. Loads and boundary conditions</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#4-mesh">4. Mesh</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#5-analysis-settings-and-initial-condition">5. Analysis settings and initial condition</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#6-validate-and-solve">6. Validate and solve</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#7-results">7. Results</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#which-things-are-out-of-date">Which things are out of date</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#undo-and-redo">Undo and redo</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#units">Units</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#examples">Examples</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#files-and-where-results-are-stored">Files and where results are stored</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#continuing-a-transient-run">Continuing a transient run</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#from-the-command-line">From the command line</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#from-python">From Python</a>
+    </li>
+    </ul>
+                </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Tutorials</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../tutorials/t4-plate/">NAFEMS T4 steady plate</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../tutorials/fin-quench/">Transient quench of a fin</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../tutorials/cold-plate/">Cold plate with a water stream</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Reference</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../units/">Units</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../materials/">Materials</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../correlations/">Correlations</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../theory/">Theory</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../verification/">Verification</a>
+                  </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../limitations/">Limitations</a>
+                </li>
+              </ul>
+      </div>
+    </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+      <nav class="wy-nav-top" role="navigation" aria-label="Mobile navigation menu">
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="..">ThermalFEA user guide</a>
+        
+      </nav>
+      <div class="wy-nav-content">
+        <div class="rst-content"><div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href=".." class="icon icon-home" aria-label="Docs"></a></li>
+      <li class="breadcrumb-item active">Getting started</li>
+    <li class="wy-breadcrumbs-aside">
+    </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+            <div class="section" itemprop="articleBody">
+              
+                <h1 id="getting-started">Getting started<a class="headerlink" href="#getting-started" title="Permanent link">&para;</a></h1>
+<p>This page describes the workflow as the program presents it, first in the window and then
+from the command line and from Python. The <a href="../tutorials/t4-plate/">tutorials</a> apply it to
+worked problems.</p>
+<p>The program has not yet been reviewed on a real screen by its owner (see
+<a href="../limitations/">Limitations</a>). Layout and wording of the window may change.</p>
+<h2 id="the-window">The window<a class="headerlink" href="#the-window" title="Permanent link">&para;</a></h2>
+<p>Start the program as described in <a href="../installation/#start-the-program">Installation</a>.</p>
+<ul>
+<li><strong>Model</strong> dock (top left): the model tree.</li>
+<li><strong>Properties</strong> dock (below it): the panel of the item selected in the tree.</li>
+<li><strong>Viewport</strong> (centre): the geometry, the mesh, load symbols and result plots.</li>
+<li><strong>Messages</strong> dock (bottom): the solver log. An <strong>Issues</strong> dock is tabbed with it and lists
+  the findings of validation. The View menu shows and hides the docks, and switches the
+  load symbols on and off ("Load symbols").</li>
+<li><strong>Toolbar</strong>: the selection modes None, Point, Curve, Surface, Node and Element, and
+  "Fit view" (the key F).</li>
+</ul>
+<p>Menus: File, Edit, View, Geometry, Mesh, Solve, Results, Tools, Help.</p>
+<h3 id="selecting-in-the-viewport">Selecting in the viewport<a class="headerlink" href="#selecting-in-the-viewport" title="Permanent link">&para;</a></h3>
+<p>A click selects the item under the pointer (8 pixels of tolerance). Ctrl-click adds to or
+removes from the selection. A click on nothing clears it. A drag longer than 4 pixels
+selects by a box: curves must lie wholly inside the box, surfaces are chosen by their
+bounding box, elements by their centre. Changing the selection mode clears the selection.
+The mouse wheel zooms and the middle button pans.</p>
+<h2 id="the-workflow">The workflow<a class="headerlink" href="#the-workflow" title="Permanent link">&para;</a></h2>
+<p>The model tree lists the parts of a model in the order you normally fill them in:</p>
+<table>
+<thead>
+<tr>
+<th>Tree node</th>
+<th>What it holds</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Geometry</td>
+<td>the geometry operations, in the order they were applied</td>
+</tr>
+<tr>
+<td>Materials</td>
+<td>the materials used by the model</td>
+</tr>
+<tr>
+<td>Regions</td>
+<td>which material (and thickness and material angle) each surface selection has</td>
+</tr>
+<tr>
+<td>Mesh</td>
+<td>mesh settings and the Generate mesh button</td>
+</tr>
+<tr>
+<td>Initial Condition</td>
+<td>the starting temperature of a transient analysis</td>
+</tr>
+<tr>
+<td>Loads &amp; Boundary Conditions</td>
+<td>fixed temperatures, fluxes, convection, radiation, symmetry, ...</td>
+</tr>
+<tr>
+<td>Contacts</td>
+<td>thermal contact between regions</td>
+</tr>
+<tr>
+<td>Flow</td>
+<td>streams and networks</td>
+</tr>
+<tr>
+<td>Enclosures</td>
+<td>enclosure radiation (not available in this version)</td>
+</tr>
+<tr>
+<td>Analysis Settings</td>
+<td>steady or transient, time stepping, output, nonlinear controls</td>
+</tr>
+<tr>
+<td>Solution</td>
+<td>the result objects (contour plots, vector plots) after a solve</td>
+</tr>
+</tbody>
+</table>
+<p>Right-click a node to see its actions. Loads can be added, renamed, duplicated, suppressed
+and deleted. Materials, streams, contacts and enclosures can be renamed, duplicated and deleted.</p>
+<h3 id="1-geometry">1. Geometry<a class="headerlink" href="#1-geometry" title="Permanent link">&para;</a></h3>
+<p>The Geometry menu has Point..., Line..., Arc..., Spline..., Rectangle..., Circle...,
+Polygon..., Surface from curves..., Union..., Cut..., Intersect..., Translate...,
+Rotate..., Mirror..., Scale..., Delete..., Import STEP/BREP/DXF..., Snap to grid and
+Rebuild geometry.</p>
+<p>Each operation opens a dialog with numeric entry. The geometry is rebuilt by itself after
+every OK. Notes:</p>
+<ul>
+<li>For Union, Cut and Intersect select the shapes in the viewport first. The earliest
+  selected shape (in history order) is the object; the others are the tools.</li>
+<li>The parameters of Translate, Rotate, Mirror and Scale are always in SI (lengths in
+  metres, angles in radians), whatever the display units.</li>
+<li>An operation that later operations refer to cannot be deleted.</li>
+<li>If a rebuild fails, the old geometry stays, is marked out of date, and the error is
+  reported. Edit &gt; Undo recovers.</li>
+<li>DXF import needs the <code>dxf</code> extra (<a href="../installation/#optional-extras">Installation</a>). See
+  <a href="../limitations/#dxf-import">Limitations</a> for what it ignores.</li>
+<li>A new model is a planar model. The window has no control to change that.</li>
+</ul>
+<h3 id="2-materials-and-regions">2. Materials and regions<a class="headerlink" href="#2-materials-and-regions" title="Permanent link">&para;</a></h3>
+<p>Right-click Materials and choose Add material. The new material starts as a copy of the
+first library material, so check every value. Each physical property has a mode box
+(Constant, Table or Expression) above its value; leave it on Constant for a constant.
+Tools &gt; Material library... opens the built-in library (<a href="../materials/">Materials</a>).</p>
+<p>Right-click Regions and choose Add region. In its Selection field press "Pick in
+viewport", set the toolbar to Surface, click the surfaces, press Apply, then press "Pick in
+viewport" again to switch picking off. Choose the Material, and set the Thickness (planar
+models) and the Material angle if needed.</p>
+<h3 id="3-loads-and-boundary-conditions">3. Loads and boundary conditions<a class="headerlink" href="#3-loads-and-boundary-conditions" title="Permanent link">&para;</a></h3>
+<p>Right-click Loads &amp; Boundary Conditions, choose Add, then one of:</p>
+<p>Add Fixed Temperature, Add Heat Flux, Add Heat Flow, Add Heat Generation,
+Add Heat Power, Add Convection, Add Correlation Convection, Add Radiation to Ambient,
+Add Symmetry, Add Adiabatic.</p>
+<p>Each load has a Selection field that works as described for regions (set the toolbar to
+Curve for edges). Selecting a load in the tree highlights its curves, and the viewport
+shows load symbols.</p>
+<ul>
+<li><strong>Press Enter after typing a number.</strong> The value is applied when you press Enter or leave
+  the field. Each applied change is one undo step.</li>
+<li>A value may be a Constant, a Table against time, or an Expression of time, position and
+  temperature. Expressions are always evaluated in SI units (<a href="../units/">Units</a>).</li>
+<li>Heat flows count as positive when they enter the body.</li>
+<li>Correlation Convection takes its heat-transfer coefficient from a
+  <a href="../correlations/">correlation</a>. A correlation used outside its validity range still
+  gives a value and logs one warning.</li>
+<li>A Contact (right-click Contacts, Add contact) starts with an empty selection and a
+  conductance of 0, which you must set. A temperature-dependent conductance is refused.</li>
+<li>Streams and networks are under Flow (right-click, Add stream). Results &gt; Flow results...
+  shows the fluid temperature along the stream.</li>
+<li>Tools &gt; HTC calculator... evaluates a correlation at single values without a model.</li>
+</ul>
+<h3 id="4-mesh">4. Mesh<a class="headerlink" href="#4-mesh" title="Permanent link">&para;</a></h3>
+<p>Click the Mesh node. The panel has, among others, "Global element size", "Element order"
+and "Element shape". Press <strong>Generate mesh</strong> (or use Mesh &gt; Generate mesh). The status bar
+reports the number of nodes and elements and the mesh is drawn in the viewport.</p>
+<h3 id="5-analysis-settings-and-initial-condition">5. Analysis settings and initial condition<a class="headerlink" href="#5-analysis-settings-and-initial-condition" title="Permanent link">&para;</a></h3>
+<p>Click Analysis Settings. "Analysis type" is <code>steady</code> or <code>transient</code>. A transient analysis
+shows "End time", "Initial time step", "Smallest time step", "Largest time step",
+"Adaptive time step", "Time-step tolerance", "Largest temperature change per step",
+"Theta", "Lumped capacitance" and the output controls ("Output steps", "Store every n-th
+step", "Output times"). The nonlinear controls are "Residual tolerance", "Temperature
+tolerance", "Maximum iterations" and "Line search".</p>
+<p>Click Initial Condition for a transient analysis. "Kind" is <code>uniform</code>, <code>expression</code>,
+<code>per_region</code> or <code>from_results</code>. The initial state (step 0) is always stored.</p>
+<h3 id="6-validate-and-solve">6. Validate and solve<a class="headerlink" href="#6-validate-and-solve" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Solve &gt; <strong>Validate</strong> checks the model before solving and lists errors and warnings in
+  the Issues dock. Errors must be fixed first.</li>
+<li>Solve &gt; <strong>Solve</strong> runs the analysis on its own thread. A window titled "Solving" shows
+  the progress and stays open, with a "Finished" state, so you can read the residual chart.</li>
+<li>Solve &gt; <strong>Cancel solve</strong> stops a run. The steps already written are kept.</li>
+<li>Solve &gt; <strong>Continue transient run</strong> continues a transient run (see below).</li>
+</ul>
+<p>The Messages dock shows the log, including the heat entering through each load and the
+relative imbalance of the energy balance.</p>
+<h3 id="7-results">7. Results<a class="headerlink" href="#7-results" title="Permanent link">&para;</a></h3>
+<p>After a solve the Solution node holds a temperature contour (for example "Temperature 1").
+Its panel has "Levels", "Banded (otherwise smooth)", "Colour scale" and "Mesh overlay",
+and, for a transient run, a "Step" slider and spin box, a "Time" box and "Play".</p>
+<p>The Results menu has: Add contour, Add vector plot, Probe, Play animation, Nodal
+history..., Path plot..., Finish path plot, Cancel path plot, Heat-flow history, Energy
+balance and Flow results.... Nodal history and Path plot ask you to pick nodes or path
+points in the viewport first. Probe shows x, y and the value at the pixel you click. It is
+a rough check; use the CSV export for exact values.</p>
+<p>File &gt; Export has: Viewport image..., Nodal results (CSV)..., ParaView (VTU)... and
+Animation (GIF).... The CSV has the columns <code>step, time, node, x, y, T, qx, qy</code> in SI
+units. Charts have their own export.</p>
+<h2 id="which-things-are-out-of-date">Which things are out of date<a class="headerlink" href="#which-things-are-out-of-date" title="Permanent link">&para;</a></h2>
+<p>An edit makes parts of the work out of date. What is affected depends on what you changed:</p>
+<table>
+<thead>
+<tr>
+<th>You changed</th>
+<th>Out of date</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>the geometry</td>
+<td>geometry, mesh and results</td>
+</tr>
+<tr>
+<td>the mesh settings, the model type, or a selection the mesh settings use</td>
+<td>mesh and results</td>
+</tr>
+<tr>
+<td>anything else (loads, materials, analysis settings, ...)</td>
+<td>results only</td>
+</tr>
+</tbody>
+</table>
+<p>How it shows:</p>
+<ul>
+<li>Results panels show "These results are out of date: the model changed since the solve."</li>
+<li>Chart windows are marked "(out of date)" in their title when new results arrive.
+  They are not redrawn.</li>
+<li>Solve is not available while the geometry or the mesh is out of date. Press Rebuild
+  geometry and Generate mesh first (the status bar says "The mesh is out of date;
+  regenerate it before solving").</li>
+</ul>
+<p>Changing the display units (<a href="../units/">Units</a>) makes nothing out of date.</p>
+<p>Selection tags and the selection named "all" are caches of the build. A rebuild is not an
+undo step and does not make anything out of date by itself.</p>
+<p>If you edit the model while a solve is running, the solve uses its own copy. When it
+finishes, the results are stored but marked out of date. If the mesh or the build was
+replaced meanwhile, the results are discarded (the file stays on disk).</p>
+<h2 id="undo-and-redo">Undo and redo<a class="headerlink" href="#undo-and-redo" title="Permanent link">&para;</a></h2>
+<p>Edit &gt; Undo and Edit &gt; Redo (Ctrl+Z, Ctrl+Y). Every applied property change, every geometry
+operation, every change of units and every tree action (add, rename, duplicate, delete) is
+one undo step.</p>
+<h2 id="units">Units<a class="headerlink" href="#units" title="Permanent link">&para;</a></h2>
+<p>Tools &gt; Units... chooses the units numbers are shown and typed in. The default is SI with
+temperatures in kelvin. See <a href="../units/">Units</a>. Press Enter after typing, and remember that
+100 degC is 373.15 K when the units are K.</p>
+<h2 id="examples">Examples<a class="headerlink" href="#examples" title="Permanent link">&para;</a></h2>
+<p>File &gt; Examples opens ready-made models: the verification cases V-01 to V-21, V-27 to
+V-29, V-32 and V-35 (<a href="../verification/">Verification</a>). They are good starting points: open
+one, look at how it is set up, change it.</p>
+<h2 id="files-and-where-results-are-stored">Files and where results are stored<a class="headerlink" href="#files-and-where-results-are-stored" title="Permanent link">&para;</a></h2>
+<ul>
+<li>File &gt; New, Open..., Save, Save As... and Recent files work as usual. The model is a
+  JSON file (<code>.tfea</code>).</li>
+<li>Results are stored in an HDF5 file named after the model with <code>.h5</code> added:
+  <code>model.tfea.h5</code> beside <code>model.tfea</code>. A model that was never saved writes its results to a
+  temporary folder.</li>
+<li>When you open a saved model, its results file is attached again once a mesh exists, so
+  press Generate mesh after opening to see the results.</li>
+<li>The results file also holds a copy of the model it was solved from.</li>
+</ul>
+<h2 id="continuing-a-transient-run">Continuing a transient run<a class="headerlink" href="#continuing-a-transient-run" title="Permanent link">&para;</a></h2>
+<p>A transient run can be continued from its last stored step to a later end time. The new
+steps are added to the same results file.</p>
+<ol>
+<li>Raise "End time" in Analysis Settings. (A run that was cancelled can be continued
+   without raising it.)</li>
+<li>Choose Solve &gt; <strong>Continue transient run</strong>.</li>
+</ol>
+<p>On the command line: <code>thermalfea solve model.tfea --restart</code>. From Python:
+<code>api.solve(model, mesh, path=..., restart=True)</code>.</p>
+<p>What to know:</p>
+<ul>
+<li>The mesh must be the same (same nodes), or the restart is refused. So is a steady
+  solution, a last step that did not converge, and an end time the file has already
+  reached.</li>
+<li>Loads, materials and settings are not compared. The continued steps use the current
+  model, which replaces the model stored in the results file. A load that you changed takes
+  effect from the restart time.</li>
+<li>With a fixed time step the continued run repeats an uninterrupted run (to round-off in
+  the linear case). With adaptive stepping the controller's history is not stored, so the
+  steps differ from those of an uninterrupted run within the time-stepping tolerance.</li>
+</ul>
+<h2 id="from-the-command-line">From the command line<a class="headerlink" href="#from-the-command-line" title="Permanent link">&para;</a></h2>
+<p>Build and save the model in the window (File &gt; Save) or from a script, then:</p>
+<pre><code>thermalfea info model.tfea
+thermalfea solve model.tfea
+</code></pre>
+<p><code>info</code> prints counts and a quality line. <code>solve</code> prints one progress line per step and a
+text summary, and writes <code>model.tfea.h5</code> (<a href="../installation/#the-command-line">Installation</a>
+has the options and exit codes). Results can then be read by the Python API or opened in the
+window.</p>
+<h2 id="from-python">From Python<a class="headerlink" href="#from-python" title="Permanent link">&para;</a></h2>
+<p>Everything the window does is available from <code>thermalfea.api</code>. This script builds a plate,
+solves it, prints the summary and saves the model:</p>
+<pre><code class="language-python">from thermalfea import api
+from thermalfea.model.bcs import Convection, FixedTemperature
+
+model = api.new_model(&quot;planar&quot;, name=&quot;plate&quot;)
+geo = api.Geometry(model)
+geo.rectangle(0.0, 0.0, 0.2, 0.1)
+built = api.build(model)
+api.select_curves(model, built, name=&quot;bottom&quot;, where=lambda c: abs(c.center[1]) &lt; 1e-9)
+api.select_curves(model, built, name=&quot;top&quot;, where=lambda c: abs(c.center[1] - 0.1) &lt; 1e-9)
+api.assign_region(model, &quot;all&quot;, material=&quot;Aluminium 6061-T6&quot;)
+model.bcs.append(FixedTemperature(&quot;base&quot;, &quot;bottom&quot;, T=373.15))
+model.bcs.append(Convection(&quot;cooling&quot;, &quot;top&quot;, h=25.0, T_inf=293.15))
+model.mesh_settings.global_size = 0.01
+mesh = api.mesh(model, built)
+results = api.solve(model, mesh, built=built)
+print(api.summary(results))
+api.save(model, &quot;plate.tfea&quot;)
+</code></pre>
+<p>All values are SI, with temperature in kelvin. Other calls: <code>api.load</code>, <code>api.plot_contour</code>,
+<code>api.plot_vectors</code>, <code>api.plot_path</code>, <code>api.plot_history</code>, <code>api.export_csv</code>,
+<code>api.export_vtu</code>, <code>api.export_animation</code> and <code>api.htc</code>. Without <code>path=</code>, <code>api.solve</code> writes
+the results to a temporary folder; <code>api.results_path(model_path)</code> gives the name beside a
+model file. Pass <code>built=</code> to <code>api.solve</code> so that the model is validated first.</p>
+              
+            </div>
+          </div><footer>
+    <div class="rst-footer-buttons" role="navigation" aria-label="Footer Navigation">
+        <a href="../installation/" class="btn btn-neutral float-left" title="Installation"><span class="icon icon-circle-arrow-left"></span> Previous</a>
+        <a href="../tutorials/t4-plate/" class="btn btn-neutral float-right" title="NAFEMS T4 steady plate">Next <span class="icon icon-circle-arrow-right"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <!-- Copyright etc -->
+  </div>
+
+  Built with <a href="https://www.mkdocs.org/">MkDocs</a> using a <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>.
+</footer>
+          
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+
+  <div class="rst-versions" role="note" aria-label="Versions">
+  <span class="rst-current-version" data-toggle="rst-current-version">
+    
+        <span>
+          <a href="https://github.com/dilleyrd/thermal-fea" class="fa fa-github" style="color: #fcfcfc"> GitHub</a>
+        </span>
+    
+    
+      <span><a href="../installation/" style="color: #fcfcfc">&laquo; Previous</a></span>
+    
+    
+      <span><a href="../tutorials/t4-plate/" style="color: #fcfcfc">Next &raquo;</a></span>
+    
+  </span>
+</div>
+    <script src="../js/jquery-3.6.0.min.js"></script>
+    <script>var base_url = "..";</script>
+    <script src="../js/theme_extra.js"></script>
+    <script src="../js/theme.js"></script>
+      <script src="../search/main.js"></script>
+    <script>
+        jQuery(function () {
+            SphinxRtdTheme.Navigation.enable(true);
+        });
+    </script>
+
+</body>
+</html>

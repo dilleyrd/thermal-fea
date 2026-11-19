@@ -1,0 +1,496 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><link rel="canonical" href="https://dilleyrd.github.io/thermal-fea/tutorials/t4-plate/" />
+      <link rel="shortcut icon" href="../../img/favicon.ico" />
+    <title>NAFEMS T4 steady plate - ThermalFEA user guide</title>
+    <link rel="stylesheet" href="../../css/theme.css" />
+    <link rel="stylesheet" href="../../css/theme_extra.css" />
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" />
+    
+      <script>
+        // Current page data
+        var mkdocs_page_name = "NAFEMS T4 steady plate";
+        var mkdocs_page_input_path = "tutorials\\t4-plate.md";
+        var mkdocs_page_url = "/thermal-fea/tutorials/t4-plate/";
+      </script>
+    
+    <!--[if lt IE 9]>
+      <script src="../../js/html5shiv.min.js"></script>
+    <![endif]-->
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
+      <script>hljs.highlightAll();</script> 
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side stickynav">
+    <div class="wy-side-scroll">
+      <div class="wy-side-nav-search">
+          <a href="../.." class="icon icon-home"> ThermalFEA user guide
+        </a><div role="search">
+  <form id ="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+      <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" title="Type search term here" />
+  </form>
+</div>
+      </div>
+
+      <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../..">Home</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../../installation/">Installation</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../../getting-started/">Getting started</a>
+                </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Tutorials</span></p>
+              <ul class="current">
+                  <li class="toctree-l1 current"><a class="reference internal current" href="#">NAFEMS T4 steady plate</a>
+    <ul class="current">
+    <li class="toctree-l2"><a class="reference internal" href="#the-problem">The problem</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#before-you-start">Before you start</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#steps">Steps</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#1-draw-the-geometry">1. Draw the geometry</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#2-enter-the-material">2. Enter the material</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#3-assign-it-to-the-plate">3. Assign it to the plate</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#4-enter-the-boundary-conditions">4. Enter the boundary conditions</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#5-mesh">5. Mesh</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#6-solve">6. Solve</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#7-read-the-answer-at-06-02">7. Read the answer at (0.6, 0.2)</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#results">Results</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#checking-the-answer">Checking the answer</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#things-to-try">Things to try</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#the-same-model-as-a-script">The same model as a script</a>
+    </li>
+    </ul>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../fin-quench/">Transient quench of a fin</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../cold-plate/">Cold plate with a water stream</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Reference</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../../units/">Units</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../materials/">Materials</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../correlations/">Correlations</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../theory/">Theory</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../verification/">Verification</a>
+                  </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../../limitations/">Limitations</a>
+                </li>
+              </ul>
+      </div>
+    </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+      <nav class="wy-nav-top" role="navigation" aria-label="Mobile navigation menu">
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../..">ThermalFEA user guide</a>
+        
+      </nav>
+      <div class="wy-nav-content">
+        <div class="rst-content"><div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="../.." class="icon icon-home" aria-label="Docs"></a></li>
+          <li class="breadcrumb-item">Tutorials</li>
+      <li class="breadcrumb-item active">NAFEMS T4 steady plate</li>
+    <li class="wy-breadcrumbs-aside">
+    </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+            <div class="section" itemprop="articleBody">
+              
+                <h1 id="tutorial-1-nafems-t4-a-steady-plate">Tutorial 1: NAFEMS T4, a steady plate<a class="headerlink" href="#tutorial-1-nafems-t4-a-steady-plate" title="Permanent link">&para;</a></h1>
+<p><strong>What you will build.</strong> A rectangular plate held at 100 °C on one edge and cooled by
+convection on two others. It is the NAFEMS "T4" heat-transfer benchmark, and the published
+answer is a single temperature at a single point.</p>
+<p><strong>What you will learn.</strong> How to draw the geometry; how to pick edges and faces in the
+viewport; how to enter a material, boundary conditions and a mesh size; how to solve a
+steady analysis and read a temperature at a point; how to check the energy balance; and how
+the answer changes as the mesh is refined.</p>
+<p>The finished model is in
+<a href="../models/t4-plate.tfea">models/t4-plate.tfea</a>; open it with <strong>File &gt; Open...</strong> to compare with
+your own.</p>
+<h2 id="the-problem">The problem<a class="headerlink" href="#the-problem" title="Permanent link">&para;</a></h2>
+<p>A plate of conductivity k = 52 W/(m K) measures 0.6 m in x and 1.0 m in y. Its bottom edge
+is held at 100 °C. Its left edge is insulated. Its right and top edges lose heat by
+convection to air at 0 °C. The question is the temperature at the point (0.6, 0.2), on the
+right edge, 0.2 m above the hot edge.</p>
+<table>
+<thead>
+<tr>
+<th>Item</th>
+<th>Value</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Plate</td>
+<td>0.6 m (x) by 1.0 m (y), planar model, thickness 1 m (the default)</td>
+</tr>
+<tr>
+<td>Conductivity k</td>
+<td>52 W/(m K), constant</td>
+</tr>
+<tr>
+<td>Bottom edge (y = 0)</td>
+<td>fixed temperature 100 °C = 373.15 K</td>
+</tr>
+<tr>
+<td>Left edge (x = 0)</td>
+<td>adiabatic (insulated)</td>
+</tr>
+<tr>
+<td>Right edge (x = 0.6) and top edge (y = 1)</td>
+<td>convection, h = 750 W/(m² K), fluid at 0 °C = 273.15 K</td>
+</tr>
+<tr>
+<td>Benchmark</td>
+<td>T(0.6, 0.2) = 18.3 °C, accepted within 0.15 °C at element size 0.025</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Temperature units.</strong> The program works in SI units and shows kelvin by default. This
+tutorial uses the defaults, so every temperature you type is in kelvin: 100 °C is 373.15 K
+and 0 °C is 273.15 K. (<strong>Tools &gt; Units...</strong> can show degrees Celsius instead; the numbers
+below are given in both.)</p>
+<p><strong>A note on the point (0.6, 0.2).</strong> The program cannot place a mesh node at a coordinate
+you type, and you want a node exactly at the benchmark point. So you draw the plate as two
+stacked rectangles that meet along y = 0.2. A shared edge puts a geometry vertex at
+(0.6, 0.2), and the mesher always puts a node on a vertex.</p>
+<h2 id="before-you-start">Before you start<a class="headerlink" href="#before-you-start" title="Permanent link">&para;</a></h2>
+<p>Start the program from the project folder:</p>
+<pre><code>.venv\Scripts\python.exe -m thermalfea.gui.app
+</code></pre>
+<p>The window has the model tree (the <strong>Model</strong> dock, top left), the property panel (the
+<strong>Properties</strong> dock, below it), the viewport in the middle, and the <strong>Messages</strong> dock at the
+bottom. The solver writes its log to Messages. An <strong>Issues</strong> dock shares that space as a
+tab. The toolbar holds the selection modes (None, Point, Curve, Surface, Node, Element) and
+<strong>Fit view</strong>.</p>
+<p>Three habits save trouble:</p>
+<ul>
+<li>Press <strong>Enter</strong> after typing a number in a property field. The value is applied when you
+  press Enter or leave the field. Each applied change is one undo step (<strong>Edit &gt; Undo</strong>).</li>
+<li>A field that holds a physical function (conductivity, temperature, heat-transfer
+  coefficient, ...) has a mode box with Constant, Table and Expression. Leave it on
+  <strong>Constant</strong> and type the number.</li>
+<li>Edges and faces are chosen from the panel of the object that needs them: press <strong>Pick in
+  viewport</strong> in the <strong>Selection</strong> field, choose the matching toolbar mode, click, press
+  <strong>Apply</strong>, then press <strong>Pick in viewport</strong> again to switch picking off. Hold <strong>Ctrl</strong> to
+  add a second item to the selection.</li>
+</ul>
+<h2 id="steps">Steps<a class="headerlink" href="#steps" title="Permanent link">&para;</a></h2>
+<h3 id="1-draw-the-geometry">1. Draw the geometry<a class="headerlink" href="#1-draw-the-geometry" title="Permanent link">&para;</a></h3>
+<ol>
+<li>Choose <strong>Geometry &gt; Rectangle...</strong>. A dialog titled "Rectangle" opens.</li>
+<li>Type x = <code>0</code>, y = <code>0</code>, Width = <code>0.6</code>, Height = <code>0.2</code>. Leave "Corner radius" at 0 and "Id"
+   empty (an id is made for you). Press <strong>OK</strong>.</li>
+<li>Choose <strong>Geometry &gt; Rectangle...</strong> again and type x = <code>0</code>, y = <code>0.2</code>, Width = <code>0.6</code>,
+   Height = <code>0.8</code>. Press <strong>OK</strong>.</li>
+<li>After each OK the geometry is rebuilt by itself: the status bar shows "Building
+   geometry..." and then "Geometry rebuilt". The tree node <strong>Geometry</strong> now lists
+   <code>rectangle1</code> and <code>rectangle2</code>.</li>
+<li>Choose <strong>View &gt; Fit view</strong> (or press <strong>F</strong>). The view is fitted only when the first shape
+   appears, so the second rectangle may be partly out of sight until you do this.</li>
+</ol>
+<p>You should see a 0.6 by 1.0 plate with a line across it at y = 0.2: two surfaces and seven
+curves.</p>
+<h3 id="2-enter-the-material">2. Enter the material<a class="headerlink" href="#2-enter-the-material" title="Permanent link">&para;</a></h3>
+<ol>
+<li>Right-click <strong>Materials</strong> and choose <strong>Add material</strong>. A node "Material 1" appears and its
+   panel opens. A new material starts as a copy of the first library material (aluminium),
+   so every value must be set by you.</li>
+<li>In "Thermal conductivity" (mode Constant) type <code>52</code> and press Enter. Density and specific
+   heat do not affect a steady answer; leave them.</li>
+</ol>
+<h3 id="3-assign-it-to-the-plate">3. Assign it to the plate<a class="headerlink" href="#3-assign-it-to-the-plate" title="Permanent link">&para;</a></h3>
+<ol>
+<li>Right-click <strong>Regions</strong> and choose <strong>Add region</strong>. A region node appears and its panel
+   ("Region") opens. Its "Material" box already shows "Material 1".</li>
+<li>In the "Selection" field press <strong>Pick in viewport</strong>, choose <strong>Surface</strong> in the toolbar,
+   click inside the lower rectangle, <strong>Ctrl</strong>-click inside the upper one (the status line
+   under the buttons says "2 surface(s) picked"), press <strong>Apply</strong>, and switch picking off.
+   The new selection is named "Region selection".</li>
+<li>Leave "Thickness" at 1 and "Material angle" at 0.</li>
+</ol>
+<p>A region ties a material to some faces and, in a planar model, gives the depth of the plate
+perpendicular to the drawing. Every heat flow the program reports is for that depth: here, per
+metre.</p>
+<h3 id="4-enter-the-boundary-conditions">4. Enter the boundary conditions<a class="headerlink" href="#4-enter-the-boundary-conditions" title="Permanent link">&para;</a></h3>
+<p>There are three. Each is added from the node <strong>Loads &amp; Boundary Conditions</strong>.</p>
+<p><strong>Fixed temperature on the bottom edge.</strong></p>
+<ol>
+<li>Right-click <strong>Loads &amp; Boundary Conditions</strong> and choose <strong>Add &gt; Add Fixed Temperature</strong>. A
+   node "Fixed Temperature 1" appears and its panel opens.</li>
+<li>In "Selection" press <strong>Pick in viewport</strong>. The panel starts in Point mode, because a fixed
+   temperature may also be put on points, so choose <strong>Curve</strong> in the toolbar. Click the bottom
+   edge of the plate. The status line says "1 curve(s) picked". Press <strong>Apply</strong>. The field
+   now reads "Fixed Temperature 1 selection". Switch picking off.</li>
+<li>In "Temperature" type <code>373.15</code> and press Enter (the unit shown is K).</li>
+</ol>
+<p><strong>Convection on the right and top edges.</strong></p>
+<ol>
+<li>Right-click <strong>Loads &amp; Boundary Conditions</strong> and choose <strong>Add &gt; Add Convection</strong>.</li>
+<li>In "Selection" press <strong>Pick in viewport</strong> and choose <strong>Curve</strong>. The right edge is two curves
+   (it is split at y = 0.2). Click the lower right edge, then hold <strong>Ctrl</strong> and click the upper
+   right edge and the top edge. The status line says "3 curve(s) picked". Press <strong>Apply</strong> and
+   switch picking off.</li>
+<li>In "Heat-transfer coefficient" type <code>750</code> and press Enter (W/(m² K)).</li>
+<li>In "Fluid temperature" type <code>273.15</code> and press Enter (K).</li>
+</ol>
+<p><strong>Adiabatic on the left edge.</strong></p>
+<ol>
+<li>Right-click <strong>Loads &amp; Boundary Conditions</strong> and choose <strong>Add &gt; Add Adiabatic</strong>.</li>
+<li>In "Selection" pick the lower left edge, <strong>Ctrl</strong>-click the upper left edge ("2 curve(s)
+   picked"), press <strong>Apply</strong>, and switch picking off.</li>
+</ol>
+<p>An adiabatic edge changes nothing: every edge without a condition is already insulated. The
+condition is there so that the model says what you meant, and so that the edge has a name.</p>
+<p>The viewport now draws a symbol for each condition. Click a condition in the tree and its
+curves are highlighted.</p>
+<h3 id="5-mesh">5. Mesh<a class="headerlink" href="#5-mesh" title="Permanent link">&para;</a></h3>
+<ol>
+<li>Click the node <strong>Mesh</strong>. The panel "Mesh" opens.</li>
+<li>In "Global element size" type <code>0.025</code> and press Enter. Leave "Element order" at 1 and
+   "Element shape" at tri: linear triangles.</li>
+<li>Press <strong>Generate mesh</strong> (or choose <strong>Mesh &gt; Generate mesh</strong>). The status bar reports
+   "Mesh generated: 1210 nodes, 2290 elements", and the mesh panel lists the same counts. The
+   mesh is drawn in the viewport.</li>
+</ol>
+<h3 id="6-solve">6. Solve<a class="headerlink" href="#6-solve" title="Permanent link">&para;</a></h3>
+<ol>
+<li>Choose <strong>Solve &gt; Validate</strong>. The status bar must say "Validation: no issues". If it lists
+   errors, fix them first; warnings alone do not stop a solve.</li>
+<li>Choose <strong>Solve &gt; Solve</strong>. A window titled "Solving" shows progress and ends in the state
+   "Finished". It stays open until you close it. A linear steady case takes a moment.
+   (The <strong>Analysis Settings</strong> node has the same Validate and Solve buttons.)</li>
+<li>A node "Temperature 1" appears under <strong>Solution</strong> in the tree, and the temperature
+   contour is drawn in the viewport. Click the node to see its panel: "Field", "Levels",
+   "Banded (otherwise smooth)", "Colour scale", "Mesh overlay".</li>
+</ol>
+<p>The analysis type was never changed: a new model is steady, which is what this problem is.</p>
+<h3 id="7-read-the-answer-at-06-02">7. Read the answer at (0.6, 0.2)<a class="headerlink" href="#7-read-the-answer-at-06-02" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>The exact value.</strong> Choose <strong>File &gt; Export &gt; Nodal results (CSV)...</strong> and give a file
+  name. Open the CSV in a spreadsheet. The columns are <code>step,time,node,x,y,T,qx,qy</code>, with T in
+  kelvin. Find the row with x = 0.6 and y = 0.2. It reads T = 291.356 K, which is 18.206 °C.</li>
+<li><strong>A quick look.</strong> Choose <strong>Results &gt; Probe</strong>, then click in the viewport as close as you can
+  to the right edge at the line y = 0.2. The status bar shows x, y and the temperature. A
+  click lands on a pixel and the point lies on the boundary, so use this only as a rough check.
+  The CSV is the exact one.</li>
+<li><strong>Energy balance.</strong> The <strong>Messages</strong> dock lists the heat entering through each condition.
+  Fixed Temperature 1 gives about +10396 W and Convection 1 about -10396 W (a positive value
+  is heat entering the plate). Below them, "relative imbalance" is the part of the heat flow
+  that the balance fails to account for. <strong>Results &gt; Energy balance</strong> plots it.</li>
+</ul>
+<h2 id="results">Results<a class="headerlink" href="#results" title="Permanent link">&para;</a></h2>
+<p><img alt="Temperature of the T4 plate, mesh size 0.025" src="../img/t4-contour.png" /></p>
+<p>The plate is hottest along the bottom edge (373.15 K) and coldest at the top right corner
+(273.7 K, a little above the fluid at 273.15 K). Heat leaves mainly through the lower part of
+the right edge, where the plate is hottest and the difference to the fluid is largest. The title says "t = 0 s"; a steady result has no
+time and the 0 carries no meaning.</p>
+<p><img alt="Temperature along the right edge, from y = 0 to y = 1" src="../img/t4-right-edge.png" /></p>
+<table>
+<thead>
+<tr>
+<th>Quantity</th>
+<th>Value</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Mesh</td>
+<td>1210 nodes, 2290 elements (linear triangles, size 0.025)</td>
+</tr>
+<tr>
+<td>T at (0.6, 0.2)</td>
+<td>291.356 K = 18.206 °C</td>
+</tr>
+<tr>
+<td>Benchmark</td>
+<td>18.3 °C, tolerance 0.15 °C</td>
+</tr>
+<tr>
+<td>Difference</td>
+<td>0.094 °C, inside the tolerance</td>
+</tr>
+<tr>
+<td>Heat entering at the bottom edge</td>
+<td>10 396 W (for 1 m depth)</td>
+</tr>
+<tr>
+<td>Heat leaving by convection</td>
+<td>10 396 W</td>
+</tr>
+</tbody>
+</table>
+<h2 id="checking-the-answer">Checking the answer<a class="headerlink" href="#checking-the-answer" title="Permanent link">&para;</a></h2>
+<p><strong>Against the benchmark.</strong> The answer is 0.094 °C below 18.3 °C and the tolerance is
+0.15 °C, so the benchmark is met.</p>
+<p><strong>Energy balance.</strong> Every solve checks that the heat in equals the heat out. For a linear
+steady case the relative imbalance must be below 1e-8. Here it is about 1e-14; the two
+heat flows above match to every digit shown.</p>
+<p><strong>Mesh refinement.</strong> Change "Global element size" and solve again, as in steps 5 to 7. After
+you change the size the mesh is out of date and <strong>Solve &gt; Solve</strong> is greyed out until you
+press <strong>Generate mesh</strong> again. After you solve, the old contour is replaced. Read the
+temperature at (0.6, 0.2) from the CSV each time.</p>
+<table>
+<thead>
+<tr>
+<th>Global element size</th>
+<th>Nodes</th>
+<th>Elements</th>
+<th>T, linear triangles [°C]</th>
+<th>T, quadratic triangles [°C]</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>0.1</td>
+<td>93</td>
+<td>152</td>
+<td>17.79</td>
+<td>18.34</td>
+</tr>
+<tr>
+<td>0.05</td>
+<td>328</td>
+<td>590</td>
+<td>18.09</td>
+<td>18.26</td>
+</tr>
+<tr>
+<td>0.025</td>
+<td>1210</td>
+<td>2290</td>
+<td>18.21</td>
+<td>18.25</td>
+</tr>
+<tr>
+<td>0.0125</td>
+<td>4629</td>
+<td>9000</td>
+<td>18.24</td>
+<td>18.25</td>
+</tr>
+</tbody>
+</table>
+<p>(The quadratic column needs "Element order" 2; the node counts for those meshes are 337,
+1245, 4709 and 18 257.)</p>
+<p><img alt="Temperature at (0.6, 0.2) against element size" src="../img/t4-convergence.png" /></p>
+<p>Read the table like this:</p>
+<ul>
+<li>With linear triangles the answer rises towards the limit from below at every refinement:
+  0.51, 0.21, 0.094 and 0.058 °C below 18.3. The steepest gradients are at the lower right
+  corner, where the hot edge meets the cooled one, and a coarse mesh resolves them poorly. On
+  the 0.1 mesh the answer is 0.5 °C off, outside the benchmark tolerance.</li>
+<li>With quadratic triangles the answer is already 18.34 °C on the coarsest mesh and settles at
+  18.25 °C. The last two refinements differ by less than 0.002 °C.</li>
+<li>So the mesh-converged answer is about 18.25 °C, not 18.3 °C. It lies 0.05 °C from the
+  benchmark value, well inside the 0.15 °C the benchmark accepts. Refining further would not
+  close that gap.</li>
+</ul>
+<p><img alt="The 0.1 mesh drawn over the temperature" src="../img/t4-mesh.png" /></p>
+<p>The picture shows the 0.1 mesh so that the triangles can be seen. At size 0.025 the plate
+has about 2300 triangles and no local refinement.</p>
+<h2 id="things-to-try">Things to try<a class="headerlink" href="#things-to-try" title="Permanent link">&para;</a></h2>
+<ul>
+<li>Select the Convection 1 node and change "Heat-transfer coefficient" to <code>800</code>. The results
+  panel shows "These results are out of date: the model changed since the solve." The mesh is
+  still valid, so you can solve again at once. <strong>Edit &gt; Undo</strong> returns the value to 750.</li>
+<li>Set "Element shape" to quad and compare. Set "Element order" to 2 and compare with the
+  table.</li>
+<li>Save the model (<strong>File &gt; Save As...</strong>), choose <strong>File &gt; New</strong>, then <strong>File &gt; Open...</strong> the
+  file. The geometry is rebuilt by itself. The results saved beside the model are attached
+  again after you press <strong>Generate mesh</strong>.</li>
+<li>Use <strong>Results &gt; Add contour</strong> and choose another entry in the "Field" box of its panel, for
+  example the heat flux, and look at where it is largest.</li>
+</ul>
+<h2 id="the-same-model-as-a-script">The same model as a script<a class="headerlink" href="#the-same-model-as-a-script" title="Permanent link">&para;</a></h2>
+<p>The same plate is built through the Python API in <code>examples/v10_nafems_t4.py</code>, and the mesh
+table above is produced by <code>examples/tutorial_t4_plate.py</code>.</p>
+              
+            </div>
+          </div><footer>
+    <div class="rst-footer-buttons" role="navigation" aria-label="Footer Navigation">
+        <a href="../../getting-started/" class="btn btn-neutral float-left" title="Getting started"><span class="icon icon-circle-arrow-left"></span> Previous</a>
+        <a href="../fin-quench/" class="btn btn-neutral float-right" title="Transient quench of a fin">Next <span class="icon icon-circle-arrow-right"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <!-- Copyright etc -->
+  </div>
+
+  Built with <a href="https://www.mkdocs.org/">MkDocs</a> using a <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>.
+</footer>
+          
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+
+  <div class="rst-versions" role="note" aria-label="Versions">
+  <span class="rst-current-version" data-toggle="rst-current-version">
+    
+        <span>
+          <a href="https://github.com/dilleyrd/thermal-fea" class="fa fa-github" style="color: #fcfcfc"> GitHub</a>
+        </span>
+    
+    
+      <span><a href="../../getting-started/" style="color: #fcfcfc">&laquo; Previous</a></span>
+    
+    
+      <span><a href="../fin-quench/" style="color: #fcfcfc">Next &raquo;</a></span>
+    
+  </span>
+</div>
+    <script src="../../js/jquery-3.6.0.min.js"></script>
+    <script>var base_url = "../..";</script>
+    <script src="../../js/theme_extra.js"></script>
+    <script src="../../js/theme.js"></script>
+      <script src="../../search/main.js"></script>
+    <script>
+        jQuery(function () {
+            SphinxRtdTheme.Navigation.enable(true);
+        });
+    </script>
+
+</body>
+</html>

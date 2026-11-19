@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><link rel="canonical" href="https://dilleyrd.github.io/thermal-fea/materials/" />
+      <link rel="shortcut icon" href="../img/favicon.ico" />
+    <title>Materials - ThermalFEA user guide</title>
+    <link rel="stylesheet" href="../css/theme.css" />
+    <link rel="stylesheet" href="../css/theme_extra.css" />
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" />
+    
+      <script>
+        // Current page data
+        var mkdocs_page_name = "Materials";
+        var mkdocs_page_input_path = "materials.md";
+        var mkdocs_page_url = "/thermal-fea/materials/";
+      </script>
+    
+    <!--[if lt IE 9]>
+      <script src="../js/html5shiv.min.js"></script>
+    <![endif]-->
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
+      <script>hljs.highlightAll();</script> 
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side stickynav">
+    <div class="wy-side-scroll">
+      <div class="wy-side-nav-search">
+          <a href=".." class="icon icon-home"> ThermalFEA user guide
+        </a><div role="search">
+  <form id ="rtd-search-form" class="wy-form" action="../search.html" method="get">
+      <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" title="Type search term here" />
+  </form>
+</div>
+      </div>
+
+      <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="..">Home</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../installation/">Installation</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../getting-started/">Getting started</a>
+                </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Tutorials</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../tutorials/t4-plate/">NAFEMS T4 steady plate</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../tutorials/fin-quench/">Transient quench of a fin</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../tutorials/cold-plate/">Cold plate with a water stream</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Reference</span></p>
+              <ul class="current">
+                  <li class="toctree-l1"><a class="reference internal" href="../units/">Units</a>
+                  </li>
+                  <li class="toctree-l1 current"><a class="reference internal current" href="#">Materials</a>
+    <ul class="current">
+    <li class="toctree-l2"><a class="reference internal" href="#solids">Solids</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#fluids">Fluids</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#air">Air</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#water">Water</a>
+    </li>
+        </ul>
+    </li>
+    </ul>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../correlations/">Correlations</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../theory/">Theory</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../verification/">Verification</a>
+                  </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../limitations/">Limitations</a>
+                </li>
+              </ul>
+      </div>
+    </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+      <nav class="wy-nav-top" role="navigation" aria-label="Mobile navigation menu">
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="..">ThermalFEA user guide</a>
+        
+      </nav>
+      <div class="wy-nav-content">
+        <div class="rst-content"><div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href=".." class="icon icon-home" aria-label="Docs"></a></li>
+          <li class="breadcrumb-item">Reference</li>
+      <li class="breadcrumb-item active">Materials</li>
+    <li class="wy-breadcrumbs-aside">
+    </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+            <div class="section" itemprop="articleBody">
+              
+                <h1 id="material-library">Material library<a class="headerlink" href="#material-library" title="Permanent link">&para;</a></h1>
+<div class="admonition info">
+<p class="admonition-title">Generated page</p>
+<p>This page is generated from <code>src/thermalfea/materials/data/solids.json</code> and <code>fluids.json</code> by <code>scripts/build_guide.py</code>.
+Do not edit it here: change the source and run the script again.</p>
+</div>
+<p>The built-in library holds solids (conductivity, density and specific heat) and fluids (temperature tables of the properties the convection correlations need). Open it in the program with Tools &gt; Material library.... You can add your own solids and fluids; they are stored in <code>%APPDATA%/ThermalFEA/materials.json</code>.</p>
+<p>The project documents say the values are "from standard heat-transfer textbook tables". The specific reference text and edition: source not yet recorded; to be confirmed in the release check, task M11.1. Check a value against your own source before relying on it.</p>
+<h2 id="solids">Solids<a class="headerlink" href="#solids" title="Permanent link">&para;</a></h2>
+<p>Every built-in solid is isotropic and has constant properties, quoted near 300 K. A material you create yourself may instead use a table against temperature, or an orthotropic conductivity.</p>
+<table>
+<thead>
+<tr>
+<th>Name</th>
+<th>k [W/(m K)]</th>
+<th>ρ [kg/m³]</th>
+<th>c_p [J/(kg K)]</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Aluminium 6061-T6</td>
+<td>167 (constant)</td>
+<td>2700 (constant)</td>
+<td>896 (constant)</td>
+</tr>
+<tr>
+<td>Copper (pure)</td>
+<td>401 (constant)</td>
+<td>8933 (constant)</td>
+<td>385 (constant)</td>
+</tr>
+<tr>
+<td>Carbon steel AISI 1010</td>
+<td>63.9 (constant)</td>
+<td>7832 (constant)</td>
+<td>434 (constant)</td>
+</tr>
+<tr>
+<td>Stainless steel 304</td>
+<td>14.9 (constant)</td>
+<td>7900 (constant)</td>
+<td>477 (constant)</td>
+</tr>
+<tr>
+<td>Titanium Ti-6Al-4V</td>
+<td>6.7 (constant)</td>
+<td>4430 (constant)</td>
+<td>526 (constant)</td>
+</tr>
+<tr>
+<td>Silicon</td>
+<td>148 (constant)</td>
+<td>2330 (constant)</td>
+<td>712 (constant)</td>
+</tr>
+<tr>
+<td>Alumina (polycrystalline)</td>
+<td>36 (constant)</td>
+<td>3970 (constant)</td>
+<td>765 (constant)</td>
+</tr>
+<tr>
+<td>Soda-lime glass</td>
+<td>1.4 (constant)</td>
+<td>2500 (constant)</td>
+<td>750 (constant)</td>
+</tr>
+<tr>
+<td>Concrete (stone mix)</td>
+<td>1.4 (constant)</td>
+<td>2300 (constant)</td>
+<td>880 (constant)</td>
+</tr>
+<tr>
+<td>FR-4 (through-thickness)</td>
+<td>0.3 (constant)</td>
+<td>1850 (constant)</td>
+<td>1100 (constant)</td>
+</tr>
+</tbody>
+</table>
+<h2 id="fluids">Fluids<a class="headerlink" href="#fluids" title="Permanent link">&para;</a></h2>
+<p>Fluid properties are tables against temperature, interpolated linearly. Outside the table the end values are used and a warning is logged. For an ideal gas the expansion coefficient is β = 1/T_film; for a liquid it comes from the β column.</p>
+<h3 id="air">Air<a class="headerlink" href="#air" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Ideal gas: yes</li>
+<li>Temperature range of the tables: 250 K to 1000 K (9 points)</li>
+<li>Tabulated properties: ρ [kg/m³], c_p [J/(kg K)], μ [Pa s], k [W/(m K)] (β is not tabulated; 1/T_film is used)</li>
+</ul>
+<table>
+<thead>
+<tr>
+<th>T [K]</th>
+<th>ρ [kg/m³]</th>
+<th>c_p [J/(kg K)]</th>
+<th>μ [Pa s]</th>
+<th>k [W/(m K)]</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>250</td>
+<td>1.3947</td>
+<td>1006</td>
+<td>1.596e-05</td>
+<td>0.0223</td>
+</tr>
+<tr>
+<td>300</td>
+<td>1.1614</td>
+<td>1007</td>
+<td>1.846e-05</td>
+<td>0.0263</td>
+</tr>
+<tr>
+<td>350</td>
+<td>0.995</td>
+<td>1009</td>
+<td>2.082e-05</td>
+<td>0.03</td>
+</tr>
+<tr>
+<td>400</td>
+<td>0.8711</td>
+<td>1014</td>
+<td>2.301e-05</td>
+<td>0.0338</td>
+</tr>
+<tr>
+<td>450</td>
+<td>0.774</td>
+<td>1021</td>
+<td>2.507e-05</td>
+<td>0.0373</td>
+</tr>
+<tr>
+<td>500</td>
+<td>0.6964</td>
+<td>1030</td>
+<td>2.701e-05</td>
+<td>0.0407</td>
+</tr>
+<tr>
+<td>600</td>
+<td>0.5804</td>
+<td>1051</td>
+<td>3.058e-05</td>
+<td>0.0469</td>
+</tr>
+<tr>
+<td>800</td>
+<td>0.4354</td>
+<td>1099</td>
+<td>3.698e-05</td>
+<td>0.0573</td>
+</tr>
+<tr>
+<td>1000</td>
+<td>0.3482</td>
+<td>1141</td>
+<td>4.244e-05</td>
+<td>0.0667</td>
+</tr>
+</tbody>
+</table>
+<h3 id="water">Water<a class="headerlink" href="#water" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Ideal gas: no</li>
+<li>Temperature range of the tables: 280 K to 360 K (5 points)</li>
+<li>Tabulated properties: ρ [kg/m³], c_p [J/(kg K)], μ [Pa s], k [W/(m K)], β [1/K]</li>
+</ul>
+<table>
+<thead>
+<tr>
+<th>T [K]</th>
+<th>ρ [kg/m³]</th>
+<th>c_p [J/(kg K)]</th>
+<th>μ [Pa s]</th>
+<th>k [W/(m K)]</th>
+<th>β [1/K]</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>280</td>
+<td>1000</td>
+<td>4198</td>
+<td>0.001422</td>
+<td>0.582</td>
+<td>4.604e-05</td>
+</tr>
+<tr>
+<td>300</td>
+<td>997</td>
+<td>4179</td>
+<td>0.000855</td>
+<td>0.613</td>
+<td>0.0002761</td>
+</tr>
+<tr>
+<td>320</td>
+<td>989</td>
+<td>4180</td>
+<td>0.000577</td>
+<td>0.64</td>
+<td>0.0004367</td>
+</tr>
+<tr>
+<td>340</td>
+<td>979</td>
+<td>4188</td>
+<td>0.00042</td>
+<td>0.66</td>
+<td>0.000566</td>
+</tr>
+<tr>
+<td>360</td>
+<td>967</td>
+<td>4203</td>
+<td>0.000324</td>
+<td>0.674</td>
+<td>0.0006979</td>
+</tr>
+</tbody>
+</table>
+              
+            </div>
+          </div><footer>
+    <div class="rst-footer-buttons" role="navigation" aria-label="Footer Navigation">
+        <a href="../units/" class="btn btn-neutral float-left" title="Units"><span class="icon icon-circle-arrow-left"></span> Previous</a>
+        <a href="../correlations/" class="btn btn-neutral float-right" title="Correlations">Next <span class="icon icon-circle-arrow-right"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <!-- Copyright etc -->
+  </div>
+
+  Built with <a href="https://www.mkdocs.org/">MkDocs</a> using a <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>.
+</footer>
+          
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+
+  <div class="rst-versions" role="note" aria-label="Versions">
+  <span class="rst-current-version" data-toggle="rst-current-version">
+    
+        <span>
+          <a href="https://github.com/dilleyrd/thermal-fea" class="fa fa-github" style="color: #fcfcfc"> GitHub</a>
+        </span>
+    
+    
+      <span><a href="../units/" style="color: #fcfcfc">&laquo; Previous</a></span>
+    
+    
+      <span><a href="../correlations/" style="color: #fcfcfc">Next &raquo;</a></span>
+    
+  </span>
+</div>
+    <script src="../js/jquery-3.6.0.min.js"></script>
+    <script>var base_url = "..";</script>
+    <script src="../js/theme_extra.js"></script>
+    <script src="../js/theme.js"></script>
+      <script src="../search/main.js"></script>
+    <script>
+        jQuery(function () {
+            SphinxRtdTheme.Navigation.enable(true);
+        });
+    </script>
+
+</body>
+</html>
