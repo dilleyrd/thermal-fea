@@ -7,7 +7,18 @@ packaged Windows installer does not exist yet; it is planned (task M11.5).
 
 - Python 3.11 or newer (the project is developed with Python 3.13).
 - The packages the program depends on are installed automatically: NumPy, SciPy, gmsh,
-  PySide6, Matplotlib, h5py and meshio.
+  PySide6, Matplotlib, h5py, meshio and pandas.
+
+## Get the source
+
+The source is on GitHub at <https://github.com/dilleyrd/thermal-fea>. Clone it with Git:
+
+```
+git clone https://github.com/dilleyrd/thermal-fea.git
+cd thermal-fea
+```
+
+or download it as a zip file from that page (Code > Download ZIP) and unpack it.
 
 ## Install
 

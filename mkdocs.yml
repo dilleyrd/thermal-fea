@@ -1,5 +1,9 @@
 site_name: ThermalFEA user guide
 site_description: User guide of ThermalFEA, a 2D steady-state and transient thermal finite-element program.
+site_url: https://dilleyrd.github.io/thermal-fea/
+repo_url: https://github.com/dilleyrd/thermal-fea
+repo_name: GitHub
+edit_uri: ""
 docs_dir: guide
 site_dir: site
 
