@@ -58,6 +58,7 @@ seen this one.
 | [Installation](installation.md) | Requirements, installing, starting the program, the command line |
 | [Getting started](getting-started.md) | The workflow in the window and from the command line |
 | Tutorials | [NAFEMS T4 steady plate](tutorials/t4-plate.md), [transient quench of a fin](tutorials/fin-quench.md), [cold plate with a water stream](tutorials/cold-plate.md) |
+| Examples | [Main closure of a canned-motor pump](examples/pump-closure.md): an axisymmetric assembly with contacts, heat-up, steady state and a parameter study |
 | [Units](units.md) | The unit systems and what they change |
 | [Materials](materials.md) | The built-in material library |
 | [Correlations](correlations.md) | Every convection correlation, with its validity range |

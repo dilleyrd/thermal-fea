@@ -29,6 +29,8 @@ nav:
       - "NAFEMS T4 steady plate": tutorials/t4-plate.md
       - "Transient quench of a fin": tutorials/fin-quench.md
       - "Cold plate with a water stream": tutorials/cold-plate.md
+  - Examples:
+      - "Main closure of a canned-motor pump": examples/pump-closure.md
   - Reference:
       - Units: units.md
       - Materials: materials.md
