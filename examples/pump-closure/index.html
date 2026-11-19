@@ -1,0 +1,704 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><link rel="canonical" href="https://dilleyrd.github.io/thermal-fea/examples/pump-closure/" />
+      <link rel="shortcut icon" href="../../img/favicon.ico" />
+    <title>Main closure of a canned-motor pump - ThermalFEA user guide</title>
+    <link rel="stylesheet" href="../../css/theme.css" />
+    <link rel="stylesheet" href="../../css/theme_extra.css" />
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" />
+    
+      <script>
+        // Current page data
+        var mkdocs_page_name = "Main closure of a canned-motor pump";
+        var mkdocs_page_input_path = "examples\\pump-closure.md";
+        var mkdocs_page_url = "/thermal-fea/examples/pump-closure/";
+      </script>
+    
+    <!--[if lt IE 9]>
+      <script src="../../js/html5shiv.min.js"></script>
+    <![endif]-->
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
+      <script>hljs.highlightAll();</script> 
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side stickynav">
+    <div class="wy-side-scroll">
+      <div class="wy-side-nav-search">
+          <a href="../.." class="icon icon-home"> ThermalFEA user guide
+        </a><div role="search">
+  <form id ="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+      <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" title="Type search term here" />
+  </form>
+</div>
+      </div>
+
+      <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../..">Home</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../../installation/">Installation</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../../getting-started/">Getting started</a>
+                </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Tutorials</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../../tutorials/t4-plate/">NAFEMS T4 steady plate</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../tutorials/fin-quench/">Transient quench of a fin</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../tutorials/cold-plate/">Cold plate with a water stream</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Examples</span></p>
+              <ul class="current">
+                  <li class="toctree-l1 current"><a class="reference internal current" href="#">Main closure of a canned-motor pump</a>
+    <ul class="current">
+    <li class="toctree-l2"><a class="reference internal" href="#the-model">The model</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#geometry">Geometry</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#boundary-conditions">Boundary conditions</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#thermal-contacts">Thermal contacts</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#initial-state-mesh-and-solution">Initial state, mesh and solution</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#results">Results</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#the-heat-up">The heat-up</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#heat-flows-over-time">Heat flows over time</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#steady-hot-case">Steady hot case</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#effect-of-the-main-seat-conductance">Effect of the main-seat conductance</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#checks">Checks</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#running-the-example">Running the example</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#look-at-the-saved-results-in-the-program">Look at the saved results in the program</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#run-the-scripts">Run the scripts</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#limits-of-the-model">Limits of the model</a>
+    </li>
+    </ul>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Reference</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../../units/">Units</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../materials/">Materials</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../correlations/">Correlations</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../theory/">Theory</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../verification/">Verification</a>
+                  </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../../limitations/">Limitations</a>
+                </li>
+              </ul>
+      </div>
+    </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+      <nav class="wy-nav-top" role="navigation" aria-label="Mobile navigation menu">
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../..">ThermalFEA user guide</a>
+        
+      </nav>
+      <div class="wy-nav-content">
+        <div class="rst-content"><div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="../.." class="icon icon-home" aria-label="Docs"></a></li>
+          <li class="breadcrumb-item">Examples</li>
+      <li class="breadcrumb-item active">Main closure of a canned-motor pump</li>
+    <li class="wy-breadcrumbs-aside">
+    </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+            <div class="section" itemprop="articleBody">
+              
+                <h1 id="example-main-closure-of-a-canned-motor-pump">Example: main closure of a canned-motor pump<a class="headerlink" href="#example-main-closure-of-a-canned-motor-pump" title="Permanent link">&para;</a></h1>
+<p><strong>What it is.</strong> An axisymmetric model of the bolted main closure between the casing of a
+canned-motor pump and the main flange of its stator. Hot water inside the casing heats the
+joint while several cooling circuits take heat away. The model has nine bodies, five sets of
+convection films and six thermal contacts. It is solved for a six-hour heat-up and for the
+steady state at full temperature, and a parameter study changes the conductance of the main
+seat.</p>
+<p><strong>What it shows.</strong> How much heat reaches the flange, by which route, and how the flange
+temperature develops. It also exercises most of what the program can do on a real assembly:
+an axisymmetric model, many regions, an orthotropic material, a time-dependent fluid
+temperature, contact resistances, adaptive time stepping and a scripted parameter study.</p>
+<div class="admonition warning">
+<p class="admonition-title">Illustrative inputs</p>
+<p>Every dimension, film coefficient, fluid temperature and contact conductance on this page
+is illustrative. The model is a demonstration of the program and does not represent a
+particular pump.</p>
+</div>
+<p>Unlike the tutorials, this example is built and solved by Python scripts. The scripts, the
+input file and a complete set of results are in the repository folder
+<a href="https://github.com/dilleyrd/thermal-fea/tree/main/examples/pump_closure"><code>examples/pump_closure</code></a>.
+<a href="#running-the-example">Running the example</a> explains how to open the saved results in the
+program or to run the scripts again.</p>
+<h2 id="the-model">The model<a class="headerlink" href="#the-model" title="Permanent link">&para;</a></h2>
+<h3 id="geometry">Geometry<a class="headerlink" href="#geometry" title="Permanent link">&para;</a></h3>
+<p>The model is a cross-section through the closure in the r-z plane of an axisymmetric model:
+x is the radius r and y is the axial position z. z = 0 is the joint face between the casing
+and the flange. Heat flows reported on this page are for the full 360° ring. The program
+can open and solve an axisymmetric model, but a model created in the window is planar, so
+this one is built by script.</p>
+<p><img alt="The axisymmetric model with its bodies, films and contacts" src="../img/pump-model.png" /></p>
+<p><em>The model (6-node triangles drawn in grey). Coloured edges carry convection films, dotted
+edges are thermal contacts. Edges with neither are insulated or bonded.</em></p>
+<table>
+<thead>
+<tr>
+<th>Body</th>
+<th>Extent (mm)</th>
+<th>Material</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Casing</td>
+<td>polygon through (r, z) = (550, 0), (550, 90), (630, 160), (656, 300), (716, 300), (704, 186), (800, 142), (800, 82), (685, 82), (685, 0)</td>
+<td>Stainless steel 304</td>
+</tr>
+<tr>
+<td>Thermal barrier</td>
+<td>plate r = 120 to 550, z = 48 to 90, with a skirt r = 490 to 550 down to z = 0. A cooling passage of Ø16 mm at (r, z) = (460, 68) is cut out</td>
+<td>Stainless steel 304</td>
+</tr>
+<tr>
+<td>Main flange</td>
+<td>r = 340 to 800, z = 0 to −150, in three regions: inner (340 to 720), band G (720 to 760) and outer (760 to 800)</td>
+<td>Stainless steel 304; band G is a mix, below</td>
+</tr>
+<tr>
+<td>Stud ring D</td>
+<td>r = 736.8 to 743.2 (6.486 mm wide), z = 0 to 82</td>
+<td>Carbon steel AISI 1010</td>
+</tr>
+<tr>
+<td>Nut ring N</td>
+<td>18.746 mm wide, centred on r = 740, z = −150 to −178</td>
+<td>Carbon steel AISI 1010</td>
+</tr>
+<tr>
+<td>Stator shell S</td>
+<td>r = 375 to 435, z = −150 to −330</td>
+<td>Stainless steel 304</td>
+</tr>
+<tr>
+<td>Liner L</td>
+<td>r = 260 to 375, z = −150 to −330</td>
+<td>Stainless steel 304</td>
+</tr>
+</tbody>
+</table>
+<p><strong>The studs and nuts become rings.</strong> An axisymmetric model cannot show 24 separate studs.
+Each row of bolts is replaced by a solid ring with the same total cross-section: a ring of
+radius R and width w has the area of N bolts of diameter d when 2πR w = N π d²/4. With 24
+studs of Ø40 mm on a bolt circle of R = 740 mm, the stud ring is w = 6.486 mm wide. With an
+equivalent nut diameter of 68 mm, the nut ring is 18.746 mm wide.</p>
+<p><strong>Inside the flange, the studs are part of band G.</strong> Over the 40 mm band from r = 720 to
+760 mm, a fraction f = 6.486/40 = 0.162 is carbon-steel stud and the rest is stainless
+flange. Band G gets a mixed, orthotropic material:</p>
+<ul>
+<li>along the studs (axial): k = (1 − f) k₃₀₄ + f k₁₀₁₀ (in parallel);</li>
+<li>across them (radial): k = (1 − f) k₃₀₄, which neglects the studs;</li>
+<li>density and volumetric heat capacity ρc_p mixed by volume.</li>
+</ul>
+<p>The material axis is along r, so <code>k</code> is the radial value and <code>k2</code> the axial one (see
+<a href="../../materials/">Materials</a> for the two library steels). In the r-z model, the heat that
+goes down the studs therefore enters the flange through band G.</p>
+<h3 id="boundary-conditions">Boundary conditions<a class="headerlink" href="#boundary-conditions" title="Permanent link">&para;</a></h3>
+<p>The five films are convection conditions with a constant heat-transfer coefficient:</p>
+<table>
+<thead>
+<tr>
+<th>Film</th>
+<th>Where</th>
+<th>h (W/(m² K))</th>
+<th>Fluid temperature</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>H</strong> hot primary water</td>
+<td>top and bore of the barrier plate, sloping inner wall of the casing</td>
+<td>3000</td>
+<td>heat-up: rises linearly from 40 °C to 180 °C over the first 1800 s, then holds; steady case: 180 °C</td>
+</tr>
+<tr>
+<td><strong>M</strong> cooled motor-cavity water</td>
+<td>underside of the barrier and inside of its skirt, flange ledge and bore, liner ledge and bore</td>
+<td>800</td>
+<td>55 °C</td>
+</tr>
+<tr>
+<td><strong>Cw</strong> barrier cooling passage</td>
+<td>the Ø16 mm passage</td>
+<td>1500</td>
+<td>35 °C</td>
+</tr>
+<tr>
+<td><strong>J</strong> jacket cooling water</td>
+<td>outer face of the stator shell</td>
+<td>1500</td>
+<td>35 °C</td>
+</tr>
+<tr>
+<td><strong>A</strong> ambient air</td>
+<td>outer faces of the casing, the casing lip and the stud cavity, top, rim and underside of the flange</td>
+<td>8</td>
+<td>30 °C</td>
+</tr>
+</tbody>
+</table>
+<p>H's fluid temperature in the heat-up is a table against time with two points, (0 s, 40 °C)
+and (1800 s, 180 °C). A table holds its last value beyond its end.</p>
+<p>The other edges are insulated (zero heat flux):</p>
+<ul>
+<li>the two planes where the model is cut off: the top of the casing at z = 300 mm and the
+  bottom of the liner and shell at z = −330 mm;</li>
+<li>the sides of the stud ring between the flange and the casing lip, and the sides and base
+  of the nut ring. These are short paths to the air in the stud cavity, left out of this
+  run.</li>
+</ul>
+<h3 id="thermal-contacts">Thermal contacts<a class="headerlink" href="#thermal-contacts" title="Permanent link">&para;</a></h3>
+<p>Six interfaces have a contact conductance h_c, so their two sides can be at different
+temperatures and the heat across them is h_c ΔT per unit area:</p>
+<table>
+<thead>
+<tr>
+<th>Contact</th>
+<th>Between</th>
+<th>Where</th>
+<th>h_c (W/(m² K))</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Main seat</td>
+<td>casing and flange</td>
+<td>z = 0, r = 565 to 685</td>
+<td>3000</td>
+</tr>
+<tr>
+<td>Seal land</td>
+<td>casing and flange</td>
+<td>z = 0, r = 550 to 565</td>
+<td>500</td>
+</tr>
+<tr>
+<td>Barrier foot</td>
+<td>barrier skirt and flange</td>
+<td>z = 0, r = 490 to 550</td>
+<td>3000</td>
+</tr>
+<tr>
+<td>Vertical fit</td>
+<td>barrier and casing</td>
+<td>r = 550, z = 0 to 90</td>
+<td>3000</td>
+</tr>
+<tr>
+<td>Stud anchor</td>
+<td>casing lip and stud ring</td>
+<td>z = 82</td>
+<td>5000</td>
+</tr>
+<tr>
+<td>Nut bearing</td>
+<td>nut ring and flange</td>
+<td>z = −150</td>
+<td>5000</td>
+</tr>
+</tbody>
+</table>
+<p>All other faces where two bodies meet are bonded, with no resistance. That includes the foot
+of the stud ring on band G, the boundaries between the three flange regions, and the faces
+between the liner, the shell and the flange.</p>
+<p>There are two parallel paths for heat from the casing into the flange:</p>
+<ol>
+<li>across the seated joint: the seal land, the main seat and the barrier foot;</li>
+<li>down the studs: from the casing lip across the stud anchor, down stud ring D, and into
+   band G.</li>
+</ol>
+<p>The nut ring hangs below the flange on its bearing face. It is a dead end: it only exchanges
+heat while it warms up.</p>
+<h3 id="initial-state-mesh-and-solution">Initial state, mesh and solution<a class="headerlink" href="#initial-state-mesh-and-solution" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Item</th>
+<th>Value</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Initial temperature</td>
+<td>40 °C everywhere</td>
+</tr>
+<tr>
+<td>Heat-up</td>
+<td>transient, 0 to 21 600 s (6 h), first step 1 s, adaptive step, results stored every 300 s (72 steps)</td>
+</tr>
+<tr>
+<td>Steady hot case</td>
+<td>steady state with H at 180 °C</td>
+</tr>
+<tr>
+<td>Mesh</td>
+<td>6-node triangles, global element size 10 mm, 1.5 mm along the stud and nut rings, the seal land, the stud anchor, the nut bearing and the cooling passage; 13 037 nodes and 6 188 elements</td>
+</tr>
+</tbody>
+</table>
+<p>The scripts read every input from
+<a href="https://github.com/dilleyrd/thermal-fea/blob/main/examples/pump_closure/closure.json"><code>closure.json</code></a>.
+Change a value there to run a different case.</p>
+<h2 id="results">Results<a class="headerlink" href="#results" title="Permanent link">&para;</a></h2>
+<h3 id="the-heat-up">The heat-up<a class="headerlink" href="#the-heat-up" title="Permanent link">&para;</a></h3>
+<p><img alt="Temperature fields during the heat-up" src="../img/pump-fields.png" /></p>
+<p><em>Temperature at six times during the heat-up and at steady state. The last panel is the rise
+still to come after 6 h.</em></p>
+<p>Heat enters along the barrier and the casing wall first. The flange and the studs follow
+hours later. After 6 h the model is close to, but not at, steady state. The largest rise
+still to come is 4.4 K, in the outer flange.</p>
+<p><img alt="Animation of the heat-up" src="../img/pump-heatup.gif" /></p>
+<p><em>The heat-up as an animation, written by <code>api.export_animation</code>. A frame every minute for
+the first hour, then every 5 minutes. All frames use one colour scale.</em></p>
+<p><img alt="Temperature at the end of the heat-up" src="../img/pump-T-6h.png" /></p>
+<p><em>Temperature at 6 h, plotted by <code>api.plot_contour</code> (°C; x = r and y = z in mm). The
+extremes are 179.2 °C on the casing wall and 35.9 °C on the jacket-cooled stator shell.</em></p>
+<p><img alt="Temperature, steady hot case" src="../img/pump-T-steady.png" /></p>
+<p><em>Temperature in the steady hot case (a steady result is stored at t = 0 s).</em></p>
+<h3 id="heat-flows-over-time">Heat flows over time<a class="headerlink" href="#heat-flows-over-time" title="Permanent link">&para;</a></h3>
+<p><img alt="History of the heat-up" src="../img/pump-history.png" /></p>
+<p><em>Top: heat through each film. Middle: flange bore and rim temperatures and the mean stud
+temperature, with the bore-minus-rim difference shaded against the right-hand axis. Bottom:
+heat across each contact.</em></p>
+<ul>
+<li><strong>The hot film peaks at 62 kW</strong> as the ramp of H ends at 30 min, then settles towards
+  35 kW.</li>
+<li><strong>The flange gradient reverses.</strong> The flange bore, cooled by the motor cavity, stays near
+  51 to 55 °C almost from the start. The rim first cools slightly, to about 39.4 °C, then
+  heats up. The bore is 13.6 K hotter than the rim at 25 min. The two are equal at about
+  1.5 h, and at 6 h the bore is 39.9 K colder than the rim (44.1 K at steady state). A
+  lumped estimate would give only one sign of this difference.</li>
+<li><strong>The heat paths peak at different times.</strong> Heat across the main seat peaks at 3496 W
+  after about 1.2 h. Heat down the studs (across the stud anchor) peaks at 738 W after
+  about 1.7 h.</li>
+<li><strong>The vertical fit reverses.</strong> For the first hour heat crosses it from the barrier into
+  the casing, at up to about 0.9 kW. It reverses after 1.02 h and ends at 0.81 kW from the
+  casing into the barrier.</li>
+</ul>
+<p><img alt="The two heat paths and the flange gradient" src="../img/pump-paths.png" /></p>
+<p><em>The same two paths drawn by <code>run_closure.py</code>: the seated joint (seal land and main seat
+together, peaking near 3.7 kW at about 70 min), the barrier foot, the studs and the nuts.
+Below is the bore-minus-rim temperature difference.</em></p>
+<h3 id="steady-hot-case">Steady hot case<a class="headerlink" href="#steady-hot-case" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Quantity</th>
+<th>Value</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Heat in through H</td>
+<td>35.19 kW</td>
+</tr>
+<tr>
+<td>Heat out through M, Cw, J, A</td>
+<td>21.35, 8.99, 1.48, 3.38 kW</td>
+</tr>
+<tr>
+<td>Relative energy imbalance</td>
+<td>4 × 10⁻¹⁴</td>
+</tr>
+<tr>
+<td>Heat into the flange: main seat, seal land, barrier foot, stud anchor</td>
+<td>2345, 138, 693, 479 W (3.65 kW in all)</td>
+</tr>
+<tr>
+<td>Heat across the vertical fit, casing to barrier</td>
+<td>855 W</td>
+</tr>
+<tr>
+<td>Heat across the nut bearing</td>
+<td>0 W (to within 3 × 10⁻⁹ W)</td>
+</tr>
+<tr>
+<td>Flange bore / rim temperature</td>
+<td>55.2 °C / 99.3 °C</td>
+</tr>
+<tr>
+<td>Mean stud temperature</td>
+<td>120.2 °C</td>
+</tr>
+</tbody>
+</table>
+<p>The studs carry 13 % of the heat that enters the flange: 479 W of 3.65 kW.</p>
+<p><img alt="Heat flux in the steady hot case" src="../img/pump-flux.png" /></p>
+<p><em>Heat-flux magnitude (logarithmic colour scale) with heat-flow lines in white and isotherms
+every 20 K in cyan. The right panel zooms in on the joint and the stud ring.</em></p>
+<p>The cooling passage is a strong sink. The highest flux, about 88 kW/m², is in the barrier
+next to the passage. Heat crosses the seated joint and fans out into the flange, and a
+narrow stream runs down the stud ring.</p>
+<p><img alt="Temperature jump across the joint" src="../img/pump-contact-jumps.png" /></p>
+<p><em>Top: temperature on each side of the joint face z = 0. Bottom: the jump ΔT across each
+contact.</em></p>
+<p>The contacts are real temperature jumps, not smeared bonds. The jump is 1.4 to 3.4 K across
+the main seat and up to 5.7 K across the seal land, whose conductance is six times lower.
+Adding up h_c ΔT 2πr along each face gives 2359 W for the main seat, against the solver's
+2345 W, and 131 W for the seal land, against 138 W.</p>
+<h3 id="effect-of-the-main-seat-conductance">Effect of the main-seat conductance<a class="headerlink" href="#effect-of-the-main-seat-conductance" title="Permanent link">&para;</a></h3>
+<p>The steady hot case was solved five times, with the main-seat conductance multiplied by 0.1,
+0.3, 1, 3 and 10 (300 to 30 000 W/(m² K)):</p>
+<table>
+<thead>
+<tr>
+<th>Factor</th>
+<th>Main seat (W)</th>
+<th>Seal land (W)</th>
+<th>Barrier foot (W)</th>
+<th>Vertical fit (W)</th>
+<th>Stud anchor (W)</th>
+<th>Rim (°C)</th>
+<th>Bore − rim (K)</th>
+<th>Mean stud (°C)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>0.1</td>
+<td>1840</td>
+<td>233</td>
+<td>846</td>
+<td>1025</td>
+<td>538</td>
+<td>95.3</td>
+<td>−40.2</td>
+<td>117.9</td>
+</tr>
+<tr>
+<td>0.3</td>
+<td>2178</td>
+<td>173</td>
+<td>745</td>
+<td>913</td>
+<td>497</td>
+<td>98.0</td>
+<td>−42.9</td>
+<td>119.5</td>
+</tr>
+<tr>
+<td>1</td>
+<td>2345</td>
+<td>138</td>
+<td>693</td>
+<td>855</td>
+<td>479</td>
+<td>99.3</td>
+<td>−44.1</td>
+<td>120.2</td>
+</tr>
+<tr>
+<td>3</td>
+<td>2406</td>
+<td>122</td>
+<td>675</td>
+<td>833</td>
+<td>474</td>
+<td>99.6</td>
+<td>−44.5</td>
+<td>120.5</td>
+</tr>
+<tr>
+<td>10</td>
+<td>2431</td>
+<td>115</td>
+<td>667</td>
+<td>824</td>
+<td>471</td>
+<td>99.8</td>
+<td>−44.6</td>
+<td>120.6</td>
+</tr>
+</tbody>
+</table>
+<p><img alt="Seat study written by seat_study.py" src="../img/pump-seat-study.png" /></p>
+<p><em>Heat into the flange by path, and the bore-minus-rim difference, against the seat factor.</em></p>
+<p><img alt="Sensitivity to the main-seat conductance" src="../img/pump-seat-sensitivity.png" /></p>
+<p><em>Left: heat across each contact, with the change from 0.1× to 10×. Middle: flange and stud
+temperatures. Right: the seated joint against the other two paths.</em></p>
+<p>A better seat moves heat from the other paths onto the seat, but it hardly changes the
+temperatures:</p>
+<ul>
+<li>Over the 100× range, heat across the seat rises by 32 %, from 1840 to 2431 W. The seal
+  land, barrier foot, vertical fit and stud anchor carry correspondingly less.</li>
+<li>The flange rim changes by 4.5 K and the bore by 0.1 K.</li>
+<li>Above 3× the seat is no longer the limiting resistance: from 3× to 10× its heat changes by
+  1 %.</li>
+</ul>
+<h3 id="checks">Checks<a class="headerlink" href="#checks" title="Permanent link">&para;</a></h3>
+<p><img alt="Energy balance, mesh check and time step" src="../img/pump-verification.png" /></p>
+<p><em>Left: relative energy imbalance at each stored step. Middle: change in steady temperatures
+when the element sizes are halved. Right: the time step the solver chose.</em></p>
+<ul>
+<li><strong>Energy balance.</strong> The relative imbalance is at most 2.5 × 10⁻¹³ over the 72 stored
+  steps of the heat-up. In the steady case, the 35.19 kW coming in through H equals the sum
+  of the four outflows.</li>
+<li><strong>Mesh.</strong> Halving every element size (13 037 to 46 051 nodes) changes the steady
+  temperatures of the flange bore, the flange rim and the mean stud by 0.026 K, 0.008 K and
+  0.069 K. The heat through H changes by 0.009 %. The criteria set for the exercise were
+  1 K and 2 %.</li>
+<li><strong>Time step.</strong> The adaptive step grows to the 300 s output interval within the first
+  hour, and each stored step needed one Newton iteration (the model is linear).</li>
+</ul>
+<h2 id="running-the-example">Running the example<a class="headerlink" href="#running-the-example" title="Permanent link">&para;</a></h2>
+<h3 id="look-at-the-saved-results-in-the-program">Look at the saved results in the program<a class="headerlink" href="#look-at-the-saved-results-in-the-program" title="Permanent link">&para;</a></h3>
+<ol>
+<li>Use <strong>File &gt; Open...</strong> to open <code>examples/pump_closure/out/closure_transient.tfea</code>, or
+   <code>closure_steady.tfea</code>.</li>
+<li>Press <strong>Generate mesh</strong>. The saved results in the <code>.tfea.h5</code> file beside the model are
+   attached, so you can plot them without solving again.</li>
+</ol>
+<p>The heat-up solves in a few seconds if you want to run it from the program.</p>
+<h3 id="run-the-scripts">Run the scripts<a class="headerlink" href="#run-the-scripts" title="Permanent link">&para;</a></h3>
+<p>From the project folder:</p>
+<pre><code>.venv\Scripts\python.exe examples\pump_closure\run_closure.py
+.venv\Scripts\python.exe examples\pump_closure\run_closure.py --steady
+.venv\Scripts\python.exe examples\pump_closure\animate_closure.py
+.venv\Scripts\python.exe examples\pump_closure\seat_study.py
+.venv\Scripts\python.exe examples\pump_closure\seat_study.py --mesh-check
+</code></pre>
+<table>
+<thead>
+<tr>
+<th>Script</th>
+<th>What it does</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>run_closure.py</code></td>
+<td>Builds, saves, meshes and solves the heat-up, or the steady hot case with <code>--steady</code>. Writes the model, the results, a CSV table of temperatures and heat flows at each stored step, and the plots.</td>
+</tr>
+<tr>
+<td><code>animate_closure.py</code></td>
+<td>Solves the heat-up again with a frame every minute for the first hour, and writes the GIF.</td>
+</tr>
+<tr>
+<td><code>seat_study.py</code></td>
+<td>Solves the steady hot case for each seat factor and writes <code>seat_study.csv</code> and <code>seat_study.png</code>. With <code>--mesh-check</code>, it solves with the element sizes as given and halved, and compares the two.</td>
+</tr>
+</tbody>
+</table>
+<p>Everything goes to <code>examples/pump_closure/out/</code>, which holds a complete set from these runs.
+The scripts in <code>examples/pump_closure/showcase/</code> draw the other figures on this page from
+those saved results, without solving again.</p>
+<p>When the heat-up starts, the log warns that the temperatures may oscillate. The program
+gives this warning when the time step is below h²ρc/(6k) in more than 5 % of the elements
+(<a href="../../theory/">Theory</a>), and the 1 s first step is. The warning is about sudden changes,
+and this model has none: H starts at the initial temperature of 40 °C and rises smoothly.</p>
+<div class="admonition note">
+<p class="admonition-title">Heat across a contact</p>
+<p>The program does not yet write the heat across a contact to the results file (see
+<a href="../../limitations/#thermal-contact">Limitations</a>). The example evaluates it from the
+stored temperatures with the solver's own contact terms (<code>closure_model.ContactHeats</code>).
+The heat-flux and contact-jump figures are post-processed by the showcase scripts from
+the stored nodal temperatures: a linear gradient in each element and the nodal jump
+across each contact.</p>
+</div>
+<h2 id="limits-of-the-model">Limits of the model<a class="headerlink" href="#limits-of-the-model" title="Permanent link">&para;</a></h2>
+<ul>
+<li><strong>Ring averages only.</strong> The results are circumferential means. Individual bolt holes,
+  thread roots, nozzles and any variation of the cooling around the circumference need a
+  sector or three-dimensional model.</li>
+<li><strong>No thermal stress.</strong> The program does not calculate the stress that the flange gradient
+  would cause.</li>
+<li><strong>Peak times are approximate.</strong> The peak times above come from results stored every 5
+  minutes.</li>
+</ul>
+              
+            </div>
+          </div><footer>
+    <div class="rst-footer-buttons" role="navigation" aria-label="Footer Navigation">
+        <a href="../../tutorials/cold-plate/" class="btn btn-neutral float-left" title="Cold plate with a water stream"><span class="icon icon-circle-arrow-left"></span> Previous</a>
+        <a href="../../units/" class="btn btn-neutral float-right" title="Units">Next <span class="icon icon-circle-arrow-right"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <!-- Copyright etc -->
+  </div>
+
+  Built with <a href="https://www.mkdocs.org/">MkDocs</a> using a <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>.
+</footer>
+          
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+
+  <div class="rst-versions" role="note" aria-label="Versions">
+  <span class="rst-current-version" data-toggle="rst-current-version">
+    
+        <span>
+          <a href="https://github.com/dilleyrd/thermal-fea" class="fa fa-github" style="color: #fcfcfc"> GitHub</a>
+        </span>
+    
+    
+      <span><a href="../../tutorials/cold-plate/" style="color: #fcfcfc">&laquo; Previous</a></span>
+    
+    
+      <span><a href="../../units/" style="color: #fcfcfc">Next &raquo;</a></span>
+    
+  </span>
+</div>
+    <script src="../../js/jquery-3.6.0.min.js"></script>
+    <script>var base_url = "../..";</script>
+    <script src="../../js/theme_extra.js"></script>
+    <script src="../../js/theme.js"></script>
+      <script src="../../search/main.js"></script>
+    <script>
+        jQuery(function () {
+            SphinxRtdTheme.Navigation.enable(true);
+        });
+    </script>
+
+</body>
+</html>
