@@ -426,5 +426,35 @@ Boundary Conditions, Flow (Streams, Network), Enclosures, Analysis Settings, Sol
   program suggested itself; it still applies to a first step set by the user. Add the
   rule to Theory §6.1 in the wording of Q27.3 once the owner confirms it, regenerate the
   guide, and test both cases.
+- [ ] **M11.11 [B] Restart compatibility.** `REVIEW.md` findings 2, 3, 4; owner's choice
+  in Q28.1. Before anything is written to the file, a restart is refused when:
+  - the mesh differs: element types, connectivity, element regions, boundary facets, or
+    planar against axisymmetric;
+  - any region's material, thickness or material angle differs from the file's region
+    data;
+  - the streams differ from the file's: names, or DOF mapping.
+
+  Loads and solver settings may still change. Tests: each case is refused, the file is
+  left byte-for-byte unchanged, and an unchanged model still continues. Update Q25.4 and
+  `docs/handover.md`.
+- [ ] **M11.12 [A] Input guards.** `REVIEW.md` findings 1, 8; Q28.2.
+  `thermalfea solve m.tfea -o m.tfea` exits with an error and leaves the model file
+  unchanged. Validation reports an error for `dt_max <= 0`, for `dt_max < dt_min`, and for
+  `initial_dt <= 0` when it is set. Tests: each case, in the CLI and in `validate`.
+- [ ] **M11.13 [A] Mesh out of date after selection edits.** `REVIEW.md` finding 5; Q28.3.
+  `gui/document.py: classify_change` also counts the selection names listed in
+  `structured_surfaces` and in each refinement's `selection`. Tests: editing either kind
+  of selection returns `"mesh"`; editing an unused selection still returns `"results"`.
+- [ ] **M11.14 [B] Path locator fallback.** `REVIEW.md` finding 6; Q28.4. In
+  `post/path.py`, a point not found among the nearest candidates is tested against every
+  element whose bounding box holds it. Tests: the reviewer's case (a point just inside a
+  large quadrilateral next to small ones) is found, and a point outside still gives -1.
+- [ ] **M11.15 [B] Position-dependent temperatures in validation.** `REVIEW.md` finding 7;
+  Q28.5. Tests: `T = 300*x` on a boundary at x = 1 m, with radiation, does not block the
+  solve; a constant 0 K still does.
+- [ ] **M11.16 [B] Early output times on long runs.** `REVIEW.md` finding 9; Q28.6.
+  `solver/timestep.py` filters and finds mandatory times with a tolerance relative to the
+  local time. Tests: end 1e8 s, output at 1e-5 s, first step 1 s; the first step lands on
+  1e-5 s and the time is stored.
 - [ ] **M11.6 [C] Release review.** Check every item of Plan §6; resolve or document every
-  entry in `docs/OPEN_QUESTIONS.md`. Depends on M11.7–M11.10.
+  entry in `docs/OPEN_QUESTIONS.md`. Depends on M11.7–M11.16.

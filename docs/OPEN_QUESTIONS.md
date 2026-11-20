@@ -562,7 +562,8 @@ end time, appending to the same results file"). These choices fill it in.
    are *not* compared: the continued steps use the current model, and the model embedded
    in the results file is replaced by it. A load changed between the runs takes effect
    from the restart time, without the theta = 1 step that a jump inside a run gets.
-   **To confirm with the owner** whether a changed model should be refused or warned about.
+   **Decided by the owner on 2026-11-20 (Q28.1, task M11.11):** a changed material,
+   thickness or material angle is refused; changed loads and settings are still allowed.
 5. **File layout.** One addition to Data §9: the attribute `last_step` on `/steps` (the
    number of the time step of the last stored step), so that step numbers and "every
    n-th step" output carry on correctly when not every step is stored. No dataset was
@@ -624,6 +625,38 @@ The owner decided on 2026-11-17 (not built yet):
    applies to a step set by the user and to steps chosen by the step control."
    Still open for the owner: whether a later step chosen by the automatic step control
    should be warned about (the proposed sentence says yes, as now).
+
+## Q28 — code-review findings of 2026-11-20 (tasks M11.11–M11.16) — raised 2026-11-20
+
+`REVIEW.md` lists nine findings, each reproduced by the reviewer. The cause named in each
+was confirmed in the code. All nine are code defects. None needs a new equation, property
+or benchmark target.
+
+1. **Restart compatibility (M11.11; findings 2, 3, 4).** The owner decided on 2026-11-20 to
+   **refuse a restart when any region's material, thickness or material angle has
+   changed**. Loads and solver settings may still change between the runs, as Q25.4 says.
+   This settles the point Q25.4 left open, and the results-file layout (Data §9) is
+   unchanged. The restart check also compares the whole mesh (element types,
+   connectivity, element regions, boundary facets, planar or axisymmetric), not only the
+   node coordinates. It also compares the streams of the model with those of the file
+   (names and DOF mapping). Every check is made before anything is written to the file.
+2. **Input guards (M11.12; findings 1, 8).** The command line refuses an output path that
+   is the model file itself. Validation reports an error for a largest time step that is
+   not positive or is below the smallest step, and for a first time step that is not
+   positive.
+3. **Mesh out of date (M11.13; finding 5).** An edit to a selection that is named in
+   `structured_surfaces` or in a refinement's `selection` marks the mesh out of date.
+4. **Path locator (M11.14; finding 6).** A point that is not inside any of the nearest
+   candidate elements is searched for among all elements whose bounding box holds it,
+   before it is reported as outside the mesh.
+5. **Position-dependent temperatures in validation (M11.15; finding 7).** A
+   position-dependent prescribed or ambient temperature is evaluated at the points of
+   the entities it applies to, not at the origin. When that is not possible it is
+   treated as unknown, as a temperature-dependent value is now, so it never blocks a
+   solve.
+6. **Early output times (M11.16; finding 9).** The step controller compares a mandatory
+   time with the current time using a tolerance relative to the local time, not to the
+   length of the whole run. Distinct output times that can be represented are kept.
 
 ## Q13 — choices made in the verification examples — raised in M3.G
 
