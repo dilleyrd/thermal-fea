@@ -556,11 +556,14 @@ end time, appending to the same results file"). These choices fill it in.
    short to land on the end time) and without an error estimate for its first step, as at
    the start of any run. Its steps therefore differ from those of an uninterrupted run
    within the time-stepping tolerance.
-4. **What may change between the runs.** The mesh must be the same (same nodes), or the
-   restart is refused; so is a file of a steady solution, a last step that did not
-   converge, and an end time the file has already reached. Loads, materials and settings
-   are *not* compared: the continued steps use the current model, and the model embedded
-   in the results file is replaced by it. A load changed between the runs takes effect
+4. **What may change between the runs.** The restart compares the full mesh (nodes,
+   element types, connectivity, element regions, boundary facets, planar or axisymmetric),
+   the region data (material, thickness, material angle) and the streams (names, mode, DOF
+   mapping) with the results file, and is refused if any differs, before anything is
+   written; so is a file of a steady solution, a last step that did not converge, and an
+   end time the file has already reached. Loads and settings are *not* compared: the
+   continued steps use the current model, and the model embedded in the results file is
+   replaced by it. A load changed between the runs takes effect
    from the restart time, without the theta = 1 step that a jump inside a run gets.
    **Decided by the owner on 2026-11-20 (Q28.1, task M11.11):** a changed material,
    thickness or material angle is refused; changed loads and settings are still allowed.

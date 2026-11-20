@@ -426,7 +426,7 @@ Boundary Conditions, Flow (Streams, Network), Enclosures, Analysis Settings, Sol
   program suggested itself; it still applies to a first step set by the user. Add the
   rule to Theory §6.1 in the wording of Q27.3 once the owner confirms it, regenerate the
   guide, and test both cases.
-- [ ] **M11.11 [B] Restart compatibility.** `REVIEW.md` findings 2, 3, 4; owner's choice
+- [x] **M11.11 [B] Restart compatibility.** `REVIEW.md` findings 2, 3, 4; owner's choice
   in Q28.1. Before anything is written to the file, a restart is refused when:
   - the mesh differs: element types, connectivity, element regions, boundary facets, or
     planar against axisymmetric;

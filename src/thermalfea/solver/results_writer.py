@@ -24,7 +24,8 @@ Layout::
 
 Every per-step dataset is extendable and chunked by step, so steps can be appended one at
 a time and a file left by an interrupted run is still readable. A writer opened with
-``append=True`` continues an existing file of a transient run (task M10.6).
+``append=True`` continues an existing file of a transient run (task M10.6) when the mesh,
+the region data and the streams are unchanged (task M11.11); loads and settings may change.
 """
 
 from __future__ import annotations
@@ -96,36 +97,135 @@ def write_mesh(group: h5py.Group, mesh: Mesh) -> None:
         ds.attrs["name"] = name
 
 
-def check_same_mesh(path: str | Path, problem: CompiledProblem) -> None:
-    """Raise unless a results file holds a transient run on the mesh of ``problem``.
+def region_data(problem: CompiledProblem) -> dict[str, dict[str, Any]]:
+    """The per-region data stored in ``/meta`` attr ``regions`` (JSON-ready)."""
+    return {
+        str(region_id): {
+            "name": r.name,
+            "thickness": r.thickness,
+            "material_angle": r.material_angle,
+            "material": r.material.to_json(),
+        }
+        for region_id, r in problem.regions.items()
+    }
+
+
+def _normal(value: Any) -> Any:
+    """The JSON round trip of a value, so stored and fresh forms compare equal."""
+    return json.loads(json.dumps(value, sort_keys=True))
+
+
+def _mesh_difference(f: h5py.File, mesh: Mesh, width: int, n_nodes: int) -> str | None:
+    """What differs between the mesh in the file and ``mesh``, or None if nothing."""
+    g = f["mesh"]
+    nodes = g["nodes"][...]
+    if (
+        nodes.shape != mesh.nodes.shape
+        or width != n_nodes
+        or not np.allclose(nodes, mesh.nodes, rtol=0.0, atol=_NODE_TOL * _extent(mesh.nodes))
+    ):
+        return "the nodes"
+    if bool(g.attrs.get("axisymmetric", False)) != bool(mesh.axisymmetric):
+        return "planar against axisymmetric"
+    blocks = g["blocks"]
+    if len(blocks) != len(mesh.blocks):
+        return "the number of element blocks"
+    for i, b in enumerate(mesh.blocks):
+        s = blocks[str(i)]
+        if str(s.attrs["etype"]) != b.etype:
+            return f"the element type of block {i}"
+        for key in ("conn", "region", "elem_ids"):
+            if not np.array_equal(s[key][...], getattr(b, key)):
+                return f"the {'connectivity' if key == 'conn' else key} of block {i}"
+    facets = g["facets"]
+    if len(facets) != len(mesh.facets):
+        return "the number of boundary facet blocks"
+    for i, fb in enumerate(mesh.facets):
+        s = facets[str(i)]
+        if str(s.attrs["etype"]) != fb.etype:
+            return f"the type of facet block {i}"
+        for key in ("conn", "entity", "parent_elem"):
+            if not np.array_equal(s[key][...], getattr(fb, key)):
+                return f"the {key} of facet block {i}"
+    return None
+
+
+def _stream_difference(f: h5py.File, problem: CompiledProblem) -> str | None:
+    """What differs between the streams in the file and those of ``problem``."""
+    current: dict[str, dict[str, Any]] = {}
+    for provider in problem.providers:
+        static = getattr(provider, "static", None)
+        current.update(static() if static is not None else {})
+    stored = {str(g.attrs["name"]): g for g in f["fluid"].values()}
+    if set(stored) != set(current):
+        return "names"
+    for name, data in current.items():
+        group = stored[name]
+        for key, value in data.items():
+            if isinstance(value, str):
+                if str(group.attrs.get(key)) != value:
+                    return f"{key} of {name!r}"
+            elif key not in group or not np.array_equal(group[key][...], np.asarray(value)):
+                return f"{key} of {name!r}"
+        if any(key in group and key not in data for key in STATIC_FLUID):
+            return f"the data of {name!r}"
+    return None
+
+
+def check_restart_compatible(path: str | Path, problem: CompiledProblem) -> None:
+    """Raise unless a results file can be continued with ``problem``.
+
+    The file is only read. It can be continued when it holds a transient run and the
+    problem has the same mesh (nodes, element types, connectivity, regions, boundary
+    facets, planar or axisymmetric), the same region data (material, thickness and
+    material angle; the name is ignored) and the same streams (names, mode, DOF mapping).
+    Loads and solver settings may differ.
 
     Raises
     ------
     ModelError
-        If the file is unreadable, holds a steady solution, or was computed on another
-        mesh (different nodes).
+        If the file is unreadable, holds a steady solution, or differs from the problem
+        in one of the respects above.
     """
+    name = Path(path).name
     try:
         with h5py.File(path, "r") as f:
             analysis = str(f["meta"].attrs["analysis"])
-            nodes = f["mesh"]["nodes"][...]
             width = f["steps"]["fields"][TEMPERATURE].shape[1]
+            if not analysis.endswith("transient"):
+                raise ModelError(f"cannot continue {name}: it holds a steady solution")
+            diff = _mesh_difference(f, problem.mesh, width, problem.dofs.n_nodes(TEMPERATURE))
+            if diff is not None:
+                raise ModelError(
+                    f"cannot continue {name}: it was computed on a different mesh ({diff}). "
+                    "A run can only be continued on the mesh it was started on; solve again "
+                    "from the start instead"
+                )
+            stored = json.loads(str(f["meta"].attrs["regions"]))
+            fresh = _normal(region_data(problem))
+            if set(stored) != set(fresh):
+                raise ModelError(
+                    f"cannot continue {name}: the regions of the model differ from those of "
+                    "the results file. A run can only be continued with the same regions; "
+                    "solve again from the start instead"
+                )
+            for key, old in stored.items():
+                new = fresh[key]
+                if any(old.get(k) != new[k] for k in ("thickness", "material_angle", "material")):
+                    raise ModelError(
+                        f"cannot continue {name}: the material, thickness or material angle "
+                        f"of region {new['name']!r} differs from the results file. A run can "
+                        "only be continued with the same regions; solve again from the start "
+                        "instead"
+                    )
+            diff = _stream_difference(f, problem)
+            if diff is not None:
+                raise ModelError(
+                    f"cannot continue {name}: the streams of the model are not those of the "
+                    f"results file ({diff}). Solve again from the start instead"
+                )
     except (OSError, KeyError) as exc:
-        raise ModelError(f"cannot continue {Path(path).name}: not a results file ({exc})") from exc
-    if not analysis.endswith("transient"):
-        raise ModelError(f"cannot continue {Path(path).name}: it holds a steady solution")
-    mesh = problem.mesh
-    same = (
-        nodes.shape == mesh.nodes.shape
-        and width == problem.dofs.n_nodes(TEMPERATURE)
-        and np.allclose(nodes, mesh.nodes, rtol=0.0, atol=_NODE_TOL * _extent(mesh.nodes))
-    )
-    if not same:
-        raise ModelError(
-            f"cannot continue {Path(path).name}: it was computed on a different mesh. "
-            "A run can only be continued on the mesh it was started on; solve again "
-            "from the start instead"
-        )
+        raise ModelError(f"cannot continue {name}: not a results file ({exc})") from exc
 
 
 def _extent(nodes: ndarray) -> float:
@@ -148,9 +248,10 @@ class ResultsWriter:
         Supplies the mesh, the DOF map, the region properties and, when it was compiled
         from a model, the model that is embedded in the file.
     append : bool
-        Continue the existing file of a transient run on the same mesh: its steps are
-        kept and new ones are added after them. The embedded model and settings are
-        replaced by those of ``problem``.
+        Continue the existing file of a transient run: its steps are kept and new ones
+        are added after them. The mesh, the region data (materials, thicknesses, material
+        angles) and the streams must be those of the file (``check_restart_compatible``).
+        The embedded model and settings are replaced by those of ``problem``.
     """
 
     def __init__(self, path: str | Path, problem: CompiledProblem, append: bool = False) -> None:
@@ -187,16 +288,7 @@ class ResultsWriter:
         meta.attrs["schema_version"] = RESULTS_SCHEMA_VERSION
         meta.attrs["created"] = datetime.now(UTC).isoformat(timespec="seconds")
         self._write_model(meta)
-        regions = {
-            str(region_id): {
-                "name": r.name,
-                "thickness": r.thickness,
-                "material_angle": r.material_angle,
-                "material": r.material.to_json(),
-            }
-            for region_id, r in problem.regions.items()
-        }
-        meta.attrs["regions"] = json.dumps(regions, sort_keys=True)
+        meta.attrs["regions"] = json.dumps(region_data(problem), sort_keys=True)
         write_mesh(f.create_group("mesh"), problem.mesh)
 
         steps = f.create_group("steps")
@@ -248,7 +340,7 @@ class ResultsWriter:
         problem = self.problem
         if not self.path.is_file():
             raise ModelError(f"results file not found: {self.path}")
-        check_same_mesh(self.path, problem)
+        check_restart_compatible(self.path, problem)
         self._file = f = h5py.File(self.path, "r+")
         self.n_steps = int(f["steps"]["time"].shape[0])
         reactions = f["reactions"]

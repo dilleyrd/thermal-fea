@@ -79,6 +79,19 @@ def test_api_refusals(tmp_path: Path) -> None:
         api.solve(model, mesh, built=built, path=tmp_path / "none.h5", restart=True)
 
 
+def test_renamed_stream_refuses_the_restart(tmp_path: Path) -> None:
+    part = tmp_path / "part.h5"
+    model, built = cold_plate(END / 2)
+    mesh = api.mesh(model, built)
+    api.solve(model, mesh, built=built, path=part)
+    untouched = part.read_bytes()
+    model.solution.end_time = END
+    model.streams[0].name = "upper"
+    with pytest.raises(ModelError, match="streams of the model are not those of the results"):
+        api.solve(model, mesh, built=built, path=part, restart=True)
+    assert part.read_bytes() == untouched
+
+
 def test_command_line_restart(tmp_path: Path, capsys: pytest.CaptureFixture) -> None:
     model, _ = cold_plate(END / 2)
     file = tmp_path / "plate.tfea"

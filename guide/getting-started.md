@@ -227,12 +227,13 @@ On the command line: `thermalfea solve model.tfea --restart`. From Python:
 
 What to know:
 
-- The mesh must be the same (same nodes), or the restart is refused. So is a steady
-  solution, a last step that did not converge, and an end time the file has already
-  reached.
-- Loads, materials and settings are not compared. The continued steps use the current
-  model, which replaces the model stored in the results file. A load that you changed takes
-  effect from the restart time.
+- The mesh, the materials, thicknesses and material angles of the regions, and the
+  streams must be the same as in the results file, or the restart is refused and the file
+  is left unchanged. So is a steady solution, a last step that did not converge, and an end
+  time the file has already reached.
+- Loads and solver settings may change. The continued steps use the current model, which
+  replaces the model stored in the results file. A load that you changed takes effect from
+  the restart time.
 - With a fixed time step the continued run repeats an uninterrupted run (to round-off in
   the linear case). With adaptive stepping the controller's history is not stored, so the
   steps differ from those of an uninterrupted run within the time-stepping tolerance.

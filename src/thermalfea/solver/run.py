@@ -16,7 +16,7 @@ from ..model.settings import SolutionSettings
 from ..post.energy import EnergyBalance, energy_balance, step_energy_balance
 from ..post.reactions import term_heats
 from .problem import TEMPERATURE, CompiledProblem
-from .results_writer import FLUID_FIELD, LAST_STEP, ResultsWriter, check_same_mesh
+from .results_writer import FLUID_FIELD, LAST_STEP, ResultsWriter, check_restart_compatible
 from .steady import STEADY_TIME, steady_solution
 from .terms import State
 from .transient import StepRecord, TransientResult, initial_state, solve_transient
@@ -193,7 +193,8 @@ def read_restart_state(problem: CompiledProblem, path: str | Path) -> RestartSta
     Parameters
     ----------
     problem : CompiledProblem
-        The problem to continue; it must use the mesh the file was computed on.
+        The problem to continue; its mesh, region data and streams must be those of the
+        file (loads and settings may differ).
     path : str or Path
         Results file of the earlier run.
 
@@ -201,13 +202,13 @@ def read_restart_state(problem: CompiledProblem, path: str | Path) -> RestartSta
     ------
     ModelError
         If the file cannot be continued: not found, a steady solution, another mesh,
-        streams that do not match, a last step that did not converge, or an end time
-        that the file has already reached.
+        other region data, streams that do not match, a last step that did not converge,
+        or an end time that the file has already reached.
     """
     path = Path(path)
     if not path.is_file():
         raise ModelError(f"results file not found: {path}")
-    check_same_mesh(path, problem)
+    check_restart_compatible(path, problem)
     dofs = problem.dofs
     u = np.zeros(dofs.n_dofs)
     filled = np.zeros(dofs.n_dofs, dtype=bool)

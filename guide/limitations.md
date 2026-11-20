@@ -152,9 +152,10 @@ message that says so; it is never solved with that part left out.
   with the loads or the initial temperature differs from a prescribed value. Later jumps
   are detected only at the start of a step; a jump that falls strictly inside a step is
   not seen.
-- **Restart checks only the mesh.** Loads, materials and settings are not compared, and
-  the model stored in the results file is replaced. Whether a changed model should be
-  refused or warned about awaits the owner (Q25.4).
+- **Restart allows changed loads and settings.** The mesh, the region materials,
+  thicknesses and material angles, and the streams must be those of the results file, or
+  the restart is refused. Loads and settings are not compared, and the model stored in the
+  results file is replaced by the current one.
 - **Restart with automatic stepping** does not reproduce an uninterrupted run exactly: the
   controller's history is not stored, so the steps differ within the time-stepping
   tolerance. With a fixed step the runs agree to round-off (linear case) or to the

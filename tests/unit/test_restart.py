@@ -7,6 +7,7 @@ that is stopped and continued must give the same steps.
 from __future__ import annotations
 
 import shutil
+from dataclasses import replace
 from pathlib import Path
 
 import h5py
@@ -205,6 +206,70 @@ def test_refusals(tmp_path: Path) -> None:
         f["steps"]["converged"][-1] = False
     with pytest.raises(ModelError, match="did not converge"):
         run_transient(slab(), bad, restart=True)
+
+
+def _rotate_connectivity(problem) -> None:
+    conn = problem.mesh.blocks[0].conn
+    conn[0] = np.roll(conn[0], 1)
+
+
+def _change_region(problem) -> None:
+    problem.mesh.blocks[0].region[3] += 1
+
+
+def _flip_axisymmetric(problem) -> None:
+    problem.mesh.axisymmetric = not problem.mesh.axisymmetric
+
+
+def _change_facet(problem) -> None:
+    problem.mesh.facets[0].entity[0] += 1
+
+
+def _change_material(problem) -> None:
+    r = next(iter(problem.regions.values()))
+    r.material = replace(r.material, k=100.0)
+
+
+def _change_thickness(problem) -> None:
+    next(iter(problem.regions.values())).thickness *= 2.0
+
+
+def _change_angle(problem) -> None:
+    next(iter(problem.regions.values())).material_angle += 0.1
+
+
+@pytest.mark.parametrize(
+    ("change", "message"),
+    [
+        (_rotate_connectivity, "different mesh.*connectivity"),
+        (_change_region, "different mesh.*region"),
+        (_flip_axisymmetric, "different mesh.*axisymmetric"),
+        (_change_facet, "different mesh.*entity"),
+        (_change_material, "material, thickness or material angle of region"),
+        (_change_thickness, "material, thickness or material angle of region"),
+        (_change_angle, "material, thickness or material angle of region"),
+    ],
+)
+def test_incompatible_restart_is_refused_and_leaves_the_file_alone(
+    tmp_path: Path, change, message: str
+) -> None:
+    part = tmp_path / "part.h5"
+    run_transient(slab(end_time=50.0), part, T0=T_INIT)
+    untouched = part.read_bytes()
+    other = slab()
+    change(other)
+    with pytest.raises(ModelError, match=message):
+        run_transient(other, part, restart=True)
+    assert part.read_bytes() == untouched
+
+
+def test_changed_load_still_continues(tmp_path: Path) -> None:
+    part = tmp_path / "part.h5"
+    run_transient(slab(end_time=50.0), part, T0=T_INIT)
+    bcs = (FixedTemperature("hot", "left", T=450.0),
+           Convection("air", "right", h=300.0, T_inf=280.0))
+    result = run_transient(slab(bcs), part, restart=True)
+    assert result.times[-1] == pytest.approx(END)
 
 
 def test_append_mode_of_the_writer_keeps_the_reaction_names(tmp_path: Path) -> None:

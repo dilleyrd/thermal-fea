@@ -171,6 +171,11 @@ the start-up step and recomputes g(T_n, t_n). Entry points: `api.solve(restart=T
 `thermalfea solve --restart`, Solve > Continue transient run. A new extra-DOF group
 (M9 or later) must be restorable from the file in the same way, or restart must refuse
 it: `read_restart_state` raises when a DOF is left unfilled.
+M11.11: `results_writer.check_restart_compatible` (used by `read_restart_state` and the
+writer's `_reopen`) refuses a restart, read-only and before any write, when the mesh
+(nodes, element types, connectivity, regions, facets, axisymmetric flag), the region data
+(`region_data`, shared with `open()`; names ignored) or the streams (`static()` of the
+providers against `/fluid`) differ from the file. Loads and settings may change.
 
 **M11.4 user guide (done, Q26).** MkDocs site: `mkdocs.yml`, pages in `guide/`. The pages
 `theory.md`, `correlations.md`, `materials.md`, `verification.md` and `units.md` are
