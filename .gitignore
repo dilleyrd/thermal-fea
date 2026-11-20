@@ -12,3 +12,5 @@ dist/
 !examples/pump_closure/out/*.h5
 examples/output/
 site/
+# local Claude Code permission settings
+.claude/settings.json
