@@ -163,6 +163,34 @@ message that says so; it is never solved with that part left out.
 - **A restart is refused** for a steady solution, for a last step that did not converge and
   for an end time the file already reached.
 
+## Known defects from the code review
+
+A code review on 2026-11-20 (`REVIEW.md` in the repository) found nine defects. Three
+were in restart and are fixed; see [Time stepping and restart](#time-stepping-and-restart).
+The six below are not fixed yet; their fixes are planned as tasks M11.12–M11.16. Where
+there is a way to avoid a defect until then, the entry gives it.
+
+- **The command line can overwrite its model.** `thermalfea solve m.tfea -o m.tfea`
+  replaces the model file with the results file. Leave out `-o` (the results go to
+  `m.tfea.h5`) or give another file name.
+- **A largest time step of 0 is accepted** and the transient solve then stops with an
+  uncaught error (`ZeroDivisionError`). Leave "Largest time step" empty, or set it
+  positive and no smaller than "Smallest time step".
+- **Editing a selection used by a mesh control does not mark the mesh out of date.**
+  This applies to a selection named in "Structured surfaces" or in a refinement. Solve can
+  then reuse the old mesh. After such an edit, generate the mesh again before solving.
+- **A path plot can show a gap inside the mesh.** A point just inside a large element
+  next to much smaller ones can be reported as outside the mesh. Refine the mesh near the
+  path, or move the path slightly.
+- **Position-dependent temperatures with radiation.** Validation evaluates a prescribed
+  or ambient temperature that depends on position at the origin (x = y = 0). With
+  radiation in the model it can then refuse the model for a temperature of 0 K that does
+  not occur.
+- **A very long run can skip an early output time.** When a requested output time is far
+  shorter than the first step relative to the length of the run (for example 1e-5 s in
+  a run of 1e8 s with a first step of 1 s), the first step does not stop at it. Set the
+  initial time step no larger than the first output time.
+
 ## The window
 
 - **Animation export to GIF blocks the window** while a long animation is written.

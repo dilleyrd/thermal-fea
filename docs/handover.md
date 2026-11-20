@@ -85,8 +85,29 @@ and reasons are in the open questions cited.
 | GUI wiring | `gui/app.py: main` | One `attach_*` function per feature; controllers with one entry point; panels through `gui/panels.py: register_panel`. |
 | Background work | `gui/worker.py` | `BackgroundTask`, `SerialWorker` (all gmsh calls on one thread). Q21.11. |
 
-## 3. State on 2026-11-16
+## 3. State on 2026-11-20
 
+Since 2026-11-16:
+- **Done and pushed:** M10.3, M10.4, M10.6, M11.4 and M11.11. The suite has 2011
+  tests.
+- **The pump main-closure example** (`examples/pump_closure/`) is in the repository: its
+  results files (`out/*.h5`) and the post-processed figures (`showcase/`, which needs
+  pandas). It is a page of the user guide.
+  Known gap: the solver computes the heat across a contact, but it is not written to the
+  results file. The showcase scripts recover it by post-processing. There is no task for
+  this yet.
+- **The user guide is published on GitHub Pages** at https://dilleyrd.github.io/thermal-fea/
+  (branch `gh-pages`). It is republished by hand after a change to `guide/`:
+  `.venv\Scripts\python.exe -m mkdocs gh-deploy --strict --remote-name origin
+  --remote-branch gh-pages`. A GitHub Actions workflow cannot be pushed, because the git
+  credential lacks the `workflow` scope.
+- **Code review of 2026-11-20** (`REVIEW.md`, Q28): nine findings.
+  - Findings 2–4 (restart) were fixed by M11.11.
+  - Tasks M11.12–M11.16 fix the other six. They are listed, with workarounds, in
+    `guide/limitations.md` ("Known defects from the code review"). Remove each entry
+    there when its task is done, and record the fix in `REVIEW.md`.
+
+As of 2026-11-16:
 - Done and pushed: M0 – M7 and M8.1 – M8.14; M5.G confirmed by the owner. 1794 tests.
 - Next: **M8.G, a human gate**: the owner builds V-10 and V-17 in the GUI following
   `docs/gui-walkthrough.md` and fills in the friction log at its end. The GUI has never
@@ -188,7 +209,7 @@ tests that pin every number the pages quote (`tests/verification/test_tutorials.
 `tests/gui/test_tutorials_gui.py`); if a number changes, regenerate the figures and the
 model files with the scripts and update the page. Build with
 `.venv\Scripts\python.exe -m mkdocs build --strict`; never `mkdocs serve` in a remote
-session.
+session. Publish with `mkdocs gh-deploy` (section 3).
 
 **M11.3 performance.** Element geometry is cached per problem (`problem.cache`); the
 transient driver already reuses the factorisation in the linear case with constant Δt.
