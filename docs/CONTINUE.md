@@ -14,7 +14,9 @@ Read in this order:
 ## 1. Where things stand
 
 - **Repository:** branch `main`, remote `origin` = https://github.com/dilleyrd/thermal-fea.
-  The last commit is 3fb2ba1. The working tree is clean and `main` matches `origin/main`.
+  The last commits are 3fb2ba1 (the review status in the documentation) and 4f5e751 (this
+  note). The working tree was clean and `main` matched `origin/main` when it was
+  written.
 - **Checks:** `.\scripts\check.ps1` runs ruff and then the whole pytest suite. It last
   passed with 2011 tests in about 90 s.
 - **Tasks:** 81 are ticked in `docs/tasks.md`. The latest are M10.6 (restart), M11.4
