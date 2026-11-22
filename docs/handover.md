@@ -87,6 +87,9 @@ and reasons are in the open questions cited.
 
 ## 3. State on 2026-11-20
 
+For the latest state, the owner's standing instructions and the next tasks with their
+code locations, see `docs/CONTINUE.md`.
+
 Since 2026-11-16:
 - **Done and pushed:** M10.3, M10.4, M10.6, M11.4 and M11.11. The suite has 2011
   tests.

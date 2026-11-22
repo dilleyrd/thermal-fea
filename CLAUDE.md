@@ -7,5 +7,6 @@ Read `PLAN.md` first, then only the documents the task in `docs/tasks.md` names.
 6. Do not change public signatures in `docs/data-model.md` or the task text; if one cannot work, record why and stop.
 Plan §7 (no literal space dimension, registered elements, facets, `DofMap`, `Term`s) binds every task.
 Working method, machine pitfalls, mechanisms not in the plan, and notes on the remaining tasks: `docs/handover.md` (read it after `PLAN.md`).
+Latest state, the owner's standing instructions and where to pick up: `docs/CONTINUE.md` (read it after `docs/handover.md`).
 Check command (lint + all tests, project venv only): `.\scripts\check.ps1`
 Commit each task as `M<n>.<k>: <task title>` and push to `origin`; never force-push.
