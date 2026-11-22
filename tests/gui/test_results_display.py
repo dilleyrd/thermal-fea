@@ -595,6 +595,42 @@ def test_menu_actions_add_objects(steady) -> None:
 
 
 # --------------------------------------------------------------------- the real viewport
+def test_real_viewport_axes_stay_put_while_stepping(
+    window, qtbot, transient_case, tmp_path
+) -> None:
+    model, path = transient_case
+    view = MplSceneView()
+    qtbot.addWidget(view.widget())
+    view.widget().resize(640, 480)
+    shell = make_shell(window, model, path, tmp_path, view=view)
+    shell.doc.set_results(shell.path)
+    view.set_mesh(Results(shell.path).mesh)
+    name = shell.ctrl.objects[0].name
+    shell.ctrl.show(name)
+    bounds = view.axes.get_position().bounds
+    for k in range(10):
+        shell.ctrl.update(name, step=(k + 1) % shell.ctrl.n_steps)
+        assert view.axes.get_position().bounds == pytest.approx(bounds, abs=1e-9)
+    shell.ctrl.pause()
+
+
+def test_manual_scale_applies_on_a_uniform_field(steady, monkeypatch) -> None:
+    ctrl, view = steady.ctrl, steady.view
+    name = ctrl.shown
+    # a uniform field: its automatic range is empty (min == max)
+    monkeypatch.setattr(ctrl, "_auto_range", lambda obj: (5.0, 5.0))
+    ctrl.update(name, range_mode="manual")  # must not be refused
+    assert ctrl.get(name).range_mode == "manual"
+    ctrl.update(name, vmin=300.0, vmax=400.0)
+    assert (view.last.vmin, view.last.vmax) == (300.0, 400.0)
+    # user limits that are not ordered are still refused
+    with pytest.raises(ModelError):
+        ctrl.update(name, vmin=400.0, vmax=300.0)
+    with pytest.raises(ModelError):
+        ctrl.update(name, vmin=300.0, vmax=300.0)
+    assert (ctrl.get(name).vmin, ctrl.get(name).vmax) == (300.0, 400.0)
+
+
 def test_real_viewport_draws_contour_then_vectors(window, qtbot, steady_case, tmp_path) -> None:
     model, path = steady_case
     view = MplSceneView()

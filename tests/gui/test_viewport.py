@@ -180,6 +180,34 @@ def test_color_by_and_vector_only_field(loaded, small_mesh) -> None:
     assert loaded.layer_artists("results")
 
 
+def _contour_spec(mesh, lo: float, hi: float, values=None) -> FieldDisplay:
+    dm = display_triangulation(mesh)
+    vals = mesh.nodes[:, 0] if values is None else values
+    return FieldDisplay(
+        xy=mesh.nodes[:, :2], triangles=dm.triangles, values=vals, vmin=lo, vmax=hi,
+        levels=6, label="x [m]", title="x",
+    )
+
+
+def test_axes_position_is_unchanged_by_colour_bar_redraws(loaded, small_mesh) -> None:
+    # each redraw adds and removes the colour bar; the model axes must not move
+    ax = loaded.axes
+    loaded.set_field(_contour_spec(small_mesh, 0.0, 6.0))
+    bounds = ax.get_position().bounds
+    for step in range(10):
+        loaded.set_field(_contour_spec(small_mesh, 0.0, 1.0 + step))
+        assert ax.get_position().bounds == pytest.approx(bounds, abs=1e-9)
+    loaded.set_field(None)
+    assert ax.get_position().bounds == pytest.approx(vm.AXES_RECT, abs=1e-9)
+
+
+def test_manual_limits_are_the_norm_limits_on_a_uniform_field(loaded, small_mesh) -> None:
+    uniform = np.full(small_mesh.n_nodes, 5.0)
+    loaded.set_field(_contour_spec(small_mesh, 300.0, 400.0, values=uniform))
+    mappable = loaded.layer_artists("results")[0]
+    assert (mappable.norm.vmin, mappable.norm.vmax) == pytest.approx((300.0, 400.0))
+
+
 def test_equal_aspect_and_fit(loaded, built_model) -> None:
     ax = loaded.axes
     assert ax.get_aspect() == 1.0

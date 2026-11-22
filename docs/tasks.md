@@ -483,7 +483,7 @@ Boundary Conditions, Flow (Streams, Network), Enclosures, Analysis Settings, Sol
   duplicate segments are merged; a closed fit-point spline nests like any other loop.
 - [ ] **M11.23 [B] Validation coverage.** `REVIEW-2.md` 2.1-13b, c, e, g and the guards of
   2.2 (evaluation §3). Tests: each check.
-- [ ] **M11.24 [A] Viewport colour bar.** `REVIEW-2.md` 2.1-14, 2.1-17. The axes keep their
+- [x] **M11.24 [A] Viewport colour bar.** `REVIEW-2.md` 2.1-14, 2.1-17. The axes keep their
   position when the colour bar is removed and redrawn; a Manual scale is allowed on a
   uniform field. Test: the axes position is unchanged over 10 step changes.
 - [ ] **M11.25 [B] GUI state on New, Open and remesh.** `REVIEW-2.md` 2.1-15, 16, 18, 19 and

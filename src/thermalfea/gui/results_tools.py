@@ -574,16 +574,23 @@ class ResultController(QObject):
             values.update(range_mode="auto_step", vmin=None, vmax=None)
         new = replace(obj, **values)
         if isinstance(new, ContourObject) and new.range_mode == "manual":
+            mode = obj.range_mode if obj.range_mode != "manual" else "auto_step"
+            both_typed = values.get("vmin") is not None and values.get("vmax") is not None
             if new.vmin is None or new.vmax is None:
-                mode = obj.range_mode if obj.range_mode != "manual" else "auto_step"
                 lo, hi = self._auto_range(replace(new, range_mode=mode))
                 new = replace(
                     new,
                     vmin=lo if new.vmin is None else new.vmin,
                     vmax=hi if new.vmax is None else new.vmax,
                 )
-            if not new.vmin < new.vmax:  # type: ignore[operator]
+            if new.vmin > new.vmax:  # type: ignore[operator]
                 raise ModelError("the range minimum must be below the maximum")
+            if new.vmin == new.vmax:  # type: ignore[operator]
+                # equal limits are only allowed where they come from a uniform field, whose
+                # automatic range is empty; limits the user typed must be strictly ordered
+                lo, hi = self._auto_range(replace(new, range_mode=mode))
+                if both_typed or lo < hi:
+                    raise ModelError("the range minimum must be below the maximum")
         return new
 
     # ----------------------------------------------------------------- display

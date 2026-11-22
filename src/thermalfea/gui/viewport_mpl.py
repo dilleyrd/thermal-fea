@@ -452,6 +452,9 @@ class MplSceneView(QObject):
                 log.debug("colour bar already gone")
             self._colorbar = None
             self._ax.set_title("")
+            # ``fig.colorbar(ax=...)`` shrinks the model axes and removing it does not give
+            # the space back; restore the rectangle so the axes never drift
+            self._ax.set_position(AXES_RECT)
         for artist in self._layers[name]:
             try:
                 artist.remove()
