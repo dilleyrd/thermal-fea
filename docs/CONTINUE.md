@@ -144,6 +144,21 @@ In order:
   - update its status in the table and the note in `REVIEW.md`;
   - republish the guide.
 
+## 4a. Update of 2026-11-22: the external review
+
+- `REVIEW-2.md` is an external review of 353a3ca. `docs/review-2026-11-21-evaluation.md`
+  checks each claim and proposes tasks M11.17–M11.30; the open decisions D1–D13 are Q29.
+- At the owner's request ("fix the clear-cut bugs where no decision is needed") these
+  were built and pushed, one commit each: M11.20 (hydraulics once per iteration), M11.21
+  (stream heating flag), M11.22 (DXF arcs and loops), M11.24 (viewport colour bar),
+  M11.18 (restart, second part, without 2.1-3) and M11.25 (GUI state on New, Open and
+  remesh). The suite then passed with 2045 tests.
+- M11.25 changed one M8.10 test assertion: result objects no longer survive a new model,
+  which was the defect the review reported.
+- Still open: M11.12–M11.16 (below), M11.23, M11.26, M11.27, M11.29, M11.30, and the tasks
+  that wait for the owner's decisions: M11.17 (D1), M11.19 (D3), M11.28 (D6), and 2.1-3
+  in M11.18 (D2).
+
 ## 5. Next work: tasks M11.12–M11.16
 
 Each task's text is in `docs/tasks.md` and the decisions are in Q28. Start each task with
