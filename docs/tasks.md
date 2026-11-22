@@ -441,6 +441,8 @@ Boundary Conditions, Flow (Streams, Network), Enclosures, Analysis Settings, Sol
   `thermalfea solve m.tfea -o m.tfea` exits with an error and leaves the model file
   unchanged. Validation reports an error for `dt_max <= 0`, for `dt_max < dt_min`, and for
   `initial_dt <= 0` when it is set. Tests: each case, in the CLI and in `validate`.
+  Extended by Q29 (`REVIEW-2.md` 2.1-13f): also `dt_min`, `time_tol`, `rtol`, `ttol` and
+  `max_dT_per_step` must be > 0.
 - [ ] **M11.13 [A] Mesh out of date after selection edits.** `REVIEW.md` finding 5; Q28.3.
   `gui/document.py: classify_change` also counts the selection names listed in
   `structured_surfaces` and in each refinement's `selection`. Tests: editing either kind
@@ -451,10 +453,49 @@ Boundary Conditions, Flow (Streams, Network), Enclosures, Analysis Settings, Sol
   large quadrilateral next to small ones) is found, and a point outside still gives -1.
 - [ ] **M11.15 [B] Position-dependent temperatures in validation.** `REVIEW.md` finding 7;
   Q28.5. Tests: `T = 300*x` on a boundary at x = 1 m, with radiation, does not block the
-  solve; a constant 0 K still does.
+  solve; a constant 0 K still does. Extended by Q29 (`REVIEW-2.md` 2.1-13d): a time table
+  is also sampled over the run, not only at t = 0.
 - [ ] **M11.16 [B] Early output times on long runs.** `REVIEW.md` finding 9; Q28.6.
   `solver/timestep.py` filters and finds mandatory times with a tolerance relative to the
   local time. Tests: end 1e8 s, output at 1e-5 s, first step 1 s; the first step lands on
   1e-5 s and the time is stored.
+- [ ] **M11.17 [C] Convergence at equilibrium.** `REVIEW-2.md` 2.1-1; Q29.1. Waits for the
+  owner's decision D1, then Theory §5 and the code. Test: a steady model with radiation to
+  300 K started at 300 K converges in one iteration.
+- [ ] **M11.18 [B] Restart, second part.** `REVIEW-2.md` 2.1-2, 2.2 (`/meta`), 2.3
+  (`from_results`); Q29. A restart of a model whose stream is fed by a pipe network runs
+  (the flow providers are updated before the first heat balance); `/meta` is rewritten
+  only once the first new step is written; a `from_results` initial condition uses the
+  M11.11 mesh check and refuses a file with no steps. Item 2.1-3 (Q29.2) is added once D2
+  is decided. Tests: each case.
+- [ ] **M11.19 [B] Steps at fast changes.** `REVIEW-2.md` 2.1-5 and the `_jumps` defects;
+  Q29.3. Waits for D3.
+- [ ] **M11.20 [B] Hydraulics once per nonlinear iteration.** `REVIEW-2.md` 2.1-8. Theory
+  §9.2 says the hydraulics are updated at most once per nonlinear iteration; line-search
+  trials and the `_jumps` probes must not update the flow providers. Tests: the hydraulic
+  solve count per Newton iteration is at most 1; a line-search trial leaves the network
+  state unchanged.
+- [ ] **M11.21 [B] Stream heating flag.** `REVIEW-2.md` 2.1-9a. The heating/cooling flag
+  of a stream is decided from the cells that have a wall only. Test: with some cells
+  without a wall, a heated stream keeps the Dittus–Boelter exponent 0.4.
+- [ ] **M11.22 [A] DXF arcs and loops.** `REVIEW-2.md` 2.1-11, 2.2 (duplicate segments,
+  fit-point spline nesting). Tests: a bulge of 2 gives the correct centre and area;
+  duplicate segments are merged; a closed fit-point spline nests like any other loop.
+- [ ] **M11.23 [B] Validation coverage.** `REVIEW-2.md` 2.1-13b, c, e, g and the guards of
+  2.2 (evaluation §3). Tests: each check.
+- [ ] **M11.24 [A] Viewport colour bar.** `REVIEW-2.md` 2.1-14, 2.1-17. The axes keep their
+  position when the colour bar is removed and redrawn; a Manual scale is allowed on a
+  uniform field. Test: the axes position is unchanged over 10 step changes.
+- [ ] **M11.25 [B] GUI state on New, Open and remesh.** `REVIEW-2.md` 2.1-15, 16, 18, 19 and
+  the solve-dialog close. New, Open and Examples clear the results, probes and results
+  panel; a background build does not overwrite selections edited during it; a failed
+  build keeps the queued rebuild; selection tags and chart nodes are cleared on a new mesh
+  or model; `BackgroundTask.shutdown` waits for a running thread. Tests: each
+  reproduction, offscreen.
+- [ ] **M11.26 [B] Meshing.** `REVIEW-2.md` 2.1-12, 2.1-6, `curve_ends` after a Transform.
+- [ ] **M11.27 [A] Inputs and outputs.** `REVIEW-2.md` items listed in the evaluation §3.
+- [ ] **M11.28 [B] Term results in the results file.** Q29.6; waits for D6.
+- [ ] **M11.29 [A] GUI flow and selection fixes.** `REVIEW-2.md` 2.2 GUI items.
+- [ ] **M11.30 [A] Packaging and documentation corrections.** Evaluation §3.
 - [ ] **M11.6 [C] Release review.** Check every item of Plan §6; resolve or document every
-  entry in `docs/OPEN_QUESTIONS.md`. Depends on M11.7–M11.16.
+  entry in `docs/OPEN_QUESTIONS.md`. Depends on M11.7–M11.30.

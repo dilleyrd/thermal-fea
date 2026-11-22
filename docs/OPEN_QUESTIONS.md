@@ -661,6 +661,31 @@ or benchmark target.
    time with the current time using a tolerance relative to the local time, not to the
    length of the whole run. Distinct output times that can be represented are kept.
 
+## Q29 — external codebase review of 2026-11-21 (tasks M11.17–M11.30) — raised 2026-11-22
+
+`REVIEW-2.md` is an external review of commit 353a3ca. Every claim was checked against
+the code; the verdicts and the plan are in `docs/review-2026-11-21-evaluation.md`. On
+2026-11-22 the owner asked for the clear-cut defects, which need no decision, to be fixed
+first: M11.20, M11.24, M11.22, M11.21, M11.25 and M11.18 (without item 2.1-3). The
+decisions below are open; the evaluation, §4, gives the options and a recommendation for
+each.
+
+1. **D1, Theory §5 F_ref at equilibrium** (M11.17). Open.
+2. **D2, fluid rows with θ < 1, Theory §6** (2.1-3, in M11.18). Open.
+3. **D3, Theory §6.1 error estimate and the predictor after a breakpoint** (M11.19). Open.
+4. **D4, Theory §9.2 network iteration near Δp = 0.** Open.
+5. **D5, inclined natural convection beyond |θ| > 90°, and the validity range.** Open.
+6. **D6, `Term.results()` in the results file, Data §9** (M11.28). Open.
+7. **D7, a `depends_on_position` attribute on `Function`.** Open.
+8. **D8, `api.solve` without `built`: model-only checks or the documented skip.** Open.
+9. **D9, corrections to Theory §7 (heat-flow sign), Data §9, PLAN and Theory §6.1.** Open.
+10. **D10, packaging: pandas as an optional extra, a licence, the duplicate images.** Open.
+11. **D11, air at 1 atm or 1 bar, the water table:** part of M11.1.
+12. **D12, design choices that can wait** (evaluation §4, item 12). Open.
+13. **D13, scope:** the suggested `validate`, `summary` and `export` commands and the API
+    exposure are excluded under the owner's "no scripting" hold unless the owner says
+    otherwise.
+
 ## Q13 — choices made in the verification examples — raised in M3.G
 
 - **Nodes at check points.** V-09 and V-10 check the temperature at given points. Point
