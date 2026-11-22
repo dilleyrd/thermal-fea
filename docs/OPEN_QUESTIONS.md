@@ -685,6 +685,9 @@ each.
 13. **D13, scope:** the suggested `validate`, `summary` and `export` commands and the API
     exposure are excluded under the owner's "no scripting" hold unless the owner says
     otherwise.
+14. **Result objects on a new model (M11.25, settled 2026-11-22).** The owner confirmed
+    that New, Open and Examples clear the result objects and probes; the M8.10 test
+    `test_results_cleared_clears_the_display` now requires this.
 
 ## Q13 — choices made in the verification examples — raised in M3.G
 
