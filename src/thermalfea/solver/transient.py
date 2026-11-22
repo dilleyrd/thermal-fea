@@ -37,7 +37,7 @@ from .initial import initial_temperature
 from .linear import Factorization, LinearSolver, default_solver, split_dofs
 from .nonlinear import F_REF_FLOOR, Assembled, newton
 from .problem import CompiledProblem
-from .steady import assemble
+from .steady import assemble, update_providers
 from .terms import State
 from .timestep import StepController, error_estimate
 
@@ -275,8 +275,8 @@ def _jumps(
         return True
     g_now = system.residual(u)
     return is_jump(
-        assemble(problem, u, probe).residual(u) - g_now,
-        assemble(problem, u, t_new).residual(u) - g_now,
+        assemble(problem, u, probe, update=False).residual(u) - g_now,
+        assemble(problem, u, t_new, update=False).residual(u) - g_now,
     )
 
 
@@ -439,13 +439,20 @@ def solve_transient(
             return T_new, 1, True, residual, step_system, base
 
         def assemble_step(u: ndarray) -> StepSystem:
-            base = assemble(problem, u, t_new, T, dt)
+            base = assemble(problem, u, t_new, T, dt, update=False)
             C = assemble_capacitance(problem, theta * u + (1.0 - theta) * T, t_new, T, dt)
             return StepSystem(base, C, T, g, dt, theta)
+
+        def refresh_providers(u: ndarray) -> None:
+            # once per iterate (Theory §9.2); line-search trials never update the providers
+            update_providers(
+                problem, State(u=u, u_prev=T, t=t_new, dt=dt, dofs=problem.dofs)
+            )
 
         outcome = newton(
             assemble_step, T, (fixed_idx, fixed_val), settings,  # type: ignore[arg-type]
             symmetric=symmetric, solver=solver,
+            refresh=refresh_providers if problem.providers else None,
         )
         step_system = outcome.system
         return (outcome.T, outcome.iterations, outcome.converged, outcome.residual,

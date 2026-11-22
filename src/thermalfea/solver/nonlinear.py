@@ -13,6 +13,10 @@ residual-only vector (see :mod:`thermalfea.solver.terms`), and iterates
    ``F_ref = max(|F|_2, |K T|_2, 1e-12)``;
 6. no convergence within the iteration limit raises ``ConvergenceError``.
 
+An optional ``refresh(T)`` hook (the flow providers' update) is called once per iterate,
+before the assembly at the start and again after each accepted update, never for a
+line-search trial; the system is then assembled again at the accepted iterate.
+
 Property derivatives (dk/dT, dh/dT) are deliberately not in the tangent. A trial solution
 with any temperature at or below 0 K counts as a failed line-search step.
 """
@@ -119,6 +123,7 @@ def newton(
     *,
     symmetric: bool = False,
     solver: LinearSolver | None = None,
+    refresh: Callable[[ndarray], None] | None = None,
 ) -> NewtonResult:
     """Solve ``r(T) = 0`` by modified Newton iteration with line search (Theory §5).
 
@@ -137,6 +142,12 @@ def newton(
         Hint for the linear solver.
     solver : LinearSolver, keyword-only, optional
         Defaults to :func:`thermalfea.solver.linear.default_solver`.
+    refresh : callable, keyword-only, optional
+        ``refresh(T)`` updates state that ``assemble_fn`` reads but that must change at most
+        once per iteration (the flow providers, Theory §9.2). It is called once before the
+        first assembly and once after each accepted update, each time followed by a fresh
+        ``assemble_fn(T)`` at that iterate: exactly ``1 + iterations`` calls. Line-search
+        trials never call it. Without it no extra assembly is made.
 
     Returns
     -------
@@ -156,6 +167,8 @@ def newton(
     free, fixed_idx = split_dofs(T.size, fixed_idx)
     T[fixed_idx] = np.asarray(fixed_val, dtype=float)
 
+    if refresh is not None:
+        refresh(T)
     system = assemble_fn(T)
     r = system.residual(T)
     norm_r = float(np.linalg.norm(r[free]))
@@ -192,6 +205,13 @@ def newton(
 
         # step 4: update
         T, system, r, norm_r = trial, trial_system, trial_r, trial_norm
+        if refresh is not None:
+            # once per accepted iterate: the trial system was assembled with the previous
+            # state of whatever ``refresh`` updates, so assemble again at the accepted T
+            refresh(T)
+            system = assemble_fn(T)
+            r = system.residual(T)
+            norm_r = float(np.linalg.norm(r[free]))
         max_dT = float(np.abs(s * dT).max()) if dT.size else 0.0
         reference = system.reference(T)
         history.append(IterationRecord(iteration, norm_r, max_dT, s))

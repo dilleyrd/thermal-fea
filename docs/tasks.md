@@ -470,7 +470,7 @@ Boundary Conditions, Flow (Streams, Network), Enclosures, Analysis Settings, Sol
   is decided. Tests: each case.
 - [ ] **M11.19 [B] Steps at fast changes.** `REVIEW-2.md` 2.1-5 and the `_jumps` defects;
   Q29.3. Waits for D3.
-- [ ] **M11.20 [B] Hydraulics once per nonlinear iteration.** `REVIEW-2.md` 2.1-8. Theory
+- [x] **M11.20 [B] Hydraulics once per nonlinear iteration.** `REVIEW-2.md` 2.1-8. Theory
   §9.2 says the hydraulics are updated at most once per nonlinear iteration; line-search
   trials and the `_jumps` probes must not update the flow providers. Tests: the hydraulic
   solve count per Newton iteration is at most 1; a line-search trial leaves the network

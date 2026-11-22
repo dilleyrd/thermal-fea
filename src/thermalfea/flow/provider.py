@@ -32,7 +32,8 @@ class FlowProvider(Protocol):
     def update(self, s: State) -> None:
         """Bring the flow solution up to date with the state (for example lagged hydraulics).
 
-        Called by the drivers before every assembly.
+        Called by the drivers at most once per nonlinear iteration (at each accepted
+        iterate, and when a linear system is assembled), never for line-search trials.
         """
         ...
 

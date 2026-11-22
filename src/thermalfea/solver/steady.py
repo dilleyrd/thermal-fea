@@ -22,12 +22,20 @@ STEADY_TIME = 0.0
 DEFAULT_START_TEMPERATURE = 293.15
 
 
+def update_providers(problem: CompiledProblem, state: State) -> None:
+    """Bring every flow provider up to date with ``state`` (e.g. lagged hydraulics)."""
+    for provider in problem.providers:
+        provider.update(state)  # the drivers know only this call
+
+
 def assemble(
     problem: CompiledProblem,
     u: ndarray,
     t: float = STEADY_TIME,
     u_prev: ndarray | None = None,
     dt: float | None = None,
+    *,
+    update: bool = True,
 ) -> Assembled:
     """Assemble ``K``, ``F``, the tangent-only matrix and the residual-only vector.
 
@@ -42,14 +50,17 @@ def assemble(
         Solution of the previous step; defaults to ``u``.
     dt : float, optional
         Time step [s].
+    update : bool, keyword-only
+        Update the flow providers at this state first (the default). The nonlinear
+        drivers pass ``False`` and update them once per iteration instead (Theory §9.2).
 
     Returns
     -------
     Assembled
     """
     state = State(u=u, u_prev=u if u_prev is None else u_prev, t=t, dt=dt, dofs=problem.dofs)
-    for provider in problem.providers:
-        provider.update(state)  # e.g. lagged hydraulics; the drivers know only this call
+    if update:
+        update_providers(problem, state)
     asm = Assembler(problem.dofs.n_dofs)
     for term in problem.terms:
         term.conductance(state, asm)
@@ -125,13 +136,19 @@ def steady_solution(
         return NewtonResult(T, 1, True, residual, system.reference(T), [], system)
 
     start = starting_temperature(problem, fixed_val) if T0 is None else np.array(T0, float)
+
+    def refresh_providers(u: ndarray) -> None:
+        # once per iterate (Theory §9.2); line-search trials never update the providers
+        update_providers(problem, State(u=u, u_prev=u, t=t, dt=None, dofs=problem.dofs))
+
     return newton(
-        lambda u: assemble(problem, u, t),
+        lambda u: assemble(problem, u, t, update=False),
         start,
         (fixed_idx, fixed_val),
         problem.settings,
         symmetric=problem.symmetric,
         solver=solver,
+        refresh=refresh_providers if problem.providers else None,
     )
 
 
