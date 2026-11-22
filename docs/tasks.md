@@ -475,7 +475,7 @@ Boundary Conditions, Flow (Streams, Network), Enclosures, Analysis Settings, Sol
   trials and the `_jumps` probes must not update the flow providers. Tests: the hydraulic
   solve count per Newton iteration is at most 1; a line-search trial leaves the network
   state unchanged.
-- [ ] **M11.21 [B] Stream heating flag.** `REVIEW-2.md` 2.1-9a. The heating/cooling flag
+- [x] **M11.21 [B] Stream heating flag.** `REVIEW-2.md` 2.1-9a. The heating/cooling flag
   of a stream is decided from the cells that have a wall only. Test: with some cells
   without a wall, a heated stream keeps the Dittus–Boelter exponent 0.4.
 - [ ] **M11.22 [A] DXF arcs and loops.** `REVIEW-2.md` 2.1-11, 2.2 (duplicate segments,

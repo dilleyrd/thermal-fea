@@ -355,7 +355,10 @@ class StreamTerm(_StreamCommon, BaseTerm):
         # wall hotter than the fluid? (only the Dittus-Boelter exponent depends on it)
         weight = A.T @ self.edge_area
         wall = (A.T @ (self.edge_area * (E @ s.u))) / np.where(weight > 0.0, weight, 1.0)
-        heating = bool(np.mean(wall) > np.mean(T_up))
+        # one flag per stream, decided over the cells that have a wall only (a cell without
+        # a wall edge has no wall temperature); with no walled cell at all: cooling exponent
+        walled = weight > 0.0
+        heating = bool(walled.any() and np.mean(wall[walled]) > np.mean(T_up[walled]))
         Nu = c.nu_duct(Re, p.Pr, stream.cross_section, "constant_T", stream.nu_option, heating)
         numbers["Nu"] = np.asarray(Nu)
         h = np.asarray(c.nusselt_to_h(Nu, p.k, self.D_h), dtype=float)

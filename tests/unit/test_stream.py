@@ -171,6 +171,35 @@ def test_coefficient_from_the_duct_correlation() -> None:
         h2, c.nu_dittus_boelter(n2["Re"], n2["Pr"], True) * p.k / other.D_h, rtol=1e-13)
 
 
+def _heating_h(n_cells: int, t_wall: float, t_fluid: float):
+    problem, term = problem_with(stream(mass_flow=0.3, nu_option="dittus_boelter",
+                                        n_cells=n_cells))
+    s = make_state(problem, t_wall)
+    s.u[term.fluid_dofs] = t_fluid
+    h, numbers = term.coefficients(s)
+    p = library.fluid("Water").props(s.u[term.fluid_dofs[:-1]])
+    k_over_d = p.k / term.D_h
+    return term, h, numbers, k_over_d
+
+
+def test_heating_flag_ignores_cells_without_a_wall() -> None:
+    # 30 cells over 20 wall edges: some cells have no wall edge (their "wall" T must not count)
+    term, h, numbers, k_over_d = _heating_h(30, 350.0, 300.0)
+    assert np.bincount(term.edge_cell, minlength=term.n_cells).min() == 0
+    np.testing.assert_allclose(
+        h, c.nu_dittus_boelter(numbers["Re"], numbers["Pr"], True) * k_over_d, rtol=1e-13)
+
+
+def test_heating_flag_cooling_and_fully_walled_unchanged() -> None:
+    term, h, numbers, k_over_d = _heating_h(30, 280.0, 300.0)  # wall colder: n = 0.3
+    np.testing.assert_allclose(
+        h, c.nu_dittus_boelter(numbers["Re"], numbers["Pr"], False) * k_over_d, rtol=1e-13)
+    term, h, numbers, k_over_d = _heating_h(20, 350.0, 300.0)  # every cell walled
+    assert np.bincount(term.edge_cell, minlength=term.n_cells).min() > 0
+    np.testing.assert_allclose(
+        h, c.nu_dittus_boelter(numbers["Re"], numbers["Pr"], True) * k_over_d, rtol=1e-13)
+
+
 def test_errors() -> None:
     for changes, message in (
         (dict(mode="through_plane"), "not an in-plane stream"),
