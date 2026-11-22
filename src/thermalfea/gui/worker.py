@@ -269,7 +269,15 @@ class BackgroundTask(QObject):
         if not self._started:
             return True
         self.cancel()
-        return self.wait(timeout_ms)
+        ended = self.wait(timeout_ms)
+        thread = self._thread
+        if thread is not None and thread.isRunning():
+            if thread not in _PARKED:
+                _PARKED.append(thread)  # Qt aborts if a running QThread is destroyed
+            _log.error("background task %r: its thread did not end within %d ms",
+                       self.name, timeout_ms)
+            return False
+        return ended
 
     # ------------------------------------------------------------------- events
     @Slot(object)

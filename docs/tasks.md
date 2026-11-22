@@ -486,7 +486,7 @@ Boundary Conditions, Flow (Streams, Network), Enclosures, Analysis Settings, Sol
 - [x] **M11.24 [A] Viewport colour bar.** `REVIEW-2.md` 2.1-14, 2.1-17. The axes keep their
   position when the colour bar is removed and redrawn; a Manual scale is allowed on a
   uniform field. Test: the axes position is unchanged over 10 step changes.
-- [ ] **M11.25 [B] GUI state on New, Open and remesh.** `REVIEW-2.md` 2.1-15, 16, 18, 19 and
+- [x] **M11.25 [B] GUI state on New, Open and remesh.** `REVIEW-2.md` 2.1-15, 16, 18, 19 and
   the solve-dialog close. New, Open and Examples clear the results, probes and results
   panel; a background build does not overwrite selections edited during it; a failed
   build keeps the queued rebuild; selection tags and chart nodes are cleared on a new mesh

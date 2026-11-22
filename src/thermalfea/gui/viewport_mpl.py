@@ -304,7 +304,7 @@ class MplSceneView(QObject):
         self._index_geometry(built)
         if built is not None:
             self._draw_geometry(built)
-        self._reset_overlays()
+        self._reset_overlays(geometry=True)
         self._after_content_change(had_content)
 
     def set_mesh(self, mesh: Mesh | None, color_by: ndarray | None = None) -> None:
@@ -986,10 +986,25 @@ class MplSceneView(QObject):
 
     # -------------------------------------------------------------------- overlays
 
-    def _reset_overlays(self) -> None:
-        """Drop hover and selection after the geometry or mesh was replaced."""
+    def _reset_overlays(self, geometry: bool = False) -> None:
+        """Drop hover and stale selection tags after the geometry or mesh was replaced.
+
+        Node and element tags belong to one mesh and are dropped whenever the geometry or
+        the mesh is replaced; geometry tags are kept only if the new geometry still has them.
+        No ``selection_changed`` is emitted (this is not a user edit).
+        """
         self._hover = None
         self._hover_overlay.clear()
+        dim = self._sel_dim
+        if dim in (NODE_DIM, ELEMENT_DIM) or (geometry and self._built is None):
+            self._sel_tags = set()
+        elif geometry:
+            valid = set({
+                0: self._pt_index.keys(),
+                1: self._curve_tags,
+                2: self._surf_tags,
+            }.get(dim, ()))
+            self._sel_tags = {t for t in self._sel_tags if t in valid}
         self._update_overlay(self._selection, self._sel_dim, sorted(self._sel_tags))
 
     def _update_overlay(self, overlay: _Overlay, dim: int, tags: list[int]) -> None:

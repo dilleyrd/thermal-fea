@@ -559,10 +559,11 @@ def test_results_cleared_clears_the_display(steady) -> None:
     assert view.last is None and view.fields[-1] is None and ctrl.display is None
     assert not steady.window.actions["results.add_contour"].isEnabled()
     assert not steady.window.actions["results.probe"].isEnabled()
-    # the object definitions survive; results from a new solve show again
-    assert ctrl.objects
+    # a new model does not keep the old model's result objects (M11.25, REVIEW-2.md
+    # 2.1-15); results from a new solve show again, with a default contour
+    assert not ctrl.objects and not ctrl.probes
     steady.doc.set_results(steady.path)
-    assert view.last is not None
+    assert view.last is not None and ctrl.objects
 
 
 def test_unreadable_results_show_nothing(steady, tmp_path) -> None:

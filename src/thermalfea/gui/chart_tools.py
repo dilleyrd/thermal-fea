@@ -175,7 +175,7 @@ class ChartController(QObject):
         self._units = document.model.display_units
         document.model_changed.connect(self._on_model_changed)
         for signal in (document.geometry_built, document.mesh_changed):
-            signal.connect(self.update_actions)
+            signal.connect(self._on_mesh_replaced)
         window.installEventFilter(self)
         self.update_actions()
 
@@ -445,6 +445,11 @@ class ChartController(QObject):
                 chart.redraw()
             except (ThermalFEAError, OSError, KeyError) as exc:
                 self._error("Chart failed", str(exc))
+
+    def _on_mesh_replaced(self) -> None:
+        """Node numbers belong to one mesh: forget them when the mesh or geometry changed."""
+        self.selected_nodes = []
+        self.update_actions()
 
     def _on_results_changed(self) -> None:
         for chart in self.windows:

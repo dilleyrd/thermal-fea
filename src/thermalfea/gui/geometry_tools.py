@@ -356,17 +356,29 @@ class GeometryController(QObject):
         task = BackgroundTask(
             lambda _context: api.build(working), self, executor=worker, name="Geometry build"
         )
-        task.finished.connect(lambda built: self._async_built(built, working))
-        task.failed.connect(lambda exc: self._async_failed(exc, text))
+        stamp = (self.document.generation, self.document.selection_revision)
+        task.finished.connect(lambda built: self._async_built(built, working, stamp))
+        task.failed.connect(lambda exc: self._async_failed(exc, text, stamp))
         self._task = task
         self._busy = True
         task.start()
         self.window.statusBar().showMessage("Building geometry...", 0)
         return True
 
-    def _async_built(self, built: Any, working: Any) -> None:
+    def _async_built(
+        self, built: Any, working: Any, stamp: tuple[int, int] | None = None
+    ) -> None:
         self._busy = False
         self._task = None
+        if stamp is not None and stamp != (
+            self.document.generation, self.document.selection_revision
+        ):
+            # another model was opened, or the selections were edited, while the build
+            # ran: its products (and resolved selection tags) must not be attached
+            self.rebuilt.emit(False)
+            if self.auto_rebuild:
+                self.rebuild()
+            return
         self._failed_geometry = None
         self.last_error = ""
         self.document.set_built(built, working)
@@ -375,11 +387,25 @@ class GeometryController(QObject):
         if self.auto_rebuild and self.document.geometry_stale:
             self.rebuild()  # the operations changed while the build ran
 
-    def _async_failed(self, exc: Any, geometry_text: str) -> None:
+    def _async_failed(
+        self, exc: Any, geometry_text: str, stamp: tuple[int, int] | None = None
+    ) -> None:
         self._busy = False
         self._task = None
+        if stamp is not None and stamp[0] != self.document.generation:
+            # the failure belongs to a model that was replaced: report nothing
+            if self.auto_rebuild:
+                self.rebuild()
+            return
         message = str(exc) if isinstance(exc, ThermalFEAError) else f"Unexpected error: {exc}"
         self._fail(message, geometry_text)
+        # an edit made while the failing build ran was ignored by _on_model_changed
+        if (
+            self.auto_rebuild
+            and self.document.geometry_stale
+            and self._geometry_text() != geometry_text
+        ):
+            self.rebuild()
 
     def _fail(self, message: str, geometry_text: str) -> None:
         _log.error("Geometry build failed: %s", message)

@@ -16,6 +16,7 @@ refreshes them at once, so the final numbers are never lost.
 from __future__ import annotations
 
 from PySide6.QtCore import QTimer, Signal
+from PySide6.QtGui import QCloseEvent
 from PySide6.QtWidgets import (
     QDialog,
     QFormLayout,
@@ -189,6 +190,27 @@ class SolveProgressDialog(QDialog):
         running = self.state in ("running", "cancelling")
         self.button.setText("Cancel" if running else "Close")
         self.button.setEnabled(self.state != "cancelling")
+
+    def closeEvent(self, event: QCloseEvent) -> None:  # noqa: N802 (Qt override)
+        """Closing a running solve's dialog (X, Esc) asks for the cancel instead.
+
+        The dialog stays visible, showing "Cancelling...", until the solve ends; a
+        solve must not keep running with no window and no Cancel button.
+        """
+        if self.state == "running":
+            self.cancel_requested.emit()
+        if self.state in ("running", "cancelling"):
+            event.ignore()
+            return
+        super().closeEvent(event)
+
+    def reject(self) -> None:
+        """Esc: while the solve runs, ask for the cancel; afterwards close as usual."""
+        if self.state in ("running", "cancelling"):
+            if self.state == "running":
+                self.cancel_requested.emit()
+            return
+        super().reject()
 
     def _on_button(self) -> None:
         if self.state == "running":

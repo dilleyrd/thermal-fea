@@ -163,6 +163,12 @@ class Document(QObject):
         self.results_stale = True
         self._built_geometry: Any = None
         self._built_selections: dict[str, Any] = {}
+        #: Counts replaced documents (:meth:`set_model`): work started for an earlier
+        #: model must not be attached to a later one.
+        self.generation = 0
+        #: Counts edits (also undo/redo) that changed the selections; a background build
+        #: that started before the latest one has stale selection tags.
+        self.selection_revision = 0
 
     # ------------------------------------------------------------------ queries
     @property
@@ -213,7 +219,10 @@ class Document(QObject):
             Model JSON text it replaces (used to decide what becomes stale).
         """
         data = json.loads(snapshot)
-        change = classify_change(json.loads(previous), data)
+        before = json.loads(previous)
+        change = classify_change(before, data)
+        if before.get("selections") != data.get("selections"):
+            self.selection_revision += 1
         self._carry_build_selections(data)
         self.model = from_json(data)
         self._invalidate(change)
@@ -338,6 +347,7 @@ class Document(QObject):
         """
         self.undo_stack.clear()
         self.undo_stack.setClean()
+        self.generation += 1
         self.model = model
         self.path = Path(path) if path is not None else None
         self.built = None

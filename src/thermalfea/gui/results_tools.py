@@ -258,6 +258,7 @@ class ResultController(QObject):
         self._times: np.ndarray = np.zeros(0)
         self._ranges: dict[str, tuple[float, float]] = {}
         self._units = document.model.display_units
+        self._generation = document.generation
         #: Results show the units of the model stored in their file until the user
         #: changes the units of the document; from then on they follow the document.
         self._follow_document_units = False
@@ -337,8 +338,21 @@ class ResultController(QObject):
         """The contour fields the results can show (``post.plots.contour_fields``)."""
         return contour_fields(self._results) if self._results is not None else []
 
+    def _forget_previous_model(self) -> None:
+        """The document was replaced (New, Open, Example): drop the old model's results state."""
+        self.objects = []
+        self.shown = None
+        self.display = None
+        self.probes = []
+        self._follow_document_units = False
+        self._units = self.document.model.display_units
+        self.set_probe(False)
+
     def _on_results_changed(self) -> None:
         self.pause()
+        if self.document.generation != self._generation:
+            self._generation = self.document.generation
+            self._forget_previous_model()
         self._ranges.clear()
         self._results = None
         self._times = np.zeros(0)
