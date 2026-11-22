@@ -478,7 +478,7 @@ Boundary Conditions, Flow (Streams, Network), Enclosures, Analysis Settings, Sol
 - [x] **M11.21 [B] Stream heating flag.** `REVIEW-2.md` 2.1-9a. The heating/cooling flag
   of a stream is decided from the cells that have a wall only. Test: with some cells
   without a wall, a heated stream keeps the Dittus–Boelter exponent 0.4.
-- [ ] **M11.22 [A] DXF arcs and loops.** `REVIEW-2.md` 2.1-11, 2.2 (duplicate segments,
+- [x] **M11.22 [A] DXF arcs and loops.** `REVIEW-2.md` 2.1-11, 2.2 (duplicate segments,
   fit-point spline nesting). Tests: a bulge of 2 gives the correct centre and area;
   duplicate segments are merged; a closed fit-point spline nests like any other loop.
 - [ ] **M11.23 [B] Validation coverage.** `REVIEW-2.md` 2.1-13b, c, e, g and the guards of

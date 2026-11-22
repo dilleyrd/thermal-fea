@@ -46,6 +46,7 @@ _BULGE_MIN = 1e-12
 _EXTRUSION_TOL = 1e-9
 _MIN_NEIGHBOURS = 2  # a point where more than two segment ends meet is a branch
 _MIN_FIT_POINTS = 2
+_FIT_SAMPLES_PER_SPAN = 16  # samples of the curve through fit points, per span (nesting test)
 
 
 # ------------------------------------------------------------------------------ segments
@@ -298,8 +299,9 @@ class _Reader:
             if chord == 0.0:
                 continue
             radius = chord * (1.0 + bulge * bulge) / (4.0 * abs(bulge))
-            sagitta = abs(bulge) * chord / 2.0
-            side = math.copysign(radius - sagitta, bulge)  # left of the chord for bulge > 0
+            # signed distance of the centre from the chord midpoint along the left normal:
+            # (chord / 2) (1 - b^2) / (2 b); to the right of the chord when |b| > 1
+            side = chord * (1.0 - bulge * bulge) / (4.0 * bulge)
             cx = (x0 + x1) / 2.0 - (y1 - y0) / chord * side
             cy = (y0 + y1) / 2.0 + (x1 - x0) / chord * side
             centre = self.xy(ocs.to_wcs((cx, cy, elevation)))
@@ -315,7 +317,7 @@ class _Reader:
             pts = [self.xy(p) for p in e.fit_points]
             if e.closed and math.dist(pts[0], pts[-1]) > 0.0:
                 pts.append(pts[0])
-            self.segments.append(Spline("fit", tuple(pts), 3, (), None, tuple(pts)))
+            self.segments.append(Spline("fit", tuple(pts), 3, (), None, _fit_polyline(pts)))
         else:
             raise GeometryError(f"{self.name}: a SPLINE has neither control nor fit points")
 
@@ -361,6 +363,36 @@ class _Reader:
             None if weights is None else tuple(weights),
             tuple(self.xy(p) for p in curve.points(ts)),
         )
+
+
+def _fit_polyline(pts: list[Point]) -> tuple[Point, ...]:
+    """Sample a smooth curve through the fit points ``pts`` (uniform Catmull-Rom spline).
+
+    The curve passes through every fit point. A list whose last point equals its first is a
+    closed curve (periodic neighbours). The nesting test needs the curve itself: the polygon
+    through the fit points can lie far inside it.
+    """
+    closed = len(pts) > 2 and pts[0] == pts[-1]
+    p = np.array(pts[:-1] if closed else pts, dtype=float)
+    n = len(p)
+    spans = n if closed else n - 1
+    out: list[Point] = []
+    for i in range(spans):
+        if closed:
+            p0, p1, p2, p3 = p[(i - 1) % n], p[i], p[(i + 1) % n], p[(i + 2) % n]
+        else:
+            p0, p1, p2, p3 = p[max(i - 1, 0)], p[i], p[i + 1], p[min(i + 2, n - 1)]
+        for k in range(_FIT_SAMPLES_PER_SPAN):
+            t = k / _FIT_SAMPLES_PER_SPAN
+            q = 0.5 * (
+                2.0 * p1
+                + (p2 - p0) * t
+                + (2.0 * p0 - 5.0 * p1 + 4.0 * p2 - p3) * t * t
+                + (3.0 * p1 - p0 - 3.0 * p2 + p3) * t * t * t
+            )
+            out.append((float(q[0]), float(q[1])))
+    out.append(out[0] if closed else (float(p[-1][0]), float(p[-1][1])))
+    return tuple(out)
 
 
 def _clamp(
@@ -518,8 +550,34 @@ def _coord(p: Point) -> str:
     return f"({p[0]:.6g}, {p[1]:.6g})"
 
 
+def _same_path(a: Segment, b: Segment, tol: float) -> bool:
+    """True if ``a`` and ``b`` are the same path, drawn in either direction (sampled)."""
+    if type(a) is not type(b):
+        return False
+    sa, sb = a.samples(), b.samples()
+    if len(sa) != len(sb):
+        return False
+    if math.dist(sa[0], sb[0]) > tol:
+        sb = sb[::-1]
+    return all(math.dist(p, q) <= tol for p, q in zip(sa, sb, strict=True))
+
+
+def _unique_circles(circles: list[Circle], tol: float) -> list[Circle]:
+    """Drop circles that repeat an earlier one (same centre and radius within ``tol``)."""
+    unique: list[Circle] = []
+    for c in circles:
+        if not any(
+            math.dist(c.center, u.center) <= tol and abs(c.radius - u.radius) <= tol
+            for u in unique
+        ):
+            unique.append(c)
+    return unique
+
+
 def join_segments(segments: list[Segment | Circle], tolerance: float | None = None) -> Drawing:
     """Join segment end points and chain the segments into closed loops.
+
+    A segment drawn twice (the same path, in either direction) is kept once.
 
     Parameters
     ----------
@@ -544,12 +602,13 @@ def join_segments(segments: list[Segment | Circle], tolerance: float | None = No
         raise GeometryError("the drawing contains no geometry")
     if tolerance is None:
         tolerance = JOIN_TOL * max(box[2] - box[0], box[3] - box[1])
-    circles = [s for s in segments if isinstance(s, Circle)]
+    circles = _unique_circles([s for s in segments if isinstance(s, Circle)], tolerance)
     curves = [s for s in segments if not isinstance(s, Circle)]
     ends = [p for s in curves for p in (s.start, s.end)]
     cluster, points = _merge_points(ends, tolerance)
     segs: list[Segment] = []
     node_of: list[tuple[int, int]] = []
+    seen: dict[tuple[int, int], list[Segment]] = defaultdict(list)  # kept, by unordered ends
     for k, seg in enumerate(curves):
         a, b = cluster[2 * k], cluster[2 * k + 1]
         if a == b and (
@@ -557,6 +616,11 @@ def join_segments(segments: list[Segment | Circle], tolerance: float | None = No
         ):
             log.debug("dropped a degenerate segment at %s", _coord(points[a]))
             continue
+        key = (min(a, b), max(a, b))
+        if any(_same_path(seg, other, tolerance) for other in seen[key]):
+            log.debug("merged a duplicate segment at %s", _coord(points[a]))
+            continue
+        seen[key].append(seg)
         segs.append(seg)
         node_of.append((a, b))
     incident: dict[int, list[tuple[int, int]]] = defaultdict(list)
