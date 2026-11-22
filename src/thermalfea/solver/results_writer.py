@@ -262,6 +262,7 @@ class ResultsWriter:
         self._names: list[str] = []
         self._streams: list[str] = []
         self.n_steps = 0
+        self._model_pending = False
 
     # ----------------------------------------------------------------- context manager
 
@@ -347,7 +348,9 @@ class ResultsWriter:
         self._names = [str(reactions[str(k)].attrs["name"]) for k in range(len(reactions))]
         fluid = f["fluid"]
         self._streams = [str(fluid[str(k)].attrs["name"]) for k in range(len(fluid))]
-        self._write_model(f["meta"])
+        # /meta describes the new model only once a new step is stored: a restart that
+        # fails on its first step leaves a file that still describes its old steps
+        self._model_pending = True
 
     def _fluid_group(self, stream: str) -> h5py.Group:
         """The group of one stream under ``/fluid`` (numbered; the name is an attribute)."""
@@ -450,6 +453,9 @@ class ResultsWriter:
         f = self._file
         if f is None:
             raise RuntimeError("the results file is not open")
+        if self._model_pending:
+            self._write_model(f["meta"])
+            self._model_pending = False
         i = self.n_steps
         steps = f["steps"]
         for name, value in (("time", time), ("dt", dt), ("iterations", iterations),

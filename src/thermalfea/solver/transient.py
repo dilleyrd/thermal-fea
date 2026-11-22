@@ -242,10 +242,15 @@ def initial_state(
         T = initial_temperature(problem)
     else:
         T = np.broadcast_to(np.asarray(T0, dtype=float), (n,)).copy()
-    for provider in () if resume else problem.providers:
-        initialize = getattr(provider, "initialize", None)
-        if initialize is not None:
-            initialize(T, t0)  # e.g. fluid nodes start at their inlet temperature
+    if resume:
+        # the stored solution is the state: the providers (e.g. a pipe network that sets
+        # a stream's mass flow) are brought up to date with it, their unknowns not reset
+        update_providers(problem, State(u=T, u_prev=T, t=t0, dt=None, dofs=problem.dofs))
+    else:
+        for provider in problem.providers:
+            initialize = getattr(provider, "initialize", None)
+            if initialize is not None:
+                initialize(T, t0)  # e.g. fluid nodes start at their inlet temperature
     idx, values = problem.prescribed(t0)
     scale = max(1.0, float(np.abs(values).max())) if values.size else 1.0
     shock = bool(values.size and np.abs(T[idx] - values).max() > JUMP_TOL * scale)

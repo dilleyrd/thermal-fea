@@ -16,6 +16,7 @@ from __future__ import annotations
 import logging
 from pathlib import Path
 
+import h5py
 import numpy as np
 from numpy import ndarray
 
@@ -28,7 +29,6 @@ log = logging.getLogger(__name__)
 
 #: Uniform temperature [K] used when a problem has no model to take one from (20 degC).
 DEFAULT_INITIAL_TEMPERATURE = 293.15
-_MESH_TOL = 1e-9
 
 
 def _per_region(problem: CompiledProblem, values: dict[str, float]) -> ndarray:
@@ -57,16 +57,23 @@ def _from_results(problem: CompiledProblem, path: str | None) -> ndarray:
 
     if not path:
         raise ModelError("the initial condition 'from_results' needs a results file")
+    from .results_writer import _mesh_difference  # imported here: it needs the writer module
+
     source = Results(Path(path))
-    mesh, other = problem.mesh, source.mesh
-    same = other.nodes.shape == mesh.nodes.shape and np.allclose(
-        other.nodes, mesh.nodes, rtol=0.0, atol=_MESH_TOL * max(1.0, float(np.ptp(mesh.nodes)))
-    )
-    if not same:
+    mesh = problem.mesh
+    if source.n_steps == 0:
+        raise ModelError(f"the results in {path} hold no steps to take an initial condition from")
+    try:
+        with h5py.File(path, "r") as f:
+            width = f["steps"]["fields"][TEMPERATURE].shape[1]
+            diff = _mesh_difference(f, mesh, width, mesh.n_nodes)
+    except (OSError, KeyError) as exc:
+        raise ModelError(f"cannot read the mesh of the results in {path} ({exc})") from exc
+    if diff is not None:
         raise ModelError(
-            f"the results in {path} were computed on a different mesh "
-            f"({other.n_nodes} nodes; this mesh has {mesh.n_nodes}). An initial condition "
-            "taken from results needs the same mesh."
+            f"the results in {path} were computed on a different mesh ({diff}; the "
+            f"file has {source.mesh.n_nodes} nodes, this mesh has {mesh.n_nodes}). An initial "
+            "condition taken from results needs the same mesh."
         )
     log.info("initial condition: last step (t = %g s) of %s", source.times[-1], path)
     return source.temperature(-1)

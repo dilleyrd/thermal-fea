@@ -462,7 +462,7 @@ Boundary Conditions, Flow (Streams, Network), Enclosures, Analysis Settings, Sol
 - [ ] **M11.17 [C] Convergence at equilibrium.** `REVIEW-2.md` 2.1-1; Q29.1. Waits for the
   owner's decision D1, then Theory §5 and the code. Test: a steady model with radiation to
   300 K started at 300 K converges in one iteration.
-- [ ] **M11.18 [B] Restart, second part.** `REVIEW-2.md` 2.1-2, 2.2 (`/meta`), 2.3
+- [x] **M11.18 [B] Restart, second part.** `REVIEW-2.md` 2.1-2, 2.2 (`/meta`), 2.3
   (`from_results`); Q29. A restart of a model whose stream is fed by a pipe network runs
   (the flow providers are updated before the first heat balance); `/meta` is rewritten
   only once the first new step is written; a `from_results` initial condition uses the
