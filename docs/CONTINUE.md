@@ -167,6 +167,12 @@ In order:
     - M11.17 (the owner gave N = 100).
   - **3D:** not yet.
   - **What still waits on the owner:** `TODO.md`.
+- **Built on 2026-11-22, after the answers:** M11.12–M11.16, which fixed findings 1 and
+  5–9 of `REVIEW.md`. All nine findings of that review are now fixed. The suite passed
+  with 2082 tests.
+  - **Next:** M11.23, then M11.26, M11.27, M11.29 and M11.30, then the newly unblocked
+    tasks.
+  - **Section 5 below is now history.**
 
 ## 5. Next work: tasks M11.12–M11.16
 
