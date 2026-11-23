@@ -222,28 +222,19 @@ const ITEMS = [
   files: ["docs/gui-walkthrough.md", "docs/verification.md", "guide/getting-started.md", "guide/limitations.md"],
   site: [["Getting started", "getting-started/"], ["Limitations", "limitations/"]] },
 
-{ id: "M11.1", sec: 2, num: "2", title: "M11.1 human task: property decisions, then the correlations", session: "B", effort: "1–2 h", type: "study", blocks: ["M11.6"],
-  body: `<p><b>Properties are checked</b> (2026-11-23, <a data-file="docs/property-verification.md" href="#">property-verification.md</a>).
-  Air and water, and 7 of the 10 solids, are copied exactly from Incropera, 7th ed., Tables A.1–A.4 and A.6.
-  Against NIST and CoolProp, air is within 2 % and water is within 1.8 % at the table points.
-  Choose from the findings below. Then check the correlations against the same book.</p>
-  <ul><li><b>Air:</b> the densities are those of 1 bar (within 0.04 %), 1.3 % below 1 atm.</li>
-  <li><b>Water:</b> with 5 rows, μ is off by up to 5.1 % between rows (at 291 K). The book's 5 K rows bring that to 1.2 %.</li>
-  <li><b>Water β at 360 K:</b> the book gives 697.9e-6, NIST 679.7e-6. This looks like a misprint (two digits swapped).</li>
-  <li><b>Air ρ</b> is off by up to 2.1 % between rows (near 700 K). All of the book's rows, 50 K apart, bring that to 0.83 %.</li>
-  <li><b>No source found</b> for 6061-T6, Ti-6Al-4V or FR-4. None of them is in Incropera.</li>
-  <li><b>Libraries:</b> KittyCAD and matproplib are not suitable. CoolProp could generate the tables at build time, but should not be called at run time.</li>
-  <li><b>Q17.2:</b> the characteristic length of horizontal plates: the selection length, or area/perimeter.</li></ul>`,
+{ id: "M11.1", sec: 2, num: "2", title: "M11.1 human task: confirm the oxygen row, and close the task", session: "B", effort: "10–20 min", type: "study", blocks: ["M11.6"],
+  body: `<p><b>Built on 2026-11-23 from your decisions</b> (OPEN_QUESTIONS Q30, tasks M11.37–M11.42).
+  Every built-in property now comes from Incropera 7th ed. (the PDF is in <code>docs/</code>, git-ignored), or from NIST for water,
+  and each entry carries its source. The correlations are the book's, with equation numbers, and Q17.2 is settled by the book: L = A<sub>s</sub>/P.
+  See <a data-file="docs/property-verification.md" href="#">property-verification.md</a> and <a data-file="guide/materials.md" href="#">the materials page</a>.</p>
+  <ul><li><b>Oxygen at 1300 K:</b> the book prints μ·10⁷ = 588.4. Its own ν and the row steps suggest 558.4. It is kept as printed.</li>
+  <li><b>Ideas for later (Q30.4):</b> enclosure correlations (a two-surface load), mixed convection, and laminar friction for non-circular ducts. None is planned.</li>
+  <li><b>M11.1:</b> its spot-check and source recording are done. Can it be ticked?</li></ul>`,
   qs: [
-    { q: "Air reference pressure (D11)", opts: [["bar", "Label it 1 bar (no number changes)"], ["atm", "Keep 1 atm, rescale ρ by 1.01325"], ["tbd", "To check"]] },
-    { q: "Water table", opts: [["ok", "Keep the 5 rows"], ["inc", "All Incropera rows, 275–370 K"], ["nist", "NIST rows every 5 K"]] },
-    { q: "Water β at 360 K", opts: [["fix", "Correct to 679.7e-6 (NIST)"], ["keep", "Keep the book's 697.9e-6"]] },
-    { q: "Air table", opts: [["all", "All Incropera rows, 250–1000 K"], ["keep", "Keep the 9 rows"]] },
-    { q: "6061-T6, Ti-6Al-4V, FR-4", opts: [["src", "I'll name a source (in the notes)"], ["swap", "Replace them with Incropera materials"], ["keep", "Keep them, marked unsourced"]] },
-    { q: "CoolProp", opts: [["gen", "Table generator (build-time script)"], ["test", "Test reference values only"], ["no", "Not used"]] },
-    { q: "Q17.2 horizontal-plate length", opts: [["sel", "Selection length (now)"], ["ap", "Area/perimeter"], ["tbd", "To check"]] },
-    { q: "Status", opts: [["todo", "Not started"], ["doing", "In progress"], ["done", "Done; sources recorded (in the notes)"]], value: "Reference text and edition" }],
-  files: ["docs/property-verification.md", "docs/data-model.md", "docs/theory.md", "src/thermalfea/materials/data/solids.json", "src/thermalfea/materials/data/fluids.json", "src/thermalfea/convection/correlations.py", "src/thermalfea/convection/fluid_props.py"],
+    { q: "Oxygen μ at 1300 K", opts: [["keep", "Keep 588.4 as printed"], ["fix", "Correct it to 558.4"]] },
+    { q: "Ideas for later (Q30.4)", opts: [["none", "Not now"], ["some", "Plan some (name them in the notes)"]] },
+    { q: "Close M11.1", opts: [["tick", "Tick M11.1"], ["more", "Not yet (say what is missing in the notes)"]] }],
+  files: ["docs/property-verification.md", "docs/OPEN_QUESTIONS.md", "docs/data-model.md", "docs/theory.md", "src/thermalfea/materials/data/solids.json", "src/thermalfea/materials/data/fluids.json", "src/thermalfea/convection/correlations.py"],
   site: [["Correlations page", "correlations/"], ["Materials page", "materials/"]] },
 
 { id: "VIS", sec: 2, num: "3", title: "Visualisation testing, and the pump example (optional)", session: "C", effort: "30–60 min", type: "study", blocks: [],
@@ -271,13 +262,13 @@ let state = {};
 try { state = JSON.parse(localStorage.getItem(STORE_KEY) || "{}") || {}; } catch (e) { state = {}; }
 function save() { try { localStorage.setItem(STORE_KEY, JSON.stringify(state)); } catch (e) { /* private window */ } }
 function st(id) { return state[id] || (state[id] = {}); }
-/* The M11.1 questions were replaced on 2026-11-23; answers saved for the old ones no longer
+/* The M11.1 questions were replaced on 2026-11-23 (twice); answers saved for the old ones no longer
    line up with them, so they are dropped (the notes are kept). */
-if (state["M11.1"] && state["M11.1"].form !== 2) {
+if (state["M11.1"] && state["M11.1"].form !== 3) {
   const notes = state["M11.1"].notes;
   state["M11.1"] = notes ? { notes: notes } : {};
 }
-st("M11.1").form = 2;
+st("M11.1").form = 3;
 
 let linkMode = "gh";
 try { linkMode = localStorage.getItem(STORE_KEY + "-links") || "gh"; } catch (e) { /* ignore */ }

@@ -1,13 +1,13 @@
 # What the agents need from the owner
 
-State on 2026-11-22, after your answers of the same day. Every answer is recorded in
+State on 2026-11-23, after your answers of 2026-11-22 and 2026-11-23. Every answer is recorded in
 `docs/OPEN_QUESTIONS.md` Q29 (items 1–15) and turned into tasks in `docs/tasks.md`; N = 100
 for D1. Three items remain. The interactive version is [`docs/owner-review.html`](docs/owner-review.html).
 
 | # | Item | Your time | Blocks |
 |---|---|---|---|
 | 1 | M8.G: build V-10 and V-17 in the window | 60–120 min | Release review M11.6 |
-| 2 | M11.1: decide on the property findings, then check the correlations | 1–2 h | Release review M11.6 |
+| 2 | M11.1: confirm the oxygen row, and close the task | 10–20 min | Release review M11.6 |
 | 3 | Visualisation testing, and the pump example (optional) | 30–60 min | Nothing |
 
 ---
@@ -39,41 +39,34 @@ choice, the display fixes and the dialog for new loads.
 - `guide/getting-started.md`;
 - `guide/limitations.md`.
 
-## 2. M11.1 human task: property decisions, then the correlations — 1–2 h
+## 2. M11.1 human task: confirm and close — 10–20 min
 
-**The properties have been checked** (2026-11-23) against Incropera 7th ed., the NIST WebBook and
-CoolProp. See `docs/property-verification.md`. Air and water are copied exactly from Incropera,
-Tables A.4 and A.6. Seven of the ten solids are copied exactly from Tables A.1–A.3. Choose:
-1. **D11, air.** The densities are those of 1 bar, within 0.04 %. Either label the table "1 bar",
-   or keep "1 atm" and rescale ρ.
-2. **Water rows.** With 5 rows, μ is off by up to 5.1 % between rows. Keep them, use all of
-   Incropera's rows from 275 to 370 K (1.2 %), or use NIST rows every 5 K (0.4 %).
-3. **Water β at 360 K.** The book gives 697.9e-6 and NIST gives 679.7e-6. This looks like a
-   misprint. Correct it, or keep it?
-4. **Air rows.** ρ is off by up to 2.1 % between rows. All of Incropera's rows, 50 K apart, bring
-   that to 0.83 %.
-5. **6061-T6, Ti-6Al-4V and FR-4** are not in Incropera. Name a source, replace them, or keep them
-   marked unsourced.
-6. **CoolProp**: use it as a build-time table generator, as test reference values only, or not
-   at all. KittyCAD and matproplib are not suitable (report §4).
+**Built on 2026-11-23 from your decisions** (tasks M11.37–M11.42, OPEN_QUESTIONS Q30):
+- **Properties.** Every built-in property now comes from Incropera 7th ed. (the PDF is in
+  `docs/`, git-ignored) or from NIST for water. Each entry carries its source.
+- **Correlations.** These are now the book's, with equation numbers (Theory §8). The
+  correlations added are being built: M11.39–M11.42.
+- **Q17.2 is settled by the book:** horizontal plates use L = A_s/P, which is half the
+  selection length.
 
-Then:
-- **Correlations.** Check every correlation and its validity range against the same book.
-  Citations recorded so far: Churchill–Bernstein, Churchill–Chu, Gnielinski, Dittus–Boelter
-  and Churchill 1977.
-- **Q17.2, horizontal plates.** Is the characteristic length the selection length (as now),
-  or area/perimeter?
-
-The inclined-plate range is settled: one-sided, θ ≤ 60° (Q29.5).
+What is left for you:
+1. **Oxygen at 1300 K.** The book prints μ·10⁷ = 588.4. Its own ν and the row steps suggest
+   558.4. It is kept as printed. Correct it, or leave it?
+2. **Q30.4, three ideas for later.** None is planned:
+   - enclosure correlations, which need a two-surface load;
+   - mixed convection;
+   - laminar friction for non-circular ducts.
+3. **Close M11.1.** The task asked for a spot-check against a reference text, with sources
+   recorded. That is now done in `docs/property-verification.md` and the source fields. Say
+   whether M11.1 can be ticked.
 
 **Files.**
 - `docs/property-verification.md`;
+- `docs/OPEN_QUESTIONS.md` Q30;
 - `docs/data-model.md` §6;
-- `docs/theory.md` §8, §8.1;
-- `src/thermalfea/materials/data/solids.json` and `fluids.json`;
-- `src/thermalfea/convection/correlations.py`;
-- `src/thermalfea/convection/fluid_props.py`;
-- `docs/OPEN_QUESTIONS.md` Q17, Q26.2.
+- `docs/theory.md` §8, §8.1, §8.2;
+- `guide/materials.md`.
+
 
 ## 3. Visualisation testing, and the pump example — 30–60 min, optional
 
@@ -85,7 +78,7 @@ The inclined-plate range is settled: one-sided, θ ≤ 60° (Q29.5).
 
 ---
 
-## Decided on 2026-11-22 (for reference)
+## Decided on 2026-11-22 and 2026-11-23 (for reference)
 
 Full text: `docs/OPEN_QUESTIONS.md` Q29.
 
@@ -109,3 +102,8 @@ Full text: `docs/OPEN_QUESTIONS.md` Q29.
 | 3D | Not yet | — |
 | Confirmations | Q1, Q14, Q18.2, Q20, Q21, Q22 (except 22.5), Q23, Q24, Q25, Q26 and all earlier entries | — |
 | Access | Publish by hand; GIF only | — |
+| Air (2026-11-23) | Labelled 1 bar; every row of Table A.4 | M11.37 |
+| Water (2026-11-23) | NIST rows every 5 K; β from NIST | M11.37 |
+| Solids (2026-11-23) | Only the book's materials; all complete entries added; 6061-T6, Ti-6Al-4V, FR-4 removed | M11.37 |
+| Correlations (2026-11-23) | The book's, plus useful ones not yet applied | M11.38–M11.42 |
+| Tutorial bound (2026-11-23) | Cold-plate Re within 3 % of the inlet values | M11.37 |
