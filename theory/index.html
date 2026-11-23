@@ -293,7 +293,14 @@ from the tangent):</p>
 <li>Line search: s = 1; while ‖r(Tⁱ + sΔT)‖ &gt; (1 − 1e-4·s)‖r(Tⁱ)‖ and s &gt; 1/32: s ← s/2.</li>
 <li>Tⁱ⁺¹ = Tⁱ + sΔT.</li>
 <li>Converged when ‖r_f‖₂ ≤ rtol · F_ref <strong>and</strong> ‖sΔT‖∞ ≤ ttol.
-   F_ref = max(‖F‖₂, ‖K T‖₂, 1e-12). Defaults rtol = 1e-6, ttol = 1e-4 K, max 30 iterations.</li>
+   F_ref = max(‖F‖₂, ‖K T‖₂, 1e-12). Defaults rtol = 1e-6, ttol = 1e-4 K, max 30 iterations.
+   Round-off floor: the residual test also passes when
+   ‖r_f‖₂ ≤ N ε (‖(|K| |T|)_f‖₂ + ‖F_f‖₂ + ‖r_extra,f‖₂), with N = 100 and ε the machine
+   precision (2.2e-16); ‖sΔT‖∞ ≤ ttol is still required. |K| and |T| are the element-wise
+   absolute values, the subscript f keeps the free rows, and r_extra is the part of r that
+   is not F − K T (for example r_rad). At equilibrium F and K T cancel and F_ref falls to
+   round-off; the floor then accepts a residual at the round-off level of the sums that
+   form it (owner, Q29.1 D1).</li>
 <li>Not converged after the limit → raise <code>ConvergenceError</code> (steady) or cut the step (transient).</li>
 </ol>
 <p>A problem is <strong>linear</strong> when no property, coefficient or load depends on T and there is no
@@ -307,7 +314,8 @@ t_n to t_{n+1} = t_n + Δt solves for T_{n+1}:</p>
 <p>with T_θ = θ T_{n+1} + (1−θ) T_n used only to evaluate ρc.
 Tangent: <strong>A = C/Δt + θ (K + K_rad)</strong> evaluated at the current iterate.
 Newton update: A_ff ΔT_f = −R_f. Line search and convergence test as in §5, with
-F_ref = max(‖C(T_{n+1}−T_n)/Δt‖₂, ‖F‖₂, ‖K T‖₂, 1e-12).</p>
+F_ref = max(‖C(T_{n+1}−T_n)/Δt‖₂, ‖F‖₂, ‖K T‖₂, 1e-12). The round-off floor of §5 applies
+unchanged, with K, F and r_extra assembled at the iterate T_{n+1}.</p>
 <ul>
 <li>θ = 1 backward Euler (<strong>default</strong>; unconditionally stable, no oscillation)</li>
 <li>θ = 2/3 Galerkin</li>
