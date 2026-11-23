@@ -292,32 +292,10 @@ message that says so; it is never solved with that part left out.</p>
   for an end time the file already reached.</li>
 </ul>
 <h2 id="known-defects-from-the-code-review">Known defects from the code review<a class="headerlink" href="#known-defects-from-the-code-review" title="Permanent link">&para;</a></h2>
-<p>A code review on 2026-11-20 (<code>REVIEW.md</code> in the repository) found nine defects. Three
-were in restart and are fixed; see <a href="#time-stepping-and-restart">Time stepping and restart</a>.
-The six below are not fixed yet; their fixes are planned as tasks M11.12–M11.16. Where
-there is a way to avoid a defect until then, the entry gives it.</p>
-<ul>
-<li><strong>The command line can overwrite its model.</strong> <code>thermalfea solve m.tfea -o m.tfea</code>
-  replaces the model file with the results file. Leave out <code>-o</code> (the results go to
-  <code>m.tfea.h5</code>) or give another file name.</li>
-<li><strong>A largest time step of 0 is accepted</strong> and the transient solve then stops with an
-  uncaught error (<code>ZeroDivisionError</code>). Leave "Largest time step" empty, or set it
-  positive and no smaller than "Smallest time step".</li>
-<li><strong>Editing a selection used by a mesh control does not mark the mesh out of date.</strong>
-  This applies to a selection named in "Structured surfaces" or in a refinement. Solve can
-  then reuse the old mesh. After such an edit, generate the mesh again before solving.</li>
-<li><strong>A path plot can show a gap inside the mesh.</strong> A point just inside a large element
-  next to much smaller ones can be reported as outside the mesh. Refine the mesh near the
-  path, or move the path slightly.</li>
-<li><strong>Position-dependent temperatures with radiation.</strong> Validation evaluates a prescribed
-  or ambient temperature that depends on position at the origin (x = y = 0). With
-  radiation in the model it can then refuse the model for a temperature of 0 K that does
-  not occur.</li>
-<li><strong>A very long run can skip an early output time.</strong> When a requested output time is far
-  shorter than the first step relative to the length of the run (for example 1e-5 s in
-  a run of 1e8 s with a first step of 1 s), the first step does not stop at it. Set the
-  initial time step no larger than the first output time.</li>
-</ul>
+<p>A code review on 2026-11-20 (<code>REVIEW.md</code> in the repository) found nine defects. All nine
+are fixed: three in restart (see <a href="#time-stepping-and-restart">Time stepping and restart</a>)
+and six by tasks M11.12–M11.16 on 2026-11-22. A second review, of 2026-11-21
+(<code>REVIEW-2.md</code>), is being worked through as tasks M11.17–M11.36.</p>
 <h2 id="the-window">The window<a class="headerlink" href="#the-window" title="Permanent link">&para;</a></h2>
 <ul>
 <li><strong>Animation export to GIF blocks the window</strong> while a long animation is written.</li>
