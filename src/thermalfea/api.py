@@ -724,7 +724,7 @@ def htc(
         (``"up"``/``"down"``), ``x`` [m] (``plate_forced_local``), ``C`` and ``n``
         (``power_law``), ``multiplier`` (default 1.0), and for ``duct_internal``:
         ``mass_flow`` [kg/s], ``area`` [m^2], ``wetted_perimeter`` [m], ``cross_section``,
-        ``wall``, ``option``.
+        ``diameter_ratio`` (annulus sections), ``wall``, ``option``.
 
     Returns
     -------

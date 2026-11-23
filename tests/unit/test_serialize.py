@@ -319,3 +319,29 @@ def test_registry_family_errors() -> None:
         registry.tag_of("bc", int)
     registry.register_bc("convection", bcs.Convection)  # re-registering the same class is fine
     assert registry.tag_of("bc", bcs.Convection) == "convection"
+
+
+def test_stream_diameter_ratio_round_trip_and_old_files() -> None:
+    model = Model(streams=[
+        bcs.Stream(
+            name="a", fluid="Water", mode="in_plane", walls=["bottom"], flow_area=1e-4,
+            wetted_perimeter=0.04, cross_section="annulus_inner", T_inlet=300.0,
+            mass_flow=0.1, path=[(0.0, 0.0), (0.6, 0.0)], nu_option="sieder_tate",
+            diameter_ratio=0.25,
+        ),
+        bcs.Stream(
+            name="b", fluid="Water", mode="through_plane", walls=["bottom"], flow_area=1e-4,
+            wetted_perimeter=0.04, cross_section="rectangle_8", T_inlet=300.0, mass_flow=0.1,
+        ),
+    ])
+    data = to_json(model)
+    back = from_json(copy.deepcopy(data))
+    assert back.streams[0].diameter_ratio == 0.25 and back.streams[0].nu_option == "sieder_tate"
+    assert back.streams[1].diameter_ratio is None
+    assert back.streams[1].cross_section == "rectangle_8"
+    # an old file has no such field
+    data["streams"][0]["cross_section"] = "circular"  # an old file has no annulus
+    for entry in data["streams"]:
+        del entry["diameter_ratio"]
+    old = from_json(data)
+    assert [s.diameter_ratio for s in old.streams] == [None, None]

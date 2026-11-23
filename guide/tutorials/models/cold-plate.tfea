@@ -301,6 +301,7 @@
         "value": 300.0
       },
       "cross_section": "parallel_plates_one_side",
+      "diameter_ratio": null,
       "flow_area": 0.0001,
       "fluid": "Water",
       "h_multiplier": 1.0,

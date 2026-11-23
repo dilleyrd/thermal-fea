@@ -449,3 +449,23 @@ def test_time_expression_is_sampled_at_start_and_end() -> None:
     assert _absolute(model, built, mesh) == ["rad"]  # 0 K at the end of the run
     model.solution.end_time = 10.0
     assert _absolute(model, built, mesh) == []
+
+
+def test_stream_diameter_ratio_is_validated() -> None:
+    model, built, mesh = good()
+    st = bcs.Stream(
+        name="s", fluid="Water", mode="in_plane", walls=["east"], flow_area=1e-4,
+        wetted_perimeter=0.04, cross_section="annulus_inner", T_inlet=300.0, mass_flow=0.1,
+        diameter_ratio=0.5)
+    model.streams.append(st)
+    assert "stream-diameter-ratio" not in codes(validate(model, built, mesh))
+    st.diameter_ratio = None
+    issue = only(validate(model, built, mesh), "stream-diameter-ratio")
+    assert issue.severity == "error" and (issue.kind, issue.name) == ("stream", "s")
+    assert "needs diameter_ratio" in issue.message
+    st.diameter_ratio = 0.01
+    message = only(validate(model, built, mesh), "stream-diameter-ratio").message
+    assert "outside 0.05 to 1.0" in message
+    st.cross_section, st.diameter_ratio = "circular", 0.5
+    assert "annulus cross-sections only" in only(
+        validate(model, built, mesh), "stream-diameter-ratio").message

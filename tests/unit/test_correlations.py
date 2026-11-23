@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import dataclasses
 import inspect
 from pathlib import Path
 
@@ -327,3 +328,93 @@ def test_jet_bounds_inside_and_outside(key: str) -> None:
     assert n_msgs(key, **{**ok, "A_r": np.array([ok["A_r"], 1.0])}) == 1
     # no Pr bound is stated
     assert n_msgs(key, **{**ok, "Pr": 1e-3}) == 0 and n_msgs(key, **{**ok, "Pr": 1e3}) == 0
+
+
+# ---------------------------------------------------------------- M11.42 duct sections
+
+LAMINAR_TABLE = {
+    "rectangle_1_43": (3.08, 3.73),
+    "rectangle_2": (3.39, 4.12),
+    "rectangle_3": (3.96, 4.79),
+    "rectangle_4": (4.44, 5.33),
+    "rectangle_8": (5.60, 6.49),
+    "triangle": (2.49, 3.11),
+}
+
+
+@pytest.mark.parametrize("name", list(LAMINAR_TABLE))
+def test_new_laminar_sections(name: str) -> None:
+    t, q = LAMINAR_TABLE[name]
+    assert c.nu_laminar(name) == t and c.nu_laminar(name, "constant_T") == t
+    assert c.nu_laminar(name, "constant_flux") == q
+    assert c.nu_duct(100.0, 5.0, name, "constant_flux") == q
+    with pytest.raises(ModelError, match="diameter_ratio"):
+        c.nu_laminar(name, diameter_ratio=0.5)
+
+
+ANNULUS_RATIO = [0.0, 0.05, 0.10, 0.25, 0.50, 1.00]
+ANNULUS_I = [None, 17.46, 11.56, 7.37, 5.74, 4.86]
+ANNULUS_O = [3.66, 4.06, 4.11, 4.23, 4.43, 4.86]
+
+
+def test_annulus_rows_and_interpolation() -> None:
+    for r, ni, no in zip(ANNULUS_RATIO, ANNULUS_I, ANNULUS_O, strict=True):
+        assert c.nu_laminar("annulus_outer", diameter_ratio=r) == pytest.approx(no, rel=1e-14)
+        if ni is not None:
+            assert c.nu_laminar("annulus_inner", diameter_ratio=r) == pytest.approx(ni, rel=1e-14)
+    # between rows: hand linear interpolation
+    assert c.nu_laminar("annulus_inner", diameter_ratio=0.15) == pytest.approx(
+        11.56 + (0.15 - 0.10) / (0.25 - 0.10) * (7.37 - 11.56), rel=1e-13)
+    assert c.nu_laminar("annulus_inner", diameter_ratio=0.75) == pytest.approx(
+        5.74 + 0.5 * (4.86 - 5.74), rel=1e-13)
+    assert c.nu_laminar("annulus_outer", diameter_ratio=0.02) == pytest.approx(
+        3.66 + 0.4 * (4.06 - 3.66), rel=1e-13)
+    assert c.nu_laminar("annulus_outer", diameter_ratio=0.3) == pytest.approx(
+        4.23 + 0.2 * (4.43 - 4.23), rel=1e-13)
+    assert c.nu_duct(1000.0, 5.0, "annulus_inner", diameter_ratio=0.15) == pytest.approx(
+        11.56 + (0.05 / 0.15) * (7.37 - 11.56), rel=1e-13)
+
+
+def test_annulus_limits_and_refusals() -> None:
+    for bad in (0.049, 0.0, 1.01, -0.1):
+        with pytest.raises(ModelError, match="diameter_ratio"):
+            c.nu_laminar("annulus_inner", diameter_ratio=bad)
+    for bad in (-0.01, 1.01):
+        with pytest.raises(ModelError, match="diameter_ratio"):
+            c.nu_laminar("annulus_outer", diameter_ratio=bad)
+    for name in ("annulus_inner", "annulus_outer"):
+        with pytest.raises(ModelError, match="needs diameter_ratio"):
+            c.nu_laminar(name)
+        with pytest.raises(ModelError, match="constant-flux"):
+            c.nu_laminar(name, "constant_flux", 0.5)
+        with pytest.raises(ModelError, match="constant-flux"):
+            c.nu_duct(1e5, 5.0, name, "constant_flux", diameter_ratio=0.5)
+    with pytest.raises(ModelError, match="annulus cross-sections only"):
+        c.nu_laminar("circular", diameter_ratio=0.5)
+
+
+def test_sieder_tate_nusselt_and_turbulent_replacement() -> None:
+    Re, Pr, ratio = 5e4, 7.0, 0.8
+    want = 0.027 * Re**0.8 * Pr ** (1 / 3) * ratio**0.14
+    assert c.nu_sieder_tate(Re, Pr, ratio) == pytest.approx(want, rel=1e-13)
+    assert c.nu_duct(Re, Pr, option="sieder_tate", mu_ratio=ratio) == pytest.approx(
+        want, rel=1e-13)
+    # laminar value and transition rule are kept
+    assert c.nu_duct(1000.0, Pr, option="sieder_tate", mu_ratio=ratio) == 3.66
+    end = c.nu_sieder_tate(4000.0, Pr, ratio)
+    mid = c.nu_duct(3150.0, Pr, option="sieder_tate", mu_ratio=ratio)
+    assert mid == pytest.approx(3.66 + 0.5 * (end - 3.66), rel=1e-13)
+
+
+def test_sieder_tate_bounds_only_where_used() -> None:
+    info = dataclasses.replace(c.CORRELATIONS["duct_internal"], validity={})
+    b = c.SIEDER_TATE_BOUNDS
+
+    def msgs(**v):
+        return c.check_validity(info, extra_bounds=b, **v)
+
+    assert msgs(Re=1e4, Pr=0.7) == [] and msgs(Re=1e4, Pr=16700.0) == []
+    assert any("Pr" in m for m in msgs(Re=1e4, Pr=0.69))
+    assert any("Pr" in m for m in msgs(Re=1e4, Pr=17000.0))
+    assert any("Re" in m for m in msgs(Re=5000.0, Pr=5.0))
+    assert not any("Re" in m for m in msgs(Re=3500.0, Pr=5.0))  # transition: not checked

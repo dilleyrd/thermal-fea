@@ -32,8 +32,23 @@ _NU_LAMINAR: dict[str, dict[str, float]] = {
     "parallel_plates": {"constant_T": 7.54, "constant_flux": 8.23},
     "parallel_plates_one_side": {"constant_T": 4.86, "constant_flux": 5.39},
     "square": {"constant_T": 2.98, "constant_flux": 3.61},
+    "rectangle_1_43": {"constant_T": 3.08, "constant_flux": 3.73},
+    "rectangle_2": {"constant_T": 3.39, "constant_flux": 4.12},
+    "rectangle_3": {"constant_T": 3.96, "constant_flux": 4.79},
+    "rectangle_4": {"constant_T": 4.44, "constant_flux": 5.33},
+    "rectangle_8": {"constant_T": 5.60, "constant_flux": 6.49},
+    "triangle": {"constant_T": 2.49, "constant_flux": 3.11},
 }
-_DUCT_OPTIONS = ("auto", "dittus_boelter")
+_DUCT_OPTIONS = ("auto", "dittus_boelter", "sieder_tate")
+
+_ANNULUS_RATIO = (0.0, 0.05, 0.10, 0.25, 0.50, 1.00)
+"""D_i/D_o of the rows of the annulus table (Theory §8.1, [I] Table 8.2)."""
+_ANNULUS_NU: dict[str, tuple[float | None, ...]] = {
+    "annulus_inner": (None, 17.46, 11.56, 7.37, 5.74, 4.86),
+    "annulus_outer": (3.66, 4.06, 4.11, 4.23, 4.43, 4.86),
+}
+ANNULUS_SECTIONS = tuple(_ANNULUS_NU)
+"""Cross-sections that need ``diameter_ratio`` (Theory §8.1)."""
 
 
 def _ret(x: ArrayLike) -> Any:
@@ -585,27 +600,77 @@ def nu_dittus_boelter(Re: ArrayLike, Pr: ArrayLike, heating: bool = True) -> Any
     return _ret(0.023 * Re_a**0.8 * Pr_a**n)
 
 
-def nu_laminar(cross_section: str, wall: str = "constant_T") -> float:
+def nu_sieder_tate(Re: ArrayLike, Pr: ArrayLike, mu_ratio: ArrayLike = 1.0) -> Any:
+    """Sieder-Tate Nusselt number ``Nu = 0.027 Re^(4/5) Pr^(1/3) (mu/mu_s)^0.14`` (Theory §8.1).
+
+    Properties at the bulk temperature except ``mu_s``, which is at the mean wall
+    temperature. Valid for 0.7 <= Pr <= 16700 and Re >= 1e4.
+
+    Parameters
+    ----------
+    Re : array_like
+        Reynolds number (dimensionless).
+    Pr : array_like
+        Prandtl number (dimensionless).
+    mu_ratio : array_like, optional
+        ``mu(T_bulk) / mu_s(T_wall)`` (dimensionless), default 1.
+    """
+    Re_a, Pr_a = np.asarray(Re, dtype=float), np.asarray(Pr, dtype=float)
+    ratio = np.asarray(mu_ratio, dtype=float)
+    return _ret(0.027 * Re_a**0.8 * Pr_a ** (1.0 / 3.0) * ratio**0.14)
+
+
+def nu_laminar(
+    cross_section: str, wall: str = "constant_T", diameter_ratio: float | None = None
+) -> float:
     """Tabulated laminar fully developed Nusselt number (Theory §8.1).
 
     Parameters
     ----------
     cross_section : str
-        One of ``"circular"``, ``"parallel_plates"`` (both heated),
-        ``"parallel_plates_one_side"`` (one side insulated) or ``"square"``.
+        A key of the Theory §8.1 table (``"circular"``, ``"parallel_plates"``,
+        ``"parallel_plates_one_side"``, ``"square"``, ``"rectangle_1_43"``, ``"rectangle_2"``,
+        ``"rectangle_3"``, ``"rectangle_4"``, ``"rectangle_8"``, ``"triangle"``), or
+        ``"annulus_inner"`` / ``"annulus_outer"`` ([I] Table 8.2, linear interpolation in
+        ``diameter_ratio``).
     wall : str, optional
         ``"constant_T"`` (default) for constant wall temperature or ``"constant_flux"``
-        for constant wall heat flux.
+        for constant wall heat flux (not available for the annulus).
+    diameter_ratio : float, optional
+        D_i/D_o; required for the annulus sections, 0.05 <= ratio <= 1 for ``annulus_inner``
+        and 0 <= ratio <= 1 for ``annulus_outer``.
 
     Raises
     ------
     ModelError
-        If ``cross_section`` or ``wall`` is not a tabulated key.
+        If ``cross_section`` or ``wall`` is not a tabulated key, for a constant-flux
+        annulus, or a missing or out-of-range ``diameter_ratio``.
     """
+    if cross_section in _ANNULUS_NU:
+        if wall != "constant_T":
+            if wall == "constant_flux":
+                raise ModelError(
+                    f"{cross_section!r}: [I] gives only constant-wall-temperature values for "
+                    "the annulus; a constant-flux request is refused"
+                )
+            raise ModelError(f"unknown wall condition {wall!r}; expected 'constant_T'")
+        if diameter_ratio is None:
+            raise ModelError(f"{cross_section!r} needs diameter_ratio (D_i/D_o)")
+        ratio = float(diameter_ratio)
+        values = _ANNULUS_NU[cross_section]
+        first = 0 if values[0] is not None else 1
+        lo, hi = _ANNULUS_RATIO[first], _ANNULUS_RATIO[-1]
+        if not lo <= ratio <= hi:
+            raise ModelError(
+                f"{cross_section!r}: diameter_ratio must be between {lo} and {hi}; got {ratio}"
+            )
+        return float(np.interp(ratio, _ANNULUS_RATIO[first:], values[first:]))
+    if diameter_ratio is not None:
+        raise ModelError("diameter_ratio is for annulus cross-sections only")
     if cross_section not in _NU_LAMINAR:
         raise ModelError(
             f"unknown duct cross-section {cross_section!r}; "
-            f"expected one of {sorted(_NU_LAMINAR)}"
+            f"expected one of {sorted(_NU_LAMINAR) + list(ANNULUS_SECTIONS)}"
         )
     values = _NU_LAMINAR[cross_section]
     if wall not in values:
@@ -620,6 +685,8 @@ def nu_duct(
     wall: str = "constant_T",
     option: str = "auto",
     heating: bool = True,
+    diameter_ratio: float | None = None,
+    mu_ratio: ArrayLike = 1.0,
 ) -> Any:
     """Internal duct flow Nusselt number, all regimes (Theory §8.1).
 
@@ -628,10 +695,9 @@ def nu_duct(
     * ``2300 < Re < 4000``: linear interpolation in Re between Nu_lam (at Re = 2300)
       and the turbulent formula evaluated at Re = 4000.
 
-    The turbulent formula is Gnielinski for ``option="auto"`` and Dittus–Boelter for
-    ``option="dittus_boelter"``. Using Dittus–Boelter as the turbulent formula, with the
-    same laminar and transition rules, is this implementation's reading of the
-    "optional user selection" in Theory §8.1.
+    The turbulent formula is Gnielinski for ``option="auto"``, Dittus–Boelter for
+    ``option="dittus_boelter"`` and Sieder–Tate for ``option="sieder_tate"``. The optional
+    selections replace Gnielinski with the same laminar and transition rules (Theory §8.1).
 
     Parameters
     ----------
@@ -644,9 +710,13 @@ def nu_duct(
     wall : str, optional
         ``"constant_T"`` (default) or ``"constant_flux"``.
     option : str, optional
-        ``"auto"`` (Gnielinski, default) or ``"dittus_boelter"``.
+        ``"auto"`` (Gnielinski, default), ``"dittus_boelter"`` or ``"sieder_tate"``.
     heating : bool, optional
         Passed to :func:`nu_dittus_boelter`; True when the wall is hotter than the fluid.
+    diameter_ratio : float, optional
+        D_i/D_o, for the annulus sections only (see :func:`nu_laminar`).
+    mu_ratio : array_like, optional
+        ``mu/mu_s`` for ``option="sieder_tate"`` (default 1).
 
     Raises
     ------
@@ -655,11 +725,13 @@ def nu_duct(
     """
     if option not in _DUCT_OPTIONS:
         raise ModelError(f"unknown duct Nusselt option {option!r}; expected one of {_DUCT_OPTIONS}")
-    nu_lam = nu_laminar(cross_section, wall)
+    nu_lam = nu_laminar(cross_section, wall, diameter_ratio)
 
     def turbulent(R: ArrayLike) -> Any:
         if option == "auto":
             return nu_gnielinski(R, Pr)
+        if option == "sieder_tate":
+            return nu_sieder_tate(R, Pr, mu_ratio)
         return nu_dittus_boelter(R, Pr, heating)
 
     Re_a = np.asarray(Re, dtype=float)
@@ -789,6 +861,14 @@ DITTUS_BOELTER_BOUNDS: tuple[ConditionalBound, ...] = (
 )
 """Validity of Dittus-Boelter (Theory §8.1), checked only when the user selected it and
 only where it is the turbulent formula in use (Re >= 4000); pass to ``check_validity``."""
+
+
+SIEDER_TATE_BOUNDS: tuple[ConditionalBound, ...] = (
+    ConditionalBound("Pr", 0.7, 16700, "Re", ge=RE_TURBULENT),
+    ConditionalBound("Re", 1e4, None, "Re", ge=RE_TURBULENT),
+)
+"""Validity of Sieder-Tate (Theory §8.1), checked only when the user selected it and only
+where it is the turbulent formula in use (Re >= 4000); pass to ``check_validity``."""
 
 
 def _range_text(lo: float | None, hi: float | None) -> str:

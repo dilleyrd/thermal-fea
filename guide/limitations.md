@@ -40,16 +40,15 @@ message that says so; it is never solved with that part left out.
 - **The window has not been reviewed on a real screen.** The human gate M8.G (build two
   verification cases in the window and list every point of friction) is not done. Every
   window test so far ran without a screen. Expect findings in layout and usability.
-- **The property tables and the correlations are not yet checked against a reference
-  text.** The material tables are "from standard heat-transfer textbook tables" and no
-  reference or edition is recorded. For the correlations the project records only the
-  names it gives in the theory text (Churchill-Bernstein, Churchill-Chu, Gnielinski,
-  Dittus-Boelter, Churchill 1977). The check is task M11.1, a human task. Until then
-  [Materials](materials.md) and [Correlations](correlations.md) say "source not yet
-  recorded".
+- **Property and correlation sources.** Since 2026-11-23 every built-in property comes from
+  Incropera et al., *Fundamentals of Heat and Mass Transfer*, 7th ed. (2011), Appendix A,
+  except water, which comes from the NIST Chemistry WebBook. Every correlation cites its
+  equation in that book, except the Churchill 1977 friction factor. See
+  [Materials](materials.md) and [Correlations](correlations.md). One printed value looks
+  like a misprint and is kept as printed: oxygen μ at 1300 K (open question Q30).
 - **Not yet done:** the verification report (task M11.2), the performance benchmark
   (M11.3) and the release review (M11.6).
-- **Several choices await the owner's confirmation** (open questions Q11, Q14, Q17.2,
+- **Several choices await the owner's confirmation** (open questions Q11, Q14,
   Q18.2, Q20, Q21, Q22, Q23, Q24, Q25). The entries below say which.
 
 ## Modelling
@@ -126,13 +125,14 @@ message that says so; it is never solved with that part left out.
 - **A correlation outside its validity range is still evaluated.** One warning is logged
   for each boundary condition and solve. Check the range on the
   [Correlations](correlations.md) page.
-- **The characteristic length of a plate is the length of the selection** in this version,
-  not area divided by perimeter, which the theory table lists for horizontal plates (open
-  question Q17.2, awaiting confirmation). An explicit characteristic length always wins.
-  Cylinders need one.
+- **The automatic characteristic length** of a plate or vertical channel is the length of the
+  selection. For horizontal plates it is half of that, the book's area/perimeter of a strip
+  or ring. Cylinders, spheres and non-circular sections need a length. The jets take theirs
+  from the nozzle size. An explicit characteristic length always wins.
 - **Internal duct flow is not a convection boundary condition.** Use a stream.
-- **The Dittus-Boelter option** replaces Gnielinski for turbulent flow; its range
-  (Re at least 1e4) is not enforced in the transition region.
+- **The Dittus-Boelter and Sieder-Tate options** replace Gnielinski for turbulent flow.
+  Their ranges (Re at least 1e4) are not enforced in the transition region, and a stream
+  logs no validity warnings for them; the heat-transfer calculator does.
 - **Fluid properties outside the table** keep the end values and log one warning for each
   fluid. For an ideal gas the expansion coefficient is still 1/T.
 - **Fluid thermal storage is neglected:** the fluid in a stream is quasi-steady. A stream
@@ -168,7 +168,8 @@ message that says so; it is never solved with that part left out.
 A code review on 2026-11-20 (`REVIEW.md` in the repository) found nine defects. All nine
 are fixed: three in restart (see [Time stepping and restart](#time-stepping-and-restart))
 and six by tasks M11.12–M11.16 on 2026-11-22. A second review, of 2026-11-21
-(`REVIEW-2.md`), is being worked through as tasks M11.17–M11.36.
+(`REVIEW-2.md`), is being worked through as tasks M11.17–M11.36. The property tables and correlations were
+rebuilt from the reference text on 2026-11-23 (tasks M11.37–M11.42).
 
 ## The window
 

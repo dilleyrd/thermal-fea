@@ -42,7 +42,7 @@ from ..convection.fluid_props import fluid_props
 from ..core.errors import ModelError
 from ..materials import library
 from ..materials.material import Fluid
-from ..model.bcs import Stream
+from ..model.bcs import Stream, diameter_ratio_problem
 from ..physics.batches import FacetBatch, facet_batches
 from ..physics.surface_loads import ConvectionTerm, FacetTerm
 from ..solver.assembler import Assembler
@@ -203,6 +203,9 @@ class _StreamCommon:
             raise ModelError(f"stream {stream.name!r}: flow area and perimeter must be positive")
         if stream.h_multiplier <= 0.0:
             raise ModelError(f"stream {stream.name!r}: h_multiplier must be positive")
+        message = diameter_ratio_problem(stream)
+        if message:
+            raise ModelError(f"stream {stream.name!r}: {message}")
         if stream.T_inlet.depends_on_T:
             raise ModelError(f"stream {stream.name!r}: the inlet temperature cannot depend on T")
         self.stream = stream
@@ -359,7 +362,15 @@ class StreamTerm(_StreamCommon, BaseTerm):
         # a wall edge has no wall temperature); with no walled cell at all: cooling exponent
         walled = weight > 0.0
         heating = bool(walled.any() and np.mean(wall[walled]) > np.mean(T_up[walled]))
-        Nu = c.nu_duct(Re, p.Pr, stream.cross_section, "constant_T", stream.nu_option, heating)
+        mu_ratio = 1.0
+        if stream.nu_option == "sieder_tate":
+            # Theory §8.1: mu_s at the cell's mean wall temperature (a cell without a wall
+            # edge has none: mu_s = mu)
+            mu_ratio = p.mu / fluid_props(self.fluid, np.where(walled, wall, T_up)).mu
+        Nu = c.nu_duct(
+            Re, p.Pr, stream.cross_section, "constant_T", stream.nu_option, heating,
+            stream.diameter_ratio, mu_ratio,
+        )
         numbers["Nu"] = np.asarray(Nu)
         h = np.asarray(c.nusselt_to_h(Nu, p.k, self.D_h), dtype=float)
         return h * stream.h_multiplier, numbers
@@ -440,7 +451,7 @@ class ThroughPlaneStreamTerm(_StreamCommon, ConvectionTerm):
         FacetTerm.__init__(self, stream.name, ", ".join(stream.walls))
         self._init_stream(stream)
         # h does not depend on the solution when given, or with the "auto" Nusselt number;
-        # only the Dittus-Boelter exponent depends on whether the wall is hotter
+        # only the Dittus-Boelter exponent and the Sieder-Tate mu_s depend on the wall
         self.is_linear = stream.h_override is not None or stream.nu_option == "auto"
 
     def setup(self, problem: CompiledProblem) -> None:
@@ -477,8 +488,15 @@ class ThroughPlaneStreamTerm(_StreamCommon, ConvectionTerm):
         T_bulk = self.bulk_temperature(s.t)
         p = fluid_props(self.fluid, T_bulk)
         Re = self.mass_flow(s.t) * self.D_h / (stream.flow_area * p.mu)
-        heating = bool(self._mean_wall_temperature(s) > T_bulk)
-        Nu = c.nu_duct(Re, p.Pr, stream.cross_section, "constant_T", stream.nu_option, heating)
+        T_wall = self._mean_wall_temperature(s)
+        heating = bool(T_wall > T_bulk)
+        mu_ratio = 1.0
+        if stream.nu_option == "sieder_tate":
+            mu_ratio = float(p.mu / fluid_props(self.fluid, T_wall).mu)
+        Nu = c.nu_duct(
+            Re, p.Pr, stream.cross_section, "constant_T", stream.nu_option, heating,
+            stream.diameter_ratio, mu_ratio,
+        )
         h = float(c.nusselt_to_h(Nu, p.k, self.D_h))
         return h * stream.h_multiplier
 

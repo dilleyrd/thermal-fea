@@ -16,11 +16,11 @@ The name is never part of a form.
 from __future__ import annotations
 
 from ..core.forms import FieldSpec, FormSpec, register_form
-from .bcs import Stream
+from .bcs import STREAM_CROSS_SECTIONS, STREAM_NU_OPTIONS, Stream
 
 _MODES = ("in_plane", "through_plane")
-_CROSS_SECTIONS = ("circular", "parallel_plates", "parallel_plates_one_side", "square")
-_NU_OPTIONS = ("auto", "dittus_boelter")
+_CROSS_SECTIONS = STREAM_CROSS_SECTIONS
+_NU_OPTIONS = STREAM_NU_OPTIONS
 
 STREAM_FORM = FormSpec(
     "Stream",
@@ -49,6 +49,11 @@ STREAM_FORM = FormSpec(
         FieldSpec(
             "cross_section", "Cross-section", "choice", choices=_CROSS_SECTIONS,
             tooltip="Shape of the flow cross-section.",
+        ),  # fmt: skip
+        FieldSpec(
+            "diameter_ratio", "Diameter ratio D_i/D_o", "float", minimum=0.0, optional=True,
+            tooltip="Annulus cross-sections only: inner over outer diameter "
+            "(0.05 to 1 for annulus_inner, 0 to 1 for annulus_outer).",
         ),  # fmt: skip
         FieldSpec(
             "T_inlet", "Inlet temperature", "function", quantity="temperature", minimum=0.0,

@@ -10,7 +10,7 @@ Units: SI; temperatures in kelvin, lengths in m, velocities in m/s, h in W/(m^2 
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from typing import Any
 
 from ..core.errors import ModelError
@@ -63,6 +63,7 @@ _INPUT_KEYS = frozenset(
         "area",
         "wetted_perimeter",
         "cross_section",
+        "diameter_ratio",
         "wall",
         "option",
     }
@@ -163,8 +164,9 @@ def htc(
         (``"up"``/``"down"``, horizontal plates), ``x`` [m] (``plate_forced_local``),
         ``C`` and ``n`` (``power_law``), ``multiplier`` (default 1.0, > 0), and for
         ``duct_internal``: ``mass_flow`` [kg/s], ``area`` [m^2], ``wetted_perimeter`` [m],
-        ``cross_section`` (default ``"circular"``), ``wall`` (default ``"constant_T"``),
-        ``option`` (default ``"auto"``).
+        ``cross_section`` (default ``"circular"``), ``diameter_ratio`` (D_i/D_o, annulus sections
+        only), ``wall`` (default ``"constant_T"``), ``option`` (``"auto"`` (default),
+        ``"dittus_boelter"`` or ``"sieder_tate"``; mu_s at ``T_surface``).
 
     Returns
     -------
@@ -351,12 +353,30 @@ def _duct(
     D_h = float(c.hydraulic_diameter(area, perimeter))
     Re = float(m_dot * D_h / (area * props.mu))
     Pr = float(props.Pr)
-    Nu = float(c.nu_duct(Re, Pr, cross_section, wall, option, heating=T_s > T_i))
+    diameter_ratio = inputs.get("diameter_ratio")
+    if diameter_ratio is not None:
+        diameter_ratio = float(diameter_ratio)
+    mu_ratio = 1.0
+    wall_props = None
+    if option == "sieder_tate":
+        # Theory §8.1: mu_s at the wall (surface) temperature, the other properties at bulk
+        wall_props = fluid_props(fluid, T_s)
+        mu_ratio = float(props.mu / wall_props.mu)
+    Nu = float(
+        c.nu_duct(
+            Re, Pr, cross_section, wall, option, T_s > T_i, diameter_ratio, mu_ratio
+        )
+    )
     h = float(c.nusselt_to_h(Nu, float(props.k), D_h)) * multiplier
 
-    extra = c.DITTUS_BOELTER_BOUNDS if option == "dittus_boelter" else ()
-    warnings = c.check_validity(info, extra_bounds=extra, Re=Re, Pr=Pr)
-    if bool(props.clamped):
+    extra = {
+        "dittus_boelter": c.DITTUS_BOELTER_BOUNDS,
+        "sieder_tate": c.SIEDER_TATE_BOUNDS,
+    }.get(option, ())
+    # Sieder-Tate replaces Gnielinski, so the Gnielinski ranges do not apply to it
+    checked = replace(info, validity={}) if option == "sieder_tate" else info
+    warnings = c.check_validity(checked, extra_bounds=extra, Re=Re, Pr=Pr)
+    if bool(props.clamped) or (wall_props is not None and bool(wall_props.clamped)):
         warnings.append(_TEMPERATURE_CLAMP)
     if Re <= c.RE_LAMINAR:
         regime = "laminar"

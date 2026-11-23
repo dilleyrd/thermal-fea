@@ -493,3 +493,21 @@ def test_jets_are_offered_with_their_inputs(calc) -> None:
         assert cid in offered
         pick(calc.correlation_box, cid)
         assert set(calc.visible_inputs()) == names
+
+
+def test_stream_form_offers_the_new_sections_and_sieder_tate() -> None:
+    from thermalfea.model.flow_forms import STREAM_FORM
+    sections = STREAM_FORM.field("cross_section").choices
+    for name in ("rectangle_1_43", "rectangle_2", "rectangle_3", "rectangle_4", "rectangle_8",
+                 "triangle", "annulus_inner", "annulus_outer"):
+        assert name in sections
+    assert "sieder_tate" in STREAM_FORM.field("nu_option").choices
+    assert STREAM_FORM.field("diameter_ratio").optional
+
+
+def test_new_stream_dialog_offers_the_sections_and_the_ratio(qtbot) -> None:
+    dialog = NewStreamDialog()
+    qtbot.addWidget(dialog)
+    offered = [dialog.cross_box.itemText(i) for i in range(dialog.cross_box.count())]
+    assert "annulus_inner" in offered and "triangle" in offered
+    assert dialog.diameter_ratio_edit is not None

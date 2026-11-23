@@ -24,6 +24,7 @@ from .bcs import (
     CorrelationConvection,
     FixedTemperature,
     RadiationAmbient,
+    diameter_ratio_problem,
 )
 from .model import Model
 from .selections import StaleSelectionError, resolve
@@ -253,6 +254,10 @@ class _Checker:
             if stream.fluid not in fluids:
                 self.error("missing-fluid", f"stream {stream.name!r} uses unknown fluid "
                            f"{stream.fluid!r}", "stream", stream.name)
+            message = diameter_ratio_problem(stream)
+            if message:
+                self.error("stream-diameter-ratio", f"stream {stream.name!r}: {message}",
+                           "stream", stream.name)
 
     # ------------------------------------------------------------ boundary conditions
 

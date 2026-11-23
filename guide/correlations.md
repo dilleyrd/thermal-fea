@@ -36,7 +36,7 @@ For ideal gases β = 1/T\_film; for liquids β comes from the property table.
 | [`sphere_forced`](#corr-sphere-forced) | Sphere in a free stream (Whitaker) | diameter | 0.71 ≤ Pr ≤ 380, 3.5 ≤ Re ≤ 7.6e4, 1.0 ≤ μ/μ\_s ≤ 3.2 |
 | [`slot_jet`](#corr-slot-jet) | Single slot nozzle impinging on the surface, average over |x| ≤ x\_r from the jet's centre line (Martin) | 2W | 3000 ≤ Re ≤ 9e4, 2 ≤ H/W ≤ 10, 0.025 ≤ A\_r ≤ 0.125 |
 | [`round_jet`](#corr-round-jet) | Single round nozzle impinging on the surface, average over r ≤ r\_r from the jet's axis (Martin) | D (nozzle) | 2000 ≤ Re ≤ 4e5, 2 ≤ H/D ≤ 12, 0.004 ≤ A\_r ≤ 0.04 |
-| [`duct_internal`](#corr-duct-internal) | Internal flow, circular or by hydraulic diameter | D\_h | Gnielinski: 0.5 ≤ Pr ≤ 2000, 3000 ≤ Re ≤ 5e6. Dittus–Boelter: 0.6 ≤ Pr ≤ 160 and Re ≥ 1e4. (The validity column of the §8 table is empty for this entry; the ranges are those stated in §8.1.) |
+| [`duct_internal`](#corr-duct-internal) | Internal flow, circular or by hydraulic diameter | D\_h | Gnielinski: 0.5 ≤ Pr ≤ 2000, 3000 ≤ Re ≤ 5e6. Dittus–Boelter: 0.6 ≤ Pr ≤ 160 and Re ≥ 1e4. Sieder–Tate: 0.7 ≤ Pr ≤ 16700 and Re ≥ 1e4. Annulus: 0.05 ≤ D\_i/D\_o ≤ 1 for `annulus_inner`, 0 ≤ D\_i/D\_o ≤ 1 for `annulus_outer`. (The validity column of the §8 table is empty for this entry; the ranges are those stated in §8.1.) |
 | [`vplate_natural`](#corr-vplate-natural) | Vertical plate (Churchill–Chu) | height | all Ra |
 | [`vplate_natural_laminar`](#corr-vplate-natural-laminar) | Vertical plate, laminar (Churchill–Chu; slightly more accurate than 9.26 for Ra ≤ 1e9) | height | Ra ≤ 1e9 |
 | [`inclined_natural`](#corr-inclined-natural) | Plate inclined θ from vertical | length | 0 ≤ θ ≤ 60°; for the other face [I] makes no recommendation (see below) |
@@ -236,16 +236,17 @@ Formula (copied from the theory document):
 
 ```text
 Re = ṁ D_h /(A μ), D_h = 4A/P_wet. Properties at the bulk fluid temperature.
-Laminar (Re ≤ 2300): Nu_lam from the table (constant wall T: circular 3.66, parallel plates both heated 7.54, parallel plates one side insulated 4.86, square 2.98; constant flux: 4.36, 8.23, 5.39, 3.61).
+Laminar (Re ≤ 2300): Nu_lam from the table (constant wall T / constant flux: circular 3.66 / 4.36, parallel plates both heated 7.54 / 8.23, parallel plates one side insulated 4.86 / 5.39, square 2.98 / 3.61, rectangle b/a = 1.43 3.08 / 3.73, b/a = 2 3.39 / 4.12, b/a = 3 3.96 / 4.79, b/a = 4 4.44 / 5.33, b/a = 8 5.60 / 6.49, triangle 2.49 / 3.11).
+Concentric annulus (`annulus_inner`, `annulus_outer`; one surface at constant temperature, the other insulated; D_h = D_o − D_i; constant-temperature only, a constant-flux request is refused): Nu linearly interpolated in D_i/D_o (`diameter_ratio`) between the rows 0, 0.05, 0.10, 0.25, 0.50, 1.00: Nu_i = —, 17.46, 11.56, 7.37, 5.74, 4.86; Nu_o = 3.66, 4.06, 4.11, 4.23, 4.43, 4.86.
 Turbulent (Re ≥ 4000): Gnielinski Nu = (f/8)(Re − 1000) Pr / [1 + 12.7 (f/8)^½ (Pr^⅔ − 1)], f = (0.790 ln Re − 1.64)⁻².
 Transition (2300 < Re < 4000): linear interpolation in Re between Nu_lam and Nu_Gnielinski(Re = 4000).
-Optional: Dittus–Boelter, Nu = 0.023 Re^0.8 Pr^n, n = 0.4 if wall hotter than fluid, else 0.3.
+Optional, each replacing Gnielinski: Dittus–Boelter, Nu = 0.023 Re^0.8 Pr^n, n = 0.4 if wall hotter than fluid, else 0.3; Sieder–Tate, Nu = 0.027 Re^(4/5) Pr^(1/3) (μ/μ_s)^0.14, μ_s at the cell's mean wall temperature, the other properties at the bulk temperature.
 ```
 
 - **Characteristic length L_c:** D\_h
 - **Inputs:** `mass_flow`, `area`, `wetted_perimeter`, the surface and fluid temperatures, and the fluid (the keyword inputs of `thermalfea.api.htc`).
 - **Fluid properties evaluated at:** The bulk fluid temperature (Theory §8.1).
-- **Validity range (as recorded):** Gnielinski: 0.5 ≤ Pr ≤ 2000, 3000 ≤ Re ≤ 5e6. Dittus–Boelter: 0.6 ≤ Pr ≤ 160 and Re ≥ 1e4. (The validity column of the §8 table is empty for this entry; the ranges are those stated in §8.1.)
+- **Validity range (as recorded):** Gnielinski: 0.5 ≤ Pr ≤ 2000, 3000 ≤ Re ≤ 5e6. Dittus–Boelter: 0.6 ≤ Pr ≤ 160 and Re ≥ 1e4. Sieder–Tate: 0.7 ≤ Pr ≤ 16700 and Re ≥ 1e4. Annulus: 0.05 ≤ D\_i/D\_o ≤ 1 for `annulus_inner`, 0 ≤ D\_i/D\_o ≤ 1 for `annulus_outer`. (The validity column of the §8 table is empty for this entry; the ranges are those stated in §8.1.)
 - **Theory section:** [Theory §8.1](theory.md#sec-8-1)
 - **Literature source:** Incropera 7th ed. Eq. 8.62 (f from 8.21), Eq. 8.60, Tables 8.1, 8.2.
 - **Note:** Not offered as a convection boundary condition: internal flow belongs to streams (see [Theory §9](theory.md#sec-9)).

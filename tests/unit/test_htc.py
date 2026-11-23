@@ -508,3 +508,54 @@ def test_jet_htc_refusals_and_warnings() -> None:
     res = htc("round_jet", "Air", 350.0, 300.0, **{**good, "H": 0.3, "r_r": 1.0})
     assert any("H_over_D" in w for w in res.warnings)
     assert any("A_r" in w for w in res.warnings)
+
+
+# ------------------------------------------------------------------------------ M11.42
+
+_DUCT = dict(mass_flow=0.3, area=1e-4, wetted_perimeter=0.04)
+
+
+def test_duct_new_sections_and_annulus() -> None:
+    p = WATER.props(300.0)
+    D_h = 4 * 1e-4 / 0.04
+    Re = 0.01 * D_h / (1e-4 * p.mu)
+    mass = dict(mass_flow=0.01, area=1e-4, wetted_perimeter=0.04)
+    assert Re < 2300
+    for name, (t, q) in {"rectangle_4": (4.44, 5.33), "triangle": (2.49, 3.11)}.items():
+        res = htc("duct_internal", "Water", 310.0, 300.0, cross_section=name, **mass)
+        assert res.Nu == t and res.h == pytest.approx(t * p.k / D_h, rel=1e-12)
+        res = htc("duct_internal", "Water", 310.0, 300.0, cross_section=name,
+                  wall="constant_flux", **mass)
+        assert res.Nu == q
+    res = htc("duct_internal", "Water", 310.0, 300.0, cross_section="annulus_inner",
+              diameter_ratio=0.15, **mass)
+    assert res.Nu == pytest.approx(11.56 + (0.05 / 0.15) * (7.37 - 11.56), rel=1e-13)
+    for kw, match in (
+        (dict(cross_section="annulus_inner"), "diameter_ratio"),
+        (dict(cross_section="annulus_inner", diameter_ratio=0.01), "diameter_ratio"),
+        (dict(cross_section="annulus_outer", diameter_ratio=0.5, wall="constant_flux"),
+         "constant-flux"),
+        (dict(cross_section="circular", diameter_ratio=0.5), "annulus cross-sections only"),
+    ):
+        with pytest.raises(ModelError, match=match):
+            htc("duct_internal", "Water", 310.0, 300.0, **kw, **mass)
+
+
+def test_duct_sieder_tate_against_the_formula() -> None:
+    T_s, T_b = 340.0, 300.0
+    res = htc("duct_internal", "Water", T_s, T_b, option="sieder_tate", **_DUCT)
+    p, ps = WATER.props(T_b), WATER.props(T_s)
+    D_h = 4 * 1e-4 / 0.04
+    Re = 0.3 * D_h / (1e-4 * p.mu)
+    assert Re > 1e4
+    Nu = 0.027 * Re**0.8 * p.Pr ** (1 / 3) * (p.mu / ps.mu) ** 0.14
+    assert res.Re == pytest.approx(Re, rel=1e-12)
+    assert res.Nu == pytest.approx(Nu, rel=1e-12)
+    assert res.h == pytest.approx(Nu * p.k / D_h, rel=1e-12)
+    assert res.warnings == []
+    low = htc("duct_internal", "Water", T_s, T_b, option="sieder_tate",
+              mass_flow=0.05, area=1e-4, wetted_perimeter=0.04)
+    assert any("Re" in w for w in low.warnings)
+    # Pr up to 16700 is valid for Sieder-Tate although Gnielinski stops at 2000
+    oil = htc("duct_internal", "Water", 340.0, 300.0, option="sieder_tate", **_DUCT)
+    assert not any("Pr" in w for w in oil.warnings)

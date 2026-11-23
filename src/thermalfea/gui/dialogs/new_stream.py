@@ -22,13 +22,14 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
+from thermalfea.core.errors import ModelError
 from thermalfea.core.forms import unit_label
 from thermalfea.core.units import UnitSettings
 from thermalfea.gui.property_panels.network import parse_number
 from thermalfea.materials import library
-from thermalfea.model.bcs import Stream
+from thermalfea.model.bcs import STREAM_CROSS_SECTIONS, Stream
 
-CROSS_SECTIONS = ("circular", "parallel_plates", "parallel_plates_one_side", "square")
+CROSS_SECTIONS = STREAM_CROSS_SECTIONS
 
 
 class NewStreamDialog(QDialog):
@@ -73,6 +74,7 @@ class NewStreamDialog(QDialog):
         self.flow_area_edit = QLineEdit()
         self.wetted_edit = QLineEdit()
         self.inlet_edit = QLineEdit()
+        self.diameter_ratio_edit = QLineEdit()
         self.message_label = QLabel("")
         self.message_label.setStyleSheet("color: #b00020;")
         self.message_label.setWordWrap(True)
@@ -82,6 +84,7 @@ class NewStreamDialog(QDialog):
         form.addRow(f"Flow area [{unit_label('area', self.units)}]", self.flow_area_edit)
         form.addRow(f"Wetted perimeter [{unit_label('length', self.units)}]", self.wetted_edit)
         form.addRow("Cross-section", self.cross_box)
+        form.addRow("Diameter ratio D_i/D_o (annulus only)", self.diameter_ratio_edit)
         form.addRow(
             f"Inlet temperature [{unit_label('temperature', self.units)}]", self.inlet_edit
         )
@@ -112,6 +115,8 @@ class NewStreamDialog(QDialog):
         cross = self.cross_box.currentText()
         if not cross:
             raise ValueError("choose a cross-section")
+        ratio_text = self.diameter_ratio_edit.text().strip()
+        ratio = parse_number(ratio_text, minimum=0.0) if ratio_text else None
         return Stream(
             name="Stream",
             fluid=fluid,
@@ -126,6 +131,7 @@ class NewStreamDialog(QDialog):
                 quantity="length", units=self.units,
             ),
             cross_section=cross,  # type: ignore[arg-type]
+            diameter_ratio=None if ratio is None else float(ratio),
             T_inlet=parse_number(
                 self._text(self.inlet_edit, "inlet temperature"), minimum=0.0,
                 quantity="temperature", units=self.units,
@@ -149,7 +155,7 @@ class NewStreamDialog(QDialog):
         """
         try:
             stream = self.build_stream()
-        except ValueError as exc:
+        except (ValueError, ModelError) as exc:
             self.message_label.setText(str(exc))
             return False
         self.message_label.setText("")

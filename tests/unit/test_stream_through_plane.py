@@ -282,3 +282,26 @@ def test_cooling_hole_through_compile_on_a_gmsh_mesh() -> None:
     out = results.heat_flow("bore_flow")[-1]
     assert into == pytest.approx(q * 0.2, rel=1e-9)
     assert abs(into + out) / into < 1e-8
+
+
+# ------------------------------------------------------------------------------ M11.42
+
+
+def test_sieder_tate_uses_the_mean_wall_temperature() -> None:
+    problem, term = problem_with(stream(nu_option="sieder_tate"))
+    assert not term.is_linear
+    T_w = 340.0
+    h = term.mean_coefficient(make_state(problem, T_w))
+    p, ps = WATER.props(T_BULK), WATER.props(T_w)
+    re = 0.3 * D_H / (AREA * p.mu)
+    nu = 0.027 * re**0.8 * p.Pr ** (1 / 3) * (p.mu / ps.mu) ** 0.14
+    assert h == pytest.approx(nu * p.k / D_H, rel=1e-13)
+    cold = term.mean_coefficient(make_state(problem, 270.0))
+    assert cold != pytest.approx(h, rel=1e-3)
+
+
+def test_through_plane_annulus() -> None:
+    problem, term = problem_with(stream(mass_flow=0.001, cross_section="annulus_outer",
+                                        diameter_ratio=0.25))
+    h = term.mean_coefficient(make_state(problem, 320.0))
+    assert h == pytest.approx(4.23 * WATER.props(T_BULK).k / D_H, rel=1e-13)

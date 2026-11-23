@@ -218,6 +218,42 @@ class Contact:
 # -------------------------------------------------------------------------------- flow
 
 
+STREAM_CROSS_SECTIONS = (
+    "circular", "parallel_plates", "parallel_plates_one_side", "square",
+    "rectangle_1_43", "rectangle_2", "rectangle_3", "rectangle_4", "rectangle_8",
+    "triangle", "annulus_inner", "annulus_outer",
+)
+"""Values of ``Stream.cross_section`` (Theory §8.1)."""
+STREAM_NU_OPTIONS = ("auto", "dittus_boelter", "sieder_tate")
+"""Values of ``Stream.nu_option`` (Theory §8.1)."""
+_ANNULUS_RANGE = {"annulus_inner": (0.05, 1.0), "annulus_outer": (0.0, 1.0)}
+
+
+def diameter_ratio_problem(stream: Stream) -> str:
+    """The complaint about ``diameter_ratio`` of a stream, or ``""`` when it is consistent.
+
+    The annulus cross-sections need D_i/D_o within their range; the other cross-sections
+    refuse it (Theory §8.1).
+    """
+    ratio = stream.diameter_ratio
+    if stream.cross_section not in _ANNULUS_RANGE:
+        if ratio is not None:
+            return (
+                "diameter_ratio is given, but it is for annulus cross-sections only "
+                f"(cross_section is {stream.cross_section!r})"
+            )
+        return ""
+    if ratio is None:
+        return f"cross_section {stream.cross_section!r} needs diameter_ratio (D_i/D_o)"
+    lo, hi = _ANNULUS_RANGE[stream.cross_section]
+    if not lo <= ratio <= hi:
+        return (
+            f"diameter_ratio {ratio} is outside {lo} to {hi}, the range of "
+            f"cross_section {stream.cross_section!r}"
+        )
+    return ""
+
+
 @dataclass(kw_only=True)
 class Stream:
     """A one-dimensional fluid stream wetting some walls of the model (keyword-only).
@@ -234,7 +270,11 @@ class Stream:
         Flow cross-section [m^2].
     wetted_perimeter : float
         Wetted perimeter [m], for the hydraulic diameter.
-    cross_section : {"circular", "parallel_plates", "parallel_plates_one_side", "square"}
+    cross_section : str
+        One of the sections of Theory §8.1: ``"circular"``, ``"parallel_plates"``,
+        ``"parallel_plates_one_side"``, ``"square"``, ``"rectangle_1_43"``, ``"rectangle_2"``,
+        ``"rectangle_3"``, ``"rectangle_4"``, ``"rectangle_8"``, ``"triangle"``,
+        ``"annulus_inner"``, ``"annulus_outer"``.
     roughness : float
         Wall roughness [m].
     mass_flow : Function, optional
@@ -245,12 +285,15 @@ class Stream:
         Polyline from inlet to outlet [m] (in-plane streams only).
     n_cells : int, optional
         Number of fluid cells; default one per wall edge along the path.
-    nu_option : {"auto", "dittus_boelter"}
+    nu_option : {"auto", "dittus_boelter", "sieder_tate"}
     h_multiplier : float
         Factor applied to the computed heat-transfer coefficient.
     h_override : Function, optional
         Heat-transfer coefficient [W/(m^2 K)] used instead of the duct correlation; a
         function of time only.
+    diameter_ratio : float, optional
+        D_i/D_o of a concentric annulus; required by (and only for) the annulus
+        cross-sections.
     """
 
     name: str
@@ -259,24 +302,28 @@ class Stream:
     walls: list[str]
     flow_area: float
     wetted_perimeter: float
-    cross_section: Literal["circular", "parallel_plates", "parallel_plates_one_side", "square"]
+    cross_section: Literal[
+        "circular", "parallel_plates", "parallel_plates_one_side", "square",
+        "rectangle_1_43", "rectangle_2", "rectangle_3", "rectangle_4", "rectangle_8",
+        "triangle", "annulus_inner", "annulus_outer",
+    ]
     T_inlet: Function
     roughness: float = 0.0
     mass_flow: Function | None = None
     path: list[tuple[float, float]] | None = None
     n_cells: int | None = None
-    nu_option: Literal["auto", "dittus_boelter"] = "auto"
+    nu_option: Literal["auto", "dittus_boelter", "sieder_tate"] = "auto"
     h_multiplier: float = 1.0
     h_override: Function | None = None
+    diameter_ratio: float | None = None
 
     def __post_init__(self) -> None:
         _choice(self.mode, ("in_plane", "through_plane"), "stream mode")
-        _choice(
-            self.cross_section,
-            ("circular", "parallel_plates", "parallel_plates_one_side", "square"),
-            "stream cross_section",
-        )
-        _choice(self.nu_option, ("auto", "dittus_boelter"), "nu_option")
+        _choice(self.cross_section, STREAM_CROSS_SECTIONS, "stream cross_section")
+        _choice(self.nu_option, STREAM_NU_OPTIONS, "nu_option")
+        message = diameter_ratio_problem(self)
+        if message:
+            raise ModelError(f"stream {self.name!r}: {message}")
         if self.path is not None:
             self.path = [(float(p[0]), float(p[1])) for p in self.path]
         coerce_functions(self)

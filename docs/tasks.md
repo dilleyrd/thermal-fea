@@ -612,7 +612,7 @@ Boundary Conditions, Flow (Streams, Network), Enclosures, Analysis Settings, Sol
   - **Params:** `W`/`D`, `H`, `x_r`/`r_r`, with the stated defaults.
   - **Refusals:** a planar `round_jet` without `r_r`, and any `char_length`.
   - The rest is as M11.39.
-- [ ] **M11.42 [B] Duct sections and Sieder–Tate.** Theory §8.1.
+- [x] **M11.42 [B] Duct sections and Sieder–Tate.** Theory §8.1.
   - **Cross-sections:** the new ones, and the annulus with `Stream.diameter_ratio`
     (Data §8). Its range is checked, and a constant-flux request is refused.
   - **Turbulent option:** `nu_option = "sieder_tate"`, with μ_s at the cell's mean wall

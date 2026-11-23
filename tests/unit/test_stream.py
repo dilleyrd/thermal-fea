@@ -362,3 +362,50 @@ def test_through_compile_on_a_gmsh_mesh() -> None:
     assert results.heat_flow("coolant")[-1] == pytest.approx(-2000.0 * LENGTH, rel=1e-9)
     # a model with a stream survives saving and loading
     assert from_json(to_json(model)) == model
+
+
+# ------------------------------------------------------------------------------ M11.42
+
+
+def test_new_sections_in_a_stream() -> None:
+    problem, term = problem_with(stream(mass_flow=0.001, cross_section="rectangle_3"))
+    h, numbers = term.coefficients(make_state(problem, 320.0))
+    assert np.all(numbers["Re"] < 2300) and np.all(numbers["Nu"] == 3.96)
+    problem, term = problem_with(stream(mass_flow=0.001, cross_section="annulus_inner",
+                                        diameter_ratio=0.15))
+    _, numbers = term.coefficients(make_state(problem, 320.0))
+    expected = 11.56 + (0.05 / 0.15) * (7.37 - 11.56)
+    np.testing.assert_allclose(numbers["Nu"], expected, rtol=1e-13)
+
+
+def test_diameter_ratio_rules() -> None:
+    with pytest.raises(ModelError, match="annulus cross-sections only"):
+        stream(diameter_ratio=0.5)
+    with pytest.raises(ModelError, match="needs diameter_ratio"):
+        stream(cross_section="annulus_outer")
+    with pytest.raises(ModelError, match="diameter_ratio"):
+        stream(cross_section="annulus_inner", diameter_ratio=0.04)
+    ok = stream(cross_section="annulus_outer", diameter_ratio=0.0)
+    assert ok.diameter_ratio == 0.0 and stream().diameter_ratio is None
+    # a later edit that bypasses the constructor is caught when the stream is built
+    bad = stream()
+    bad.diameter_ratio = 0.5
+    with pytest.raises(ModelError, match="annulus cross-sections only"):
+        problem_with(bad)
+
+
+def test_sieder_tate_stream_uses_the_cell_wall_temperature() -> None:
+    problem, term = problem_with(stream(mass_flow=0.3, nu_option="sieder_tate", n_cells=20))
+    s = make_state(problem, 350.0)
+    s.u[term.fluid_dofs] = np.linspace(300.0, 310.0, 21)
+    assert np.bincount(term.edge_cell, minlength=term.n_cells).min() > 0  # every cell walled
+    h, numbers = term.coefficients(s)
+    water = library.fluid("Water")
+    T_up = s.u[term.fluid_dofs[:-1]]
+    p = water.props(T_up)
+    ps = water.props(350.0)
+    Re = 0.3 * term.D_h / (1e-4 * p.mu)
+    assert np.all(Re >= 1e4)
+    Nu = 0.027 * Re**0.8 * p.Pr ** (1 / 3) * (p.mu / ps.mu) ** 0.14
+    np.testing.assert_allclose(numbers["Nu"], Nu, rtol=1e-13)
+    np.testing.assert_allclose(h, Nu * p.k / term.D_h, rtol=1e-13)
