@@ -128,44 +128,113 @@ def _apply_size_controls(gmsh: ModuleType, model: Model, built: BuiltGeometry) -
         field.setAsBackgroundMesh(combined)
 
 
+def _boundary_loops(gmsh: ModuleType, dim: int, surface: int) -> list[list[int]]:
+    """Boundary curves of a surface, split into closed loops and ordered along each loop.
+
+    The loops are found from the curves' end points: curves that share a point belong to
+    the same loop.
+    """
+    curves = [abs(int(t)) for _, t in gmsh.model.getBoundary([(dim, surface)])]
+    ends: dict[int, list[int]] = {}
+    for c in curves:
+        found = gmsh.model.getBoundary([(dim - 1, c)], combined=False, oriented=False)
+        ends[c] = [int(t) for _, t in found]
+    loops: list[list[int]] = []
+    remaining = list(curves)
+    while remaining:
+        chain = [remaining.pop(0)]
+        point = ends[chain[0]][-1]
+        while True:
+            nxt = next((c for c in remaining if point in ends[c]), None)
+            if nxt is None:
+                break
+            remaining.remove(nxt)
+            chain.append(nxt)
+            point = ends[nxt][0] if ends[nxt][-1] == point else ends[nxt][-1]
+        loops.append(chain)
+    return loops
+
+
+def _components(groups: list[list[int]]) -> list[set[int]]:
+    """Merge groups of curves that share a curve (union-find on the curve tags)."""
+    parent: dict[int, int] = {}
+
+    def find(x: int) -> int:
+        parent.setdefault(x, x)
+        while parent[x] != x:
+            parent[x] = parent[parent[x]]
+            x = parent[x]
+        return x
+
+    for group in groups:
+        root = find(group[0])
+        for c in group[1:]:
+            parent[find(c)] = root
+    out: dict[int, set[int]] = {}
+    for c in list(parent):
+        out.setdefault(find(c), set()).add(c)
+    return list(out.values())
+
+
 def _apply_structured(gmsh: ModuleType, model: Model, built: BuiltGeometry, dim: int) -> None:
-    """Transfinite curve divisions and transfinite (structured) surfaces."""
+    """Transfinite curve divisions and transfinite (structured) surfaces.
+
+    Sides that must carry the same number of elements (opposite pairs of a four-sided
+    surface, all sides of a three-sided one) are joined into connected components over
+    all structured surfaces, so the result does not depend on the order of the surfaces.
+    A component takes the explicit division count of its curves, or else the largest
+    automatic count among them.
+    """
     settings = model.mesh_settings
-    divisions: dict[int, int] = {}
+    explicit: dict[int, int] = {}
+    named: dict[int, str] = {}
     for name, n in settings.curve_divisions.items():
         if n < 1:
             raise MeshError(f"curve divisions for {name!r} must be at least 1")
         _, tags = _selection_tags(model, built, name, (1,))
-        divisions.update(dict.fromkeys(tags, int(n)))
+        explicit.update(dict.fromkeys(tags, int(n)))
 
+    groups: list[list[int]] = []
+    surfaces_done: list[int] = []
     for name in settings.structured_surfaces:
         _, surfaces = _selection_tags(model, built, name, (dim,))
         for surface in surfaces:
-            boundary = [abs(int(t)) for _, t in gmsh.model.getBoundary([(dim, surface)])]
+            loops = _boundary_loops(gmsh, dim, surface)
+            if len(loops) > 1:
+                raise MeshError(
+                    f"structured meshing needs a 3- or 4-sided surface without holes; a "
+                    f"surface of selection {name!r} has a hole"
+                )
+            boundary = loops[0]
             if len(boundary) not in _TRANSFINITE_SIDES:
                 raise MeshError(
                     f"structured meshing needs a 3- or 4-sided surface; a surface of "
                     f"selection {name!r} has {len(boundary)} boundary curves"
                 )
-            # sides that must carry the same number of elements: opposite pairs of a
-            # four-sided surface, all sides of a three-sided one
-            n_sides = len(boundary)
-            groups = (
-                [boundary] if n_sides == min(_TRANSFINITE_SIDES)
-                else [boundary[0::2], boundary[1::2]]
+            if len(boundary) == min(_TRANSFINITE_SIDES):
+                groups.append(boundary)
+            else:
+                groups.extend([boundary[0::2], boundary[1::2]])
+            for c in boundary:
+                named.setdefault(c, name)
+            surfaces_done.append(surface)
+
+    divisions = dict(explicit)
+    for component in _components(groups):
+        given = {explicit[c] for c in component if c in explicit}
+        if len(given) > 1:
+            names = sorted({named[c] for c in component})
+            raise MeshError(
+                f"structured surface in {names}: opposite sides (or sides shared with "
+                f"another structured surface) have different numbers of divisions "
+                f"{sorted(given)}"
             )
-            for group in groups:
-                given = {divisions[c] for c in group if c in divisions}
-                if len(given) > 1:
-                    raise MeshError(
-                        f"structured surface in {name!r}: opposite sides have different "
-                        f"numbers of divisions {sorted(given)}"
-                    )
-                n = given.pop() if given else max(
-                    max(1, round(built.curves[c].measure / settings.global_size)) for c in group
-                )
-                divisions.update(dict.fromkeys(group, n))
-            gmsh.model.mesh.setTransfiniteSurface(surface)
+        n = given.pop() if given else max(
+            max(1, round(built.curves[c].measure / settings.global_size)) for c in component
+        )
+        divisions.update(dict.fromkeys(component, n))
+    for surface in surfaces_done:
+        gmsh.model.mesh.setTransfiniteSurface(surface)
 
     for curve, n in divisions.items():
         gmsh.model.mesh.setTransfiniteCurve(curve, n + 1)

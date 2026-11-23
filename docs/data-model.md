@@ -71,8 +71,12 @@ class Mesh:
 
 Facet orientation in 2D: nodes are stored so that the parent element lies on the **left**;
 the outward normal is then (dy, −dx)/length. `outward_normals` must give the same result
-by the general rule (normal to the facet, pointing away from the parent element centroid)
-so that it also works in 3D.
+by the general rule so that it also works in 3D: the facet is matched (by node set) with
+the side of its parent element in the registered facet table, whose node order is outward
+(element on the left of a line facet, right-hand rule in 3D); the facet's normal at the
+reference centre is compared with the normal of that side, and `validate` requires them
+to agree. This holds for curved elements on concave boundaries, where a centroid test
+fails. A facet that is not a side of its parent element is an error.
 
 ## §3 Model
 

@@ -224,12 +224,65 @@ class Mesh:
         position = np.einsum("n,fni->fi", ft.shape(centre)[0], coords)
         return normal, position
 
+    def _facet_orientation(self, fb: FacetBlock) -> tuple[ndarray, ndarray, ndarray]:
+        """Compare each facet's normal with the outward normal of its parent's side.
+
+        The side of the parent element that has the same node set as the facet is found
+        in the registered facet table, which lists its nodes in outward order (element on
+        the left of a line facet, right-hand rule in 3D). Both natural normals are taken
+        at the reference centre, which is mapped onto itself by reversal and cyclic
+        rotation of the facet nodes, so they are parallel at the same physical point.
+
+        Parameters
+        ----------
+        fb : FacetBlock
+            Facets of this mesh with valid parent element ids.
+
+        Returns
+        -------
+        normal : ndarray, shape (n_facet, dim)
+            Natural (non-unit) normal of each facet.
+        dot : ndarray, shape (n_facet,)
+            Dot product of ``normal`` with the outward reference normal; positive when the
+            facet is oriented away from its parent.
+        is_side : ndarray, shape (n_facet,), bool
+            Whether the facet is a registered side of its parent element.
+        """
+        normal, _ = self._facet_normals(fb)
+        n_facet = fb.conn.shape[0]
+        dot = np.zeros(n_facet)
+        is_side = np.zeros(n_facet, dtype=bool)
+        centre = element(fb.etype).quadrature[0].mean(axis=0, keepdims=True)
+        for b in self.blocks:
+            if b.elem_ids.size == 0:
+                continue
+            # global element id -> row of this block (blocks hold disjoint id sets)
+            rows = np.full(int(b.elem_ids.max()) + 1, -1, dtype=np.int64)
+            rows[b.elem_ids] = np.arange(b.elem_ids.size)
+            inside = fb.parent_elem < rows.size
+            row = np.full(n_facet, -1, dtype=np.int64)
+            row[inside] = rows[fb.parent_elem[inside]]
+            sel = np.flatnonzero(row >= 0)
+            if sel.size == 0:
+                continue
+            sides = b.conn[row[sel]][:, element(b.etype).facets]  # (m, n_sides, k)
+            same = (fb.conn[sel][:, None, :, None] == sides[:, :, None, :]).any(-1).all(-1)
+            found = same.any(axis=1)
+            side = sides[np.arange(sel.size), same.argmax(axis=1)]  # (m, k) outward order
+            ref = natural_normals(jacobians(fb.etype, self.nodes[side], centre)[:, 0])
+            dot[sel] = np.einsum("fi,fi->f", normal[sel], ref)
+            is_side[sel] = found
+        return normal, dot, is_side
+
     def outward_normals(self, facet_block: FacetBlock) -> ndarray:
         """Unit normals of facets, pointing away from the parent element.
 
-        The normal is evaluated at the reference centre of each facet and oriented away
-        from the centroid of the parent element, which is valid in any space dimension.
-        For a correctly oriented 2D facet this equals ``(dy, -dx) / length``.
+        The normal is evaluated at the reference centre of each facet. Its sign is fixed
+        by the side of the parent element the facet coincides with: the registered facet
+        table lists that side's nodes in outward order, so the facet normal is flipped if
+        it opposes the normal of that side. This holds for curved elements on concave
+        boundaries and in any space dimension. For a correctly oriented 2D facet the
+        result equals ``(dy, -dx) / length``.
 
         Parameters
         ----------
@@ -240,10 +293,19 @@ class Mesh:
         -------
         ndarray, shape (n_facet, dim)
             Unit outward normals (dimensionless).
+
+        Raises
+        ------
+        MeshError
+            If a facet is not a side of its parent element.
         """
-        normal, position = self._facet_normals(facet_block)
-        away = position - self.element_centroids()[facet_block.parent_elem]
-        sign = np.where(np.einsum("fi,fi->f", normal, away) < 0.0, -1.0, 1.0)
+        normal, dot, is_side = self._facet_orientation(facet_block)
+        if not is_side.all():
+            raise MeshError(
+                f"facet block {facet_block.etype!r}: {int((~is_side).sum())} facet(s) are "
+                "not a side of their parent element"
+            )
+        sign = np.where(dot < 0.0, -1.0, 1.0)
         length = np.linalg.norm(normal, axis=1)
         return normal * (sign / length)[:, None]
 
@@ -254,8 +316,8 @@ class Mesh:
 
         Checks array shapes and index ranges, unique element ids, positive Jacobians at
         every integration point, absence of orphan nodes, and facet orientation (each
-        facet's nodes belong to its parent element and its natural normal points away
-        from that element).
+        facet is a side of its parent element and its natural normal agrees with the
+        outward normal of that side in the registered node order).
 
         Raises
         ------
@@ -317,7 +379,6 @@ class Mesh:
         for ib, b in enumerate(self.blocks):
             id_block[b.elem_ids] = ib
             id_row[b.elem_ids] = np.arange(b.conn.shape[0])
-        centroids = self.element_centroids()
 
         for fb in self.facets:
             ft = element(fb.etype)
@@ -349,13 +410,17 @@ class Mesh:
                     f"facet block {fb.etype!r}: {int((~belongs).sum())} facet(s) have nodes "
                     "that are not nodes of their parent element"
                 )
-            normal, position = self._facet_normals(fb)
+            normal, dot, is_side = self._facet_orientation(fb)
+            if not is_side.all():
+                raise MeshError(
+                    f"facet block {fb.etype!r}: {int((~is_side).sum())} facet(s) are not a "
+                    "side of their parent element"
+                )
             if not np.all(np.linalg.norm(normal, axis=1) > 0.0):
                 raise MeshError(f"facet block {fb.etype!r}: degenerate facet")
-            outward = np.einsum("fi,fi->f", normal, position - centroids[parent])
-            if not np.all(outward > 0.0):
+            if not np.all(dot > 0.0):
                 raise MeshError(
-                    f"facet block {fb.etype!r}: {int((~(outward > 0.0)).sum())} facet(s) are "
+                    f"facet block {fb.etype!r}: {int((~(dot > 0.0)).sum())} facet(s) are "
                     "oriented towards their parent element"
                 )
 

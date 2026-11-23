@@ -246,3 +246,57 @@ def test_rect_mesh_rejects_bad_input() -> None:
         rect_mesh(0, 0, -1, 1, 1, 1, "Q4")
     with pytest.raises(MeshError):
         rect_mesh(0, 0, 1, 1, 1, 1, "L2")
+
+
+def _quarter_ring_q8() -> Mesh:
+    """One curved Q8 element across a thin quarter ring, L3 facets on both arcs."""
+    r_in, r_out = 1.0, 1.1
+    c45 = np.cos(np.pi / 4)
+    nodes = np.array(
+        [
+            [r_in, 0.0], [r_out, 0.0], [0.0, r_out], [0.0, r_in],  # corners
+            [0.5 * (r_in + r_out), 0.0],  # 4: radial line at 0 degrees
+            [r_out * c45, r_out * c45],  # 5: outer arc
+            [0.0, 0.5 * (r_in + r_out)],  # 6: radial line at 90 degrees
+            [r_in * c45, r_in * c45],  # 7: inner arc
+        ]
+    )
+    conn = np.arange(8, dtype=np.int64)[None, :]
+    facets = element("Q8").facets
+    inner = FacetBlock("L3", conn[:, facets[3]], np.array([1], dtype=np.int32), np.array([0]))
+    outer = FacetBlock("L3", conn[:, facets[1]], np.array([2], dtype=np.int32), np.array([0]))
+    block = ElementBlock("Q8", conn, np.array([1], dtype=np.int32), np.array([0], dtype=np.int64))
+    return Mesh(dim=2, nodes=nodes, blocks=[block], facets=[inner, outer])
+
+
+def test_curved_element_on_a_concave_boundary_validates() -> None:
+    mesh = _quarter_ring_q8()
+    # the node average of the element lies inside the inner arc (|c| < 1)
+    assert np.linalg.norm(mesh.element_centroids()[0]) < 1.0
+    mesh.validate()
+    inner, outer = mesh.facets
+    c45 = np.cos(np.pi / 4)
+    radial = np.array([[c45, c45]])
+    np.testing.assert_allclose(mesh.outward_normals(inner), -radial, atol=1e-12)
+    np.testing.assert_allclose(mesh.outward_normals(outer), radial, atol=1e-12)
+    # the stored node order of a facet does not matter
+    flipped = FacetBlock("L3", inner.conn[:, [1, 0, 2]], inner.entity, inner.parent_elem)
+    np.testing.assert_allclose(mesh.outward_normals(flipped), -radial, atol=1e-12)
+
+
+def test_curved_element_with_reversed_facet_fails_validation() -> None:
+    mesh = _quarter_ring_q8()
+    mesh.facets[0].conn = mesh.facets[0].conn[:, [1, 0, 2]]
+    with pytest.raises(MeshError, match="oriented"):
+        mesh.validate()
+
+
+def test_facet_that_is_not_a_side_fails_validation() -> None:
+    mesh = make("Q4")
+    fb = mesh.facets[0]
+    parent = mesh.blocks[0].conn[fb.parent_elem[0]]
+    fb.conn[0] = parent[[0, 2]]  # a diagonal: both nodes belong to the parent
+    with pytest.raises(MeshError, match="not a side of their parent"):
+        mesh.validate()
+    with pytest.raises(MeshError, match="not a side of their parent"):
+        mesh.outward_normals(fb)

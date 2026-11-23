@@ -218,3 +218,42 @@ def test_mesh_can_be_regenerated_with_new_settings() -> None:
     assert fine.n_elements > 8 * coarse.n_elements
     model.mesh_settings.order = 2
     assert {b.etype for b in generate(model, built).blocks} == {"T6"}
+
+
+def test_quarter_annulus_single_q8_has_outward_facet_normals() -> None:
+    """One curved Q8 on a concave boundary: its node average lies inside the inner arc."""
+    r_in, r_out = 1.0, 1.1
+    model = Model(
+        geometry=[
+            g.Point("o", 0.0, 0.0),
+            g.Point("a1", r_in, 0.0),
+            g.Point("a2", r_out, 0.0),
+            g.Point("b1", 0.0, r_in),
+            g.Point("b2", 0.0, r_out),
+            g.Arc("inner", "a1", "o", "b1"),
+            g.Arc("outer", "a2", "o", "b2"),
+            g.Line("la", "a1", "a2"),
+            g.Line("lb", "b1", "b2"),
+            g.SurfaceFromCurves("s", ["la", "outer", "lb", "inner"]),
+        ],
+        mesh_settings=MeshSettings(
+            global_size=10.0, order=2, element_shape="quad", structured_surfaces=["all"]
+        ),
+    )
+    built = build(model)
+    api.select_surfaces(model, built, "all", where=lambda s: True)
+    api.select_curves(model, built, "inner", where=lambda c: c.bbox[3] < 1.05 and c.measure > 1.0)
+    api.select_curves(model, built, "outer", where=lambda c: c.bbox[3] > 1.05 and c.measure > 1.0)
+    mesh = generate(model, built)  # validates, including the facet orientation
+    (block,) = mesh.blocks
+    assert block.etype == "Q8"
+    assert block.conn.shape[0] == 1
+    assert np.linalg.norm(mesh.element_centroids()[0]) < r_in
+    for name, sign, radius in (("inner", -1.0, r_in), ("outer", 1.0, r_out)):
+        for fb in mesh.facets_on(model.selections[name].tags):
+            position = np.einsum(
+                "n,fni->fi", element(fb.etype).shape(np.zeros((1, 1)))[0], mesh.nodes[fb.conn]
+            )
+            radial = position / np.linalg.norm(position, axis=1, keepdims=True)
+            np.testing.assert_allclose(np.linalg.norm(position, axis=1), radius, rtol=1e-6)
+            np.testing.assert_allclose(mesh.outward_normals(fb), sign * radial, atol=1e-6)

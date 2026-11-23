@@ -173,6 +173,10 @@ In order:
   - **Next:** M11.23, then M11.26, M11.27, M11.29 and M11.30, then the newly unblocked
     tasks.
   - **Section 5 below is now history.**
+- **Built on 2026-11-23:** M11.23 (validation coverage) and M11.26 (meshing: facet
+  orientation by the parent's registered side, order-independent structured counts,
+  holes refused, curve ends after a copy). The suite passed with 2443 tests.
+  - **Next:** M11.27, M11.29 and M11.30, then the newly unblocked tasks.
 
 ## 5. Next work: tasks M11.12–M11.16
 

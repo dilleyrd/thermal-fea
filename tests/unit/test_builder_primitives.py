@@ -170,3 +170,23 @@ def test_errors_name_the_operation(geometry: list, message: str) -> None:
         build(Model(geometry=geometry))
     # the session is usable again after a failed build
     assert measure(build(Model(geometry=[g.Rectangle("r", 0, 0, 1, 1)])), "r") == pytest.approx(1.0)
+
+
+def test_surface_from_copied_curves_in_any_order() -> None:
+    """A copy transform keeps the curves' end points, so a loop is chained correctly."""
+    w, h = 2.0, 0.5
+    corners = [(0.0, 0.0), (w, 0.0), (w, h), (0.0, h)]
+    pts = [g.Point(f"p{i}", x, y) for i, (x, y) in enumerate(corners)]
+    lines = [g.Line(f"l{i}", f"p{i}", f"p{(i + 1) % 4}") for i in range(4)]
+    shuffled = ["l0", "l2", "l1", "l3"]  # not in chain order
+    built = build(
+        Model(
+            geometry=[
+                *pts,
+                *lines,
+                g.Transform("t", "translate", shuffled, {"dx": 5.0, "dy": 1.0}, copy=True),
+                g.SurfaceFromCurves("s", ["t"]),
+            ]
+        )
+    )
+    assert measure(built, "s") == pytest.approx(w * h, rel=1e-12)

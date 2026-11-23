@@ -204,3 +204,72 @@ def test_stale_selection_in_a_mesh_control() -> None:
     model.geometry[0] = g.Rectangle("r", 0.0, 0.0, W, 2 * H)
     with pytest.raises(MeshError, match="'left' is stale"):
         generate(model, build(model))
+
+
+# ------------------------------------------------- structured surfaces sharing curves
+
+ROW = [
+    ("left", [(0.0, 0.0), (1.0, 1.0), (1.0, 2.0), (0.0, 3.0)]),
+    ("middle", [(1.0, 1.0), (2.0, 1.0), (2.0, 2.0), (1.0, 2.0)]),
+    ("right", [(2.0, 1.0), (3.0, 0.5), (3.0, 2.5), (2.0, 2.0)]),
+]
+
+
+def row_model(order: list[str], **mesh) -> tuple[Model, object]:
+    """Three quadrilaterals in a row; their outer sides need different automatic counts."""
+    model = Model(
+        geometry=[g.Polygon(name, pts) for name, pts in ROW],
+        mesh_settings=MeshSettings(
+            global_size=0.5, element_shape="quad", structured_surfaces=order, **mesh
+        ),
+    )
+    built = build(model)
+    for name, pts in ROW:
+        x_mid = sum(x for x, _ in pts) / len(pts)
+        api.select_surfaces(model, built, name, where=lambda s, x=x_mid: abs(s.center[0] - x) < 0.3)
+    for name, x in (("x0", 0.0), ("x1", 1.0), ("x2", 2.0), ("x3", 3.0)):
+        api.select_curves(
+            model, built, name,
+            where=lambda c, x=x: abs(c.bbox[0] - x) < 1e-6 and abs(c.bbox[3] - x) < 1e-6,
+        )
+    return model, built
+
+
+@pytest.mark.parametrize("order", [["left", "right", "middle"], ["middle", "left", "right"]])
+def test_structured_counts_do_not_depend_on_surface_order(order: list[str]) -> None:
+    model, built = row_model(order)
+    mesh = generate(model, built)
+    for name in ("x0", "x1", "x2", "x3"):
+        # the shared curves (x1, x2) and the curves linked to them carry the maximum, 6
+        assert n_edges(mesh, built, model.selections[name].tags) == 6
+    reference = generate(*row_model(["left", "middle", "right"]))
+    assert mesh.n_elements == reference.n_elements
+
+
+def test_explicit_divisions_propagate_through_a_component() -> None:
+    model, built = row_model(["left", "right", "middle"], curve_divisions={"x1": 3})
+    mesh = generate(model, built)
+    for name in ("x0", "x1", "x2", "x3"):
+        assert n_edges(mesh, built, model.selections[name].tags) == 3
+
+
+def test_conflicting_explicit_divisions_in_a_component() -> None:
+    model, built = row_model(["left", "middle", "right"], curve_divisions={"x1": 3, "x3": 5})
+    with pytest.raises(MeshError, match=r"opposite sides.*\[3, 5\]"):
+        generate(model, built)
+
+
+@pytest.mark.parametrize("outer", ["triangle", "rectangle"])
+def test_structured_surface_with_a_hole_is_refused(outer: str) -> None:
+    shape = (
+        g.Polygon("o", [(0.0, 0.0), (4.0, 0.0), (0.0, 4.0)]) if outer == "triangle"
+        else g.Rectangle("o", 0.0, 0.0, 4.0, 4.0)
+    )
+    model = Model(
+        geometry=[shape, g.Circle("h", 1.0, 1.0, 0.3), g.Boolean("cut", "cut", ["o"], ["h"])],
+        mesh_settings=MeshSettings(global_size=0.5, structured_surfaces=["all"]),
+    )
+    built = build(model)
+    api.select_surfaces(model, built, "all", where=lambda s: True)
+    with pytest.raises(MeshError, match="has a hole"):
+        generate(model, built)

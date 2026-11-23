@@ -33,6 +33,7 @@ DimTag = tuple[int, int]
 POINT_DIM, CURVE_DIM, SURFACE_DIM = 0, 1, 2
 _MIN_SPLINE_POINTS = 2
 _MIN_POLYGON_VERTICES = 3
+_CURVE_END_COUNT = 2  # an open curve has a start and an end point
 #: Number of points sampled along each curve for display.
 POLYLINE_POINTS = 40
 #: Relative tolerance when re-identifying an entity by its bounding box and measure.
@@ -191,6 +192,21 @@ class BuildContext:
         for op_id, owned in self.op_entities.items():
             self.op_entities[op_id] = [e for e in owned if e not in gone]
 
+    def record_curve_ends(self, entities: list[DimTag]) -> None:
+        """Record the end points of curves whose ends are not known yet.
+
+        Used for curves made by a copy, which the curve operations did not create. The
+        model is synchronised so that gmsh can report each curve's boundary points.
+        """
+        unknown = [t for d, t in entities if d == CURVE_DIM and t not in self.curve_ends]
+        if not unknown:
+            return
+        self.occ.synchronize()
+        for tag in unknown:
+            ends = self.gmsh.model.getBoundary([(CURVE_DIM, tag)], combined=False, oriented=False)
+            if len(ends) == _CURVE_END_COUNT:
+                self.curve_ends[tag] = (int(ends[0][1]), int(ends[1][1]))
+
     def ordered_loop(self, curve_tags: list[int]) -> list[int]:
         """Return the curves of a closed loop in chain order.
 
@@ -340,6 +356,7 @@ def _transform(ctx: BuildContext, op: ops.Transform) -> list[DimTag]:
         raise GeometryError("a transform needs at least one target")
     if op.copy:
         targets = [(int(d), int(t)) for d, t in ctx.occ.copy(targets)]
+        ctx.record_curve_ends(targets)
     # moving a shape moves (and may renumber) its boundary; see BuildContext.reidentify
     before = {} if op.copy else ctx.snapshot(exclude=targets)
     q = op.params
