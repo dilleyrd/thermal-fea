@@ -309,3 +309,68 @@ def test_features_without_a_solver_term_are_refused_not_ignored() -> None:
     model.materials["spare"] = Material("spare", 1.0, 1.0, 1.0,
                                         phase_change=PhaseChange(300.0, 310.0, 1.0e5))
     assert "not-implemented" not in codes(validate(model, built, mesh))
+
+
+# ------------------------------------------------------------------- time stepping settings
+
+
+def transient_good() -> tuple[Model, object, object]:
+    model, built, mesh = good()
+    model.solution.kind = "transient"
+    model.solution.end_time = 10.0
+    return model, built, mesh
+
+
+@pytest.mark.parametrize(("field", "value"), [
+    ("dt_max", 0.0),
+    ("dt_max", -1.0),
+    ("dt_max", float("nan")),
+    ("dt_max", 1e-12),  # below dt_min (default 1e-9)
+    ("initial_dt", 0.0),
+    ("initial_dt", -1.0),
+    ("initial_dt", float("nan")),
+    ("dt_min", 0.0),
+    ("dt_min", -1.0),
+    ("dt_min", float("nan")),
+    ("time_tol", 0.0),
+    ("time_tol", -0.02),
+    ("max_dT_per_step", 0.0),
+    ("max_dT_per_step", -5.0),
+])
+def test_transient_time_step_settings_must_be_positive(field: str, value: float) -> None:
+    model, built, mesh = transient_good()
+    setattr(model.solution, field, value)
+    errs = errors(validate(model, built, mesh))
+    assert errs and all(i.kind == "solution" and i.code == "bad-time-step" for i in errs)
+    assert any(field in i.message for i in errs)
+    with pytest.raises(ModelError):
+        raise_if_errors(validate(model, built, mesh))
+
+
+@pytest.mark.parametrize("field", ["rtol", "ttol"])
+def test_nonlinear_tolerances_must_be_positive_in_steady_and_transient(field: str) -> None:
+    for kind in ("steady", "transient"):
+        model, built, mesh = good()
+        model.solution.kind = kind
+        setattr(model.solution, field, 0.0)
+        errs = errors(validate(model, built, mesh))
+        assert [(i.code, i.kind) for i in errs] == [("bad-tolerance", "solution")]
+        assert field in errs[0].message
+
+
+def test_valid_time_step_settings_give_no_issues() -> None:
+    model, built, mesh = transient_good()
+    assert validate(model, built, mesh) == []
+    model.solution.dt_max = 1.0
+    model.solution.initial_dt = 0.5
+    model.solution.max_dT_per_step = 5.0
+    model.solution.dt_min = 1e-6
+    assert validate(model, built, mesh) == []
+
+
+def test_time_step_settings_of_a_steady_model_are_not_checked() -> None:
+    model, built, mesh = good()  # steady: the time-stepping fields are not used
+    model.solution.dt_max = -1.0
+    model.solution.initial_dt = 0.0
+    model.solution.time_tol = 0.0
+    assert validate(model, built, mesh) == []

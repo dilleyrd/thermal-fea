@@ -123,6 +123,28 @@ def test_exit_code_1_for_model_errors(tmp_path: Path, capsys: pytest.CaptureFixt
     assert not (tmp_path / "invalid.tfea.h5").exists()
 
 
+def test_output_equal_to_the_model_file_is_refused(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str], monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """The model file is never overwritten by its own results, whatever the spelling."""
+    path = steady_file(tmp_path)
+    before = path.read_bytes()
+    monkeypatch.chdir(tmp_path)
+    for model_arg, output_arg in (
+        ("steady.tfea", "steady.tfea"),
+        ("steady.tfea", "./steady.tfea"),
+        ("steady.tfea", str(path.resolve())),
+    ):
+        assert cli.main(["solve", model_arg, "-o", output_arg]) == 1
+        err = capsys.readouterr().err
+        assert err.startswith("error:") and "model file" in err
+        assert path.read_bytes() == before
+        assert not (tmp_path / "steady.tfea.h5").exists()
+    other = tmp_path / "elsewhere.h5"
+    assert cli.main(["solve", "steady.tfea", "-o", str(other)]) == 0
+    assert other.is_file() and path.read_bytes() == before
+
+
 def test_console_script_in_a_subprocess(tmp_path: Path) -> None:
     """The installed entry point: real process, real exit codes."""
     path = transient_file(tmp_path)

@@ -291,6 +291,43 @@ class _Checker:
                              f"the model's temperatures span {lo:g} to {hi:g} K; values "
                              f"outside the table are {outside}", "material", material.name)
 
+    # ------------------------------------------------------------------- time stepping
+
+    def time_stepping(self) -> None:
+        """Step sizes and tolerances are positive (NaN is not).
+
+        The time-step settings are read by the transient solver only, so they are checked
+        for a transient analysis only; the nonlinear tolerances are used by both kinds.
+        """
+        s = self.model.solution
+        if s.kind == "transient":
+            if not s.dt_min > 0.0:
+                self.error("bad-time-step", f"the smallest time step (dt_min) must be greater "
+                           f"than 0; got {s.dt_min:g}", "solution", "")
+            if s.initial_dt is not None and not s.initial_dt > 0.0:
+                self.error("bad-time-step", f"the first time step (initial_dt) must be greater "
+                           f"than 0; got {s.initial_dt:g}", "solution", "")
+            if s.dt_max is not None:
+                if not s.dt_max > 0.0:
+                    self.error("bad-time-step", f"the largest time step (dt_max) must be greater "
+                               f"than 0; got {s.dt_max:g}", "solution", "")
+                elif s.dt_max < s.dt_min:
+                    self.error("bad-time-step", f"the largest time step (dt_max = {s.dt_max:g} "
+                               f"s) is below the smallest (dt_min = {s.dt_min:g} s)",
+                               "solution", "")
+            if not s.time_tol > 0.0:
+                self.error("bad-time-step", f"the time-step tolerance (time_tol) must be greater "
+                           f"than 0; got {s.time_tol:g}", "solution", "")
+            if s.max_dT_per_step is not None and not s.max_dT_per_step > 0.0:
+                self.error("bad-time-step", f"the largest temperature change per step "
+                           f"(max_dT_per_step) must be greater than 0; got "
+                           f"{s.max_dT_per_step:g}", "solution", "")
+        for name in ("rtol", "ttol"):
+            value = getattr(s, name)
+            if not value > 0.0:
+                self.error("bad-tolerance", f"the nonlinear tolerance {name} must be greater "
+                           f"than 0; got {value:g}", "solution", "")
+
     # ----------------------------------------------------------------- mesh, contacts
 
     def axis(self) -> None:
@@ -368,6 +405,7 @@ def validate(model: Model, built: BuiltGeometry, mesh: Mesh | None = None) -> li
     check.temperature_reference()
     known = check.absolute_temperatures()
     check.materials(known)
+    check.time_stepping()
     check.axis()
     check.contacts()
     for issue in check.issues:

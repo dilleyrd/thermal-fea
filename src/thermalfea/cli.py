@@ -13,19 +13,33 @@ from __future__ import annotations
 
 import argparse
 import logging
+import os
 import sys
 from collections.abc import Sequence
+from pathlib import Path
 
-from .core.errors import ConvergenceError, ThermalFEAError
+from .core.errors import ConvergenceError, ModelError, ThermalFEAError
 from .core.log import configure_logging
 
 EXIT_OK, EXIT_ERROR, EXIT_NOT_CONVERGED = 0, 1, 2
+
+
+def _same_file(first: str, second: str) -> bool:
+    """True when two paths name the same file (spelling, case and links do not matter)."""
+    if Path(first).resolve() == Path(second).resolve():
+        return True
+    return os.path.exists(first) and os.path.exists(second) and os.path.samefile(first, second)
 
 
 def _solve(args: argparse.Namespace) -> int:
     from . import api
     from .post.summary import text_summary
 
+    if args.output is not None and _same_file(args.model, args.output):
+        raise ModelError(
+            f"the results file {args.output} is the model file itself; "
+            "choose another -o file so the model is not overwritten"
+        )
     out = sys.stdout.write
     model = api.load(args.model)
     built = api.build(model)

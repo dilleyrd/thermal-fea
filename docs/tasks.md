@@ -439,7 +439,7 @@ Boundary Conditions, Flow (Streams, Network), Enclosures, Analysis Settings, Sol
   Loads and solver settings may still change. Tests: each case is refused, the file is
   left byte-for-byte unchanged, and an unchanged model still continues. Update Q25.4 and
   `docs/handover.md`.
-- [ ] **M11.12 [A] Input guards.** `REVIEW.md` findings 1, 8; Q28.2.
+- [x] **M11.12 [A] Input guards.** `REVIEW.md` findings 1, 8; Q28.2.
   `thermalfea solve m.tfea -o m.tfea` exits with an error and leaves the model file
   unchanged. Validation reports an error for `dt_max <= 0`, for `dt_max < dt_min`, and for
   `initial_dt <= 0` when it is set. Tests: each case, in the CLI and in `validate`.
