@@ -539,3 +539,58 @@ def test_model_with_each_new_kind_of_input_solves(name: str, forced: bool) -> No
     h = term.mean_coefficient(make_state(problem, result.T))
     # the flux through the slab equals the convective flux at the wall
     assert k * (400.0 - T_s) / length == pytest.approx(h * (T_s - 300.0), rel=1e-5)
+
+
+# --------------------------------------------------------------------------------- M11.40
+
+_CHANNEL_IDS = {
+    "vchannel_natural": c.nu_vchannel_natural,
+    "vchannel_one_side_natural": c.nu_vchannel_one_side_natural,
+}
+
+
+@pytest.mark.parametrize("name", list(_CHANNEL_IDS))
+def test_vchannel_needs_a_positive_spacing(name: str) -> None:
+    with pytest.raises(ModelError, match="S"):
+        build(CorrelationConvection("x", "right", name, "Air", 300.0))
+    with pytest.raises(ModelError, match="S"):
+        build(CorrelationConvection("x", "right", name, "Air", 300.0, params={"S": 0.0}))
+
+
+@pytest.mark.parametrize("name", list(_CHANNEL_IDS))
+def test_vchannel_term_length_is_the_selection_unless_given(name: str) -> None:
+    S = 0.01
+    bc = CorrelationConvection("x", "right", name, "Air", 300.0, params={"S": S})
+    problem, term = build(bc)
+    s = make_state(problem, 350.0)
+    p = AIR.props(325.0)
+    Ra_S = c.rayleigh(p.beta, 50.0, S, p.Pr, p.rho, p.mu)
+    for L, kw in ((term._length, {}), (0.7, {"char_length": 0.7})):
+        if kw:
+            problem, term = build(
+                CorrelationConvection("x", "right", name, "Air", 300.0, params={"S": S}, **kw)
+            )
+            s = make_state(problem, 350.0)
+        Nu = _CHANNEL_IDS[name](Ra_S, S / L)
+        for _b, values in points(term, problem, s):
+            np.testing.assert_allclose(values, Nu * p.k / S, rtol=1e-12)
+    problem, term = build(bc)
+    expected_L = sum(b.geom.dS.sum() for b in term._batches)
+    assert term._length == pytest.approx(expected_L, rel=1e-12)
+
+
+@pytest.mark.parametrize("name", list(_CHANNEL_IDS))
+def test_model_with_a_vertical_channel_solves(name: str) -> None:
+    length, k = 0.1, 50.0
+    bcs = (
+        FixedTemperature("hot", "left", T=400.0),
+        CorrelationConvection("conv", "right", name, "Air", 300.0, params={"S": 0.01}),
+    )
+    problem = make_problem("Q4", size=(length, length / 10), cells=(10, 1), bcs=bcs)
+    result = steady_solution(problem)
+    assert result.converged
+    T_s = float(result.T[np.isclose(problem.mesh.nodes[:, 0], length)].mean())
+    assert 300.0 < T_s < 400.0
+    term = problem.terms[-1]
+    h = term.mean_coefficient(make_state(problem, result.T))
+    assert k * (400.0 - T_s) / length == pytest.approx(h * (T_s - 300.0), rel=1e-5)

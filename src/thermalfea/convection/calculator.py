@@ -38,6 +38,7 @@ _HPLATES = (_UP, _DOWN)
 _FORCED_PLATES = ("plate_forced_avg", "plate_forced_local")
 _LOCAL = "plate_forced_local"
 _INCLINED = "inclined_natural"
+_CHANNELS = ("vchannel_natural", "vchannel_one_side_natural")
 _DUCT = "duct_internal"
 _USER = "power_law"
 _TEMPERATURE_CLAMP = "fluid temperature outside the property table; end values are used"
@@ -46,6 +47,7 @@ _INPUT_KEYS = frozenset(
         "length",
         "velocity",
         "theta_deg",
+        "S",
         "face_direction",
         "x",
         "C",
@@ -147,7 +149,9 @@ def htc(
     **inputs
         ``length`` [m] (characteristic length; the diameter for cylinders; A_s/P for the
         horizontal plates, which a boundary condition takes as half the selection length),
-        ``velocity`` [m/s] (forced), ``theta_deg`` [deg] (``inclined_natural``), ``face_direction``
+        ``velocity`` [m/s] (forced), ``theta_deg`` [deg] (``inclined_natural``), ``S`` [m]
+        (plate spacing of the vertical channels; ``length`` is then the channel height),
+        ``face_direction``
         (``"up"``/``"down"``, horizontal plates), ``x`` [m] (``plate_forced_local``),
         ``C`` and ``n`` (``power_law``), ``multiplier`` (default 1.0, > 0), and for
         ``duct_internal``: ``mass_flow`` [kg/s], ``area`` [m^2], ``wetted_perimeter`` [m],
@@ -236,6 +240,10 @@ def _fluid_correlation(
     if info.id == _INCLINED:
         _need(info.id, inputs, "theta_deg")
         theta_deg = float(inputs["theta_deg"])
+    params: dict[str, float] | None = None
+    if info.id in _CHANNELS:
+        _need(info.id, inputs, "S")
+        params = {"S": _positive("S", inputs["S"])}
     face = inputs.get("face_direction")
     if face is not None and face not in ("up", "down"):
         raise ModelError(f"face_direction must be 'up', 'down' or None; got {face!r}")
@@ -249,6 +257,7 @@ def _fluid_correlation(
         velocity=velocity,
         theta_deg=theta_deg,
         face_direction=face,
+        params=params,
     )
     Pr = float(numbers["Pr"])
     auto = info.id in _HPLATES and face is not None

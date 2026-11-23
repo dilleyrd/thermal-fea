@@ -473,3 +473,12 @@ def test_new_correlations_are_offered_with_their_inputs(calc) -> None:
     assert "film temperature" not in calc.length_label.text()
     pick(calc.correlation_box, "square_face_crossflow")
     assert "film temperature" in calc.length_label.text()
+
+
+def test_vertical_channels_are_offered_with_the_spacing_input(calc) -> None:
+    offered = [calc.correlation_box.itemText(i) for i in range(calc.correlation_box.count())]
+    for cid in ("vchannel_natural", "vchannel_one_side_natural"):
+        assert cid in offered
+        pick(calc.correlation_box, cid)
+        assert set(calc.visible_inputs()) == {"length", "S"}
+        assert "Not stated" in calc.validity_label.text()

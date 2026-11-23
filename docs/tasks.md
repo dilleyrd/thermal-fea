@@ -606,7 +606,7 @@ Boundary Conditions, Flow (Streams, Network), Enclosures, Analysis Settings, Sol
     correlation list, and in the generated guide.
   - **Tests:** V-25 spot checks for each (branches and validity), and a solved model with
     each kind of input.
-- [ ] **M11.40 [B] Vertical channels.** Theory §8 `vchannel_natural` and
+- [x] **M11.40 [B] Vertical channels.** Theory §8 `vchannel_natural` and
   `vchannel_one_side_natural`, with the param `S`. The rest is as M11.39.
 - [ ] **M11.41 [B] Impinging jets.** Theory §8 `slot_jet` and `round_jet`.
   - **Params:** `W`/`D`, `H`, `x_r`/`r_r`, with the stated defaults.

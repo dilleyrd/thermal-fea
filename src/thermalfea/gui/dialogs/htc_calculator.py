@@ -45,6 +45,7 @@ INPUT_LABELS: dict[str, tuple[str, str]] = {
     "velocity": ("Velocity", "m/s"),
     "x": ("Distance from leading edge", "m"),
     "theta_deg": ("Inclination from vertical", "deg"),
+    "S": ("Plate spacing S", "m"),
     "mass_flow": ("Mass flow", "kg/s"),
     "area": ("Flow area", "m^2"),
     "wetted_perimeter": ("Wetted perimeter", "m"),

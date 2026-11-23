@@ -305,3 +305,28 @@ def test_vplate_natural_laminar(Ra: float) -> None:
 def test_sphere_natural(Ra: float) -> None:
     want = 2 + 0.589 * Ra**0.25 / (1 + (0.469 / PR) ** (9 / 16)) ** (4 / 9)
     rel_eq(c.nu_sphere_natural(Ra, PR), want)
+
+
+# ------------------------------------------------------------------ M11.40: vertical channels
+
+
+@pytest.mark.parametrize("x", [1e-2, 1.0, 50.0, 1e3, 1e6])
+def test_vchannel_natural(x: float) -> None:
+    # x = Ra_S S/L, split into Ra_S and S/L
+    want = (576.0 / x**2 + 2.87 / x**0.5) ** -0.5
+    rel_eq(c.nu_vchannel_natural(x * 10.0, 0.1), want)
+    rel_eq(c.nu_vchannel_natural(x, 1.0), want)
+
+
+@pytest.mark.parametrize("x", [1e-2, 1.0, 50.0, 1e3, 1e6])
+def test_vchannel_one_side_natural(x: float) -> None:
+    want = (144.0 / x**2 + 2.87 / x**0.5) ** -0.5
+    rel_eq(c.nu_vchannel_one_side_natural(x * 10.0, 0.1), want)
+    rel_eq(c.nu_vchannel_one_side_natural(x, 1.0), want)
+
+
+def test_vchannel_array_inputs() -> None:
+    x = np.array([1.0, 1e3])
+    got = c.nu_vchannel_natural(x, 1.0)
+    for i, v in enumerate(x):
+        rel_eq(float(got[i]), c.nu_vchannel_natural(float(v), 1.0))

@@ -89,7 +89,7 @@ BC_FORMS: dict[str, FormSpec] = {
             FieldSpec("multiplier", "Multiplier", "float", minimum=0.0),
             FieldSpec(
                 "params", "Extra inputs", "dict",
-                tooltip="key=value pairs, e.g. theta_deg=30, C=0.5, n=0.25.",
+                tooltip="key=value pairs, e.g. theta_deg=30, S=0.01, C=0.5, n=0.25.",
             ),
         ],
         description="Convection whose coefficient comes from a correlation.",

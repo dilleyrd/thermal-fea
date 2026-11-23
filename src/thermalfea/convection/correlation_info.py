@@ -236,6 +236,33 @@ CORRELATION_INFO: dict[str, CorrelationInfo] = {
         inputs=("length",),
         source="docs/theory.md §8, correlation table",
     ),
+    "vchannel_natural": CorrelationInfo(
+        title=(
+            "Vertical channel between two parallel isothermal plates, both at T_s "
+            "(Bar-Cohen–Rohsenow)"
+        ),
+        formula=(
+            "Nu_S = [576/(Ra_S S/L)² + 2.87/(Ra_S S/L)^½]^(−½), Ra_S = Ra with L → S; "
+            "h = Nu_S k_f / S"
+        ),
+        validity=NOT_STATED,
+        length="S (plate spacing); L = channel height",
+        inputs=("length", "S"),
+        source="docs/theory.md §8, correlation table",
+    ),
+    "vchannel_one_side_natural": CorrelationInfo(
+        title=(
+            "Vertical channel, this plate at T_s, the opposite plate adiabatic "
+            "(Bar-Cohen–Rohsenow)"
+        ),
+        formula=(
+            "Nu_S = [144/(Ra_S S/L)² + 2.87/(Ra_S S/L)^½]^(−½), Ra_S and h as above"
+        ),
+        validity=NOT_STATED,
+        length="S; L = channel height",
+        inputs=("length", "S"),
+        source="docs/theory.md §8, correlation table",
+    ),
     "power_law": CorrelationInfo(
         title="User form",
         formula="h = C · |T_s − T∞|ⁿ",

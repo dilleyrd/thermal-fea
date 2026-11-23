@@ -67,6 +67,10 @@ _PREVIEW_FIELDS: dict[str, FieldSpec] = {
         "theta_deg", "Inclination from vertical [deg]", "float", optional=True,
         tooltip="Inclination from vertical in degrees.",
     ),
+    "S": FieldSpec(
+        "S", "Plate spacing S", "float", quantity="length", minimum=0.0, optional=True,
+        tooltip="Spacing S of the vertical channel plates.",
+    ),
     "C": FieldSpec("C", "C", "float", optional=True, tooltip="Coefficient C of the power law."),
     "n": FieldSpec("n", "n", "float", optional=True, tooltip="Exponent n of the power law."),
     "mass_flow": FieldSpec(
@@ -235,7 +239,7 @@ class CorrelationPanel(FormPanel):
         ----------
         name : str
             ``"T_surface"``, ``"T_inf"``, ``"length"``, ``"x"``, ``"velocity"``,
-            ``"theta_deg"``, ``"C"``, ``"n"``, ``"mass_flow"``, ``"area"`` or
+            ``"theta_deg"``, ``"S"``, ``"C"``, ``"n"``, ``"mass_flow"``, ``"area"`` or
             ``"wetted_perimeter"``.
         value : float or None
             The value in SI units (kelvin, metres, ...); ``None`` clears it.
@@ -261,7 +265,7 @@ class CorrelationPanel(FormPanel):
                 continue
             if key == "velocity" and isinstance(obj.velocity, Constant):
                 continue
-            if key in ("theta_deg", "C", "n") and key in obj.params:
+            if key in ("theta_deg", "S", "C", "n") and key in obj.params:
                 continue
             needed.append(key)
         return needed

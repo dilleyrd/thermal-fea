@@ -65,11 +65,13 @@ _GIVEN_LENGTH = frozenset(
 )
 """Correlations whose L_c (a diameter or D) must be given (Theory §8, Diameters)."""
 
-_PARAM_KEYS = ("theta_deg", "x0", "y0", "dir_x", "dir_y", "C", "n")
+_CHANNELS = ("vchannel_natural", "vchannel_one_side_natural")
+_PARAM_KEYS = ("theta_deg", "x0", "y0", "dir_x", "dir_y", "C", "n", "S")
 _REQUIRED_PARAMS: dict[str, tuple[str, ...]] = {
     _INCLINED: ("theta_deg",),
     _LOCAL: ("x0", "y0", "dir_x", "dir_y"),
     _USER: ("C", "n"),
+    **{channel: ("S",) for channel in _CHANNELS},
 }
 
 
@@ -173,6 +175,15 @@ def film_coefficient(
         values["Re"] = values["Re_x"] = numbers["Re"] = Re
     else:
         g = c.G * np.cos(np.radians(theta_deg)) if info.id == _INCLINED else c.G
+        if info.id in _CHANNELS:
+            # Theory §8: Ra_S uses the spacing S; L is the channel height; h = Nu_S k_f / S.
+            spacing = (params or {}).get("S")
+            if spacing is None or not spacing > 0.0:
+                raise ModelError(
+                    f"correlation {info.id!r} needs the plate spacing S (> 0); got {spacing!r}"
+                )
+            values["S_over_L"] = spacing / np.asarray(length, dtype=float)
+            length = spacing
         Ra = c.rayleigh(p.beta, T_s_a - T_inf_a, length, p.Pr, p.rho, p.mu, g)
         values["Ra"] = numbers["Ra"] = Ra
 
@@ -221,6 +232,10 @@ class CorrelationConvectionTerm(ConvectionTerm):
         missing = [k for k in _REQUIRED_PARAMS.get(self.info.id, ()) if k not in bc.params]
         if missing:
             raise ModelError(f"{bc.name}: {bc.correlation!r} needs the params {missing}")
+        if "S" in bc.params and not float(bc.params["S"]) > 0.0:
+            raise ModelError(
+                f"{bc.name}: the plate spacing S must be positive; got {bc.params['S']}"
+            )
         if self.info.kind == "forced" and bc.velocity is None:
             raise ModelError(f"{bc.name}: {bc.correlation!r} needs a velocity")
         self.fluid: Fluid | None = None

@@ -128,7 +128,8 @@ class CorrelationConvection(BoundaryCondition):
         Extra inputs of some correlations. Documented keys: ``"theta_deg"`` (inclination
         from vertical [deg], ``inclined_natural``); ``"x0"``, ``"y0"`` (leading-edge point
         [m]) and ``"dir_x"``, ``"dir_y"`` (flow direction, need not be normalised) for
-        ``plate_forced_local``; ``"C"`` and ``"n"`` for ``power_law``.
+        ``plate_forced_local``; ``"C"`` and ``"n"`` for ``power_law``;
+        ``"S"`` (plate spacing [m]) for ``vchannel_natural`` and ``vchannel_one_side_natural``.
     """
 
     correlation: str

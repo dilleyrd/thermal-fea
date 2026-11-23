@@ -432,3 +432,31 @@ def test_sphere_natural_and_vplate_laminar() -> None:
     assert res.warnings == []
     res = htc("vplate_natural_laminar", "Air", 350.0, 300.0, length=10.0)
     assert any("Ra outside validity range" in w for w in res.warnings)
+
+
+# ------------------------------------------------------------------------------ M11.40
+
+_CHANNEL_FUNCTIONS = {
+    "vchannel_natural": c.nu_vchannel_natural,
+    "vchannel_one_side_natural": c.nu_vchannel_one_side_natural,
+}
+
+
+@pytest.mark.parametrize("name", list(_CHANNEL_FUNCTIONS))
+def test_vchannel_uses_the_spacing_for_ra_and_h(name: str) -> None:
+    L, S = 0.5, 0.02
+    res = htc(name, "Air", 350.0, 300.0, length=L, S=S)
+    p = AIR.props(325.0)
+    Ra_S = c.rayleigh(p.beta, 50.0, S, p.Pr, p.rho, p.mu)
+    Nu = _CHANNEL_FUNCTIONS[name](Ra_S, S / L)
+    assert res.T_film == 325.0 and res.length == L
+    assert res.Ra == pytest.approx(Ra_S, rel=1e-12)
+    assert res.Nu == pytest.approx(Nu, rel=1e-12)
+    assert res.h == pytest.approx(Nu * p.k / S, rel=1e-12)
+    assert res.warnings == []
+    with pytest.raises(ModelError, match="S"):
+        htc(name, "Air", 350.0, 300.0, length=L)
+    with pytest.raises(ModelError, match="length"):
+        htc(name, "Air", 350.0, 300.0, S=S)
+    with pytest.raises(ModelError):
+        htc(name, "Air", 350.0, 300.0, length=L, S=0.0)

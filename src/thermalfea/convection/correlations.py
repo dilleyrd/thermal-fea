@@ -428,6 +428,42 @@ def nu_sphere_natural(Ra: ArrayLike, Pr: ArrayLike) -> Any:
     return _ret(2.0 + 0.589 * Ra_a**0.25 / (1.0 + (0.469 / Pr_a) ** (9.0 / 16.0)) ** (4.0 / 9.0))
 
 
+def _nu_vchannel(c1: float, Ra: ArrayLike, S_over_L: ArrayLike) -> Any:
+    """``Nu_S = [C1/x^2 + 2.87/x^(1/2)]^(-1/2)`` with ``x = Ra_S S/L`` (Theory §8)."""
+    x = np.asarray(Ra, dtype=float) * np.asarray(S_over_L, dtype=float)
+    return _ret((c1 / x**2 + 2.87 / x**0.5) ** -0.5)
+
+
+def nu_vchannel_natural(Ra: ArrayLike, S_over_L: ArrayLike) -> Any:
+    """Vertical channel, both plates at T_s (Bar-Cohen-Rohsenow, Theory §8).
+
+    ``Nu_S = [576/(Ra_S S/L)^2 + 2.87/(Ra_S S/L)^(1/2)]^(-1/2)``; ``h = Nu_S k_f / S``.
+
+    Parameters
+    ----------
+    Ra : array_like
+        ``Ra_S``, the Rayleigh number with the plate spacing S as length (dimensionless).
+    S_over_L : array_like
+        Plate spacing over channel height (dimensionless).
+    """
+    return _nu_vchannel(576.0, Ra, S_over_L)
+
+
+def nu_vchannel_one_side_natural(Ra: ArrayLike, S_over_L: ArrayLike) -> Any:
+    """Vertical channel, this plate at T_s, the opposite one adiabatic (Theory §8).
+
+    ``Nu_S = [144/(Ra_S S/L)^2 + 2.87/(Ra_S S/L)^(1/2)]^(-1/2)``; ``h = Nu_S k_f / S``.
+
+    Parameters
+    ----------
+    Ra : array_like
+        ``Ra_S``, the Rayleigh number with the plate spacing S as length (dimensionless).
+    S_over_L : array_like
+        Plate spacing over channel height (dimensionless).
+    """
+    return _nu_vchannel(144.0, Ra, S_over_L)
+
+
 def h_power_law(C: ArrayLike, n: ArrayLike, dT: ArrayLike) -> Any:
     """User power-law convection coefficient ``h = C |dT|^n`` [W/(m^2 K)].
 
@@ -1016,6 +1052,32 @@ CORRELATIONS: dict[str, CorrelationInfo] = {
         description="Sphere (Churchill)",
         length="diameter",
         source=f"{_I} Eq. 9.35",
+    ),
+    "vchannel_natural": CorrelationInfo(
+        id="vchannel_natural",
+        function=nu_vchannel_natural,
+        inputs=("Ra", "S_over_L"),
+        kind="natural",
+        validity={},
+        description=(
+            "Vertical channel between two parallel isothermal plates, both at T_s "
+            "(Bar-Cohen–Rohsenow)"
+        ),
+        length="S (plate spacing); L = channel height",
+        source=f"{_I} Eq. 9.45, Table 9.3",
+    ),
+    "vchannel_one_side_natural": CorrelationInfo(
+        id="vchannel_one_side_natural",
+        function=nu_vchannel_one_side_natural,
+        inputs=("Ra", "S_over_L"),
+        kind="natural",
+        validity={},
+        description=(
+            "Vertical channel, this plate at T_s, the opposite plate adiabatic "
+            "(Bar-Cohen–Rohsenow)"
+        ),
+        length="S; L = channel height",
+        source=f"{_I} Eq. 9.45, Table 9.3",
     ),
     "power_law": CorrelationInfo(
         id="power_law",

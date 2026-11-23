@@ -718,7 +718,7 @@ def htc(
         Wall and fluid temperatures [K], both above 0.
     **inputs
         ``length`` [m] (A_s/P for the horizontal plates), ``velocity`` [m/s],
-        ``theta_deg`` [deg], ``face_direction``
+        ``theta_deg`` [deg], ``S`` [m] (plate spacing, vertical channels), ``face_direction``
         (``"up"``/``"down"``), ``x`` [m] (``plate_forced_local``), ``C`` and ``n``
         (``power_law``), ``multiplier`` (default 1.0), and for ``duct_internal``:
         ``mass_flow`` [kg/s], ``area`` [m^2], ``wetted_perimeter`` [m], ``cross_section``,

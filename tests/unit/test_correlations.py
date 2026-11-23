@@ -30,6 +30,8 @@ IDS = [
     "hplate_down_natural",
     "hcyl_natural",
     "sphere_natural",
+    "vchannel_natural",
+    "vchannel_one_side_natural",
     "power_law",
 ]
 
@@ -52,6 +54,8 @@ VALIDITY = {
     "hplate_down_natural": {"Ra": (1e4, 1e9), "Pr": (0.7, None)},
     "hcyl_natural": {"Ra": (None, 1e12)},
     "sphere_natural": {"Pr": (0.7, None), "Ra": (None, 1e11)},
+    "vchannel_natural": {},
+    "vchannel_one_side_natural": {},
     "power_law": {},
 }
 

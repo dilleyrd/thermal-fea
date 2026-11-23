@@ -42,6 +42,8 @@ For ideal gases β = 1/T\_film; for liquids β comes from the property table.
 | [`hplate_down_natural`](#corr-hplate-down-natural) | Horizontal, hot face down or cold face up | area/perimeter | 1e4 ≤ Ra ≤ 1e9, Pr ≥ 0.7 |
 | [`hcyl_natural`](#corr-hcyl-natural) | Horizontal cylinder (Churchill–Chu) | diameter | Ra ≤ 1e12 |
 | [`sphere_natural`](#corr-sphere-natural) | Sphere (Churchill) | diameter | Pr ≥ 0.7, Ra ≤ 1e11 |
+| [`vchannel_natural`](#corr-vchannel-natural) | Vertical channel between two parallel isothermal plates, both at T\_s (Bar-Cohen–Rohsenow) | S (plate spacing); L = channel height | Not stated in the theory document. |
+| [`vchannel_one_side_natural`](#corr-vchannel-one-side-natural) | Vertical channel, this plate at T\_s, the opposite plate adiabatic (Bar-Cohen–Rohsenow) | S; L = channel height | Not stated in the theory document. |
 | [`power_law`](#corr-power-law) | User form | — | Not stated in the theory document. |
 
 ## Correlations
@@ -320,6 +322,36 @@ Nu = 2 + 0.589 Ra^¼ / [1+(0.469/Pr)^(9/16)]^(4/9)
 - **Validity range (as recorded):** Pr ≥ 0.7, Ra ≤ 1e11
 - **Theory section:** [Theory §8](theory.md#sec-8)
 - **Literature source:** Incropera 7th ed. Eq. 9.35.
+
+### `vchannel_natural`: Vertical channel between two parallel isothermal plates, both at T\_s (Bar-Cohen–Rohsenow) {#corr-vchannel-natural}
+
+Formula (copied from the theory document):
+
+```text
+Nu_S = [576/(Ra_S S/L)² + 2.87/(Ra_S S/L)^½]^(−½), Ra_S = Ra with L → S; h = Nu_S k_f / S
+```
+
+- **Characteristic length L_c:** S (plate spacing); L = channel height
+- **Inputs:** `length`, `S`, the surface and fluid temperatures, and the fluid (the keyword inputs of `thermalfea.api.htc`).
+- **Fluid properties evaluated at:** Fluid properties at the film temperature T\_film = (T\_s + T∞)/2.
+- **Validity range (as recorded):** Not stated in the theory document.
+- **Theory section:** [Theory §8](theory.md#sec-8)
+- **Literature source:** Incropera 7th ed. Eq. 9.45, Table 9.3.
+
+### `vchannel_one_side_natural`: Vertical channel, this plate at T\_s, the opposite plate adiabatic (Bar-Cohen–Rohsenow) {#corr-vchannel-one-side-natural}
+
+Formula (copied from the theory document):
+
+```text
+Nu_S = [144/(Ra_S S/L)² + 2.87/(Ra_S S/L)^½]^(−½), Ra_S and h as above
+```
+
+- **Characteristic length L_c:** S; L = channel height
+- **Inputs:** `length`, `S`, the surface and fluid temperatures, and the fluid (the keyword inputs of `thermalfea.api.htc`).
+- **Fluid properties evaluated at:** Fluid properties at the film temperature T\_film = (T\_s + T∞)/2.
+- **Validity range (as recorded):** Not stated in the theory document.
+- **Theory section:** [Theory §8](theory.md#sec-8)
+- **Literature source:** Incropera 7th ed. Eq. 9.45, Table 9.3.
 
 ### `power_law`: User form {#corr-power-law}
 
