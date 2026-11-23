@@ -597,7 +597,7 @@ Boundary Conditions, Flow (Streams, Network), Enclosures, Analysis Settings, Sol
     display texts of `correlation_info.py` follow the theory.
   - **Tests.** V-25 cases for the changed formula, each new validity rule, and the half
     length.
-- [ ] **M11.39 [B] Non-circular cylinders and spheres.** Theory §8 rows
+- [x] **M11.39 [B] Non-circular cylinders and spheres.** Theory §8 rows
   `square_corner_crossflow`, `square_face_crossflow`, `hexagon_face_crossflow`,
   `hexagon_corner_crossflow`, `plate_front_crossflow`, `plate_back_crossflow`,
   `sphere_forced` (properties at T∞, μ_s at T_s), `sphere_natural` and

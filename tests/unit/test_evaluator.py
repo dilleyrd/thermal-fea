@@ -480,3 +480,62 @@ def test_hplate_down_pr_bound_through_the_term(caplog: pytest.LogCaptureFixture)
     with caplog.at_level(logging.WARNING, logger=LOGGER):
         points(term, problem, make_state(problem, 700.0))
     assert any("Pr" in m for m in warnings_of(caplog))
+
+
+# --------------------------------------------------------------------------------- M11.39
+
+_GIVEN_LENGTH_IDS = [
+    "square_corner_crossflow", "square_face_crossflow", "hexagon_face_crossflow",
+    "hexagon_corner_crossflow", "plate_front_crossflow", "plate_back_crossflow",
+    "sphere_forced", "sphere_natural",
+]
+
+
+@pytest.mark.parametrize("name", _GIVEN_LENGTH_IDS)
+def test_noncircular_and_sphere_need_char_length(name: str) -> None:
+    forced = c.CORRELATIONS[name].kind == "forced"
+    bc = CorrelationConvection("x", "right", name, "Air", 300.0, velocity=2.0 if forced else None)
+    with pytest.raises(ModelError, match="char_length"):
+        build(bc)
+
+
+def test_sphere_forced_term_uses_t_inf_and_local_mu_s() -> None:
+    D, V = 0.02, 5.0
+    bc = CorrelationConvection("s", "right", "sphere_forced", "Air", 300.0, velocity=V,
+                               char_length=D)
+    problem, term = build(bc)
+    s = make_state(problem, 350.0 + 40.0 * problem.mesh.nodes[:, 1])
+    p = AIR.props(300.0)
+    Re = c.reynolds(p.rho, V, D, p.mu)
+    for b, values in points(term, problem, s):
+        T_s = interpolate(b.geom.N, s.u[b.dofs])
+        ratio = p.mu / AIR.props(T_s).mu
+        expected = c.nu_sphere_forced(Re, p.Pr, ratio) * p.k / D
+        np.testing.assert_allclose(values, expected, rtol=1e-12)
+        assert np.ptp(values) > 0.0  # mu_s varies with the local wall temperature
+
+
+@pytest.mark.parametrize(
+    ("name", "forced"),
+    [("square_face_crossflow", True), ("sphere_forced", True), ("sphere_natural", False),
+     ("vplate_natural_laminar", False)],
+)
+def test_model_with_each_new_kind_of_input_solves(name: str, forced: bool) -> None:
+    length, k = 0.1, 50.0
+    D = 0.3
+    kw = {"velocity": 5.0} if forced else {}
+    if name != "vplate_natural_laminar":
+        kw["char_length"] = D
+    bcs = (
+        FixedTemperature("hot", "left", T=400.0),
+        CorrelationConvection("conv", "right", name, "Air", 300.0, **kw),
+    )
+    problem = make_problem("Q4", size=(length, length / 10), cells=(10, 1), bcs=bcs)
+    result = steady_solution(problem)
+    assert result.converged
+    T_s = float(result.T[np.isclose(problem.mesh.nodes[:, 0], length)].mean())
+    assert 300.0 < T_s < 400.0
+    term = problem.terms[-1]
+    h = term.mean_coefficient(make_state(problem, result.T))
+    # the flux through the slab equals the convective flux at the wall
+    assert k * (400.0 - T_s) / length == pytest.approx(h * (T_s - 300.0), rel=1e-5)

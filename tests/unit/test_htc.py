@@ -359,3 +359,76 @@ def test_duct_dittus_boelter_validity_only_when_selected() -> None:
     ok = htc("duct_internal", "Water", T_WALL, T_BULK, option="dittus_boelter",
              **dict(common, mass_flow=_mass_flow(2e4)))
     assert ok.warnings == []
+
+
+# ------------------------------------------------------------------------------ M11.39
+
+_NONCIRCULAR = {
+    "square_corner_crossflow": c.nu_square_corner_crossflow,
+    "square_face_crossflow": c.nu_square_face_crossflow,
+    "hexagon_face_crossflow": c.nu_hexagon_face_crossflow,
+    "hexagon_corner_crossflow": c.nu_hexagon_corner_crossflow,
+    "plate_front_crossflow": c.nu_plate_front_crossflow,
+    "plate_back_crossflow": c.nu_plate_back_crossflow,
+}
+
+
+@pytest.mark.parametrize("name", list(_NONCIRCULAR))
+def test_noncircular_crossflow_at_film_temperature(name: str) -> None:
+    D, V = 0.3, 2.0
+    res = htc(name, "Air", 350.0, 300.0, length=D, velocity=V)
+    p = AIR.props(325.0)
+    Re = c.reynolds(p.rho, V, D, p.mu)
+    Nu = _NONCIRCULAR[name](Re, p.Pr)
+    assert res.T_film == 325.0 and res.length == D
+    assert res.Re == pytest.approx(Re, rel=1e-12)
+    assert res.Nu == pytest.approx(Nu, rel=1e-12)
+    assert res.h == pytest.approx(Nu * p.k / D, rel=1e-12)
+    with pytest.raises(ModelError, match="length"):
+        htc(name, "Air", 350.0, 300.0, velocity=V)
+
+
+def test_noncircular_out_of_range_warns() -> None:
+    res = htc("plate_front_crossflow", "Air", 350.0, 300.0, length=0.001, velocity=1.0)
+    assert any("Re outside validity range" in w for w in res.warnings)
+
+
+def test_sphere_forced_properties_at_t_inf_and_mu_s_at_t_s() -> None:
+    D, V, T_s, T_i = 0.02, 5.0, 400.0, 300.0
+    res = htc("sphere_forced", "Air", T_s, T_i, length=D, velocity=V)
+    p = AIR.props(T_i)
+    mu_s = AIR.props(T_s).mu
+    Re = c.reynolds(p.rho, V, D, p.mu)
+    Nu = c.nu_sphere_forced(Re, p.Pr, p.mu / mu_s)
+    assert res.T_film == T_i
+    assert res.Re == pytest.approx(Re, rel=1e-12)
+    assert res.Pr == pytest.approx(p.Pr, rel=1e-12)
+    assert res.Nu == pytest.approx(Nu, rel=1e-12)
+    assert res.h == pytest.approx(Nu * p.k / D, rel=1e-12)
+    # the film-temperature value is different
+    pf = AIR.props(0.5 * (T_s + T_i))
+    other = c.nu_sphere_forced(c.reynolds(pf.rho, V, D, pf.mu), pf.Pr, 1.0) * pf.k / D
+    assert abs(other - res.h) > 1e-3 * res.h
+    # a hot wall in a gas has mu/mu_s < 1: outside 1.0 <= mu/mu_s
+    assert any("mu_ratio" in w for w in res.warnings)
+
+
+def test_sphere_forced_mu_ratio_in_range_for_a_cold_wall() -> None:
+    res = htc("sphere_forced", "Air", 280.0, 300.0, length=0.02, velocity=5.0)
+    assert not any("mu_ratio" in w for w in res.warnings)
+
+
+def test_sphere_natural_and_vplate_laminar() -> None:
+    D = 0.1
+    res = htc("sphere_natural", "Air", 350.0, 300.0, length=D)
+    p = AIR.props(325.0)
+    Ra = c.rayleigh(p.beta, 50.0, D, p.Pr, p.rho, p.mu)
+    assert res.Ra == pytest.approx(Ra, rel=1e-12)
+    assert res.Nu == pytest.approx(c.nu_sphere_natural(Ra, p.Pr), rel=1e-12)
+    assert res.h == pytest.approx(res.Nu * p.k / D, rel=1e-12)
+    res = htc("vplate_natural_laminar", "Air", 350.0, 300.0, length=0.3)
+    Ra = c.rayleigh(p.beta, 50.0, 0.3, p.Pr, p.rho, p.mu)
+    assert res.Nu == pytest.approx(c.nu_vplate_natural_laminar(Ra, p.Pr), rel=1e-12)
+    assert res.warnings == []
+    res = htc("vplate_natural_laminar", "Air", 350.0, 300.0, length=10.0)
+    assert any("Ra outside validity range" in w for w in res.warnings)

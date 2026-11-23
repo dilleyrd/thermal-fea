@@ -250,7 +250,7 @@ def correlations_page() -> str:
     """Return the text of ``guide/correlations.md``."""
     from thermalfea.convection.correlation_info import (
         CORRELATION_INFO,
-        PROPERTIES_AT,
+        properties_at,
     )
     from thermalfea.convection.correlations import CORRELATIONS
 
@@ -312,7 +312,7 @@ def correlations_page() -> str:
         if cid == _DUCT_ID:
             where = "The bulk fluid temperature (Theory §8.1)."
         elif info.needs_fluid:
-            where = escape_inline(PROPERTIES_AT)
+            where = escape_inline(properties_at(cid))
         else:
             where = "None: the correlation does not use fluid properties."
         lines += [

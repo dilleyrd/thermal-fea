@@ -22,6 +22,14 @@ H_FROM_NU = "h = Nu · k_f / L_c"
 #: Film temperature rule (docs/theory.md §8).
 PROPERTIES_AT = "Fluid properties at the film temperature T_film = (T_s + T∞)/2."
 
+#: The exception of ``sphere_forced`` (docs/theory.md §8 table).
+PROPERTIES_AT_T_INF = "All fluid properties at T∞, except μ_s at T_s."
+
+
+def properties_at(correlation: str) -> str:
+    """The sentence naming the temperature of the fluid properties of a correlation."""
+    return PROPERTIES_AT_T_INF if correlation == "sphere_forced" else PROPERTIES_AT
+
 
 @dataclass(frozen=True)
 class CorrelationInfo:
@@ -102,6 +110,65 @@ CORRELATION_INFO: dict[str, CorrelationInfo] = {
         inputs=("length", "velocity"),
         source="docs/theory.md §8, correlation table",
     ),
+    "square_corner_crossflow": CorrelationInfo(
+        title="Square cylinder, a corner facing the flow, gas",
+        formula="Nu = 0.304 Re^0.59 Pr^⅓",
+        validity="6000 ≤ Re ≤ 60000",
+        length="D = diagonal (width across the flow)",
+        inputs=("length", "velocity"),
+        source="docs/theory.md §8, correlation table",
+    ),
+    "square_face_crossflow": CorrelationInfo(
+        title="Square cylinder, a face facing the flow, gas",
+        formula="Nu = 0.158 Re^0.66 Pr^⅓",
+        validity="5000 ≤ Re ≤ 60000",
+        length="D = side",
+        inputs=("length", "velocity"),
+        source="docs/theory.md §8, correlation table",
+    ),
+    "hexagon_face_crossflow": CorrelationInfo(
+        title="Hexagonal cylinder, a face facing the flow, gas",
+        formula="Re ≤ 20400: Nu = 0.164 Re^0.638 Pr^⅓; else Nu = 0.039 Re^0.78 Pr^⅓",
+        validity="5200 ≤ Re ≤ 105000",
+        length="D = corner-to-corner width across the flow",
+        inputs=("length", "velocity"),
+        source="docs/theory.md §8, correlation table",
+    ),
+    "hexagon_corner_crossflow": CorrelationInfo(
+        title="Hexagonal cylinder, a corner facing the flow, gas",
+        formula="Nu = 0.150 Re^0.638 Pr^⅓",
+        validity="4500 ≤ Re ≤ 90700",
+        length="D = face-to-face width across the flow",
+        inputs=("length", "velocity"),
+        source="docs/theory.md §8, correlation table",
+    ),
+    "plate_front_crossflow": CorrelationInfo(
+        title="Thin plate across the flow, upstream face, gas",
+        formula="Nu = 0.667 Re^0.500 Pr^⅓",
+        validity="10000 ≤ Re ≤ 50000",
+        length="D = plate height across the flow",
+        inputs=("length", "velocity"),
+        source="docs/theory.md §8, correlation table",
+    ),
+    "plate_back_crossflow": CorrelationInfo(
+        title="Thin plate across the flow, downstream face, gas",
+        formula="Nu = 0.191 Re^0.667 Pr^⅓",
+        validity="7000 ≤ Re ≤ 80000",
+        length="D = plate height across the flow",
+        inputs=("length", "velocity"),
+        source="docs/theory.md §8, correlation table",
+    ),
+    "sphere_forced": CorrelationInfo(
+        title="Sphere in a free stream (Whitaker)",
+        formula=(
+            "Nu = 2 + (0.4 Re^½ + 0.06 Re^⅔) Pr^0.4 (μ/μ_s)^¼. "
+            "**All properties at T∞**, except μ_s at T_s"
+        ),
+        validity="0.71 ≤ Pr ≤ 380, 3.5 ≤ Re ≤ 7.6e4, 1.0 ≤ μ/μ_s ≤ 3.2",
+        length="diameter",
+        inputs=("length", "velocity"),
+        source="docs/theory.md §8, correlation table",
+    ),
     "duct_internal": CorrelationInfo(
         title="Internal flow, circular or by hydraulic diameter",
         formula=_DUCT_FORMULA,
@@ -114,6 +181,17 @@ CORRELATION_INFO: dict[str, CorrelationInfo] = {
         title="Vertical plate (Churchill–Chu)",
         formula="Nu = {0.825 + 0.387 Ra^(1/6) / [1+(0.492/Pr)^(9/16)]^(8/27)}²",
         validity="all Ra",
+        length="height",
+        inputs=("length",),
+        source="docs/theory.md §8, correlation table",
+    ),
+    "vplate_natural_laminar": CorrelationInfo(
+        title=(
+            "Vertical plate, laminar (Churchill–Chu; slightly more accurate than 9.26 "
+            "for Ra ≤ 1e9)"
+        ),
+        formula="Nu = 0.68 + 0.670 Ra^¼ / [1+(0.492/Pr)^(9/16)]^(4/9)",
+        validity="Ra ≤ 1e9",
         length="height",
         inputs=("length",),
         source="docs/theory.md §8, correlation table",
@@ -146,6 +224,14 @@ CORRELATION_INFO: dict[str, CorrelationInfo] = {
         title="Horizontal cylinder (Churchill–Chu)",
         formula="Nu = {0.60 + 0.387 Ra^(1/6) / [1+(0.559/Pr)^(9/16)]^(8/27)}²",
         validity="Ra ≤ 1e12",
+        length="diameter",
+        inputs=("length",),
+        source="docs/theory.md §8, correlation table",
+    ),
+    "sphere_natural": CorrelationInfo(
+        title="Sphere (Churchill)",
+        formula="Nu = 2 + 0.589 Ra^¼ / [1+(0.469/Pr)^(9/16)]^(4/9)",
+        validity="Pr ≥ 0.7, Ra ≤ 1e11",
         length="diameter",
         inputs=("length",),
         source="docs/theory.md §8, correlation table",

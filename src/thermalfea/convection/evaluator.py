@@ -11,8 +11,9 @@ total length of the selection (the sum of the in-plane lengths of its edges, wit
 geometry factor) for the plate correlations and the vertical channels, and half of it for the
 horizontal plates ``hplate_up_natural`` and ``hplate_down_natural``: [I] defines
 L = A_s/P, which is half the strip width in a planar model and half the ring width in an
-axisymmetric one (Theory §8, Q17.2). Cylinder correlations need ``char_length`` (the
-diameter).
+axisymmetric one (Theory §8, Q17.2). The cylinder, sphere and non-circular cylinder
+correlations need ``char_length`` (the diameter or D). ``sphere_forced`` takes all properties
+at ``T_inf`` except ``mu_s`` at ``T_s`` (at each point when the wall temperature is local).
 
 Units: SI, temperatures in kelvin, lengths in m, h in W/(m^2 K).
 """
@@ -47,6 +48,22 @@ _INCLINED = "inclined_natural"
 _LOCAL = "plate_forced_local"
 _USER = "power_law"
 _DUCT = "duct_internal"
+_SPHERE_FORCED = "sphere_forced"
+_GIVEN_LENGTH = frozenset(
+    {
+        "cylinder_crossflow",
+        "hcyl_natural",
+        "square_corner_crossflow",
+        "square_face_crossflow",
+        "hexagon_face_crossflow",
+        "hexagon_corner_crossflow",
+        "plate_front_crossflow",
+        "plate_back_crossflow",
+        "sphere_forced",
+        "sphere_natural",
+    }
+)
+"""Correlations whose L_c (a diameter or D) must be given (Theory §8, Diameters)."""
 
 _PARAM_KEYS = ("theta_deg", "x0", "y0", "dir_x", "dir_y", "C", "n")
 _REQUIRED_PARAMS: dict[str, tuple[str, ...]] = {
@@ -131,8 +148,15 @@ def film_coefficient(
     if fluid is None:
         raise ModelError(f"correlation {info.id!r} needs a fluid")
 
+    if info.id == _SPHERE_FORCED:
+        # Theory §8: all properties at T_inf, except mu_s at T_s.
+        T_film = T_inf_a + 0.0 * T_s_a
     p = fluid_props(fluid, T_film)
     values: dict[str, Any] = {"Pr": p.Pr}
+    if info.id == _SPHERE_FORCED:
+        p_s = fluid_props(fluid, T_s_a)
+        values["mu_ratio"] = p.mu / p_s.mu
+        p.clamped = p.clamped | p_s.clamped
     numbers: dict[str, Any] = {
         "T_film": T_film,
         "Pr": p.Pr,
@@ -140,6 +164,8 @@ def film_coefficient(
         "clamped": p.clamped,
         "dT": T_s_a - T_inf_a,
     }
+    if "mu_ratio" in values:
+        numbers["mu_ratio"] = values["mu_ratio"]
     if info.kind == "forced":
         if velocity is None:
             raise ModelError(f"correlation {info.id!r} needs a velocity")
@@ -203,14 +229,9 @@ class CorrelationConvectionTerm(ConvectionTerm):
         self.char_length = bc.char_length
         if bc.char_length is not None and not bc.char_length > 0.0:
             raise ModelError(f"{bc.name}: char_length must be positive; got {bc.char_length}")
-        if (
-            bc.char_length is None
-            and "diameter" in self.info.length
-            and self.info.id != _LOCAL
-        ):
-            raise ModelError(
-                f"{bc.name}: {bc.correlation!r} needs char_length (the diameter)"
-            )
+        if bc.char_length is None and self.info.id in _GIVEN_LENGTH:
+            what = "the diameter" if "diameter" in self.info.length else "D"
+            raise ModelError(f"{bc.name}: {bc.correlation!r} needs char_length ({what})")
         self.params = {k: float(v) for k, v in bc.params.items()}
         self._direction = np.zeros(2)
         if self.info.id == _LOCAL:
@@ -277,6 +298,8 @@ class CorrelationConvectionTerm(ConvectionTerm):
             values["RePr"] = numbers["Re"] * numbers["Pr"]
         if "Ra" in numbers:
             values["Ra"] = numbers["Ra"]
+        if "mu_ratio" in numbers:
+            values["mu_ratio"] = numbers["mu_ratio"]
         if self.info.id == _INCLINED:
             values["theta_deg"] = self.params["theta_deg"]
         cases: list[tuple[c.CorrelationInfo, ndarray | None]] = [(self.info, None)]

@@ -82,7 +82,7 @@ class HtcResult:
     regime : str
         Short description of the branch used.
     T_film : float
-        Temperature the properties were evaluated at [K].
+        Temperature the properties were evaluated at [K]; ``T_inf`` for ``sphere_forced``.
     length : float or None
         Characteristic length used [m]; D_h for ``duct_internal``.
     warnings : list of str
@@ -266,6 +266,8 @@ def _fluid_correlation(
     if "Ra" in numbers:
         Ra = float(numbers["Ra"])
         values["Ra"] = Ra
+    if "mu_ratio" in numbers:
+        values["mu_ratio"] = float(numbers["mu_ratio"])
     if info.id == _INCLINED:
         values["theta_deg"] = theta_deg
     warnings = c.check_validity(c.CORRELATIONS[used], **values)

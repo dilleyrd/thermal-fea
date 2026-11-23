@@ -189,6 +189,126 @@ def nu_cylinder_crossflow(Re: ArrayLike, Pr: ArrayLike) -> Any:
     )
 
 
+def _nu_power(coefficient: float, exponent: float, Re: ArrayLike, Pr: ArrayLike) -> Any:
+    """``Nu = C Re^m Pr^(1/3)``, the form of the Table 7.3 correlations."""
+    Re_a, Pr_a = np.asarray(Re, dtype=float), np.asarray(Pr, dtype=float)
+    return _ret(coefficient * Re_a**exponent * Pr_a ** (1.0 / 3.0))
+
+
+def nu_square_corner_crossflow(Re: ArrayLike, Pr: ArrayLike) -> Any:
+    """Square cylinder, a corner facing the flow, gas (Theory §8, Table 7.3).
+
+    ``Nu = 0.304 Re^0.59 Pr^(1/3)``; ``Re`` is based on the diagonal.
+
+    Parameters
+    ----------
+    Re : array_like
+        Reynolds number based on the width across the flow (dimensionless).
+    Pr : array_like
+        Prandtl number (dimensionless).
+    """
+    return _nu_power(0.304, 0.59, Re, Pr)
+
+
+def nu_square_face_crossflow(Re: ArrayLike, Pr: ArrayLike) -> Any:
+    """Square cylinder, a face facing the flow, gas (Theory §8, Table 7.3).
+
+    ``Nu = 0.158 Re^0.66 Pr^(1/3)``; ``Re`` is based on the side.
+
+    Parameters
+    ----------
+    Re : array_like
+        Reynolds number based on the width across the flow (dimensionless).
+    Pr : array_like
+        Prandtl number (dimensionless).
+    """
+    return _nu_power(0.158, 0.66, Re, Pr)
+
+
+def nu_hexagon_face_crossflow(Re: ArrayLike, Pr: ArrayLike) -> Any:
+    """Hexagonal cylinder, a face facing the flow, gas (Theory §8, Table 7.3).
+
+    ``Re <= 20400``: ``Nu = 0.164 Re^0.638 Pr^(1/3)``; otherwise
+    ``Nu = 0.039 Re^0.78 Pr^(1/3)``.
+
+    Parameters
+    ----------
+    Re : array_like
+        Reynolds number based on the corner-to-corner width across the flow (dimensionless).
+    Pr : array_like
+        Prandtl number (dimensionless).
+    """
+    Re_a = np.asarray(Re, dtype=float)
+    low = np.asarray(_nu_power(0.164, 0.638, Re_a, Pr), dtype=float)
+    high = np.asarray(_nu_power(0.039, 0.78, Re_a, Pr), dtype=float)
+    return _ret(np.where(Re_a <= 20400.0, low, high))
+
+
+def nu_hexagon_corner_crossflow(Re: ArrayLike, Pr: ArrayLike) -> Any:
+    """Hexagonal cylinder, a corner facing the flow, gas (Theory §8, Table 7.3).
+
+    ``Nu = 0.150 Re^0.638 Pr^(1/3)``.
+
+    Parameters
+    ----------
+    Re : array_like
+        Reynolds number based on the face-to-face width across the flow (dimensionless).
+    Pr : array_like
+        Prandtl number (dimensionless).
+    """
+    return _nu_power(0.150, 0.638, Re, Pr)
+
+
+def nu_plate_front_crossflow(Re: ArrayLike, Pr: ArrayLike) -> Any:
+    """Thin plate across the flow, upstream face, gas (Theory §8, Table 7.3).
+
+    ``Nu = 0.667 Re^0.500 Pr^(1/3)``.
+
+    Parameters
+    ----------
+    Re : array_like
+        Reynolds number based on the plate height across the flow (dimensionless).
+    Pr : array_like
+        Prandtl number (dimensionless).
+    """
+    return _nu_power(0.667, 0.500, Re, Pr)
+
+
+def nu_plate_back_crossflow(Re: ArrayLike, Pr: ArrayLike) -> Any:
+    """Thin plate across the flow, downstream face, gas (Theory §8, Table 7.3).
+
+    ``Nu = 0.191 Re^0.667 Pr^(1/3)``.
+
+    Parameters
+    ----------
+    Re : array_like
+        Reynolds number based on the plate height across the flow (dimensionless).
+    Pr : array_like
+        Prandtl number (dimensionless).
+    """
+    return _nu_power(0.191, 0.667, Re, Pr)
+
+
+def nu_sphere_forced(Re: ArrayLike, Pr: ArrayLike, mu_ratio: ArrayLike) -> Any:
+    """Sphere in a free stream (Whitaker, Theory §8).
+
+    ``Nu = 2 + (0.4 Re^(1/2) + 0.06 Re^(2/3)) Pr^0.4 (mu/mu_s)^(1/4)``. All properties are
+    taken at T_inf except ``mu_s``, which is taken at the wall temperature.
+
+    Parameters
+    ----------
+    Re : array_like
+        Reynolds number based on the diameter, properties at T_inf (dimensionless).
+    Pr : array_like
+        Prandtl number at T_inf (dimensionless).
+    mu_ratio : array_like
+        ``mu(T_inf) / mu_s(T_s)`` (dimensionless).
+    """
+    Re_a, Pr_a = np.asarray(Re, dtype=float), np.asarray(Pr, dtype=float)
+    ratio = np.asarray(mu_ratio, dtype=float)
+    return _ret(2.0 + (0.4 * Re_a**0.5 + 0.06 * Re_a ** (2.0 / 3.0)) * Pr_a**0.4 * ratio**0.25)
+
+
 # --------------------------------------------------------------------------- natural convection
 
 
@@ -274,6 +394,38 @@ def nu_hcyl_natural(Ra: ArrayLike, Pr: ArrayLike) -> Any:
         8.0 / 27.0
     )
     return _ret(inner**2)
+
+
+def nu_vplate_natural_laminar(Ra: ArrayLike, Pr: ArrayLike) -> Any:
+    """Vertical plate, laminar (Churchill–Chu, Theory §8).
+
+    ``Nu = 0.68 + 0.670 Ra^(1/4) / [1+(0.492/Pr)^(9/16)]^(4/9)``, for Ra <= 1e9.
+
+    Parameters
+    ----------
+    Ra : array_like
+        Rayleigh number based on the height (dimensionless).
+    Pr : array_like
+        Prandtl number (dimensionless).
+    """
+    Ra_a, Pr_a = np.asarray(Ra, dtype=float), np.asarray(Pr, dtype=float)
+    return _ret(0.68 + 0.670 * Ra_a**0.25 / (1.0 + (0.492 / Pr_a) ** (9.0 / 16.0)) ** (4.0 / 9.0))
+
+
+def nu_sphere_natural(Ra: ArrayLike, Pr: ArrayLike) -> Any:
+    """Sphere, natural convection (Churchill, Theory §8).
+
+    ``Nu = 2 + 0.589 Ra^(1/4) / [1+(0.469/Pr)^(9/16)]^(4/9)``.
+
+    Parameters
+    ----------
+    Ra : array_like
+        Rayleigh number based on the diameter (dimensionless).
+    Pr : array_like
+        Prandtl number (dimensionless).
+    """
+    Ra_a, Pr_a = np.asarray(Ra, dtype=float), np.asarray(Pr, dtype=float)
+    return _ret(2.0 + 0.589 * Ra_a**0.25 / (1.0 + (0.469 / Pr_a) ** (9.0 / 16.0)) ** (4.0 / 9.0))
 
 
 def h_power_law(C: ArrayLike, n: ArrayLike, dT: ArrayLike) -> Any:
@@ -711,6 +863,76 @@ CORRELATIONS: dict[str, CorrelationInfo] = {
         length="diameter",
         source=f"{_I} Eq. 7.54",
     ),
+    "square_corner_crossflow": CorrelationInfo(
+        id="square_corner_crossflow",
+        function=nu_square_corner_crossflow,
+        inputs=("Re", "Pr"),
+        kind="forced",
+        validity={"Re": (6000, 60000)},
+        description="Square cylinder, a corner facing the flow, gas",
+        length="D = diagonal (width across the flow)",
+        source=f"{_I} Eq. 7.52, Table 7.3",
+    ),
+    "square_face_crossflow": CorrelationInfo(
+        id="square_face_crossflow",
+        function=nu_square_face_crossflow,
+        inputs=("Re", "Pr"),
+        kind="forced",
+        validity={"Re": (5000, 60000)},
+        description="Square cylinder, a face facing the flow, gas",
+        length="D = side",
+        source=f"{_I} Eq. 7.52, Table 7.3",
+    ),
+    "hexagon_face_crossflow": CorrelationInfo(
+        id="hexagon_face_crossflow",
+        function=nu_hexagon_face_crossflow,
+        inputs=("Re", "Pr"),
+        kind="forced",
+        validity={"Re": (5200, 105000)},
+        description="Hexagonal cylinder, a face facing the flow, gas",
+        length="D = corner-to-corner width across the flow",
+        source=f"{_I} Eq. 7.52, Table 7.3",
+    ),
+    "hexagon_corner_crossflow": CorrelationInfo(
+        id="hexagon_corner_crossflow",
+        function=nu_hexagon_corner_crossflow,
+        inputs=("Re", "Pr"),
+        kind="forced",
+        validity={"Re": (4500, 90700)},
+        description="Hexagonal cylinder, a corner facing the flow, gas",
+        length="D = face-to-face width across the flow",
+        source=f"{_I} Eq. 7.52, Table 7.3",
+    ),
+    "plate_front_crossflow": CorrelationInfo(
+        id="plate_front_crossflow",
+        function=nu_plate_front_crossflow,
+        inputs=("Re", "Pr"),
+        kind="forced",
+        validity={"Re": (10000, 50000)},
+        description="Thin plate across the flow, upstream face, gas",
+        length="D = plate height across the flow",
+        source=f"{_I} Eq. 7.52, Table 7.3",
+    ),
+    "plate_back_crossflow": CorrelationInfo(
+        id="plate_back_crossflow",
+        function=nu_plate_back_crossflow,
+        inputs=("Re", "Pr"),
+        kind="forced",
+        validity={"Re": (7000, 80000)},
+        description="Thin plate across the flow, downstream face, gas",
+        length="D = plate height across the flow",
+        source=f"{_I} Eq. 7.52, Table 7.3",
+    ),
+    "sphere_forced": CorrelationInfo(
+        id="sphere_forced",
+        function=nu_sphere_forced,
+        inputs=("Re", "Pr", "mu_ratio"),
+        kind="forced",
+        validity={"Pr": (0.71, 380), "Re": (3.5, 7.6e4), "mu_ratio": (1.0, 3.2)},
+        description="Sphere in a free stream (Whitaker)",
+        length="diameter",
+        source=f"{_I} Eq. 7.56",
+    ),
     "duct_internal": CorrelationInfo(
         id="duct_internal",
         function=nu_duct,
@@ -730,6 +952,19 @@ CORRELATIONS: dict[str, CorrelationInfo] = {
         description="Vertical plate (Churchill–Chu)",
         length="height",
         source=f"{_I} Eq. 9.26",
+    ),
+    "vplate_natural_laminar": CorrelationInfo(
+        id="vplate_natural_laminar",
+        function=nu_vplate_natural_laminar,
+        inputs=("Ra", "Pr"),
+        kind="natural",
+        validity={"Ra": (None, 1e9)},
+        description=(
+            "Vertical plate, laminar (Churchill–Chu; slightly more accurate than 9.26 "
+            "for Ra ≤ 1e9)"
+        ),
+        length="height",
+        source=f"{_I} Eq. 9.27",
     ),
     "inclined_natural": CorrelationInfo(
         id="inclined_natural",
@@ -771,6 +1006,16 @@ CORRELATIONS: dict[str, CorrelationInfo] = {
         description="Horizontal cylinder (Churchill–Chu)",
         length="diameter",
         source=f"{_I} Eq. 9.34",
+    ),
+    "sphere_natural": CorrelationInfo(
+        id="sphere_natural",
+        function=nu_sphere_natural,
+        inputs=("Ra", "Pr"),
+        kind="natural",
+        validity={"Pr": (0.7, None), "Ra": (None, 1e11)},
+        description="Sphere (Churchill)",
+        length="diameter",
+        source=f"{_I} Eq. 9.35",
     ),
     "power_law": CorrelationInfo(
         id="power_law",

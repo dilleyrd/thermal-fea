@@ -243,3 +243,65 @@ def test_array_inputs_match_scalar_calls() -> None:
     got_f = c.friction_churchill(Re_d, 0.001)
     for i, r in enumerate(Re_d):
         rel_eq(float(got_f[i]), c.friction_churchill(float(r), 0.001))
+
+
+# ------------------------------------------------------------------ M11.39: non-circular, spheres
+
+
+@pytest.mark.parametrize("Re", [6000.0, 2e4, 6e4])
+def test_square_corner_crossflow(Re: float) -> None:
+    rel_eq(c.nu_square_corner_crossflow(Re, PR), 0.304 * Re**0.59 * PR ** (1 / 3))
+
+
+@pytest.mark.parametrize("Re", [5000.0, 2e4, 6e4])
+def test_square_face_crossflow(Re: float) -> None:
+    rel_eq(c.nu_square_face_crossflow(Re, PR), 0.158 * Re**0.66 * PR ** (1 / 3))
+
+
+@pytest.mark.parametrize("Re", [5200.0, 20400.0, 20400.0 + 1, 5e4, 105000.0])
+def test_hexagon_face_crossflow_both_branches(Re: float) -> None:
+    if Re <= 20400:
+        want = 0.164 * Re**0.638 * PR ** (1 / 3)
+    else:
+        want = 0.039 * Re**0.78 * PR ** (1 / 3)
+    rel_eq(c.nu_hexagon_face_crossflow(Re, PR), want)
+
+
+def test_hexagon_face_crossflow_array_mixes_branches() -> None:
+    Re = np.array([1e4, 20400.0, 3e4])
+    got = c.nu_hexagon_face_crossflow(Re, PR)
+    for i, r in enumerate(Re):
+        rel_eq(float(got[i]), c.nu_hexagon_face_crossflow(float(r), PR))
+
+
+@pytest.mark.parametrize("Re", [4500.0, 3e4, 90700.0])
+def test_hexagon_corner_crossflow(Re: float) -> None:
+    rel_eq(c.nu_hexagon_corner_crossflow(Re, PR), 0.150 * Re**0.638 * PR ** (1 / 3))
+
+
+@pytest.mark.parametrize("Re", [1e4, 3e4, 5e4])
+def test_plate_front_crossflow(Re: float) -> None:
+    rel_eq(c.nu_plate_front_crossflow(Re, PR), 0.667 * Re**0.500 * PR ** (1 / 3))
+
+
+@pytest.mark.parametrize("Re", [7000.0, 4e4, 8e4])
+def test_plate_back_crossflow(Re: float) -> None:
+    rel_eq(c.nu_plate_back_crossflow(Re, PR), 0.191 * Re**0.667 * PR ** (1 / 3))
+
+
+@pytest.mark.parametrize(("Re", "ratio"), [(3.5, 1.0), (1e3, 1.3), (7.6e4, 3.2)])
+def test_sphere_forced(Re: float, ratio: float) -> None:
+    want = 2 + (0.4 * Re**0.5 + 0.06 * Re ** (2 / 3)) * PR**0.4 * ratio**0.25
+    rel_eq(c.nu_sphere_forced(Re, PR, ratio), want)
+
+
+@pytest.mark.parametrize("Ra", [1e3, 1e6, 1e9])
+def test_vplate_natural_laminar(Ra: float) -> None:
+    want = 0.68 + 0.670 * Ra**0.25 / (1 + (0.492 / PR) ** (9 / 16)) ** (4 / 9)
+    rel_eq(c.nu_vplate_natural_laminar(Ra, PR), want)
+
+
+@pytest.mark.parametrize("Ra", [1e3, 1e7, 1e11])
+def test_sphere_natural(Ra: float) -> None:
+    want = 2 + 0.589 * Ra**0.25 / (1 + (0.469 / PR) ** (9 / 16)) ** (4 / 9)
+    rel_eq(c.nu_sphere_natural(Ra, PR), want)

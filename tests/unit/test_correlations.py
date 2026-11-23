@@ -15,12 +15,21 @@ IDS = [
     "plate_forced_avg",
     "plate_forced_local",
     "cylinder_crossflow",
+    "square_corner_crossflow",
+    "square_face_crossflow",
+    "hexagon_face_crossflow",
+    "hexagon_corner_crossflow",
+    "plate_front_crossflow",
+    "plate_back_crossflow",
+    "sphere_forced",
     "duct_internal",
     "vplate_natural",
+    "vplate_natural_laminar",
     "inclined_natural",
     "hplate_up_natural",
     "hplate_down_natural",
     "hcyl_natural",
+    "sphere_natural",
     "power_law",
 ]
 
@@ -28,17 +37,26 @@ VALIDITY = {
     "plate_forced_avg": {"Pr": (0.6, None), "Re": (None, 1e8)},
     "plate_forced_local": {"Pr": (0.6, None), "Re": (None, 1e8)},
     "cylinder_crossflow": {"RePr": (0.2, None)},
+    "square_corner_crossflow": {"Re": (6000, 60000)},
+    "square_face_crossflow": {"Re": (5000, 60000)},
+    "hexagon_face_crossflow": {"Re": (5200, 105000)},
+    "hexagon_corner_crossflow": {"Re": (4500, 90700)},
+    "plate_front_crossflow": {"Re": (10000, 50000)},
+    "plate_back_crossflow": {"Re": (7000, 80000)},
+    "sphere_forced": {"Pr": (0.71, 380), "Re": (3.5, 7.6e4), "mu_ratio": (1.0, 3.2)},
     "duct_internal": {"Pr": (0.5, 2000), "Re": (None, 5e6)},
     "vplate_natural": {},
+    "vplate_natural_laminar": {"Ra": (None, 1e9)},
     "inclined_natural": {"theta_deg": (None, 60)},
     "hplate_up_natural": {"Ra": (1e4, 1e11)},
     "hplate_down_natural": {"Ra": (1e4, 1e9), "Pr": (0.7, None)},
     "hcyl_natural": {"Ra": (None, 1e12)},
+    "sphere_natural": {"Pr": (0.7, None), "Ra": (None, 1e11)},
     "power_law": {},
 }
 
 
-def test_registry_has_ten_ids_in_table_order() -> None:
+def test_registry_has_all_ids_in_table_order() -> None:
     assert list(c.CORRELATIONS) == IDS
     for key, info in c.CORRELATIONS.items():
         assert info.id == key
@@ -226,3 +244,55 @@ def test_inclined_face_messages() -> None:
     assert f("down", 50.0) == []
     assert f(None, 50.0) == [] and f(None, -50.0) == []
     assert len(f("up", np.array([-5.0, 5.0]))) == 1
+
+
+# ---------------------------------------------------------------- M11.39 validity rules
+
+RE_RANGES = {
+    "square_corner_crossflow": (6000.0, 60000.0),
+    "square_face_crossflow": (5000.0, 60000.0),
+    "hexagon_face_crossflow": (5200.0, 105000.0),
+    "hexagon_corner_crossflow": (4500.0, 90700.0),
+    "plate_front_crossflow": (10000.0, 50000.0),
+    "plate_back_crossflow": (7000.0, 80000.0),
+}
+
+
+@pytest.mark.parametrize("key", list(RE_RANGES))
+def test_noncircular_re_range_inside_and_outside(key: str) -> None:
+    lo, hi = RE_RANGES[key]
+    assert n_msgs(key, Re=lo, Pr=0.7) == 0
+    assert n_msgs(key, Re=hi, Pr=0.7) == 0
+    assert n_msgs(key, Re=lo * 0.99, Pr=0.7) == 1
+    assert n_msgs(key, Re=hi * 1.01, Pr=0.7) == 1
+    assert n_msgs(key, Re=np.array([lo, hi * 1.01]), Pr=0.7) == 1
+    # no Pr bound is stated for these gas correlations
+    assert n_msgs(key, Re=lo, Pr=1e-3) == 0 and n_msgs(key, Re=lo, Pr=1e3) == 0
+
+
+def test_sphere_forced_bounds() -> None:
+    key = "sphere_forced"
+    ok = {"Re": 1e3, "Pr": 0.71, "mu_ratio": 1.5}
+    assert n_msgs(key, **ok) == 0
+    for name, edge in (
+        ("Re", 3.5), ("Re", 7.6e4), ("Pr", 0.71), ("Pr", 380.0),
+        ("mu_ratio", 1.0), ("mu_ratio", 3.2),
+    ):
+        assert n_msgs(key, **{**ok, name: edge}) == 0, (name, edge)
+    for name, bad in (
+        ("Re", 3.4), ("Re", 7.7e4), ("Pr", 0.70), ("Pr", 381.0),
+        ("mu_ratio", 0.99), ("mu_ratio", 3.21),
+    ):
+        msgs = c.check_validity(c.CORRELATIONS[key], **{**ok, name: bad})
+        assert len(msgs) == 1 and name in msgs[0], (name, bad)
+    assert n_msgs(key, **{**ok, "mu_ratio": np.array([1.5, 3.3])}) == 1
+
+
+def test_vplate_laminar_and_sphere_natural_bounds() -> None:
+    assert n_msgs("vplate_natural_laminar", Ra=1e9, Pr=0.7) == 0
+    assert n_msgs("vplate_natural_laminar", Ra=1e9 * 1.01, Pr=0.7) == 1
+    assert n_msgs("vplate_natural_laminar", Ra=1.0, Pr=1e-6) == 0  # no Pr bound
+    assert n_msgs("sphere_natural", Ra=1e11, Pr=0.7) == 0
+    assert n_msgs("sphere_natural", Ra=1e11 * 1.01, Pr=0.7) == 1
+    assert n_msgs("sphere_natural", Ra=1e6, Pr=0.69) == 1
+    assert n_msgs("sphere_natural", Ra=1e6, Pr=0.7) == 0

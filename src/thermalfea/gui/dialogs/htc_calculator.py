@@ -32,7 +32,7 @@ from thermalfea.convection.calculator import HtcResult
 from thermalfea.convection.correlation_info import (
     CORRELATION_INFO,
     H_FROM_NU,
-    PROPERTIES_AT,
+    properties_at,
 )
 from thermalfea.convection.correlations import CORRELATIONS
 from thermalfea.core.errors import ModelError
@@ -174,7 +174,9 @@ class HtcCalculator(QWidget):
             self.title_label.setText(info.title)
             self.formula_label.setText(f"Formula ({H_FROM_NU}):\n{info.formula}")
             self.validity_label.setText(f"Validity: {info.validity}")
-            self.length_label.setText(f"Characteristic length: {info.length}. {PROPERTIES_AT}")
+            self.length_label.setText(
+                f"Characteristic length: {info.length}. {properties_at(self.correlation)}"
+            )
             self.fluid_box.setEnabled(info.needs_fluid)
         self.calculate()
 

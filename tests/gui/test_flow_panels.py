@@ -450,3 +450,26 @@ def test_htc_action_opens_the_calculator(flow_shell) -> None:
     flow_shell.window.actions["tools.htc"].trigger()
     assert flow_shell.flow.htc_window is not None
     assert flow_shell.flow.htc_window.isVisible()
+
+
+NEW_IDS_M11_39 = [
+    "square_corner_crossflow", "square_face_crossflow", "hexagon_face_crossflow",
+    "hexagon_corner_crossflow", "plate_front_crossflow", "plate_back_crossflow",
+    "sphere_forced", "sphere_natural", "vplate_natural_laminar",
+]
+
+
+def test_new_correlations_are_offered_with_their_inputs(calc) -> None:
+    offered = [calc.correlation_box.itemText(i) for i in range(calc.correlation_box.count())]
+    for cid in NEW_IDS_M11_39:
+        assert cid in offered
+        pick(calc.correlation_box, cid)
+        shown = set(calc.visible_inputs())
+        assert "length" in shown
+        assert ("velocity" in shown) == (CORRELATIONS[cid].kind == "forced")
+    pick(calc.correlation_box, "sphere_forced")
+    assert "except μ_s at T_s" in calc.formula_label.text()
+    assert "T∞, except μ_s" in calc.length_label.text()
+    assert "film temperature" not in calc.length_label.text()
+    pick(calc.correlation_box, "square_face_crossflow")
+    assert "film temperature" in calc.length_label.text()
