@@ -722,7 +722,14 @@ commit 314093c) and in the evaluation, §4.
     - pandas moves to an optional extra `examples`.
     - Both copies of the showcase images are kept.
     - A short root `README.md` is written.
-11. **D11, air at 1 atm or 1 bar, the water table:** still part of M11.1.
+11. **D11, air at 1 atm or 1 bar, the water table:** still part of M11.1. Checked on 2026-11-23
+    (`docs/property-verification.md`):
+    - the air densities are those of 1 bar;
+    - the 5-row water table is off by up to 5.1 % in μ between rows;
+    - Incropera's β at 360 K looks like a misprint;
+    - 6061-T6, Ti-6Al-4V and FR-4 have no source found.
+
+    The choices are listed in the report's §5.
 12. **D12, design choices.**
     - Kept as now:
       - one Dittus–Boelter heating flag per stream;

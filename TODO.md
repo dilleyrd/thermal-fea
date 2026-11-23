@@ -7,7 +7,7 @@ for D1. Three items remain. The interactive version is [`docs/owner-review.html`
 | # | Item | Your time | Blocks |
 |---|---|---|---|
 | 1 | M8.G: build V-10 and V-17 in the window | 60–120 min | Release review M11.6 |
-| 2 | M11.1: check properties and correlations against a reference text | 2–4 h | Release review M11.6 |
+| 2 | M11.1: decide on the property findings, then check the correlations | 1–2 h | Release review M11.6 |
 | 3 | Visualisation testing, and the pump example (optional) | 30–60 min | Nothing |
 
 ---
@@ -39,28 +39,35 @@ choice, the display fixes and the dialog for new loads.
 - `guide/getting-started.md`;
 - `guide/limitations.md`.
 
-## 2. M11.1 human task: properties and correlations against a reference text — 2–4 h
+## 2. M11.1 human task: property decisions, then the correlations — 1–2 h
 
-Spot-check the property tables, and check every correlation and validity range, against
-a heat-transfer text such as Incropera, *Fundamentals of Heat and Mass Transfer*. Record
-the source and the edition of each. Until this is done the guide says "source not yet
-recorded", and Plan §6 item 7 is not met.
+**The properties have been checked** (2026-11-23) against Incropera 7th ed., the NIST WebBook and
+CoolProp. See `docs/property-verification.md`. Air and water are copied exactly from Incropera,
+Tables A.4 and A.6. Seven of the ten solids are copied exactly from Tables A.1–A.3. Choose:
+1. **D11, air.** The densities are those of 1 bar, within 0.04 %. Either label the table "1 bar",
+   or keep "1 atm" and rescale ρ.
+2. **Water rows.** With 5 rows, μ is off by up to 5.1 % between rows. Keep them, use all of
+   Incropera's rows from 275 to 370 K (1.2 %), or use NIST rows every 5 K (0.4 %).
+3. **Water β at 360 K.** The book gives 697.9e-6 and NIST gives 679.7e-6. This looks like a
+   misprint. Correct it, or keep it?
+4. **Air rows.** ρ is off by up to 2.1 % between rows. All of Incropera's rows, 50 K apart, bring
+   that to 0.83 %.
+5. **6061-T6, Ti-6Al-4V and FR-4** are not in Incropera. Name a source, replace them, or keep them
+   marked unsourced.
+6. **CoolProp**: use it as a build-time table generator, as test reference values only, or not
+   at all. KittyCAD and matproplib are not suitable (report §4).
 
-Points to settle in the same session:
-- **Air.** The documents say "1 atm", but the densities match 1 bar (D11). Which is
-  intended?
-- **Water.** The table has only 5 points. Is linear interpolation between them accurate
-  enough?
-- **Q17.2, horizontal plates.** The characteristic length is the selection length (now),
+Then:
+- **Correlations.** Check every correlation and its validity range against the same book.
+  Citations recorded so far: Churchill–Bernstein, Churchill–Chu, Gnielinski, Dittus–Boelter
+  and Churchill 1977.
+- **Q17.2, horizontal plates.** Is the characteristic length the selection length (as now),
   or area/perimeter?
-- **Citations.** Only those the theory names are recorded so far: Churchill–Bernstein,
-  Churchill–Chu, Gnielinski, Dittus–Boelter and Churchill 1977.
 
 The inclined-plate range is settled: one-sided, θ ≤ 60° (Q29.5).
 
-An agent can prepare a checklist of every value with its file and line; ask for it.
-
 **Files.**
+- `docs/property-verification.md`;
 - `docs/data-model.md` §6;
 - `docs/theory.md` §8, §8.1;
 - `src/thermalfea/materials/data/solids.json` and `fluids.json`;
