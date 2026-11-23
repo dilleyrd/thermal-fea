@@ -193,7 +193,13 @@ message that says so; it is never solved with that part left out.</p>
   with two rectangles) and read the value from the CSV export.</li>
 <li><strong>The mesh quality report only measures.</strong> It applies no pass or fail threshold.</li>
 <li><strong>A total heat flow or power, and a fixed temperature, cannot depend on temperature.</strong>
-  Use a flux, a convection condition or a time function instead.</li>
+  Use a flux, a convection condition or a time function instead. A total heat flow or
+  power cannot depend on position either (it is spread uniformly); use a heat flux or a
+  heat generation.</li>
+<li><strong>Material properties may depend on temperature only.</strong> A property that uses t, x or y
+  is refused, and so is one that is not finite (for example <code>sqrt(T - 400)</code> below 400 K).</li>
+<li><strong>An inclined plate is limited to ±90° from vertical.</strong> A larger or non-finite angle is
+  refused; use the horizontal-plate correlations for a horizontal face.</li>
 <li><strong>A steady analysis evaluates time-dependent loads at t = 0.</strong></li>
 <li><strong>The nonlinear iteration is a modified Newton method.</strong> Derivatives of properties and of
   coefficients with respect to temperature are deliberately left out of the tangent, so
