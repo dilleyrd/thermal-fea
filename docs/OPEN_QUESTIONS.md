@@ -679,8 +679,8 @@ commit 314093c) and in the evaluation, §4.
 1. **D1, Theory §5 convergence at equilibrium (M11.17): option (c).** Keep the relative
    test ‖r‖ ≤ rtol · F_ref and `ttol`. Also accept an iterate when ‖r‖ on the free rows is
    at most N · ε · (‖|K|·|T|‖ + ‖F‖ + ‖r_extra‖), the same free-row norms, where ε is the
-   machine precision. This applies to steady and transient solves. **The factor N is still
-   to be given by the owner**; M11.17 waits for it.
+   machine precision. This applies to steady and transient solves. **N = 100** (owner,
+   2026-11-22).
 2. **D2, fluid rows with θ < 1 (M11.31): option (a).**
    - Rows without capacitance (the stream fluid rows) are always stepped with θ = 1,
      whatever θ the solid uses, in both the linear and the Newton paths.

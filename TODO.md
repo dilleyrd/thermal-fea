@@ -1,45 +1,18 @@
 # What the agents need from the owner
 
 State on 2026-11-22, after your answers of the same day. Every answer is recorded in
-`docs/OPEN_QUESTIONS.md` Q29 (items 1–15) and turned into tasks in `docs/tasks.md`. Four
-items remain. The interactive version is [`docs/owner-review.html`](docs/owner-review.html).
+`docs/OPEN_QUESTIONS.md` Q29 (items 1–15) and turned into tasks in `docs/tasks.md`; N = 100
+for D1. Three items remain. The interactive version is [`docs/owner-review.html`](docs/owner-review.html).
 
 | # | Item | Your time | Blocks |
 |---|---|---|---|
-| 1 | The factor N for D1 | 2 min | M11.17 |
-| 2 | M8.G: build V-10 and V-17 in the window | 60–120 min | Release review M11.6 |
-| 3 | M11.1: check properties and correlations against a reference text | 2–4 h | Release review M11.6 |
-| 4 | Visualisation testing, and the pump example (optional) | 30–60 min | Nothing |
+| 1 | M8.G: build V-10 and V-17 in the window | 60–120 min | Release review M11.6 |
+| 2 | M11.1: check properties and correlations against a reference text | 2–4 h | Release review M11.6 |
+| 3 | Visualisation testing, and the pump example (optional) | 30–60 min | Nothing |
 
 ---
 
-## 1. The factor N for D1 — 2 min — blocks M11.17
-
-You chose option (c) for D1. It keeps the relative test, and also accepts an iterate
-when the residual on the free rows satisfies
-
-  ‖r‖ ≤ N · ε · (‖|K|·|T|‖ + ‖F‖ + ‖r_extra‖)
-
-where ε ≈ 2.2e-16 is the machine precision. The answer did not include N, and an agent
-may not choose a constant (CLAUDE.md rule 3).
-
-**What N does.** It sets how many multiples of round-off count as "zero".
-- **Too small**, such as 1: the floor may still be beaten by the round-off of the
-  assembly itself, and the failure stays.
-- **Too large**, such as 1e6: a real residual could pass when the temperature level is
-  high and the flows are small.
-
-In the reproduced case the residual was about 40–60 % of a reference that was itself at
-round-off.
-
-**Choose:** 10, 100 or 1000, or another value.
-
-**Files.**
-- `docs/theory.md` §5;
-- `src/thermalfea/solver/nonlinear.py`;
-- `docs/OPEN_QUESTIONS.md` Q29.1.
-
-## 2. M8.G human gate: build V-10 and V-17 in the window — 60–120 min
+## 1. M8.G human gate: build V-10 and V-17 in the window — 60–120 min
 
 No person has used the program on a real screen; every GUI test runs offscreen. The
 steps:
@@ -66,7 +39,7 @@ choice, the display fixes and the dialog for new loads.
 - `guide/getting-started.md`;
 - `guide/limitations.md`.
 
-## 3. M11.1 human task: properties and correlations against a reference text — 2–4 h
+## 2. M11.1 human task: properties and correlations against a reference text — 2–4 h
 
 Spot-check the property tables, and check every correlation and validity range, against
 a heat-transfer text such as Incropera, *Fundamentals of Heat and Mass Transfer*. Record
@@ -95,7 +68,7 @@ An agent can prepare a checklist of every value with its file and line; ask for 
 - `src/thermalfea/convection/fluid_props.py`;
 - `docs/OPEN_QUESTIONS.md` Q17, Q26.2.
 
-## 4. Visualisation testing, and the pump example — 30–60 min, optional
+## 3. Visualisation testing, and the pump example — 30–60 min, optional
 
 1. **Visualisation.** You planned to test it over more kinds of boundary condition, once
    the build is complete. You chose GIF only, so there is no MP4 to test.
@@ -111,7 +84,7 @@ Full text: `docs/OPEN_QUESTIONS.md` Q29.
 
 | Item | Decision | Task |
 |---|---|---|
-| D1 convergence | (c) round-off floor N · ε (N above) | M11.17 |
+| D1 convergence | (c) round-off floor N · ε with N = 100 | M11.17 |
 | D2 fluid rows | θ = 1 for rows without capacitance; re-solve the fluid on a restart | M11.31 |
 | D3 step estimate | Free DOFs only; restart the predictor after a physical breakpoint; first-step limit; fix `_jumps` | M11.19 |
 | D4 network | A clear error with diagnostics | M11.32 |

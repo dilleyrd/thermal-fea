@@ -463,8 +463,8 @@ Boundary Conditions, Flow (Streams, Network), Enclosures, Analysis Settings, Sol
   1e-5 s and the time is stored.
 - [ ] **M11.17 [C] Convergence at equilibrium.** `REVIEW-2.md` 2.1-1; Q29.1. Owner's decision D1
   (c): keep the relative test and `ttol`, and also accept when the free-row residual is at
-  most N · ε · (‖|K|·|T|‖ + ‖F‖ + ‖r_extra‖), steady and transient. **Waits for the owner's
-  value of N.** Write it into Theory §5, then the code. Test: a steady model with radiation
+  most N · ε · (‖|K|·|T|‖ + ‖F‖ + ‖r_extra‖), steady and transient, with **N = 100** (owner,
+  2026-11-22). Write it into Theory §5, then the code. Test: a steady model with radiation
   to 300 K started at 300 K converges in one iteration; the relative test is unchanged
   elsewhere.
 - [x] **M11.18 [B] Restart, second part.** `REVIEW-2.md` 2.1-2, 2.2 (`/meta`), 2.3

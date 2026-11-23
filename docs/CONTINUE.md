@@ -164,7 +164,7 @@ In order:
     newly unblocked tasks:
     - M11.19, M11.28 and M11.31–M11.36;
     - the released M10.5 and M11.7–M11.10;
-    - M11.17 once the owner gives N.
+    - M11.17 (the owner gave N = 100).
   - **3D:** not yet.
   - **What still waits on the owner:** `TODO.md`.
 

@@ -156,7 +156,7 @@ table.mini th { color: var(--muted); font-weight: 600; font-size: 12.5px; }
   <section id="overview">
     <h2>Overview</h2>
     <p class="lead">Your answers of 2026-11-22 are recorded (<a data-file="docs/OPEN_QUESTIONS.md" href="#">OPEN_QUESTIONS.md</a> Q29)
-      and turned into tasks. Four items remain. Pick an option, add notes, tick it done, then press
+      and turned into tasks (N = 100 for D1). Three items remain. Pick an option, add notes, tick it done, then press
       <b>Copy my answers</b> and paste the text into the chat. Your answers stay in this browser only.</p>
     <div class="grid">
       <div class="panel">
@@ -179,7 +179,7 @@ table.mini th { color: var(--muted); font-weight: 600; font-size: 12.5px; }
 
   <section id="sessions-sec">
     <h2>What remains</h2>
-    <p class="lead">Item 1 takes two minutes and unblocks M11.17. The other three are hands-on.</p>
+    <p class="lead">All three are hands-on. M8.G and M11.1 are needed before the release review, M11.6.</p>
     <div class="sessions" id="sessions"></div>
   </section>
 
@@ -201,7 +201,6 @@ const STORE_KEY = "thermalfea-owner-review-v2";
 
 /* ------------------------------------------------------------------ data */
 const SESSIONS = {
-  A: { name: "One quick answer", time: [2, 5], kind: "The factor N for D1", c: "--s-a" },
   B: { name: "In the window (M8.G)", time: [60, 120], kind: "Hands-on, with the friction log", c: "--s-d" },
   C: { name: "With the reference book", time: [120, 240], kind: "Checking values and sources", c: "--s-e" },
   D: { name: "Optional", time: [30, 60], kind: "Visualisation and the pump example", c: "--s-f" },
@@ -213,18 +212,7 @@ const DATA = {
 };
 
 const ITEMS = [
-{ id: "N", sec: 1, num: "1", title: "The factor N for D1 (convergence at equilibrium)", session: "A", effort: "2 min", type: "quick", blocks: ["M11.17"],
-  body: `<p>You chose option (c): keep the relative test, and also accept an iterate when the free-row residual satisfies
-  <b>‖r‖ ≤ N · ε · (‖|K|·|T|‖ + ‖F‖ + ‖r_extra‖)</b>, where ε ≈ 2.2e-16 is the machine precision. The answer did not include N,
-  and an agent may not choose a constant (CLAUDE.md rule 3).</p>
-  <ul><li><b>Too small</b> (around 1): the assembly's own round-off can still beat the floor, and the failure stays.</li>
-  <li><b>Too large</b> (around 1e6): a real residual could pass when the temperature level is high and the flows are small.</li></ul>
-  <p>The chart shows the reproduced case: the residual stays at 40–60 % of a reference that is itself at round-off.</p>`,
-  chart: "d1",
-  qs: [{ q: "N", opts: [["10", "N = 10"], ["100", "N = 100"], ["1000", "N = 1000"], ["other", "Another value (type it below)"]], value: "Other value of N" }],
-  files: ["docs/theory.md", "src/thermalfea/solver/nonlinear.py", "docs/OPEN_QUESTIONS.md", "docs/tasks.md"] },
-
-{ id: "M8.G", sec: 2, num: "2", title: "M8.G human gate: build V-10 and V-17 in the window", session: "B", effort: "60–120 min", type: "study", blocks: ["M11.6"],
+{ id: "M8.G", sec: 2, num: "1", title: "M8.G human gate: build V-10 and V-17 in the window", session: "B", effort: "60–120 min", type: "study", blocks: ["M11.6"],
   body: `<p>No person has used the program on a real screen; every GUI test runs offscreen.</p>
   <ul><li>Start it with <code>.venv\\Scripts\\python.exe -m thermalfea.gui.app</code>.</li>
   <li>Follow <a data-file="docs/gui-walkthrough.md" href="#">docs/gui-walkthrough.md</a> to build V-10 and V-17 from an empty model, and solve both.</li>
@@ -239,7 +227,7 @@ const ITEMS = [
   files: ["docs/gui-walkthrough.md", "docs/verification.md", "guide/getting-started.md", "guide/limitations.md"],
   site: [["Getting started", "getting-started/"], ["Limitations", "limitations/"]] },
 
-{ id: "M11.1", sec: 2, num: "3", title: "M11.1 human task: properties and correlations against a reference text", session: "C", effort: "2–4 h", type: "study", blocks: ["M11.6"],
+{ id: "M11.1", sec: 2, num: "2", title: "M11.1 human task: properties and correlations against a reference text", session: "C", effort: "2–4 h", type: "study", blocks: ["M11.6"],
   body: `<p>Spot-check the property tables, and check every correlation and validity range, against a heat-transfer text, such as
   Incropera's <i>Fundamentals of Heat and Mass Transfer</i>. Record the source and the edition of each. Until then the guide says
   "source not yet recorded", and Plan §6 item 7 is not met. The inclined-plate range is settled (one-sided, θ ≤ 60°).</p>
@@ -256,7 +244,7 @@ const ITEMS = [
   files: ["docs/data-model.md", "docs/theory.md", "src/thermalfea/materials/data/solids.json", "src/thermalfea/materials/data/fluids.json", "src/thermalfea/convection/correlations.py", "src/thermalfea/convection/fluid_props.py"],
   site: [["Correlations page", "correlations/"], ["Materials page", "materials/"]] },
 
-{ id: "VIS", sec: 2, num: "4", title: "Visualisation testing, and the pump example (optional)", session: "D", effort: "30–60 min", type: "study", blocks: [],
+{ id: "VIS", sec: 2, num: "3", title: "Visualisation testing, and the pump example (optional)", session: "D", effort: "30–60 min", type: "study", blocks: [],
   body: `<p>You planned to test the visualisation over more kinds of boundary condition once the build is complete; GIF only, as you chose.
   The pump example's inputs are all marked illustrative and stay so unless you supply real values. They are indexed in
   <a data-file="examples/pump_closure/README.md" href="#">its README</a>.</p>`,
@@ -268,12 +256,11 @@ const ITEMS = [
 ];
 
 const SECTIONS = {
-  1: ["Still to answer", "One value is missing from your answers."],
   2: ["Testing and evaluation only you can do", "Hands-on work; book a long stretch for each."],
 };
 
 const DECIDED = [
-  ["D1 convergence", "(c) round-off floor N·ε (N above)", "M11.17"],
+  ["D1 convergence", "(c) round-off floor N·ε, N = 100", "M11.17"],
   ["D2 fluid rows", "θ = 1 for rows without capacitance; re-solve the fluid on a restart", "M11.31"],
   ["D3 step estimate", "Free DOFs only; predictor restart after a physical breakpoint; first-step limit; fix _jumps", "M11.19"],
   ["D4 network", "A clear error with diagnostics", "M11.32"],
@@ -623,8 +610,8 @@ function drawDepmap() {
   const host = document.getElementById("depmap");
   const cols = [
     { title: "Built", color: "--good", items: ["M11.18", "M11.20", "M11.21", "M11.22", "M11.24", "M11.25"] },
-    { title: "Ready to build", color: "--accent", items: ["M11.12–16", "M11.19", "M11.23", "M11.26–27", "M11.28", "M11.29–30", "M11.31–36", "M10.5", "M11.7–10"] },
-    { title: "Waits on you", color: "--bad", items: [["N for D1", "N"], ["M8.G", "M8.G"], ["M11.1", "M11.1"]] },
+    { title: "Ready to build", color: "--accent", items: ["M11.12–16", "M11.19", "M11.23", "M11.26–27", "M11.28", "M11.29–30", "M11.31–36", "M10.5", "M11.7–10", "M11.17"] },
+    { title: "Waits on you", color: "--bad", items: [["M8.G", "M8.G"], ["M11.1", "M11.1"], ["Optional tests", "VIS"]] },
   ];
   const W = 420, rowH = 24, H = 10 * rowH + 50, cw = 128, gap = 10;
   const s = svg(W, H, "Tasks built, ready to build, and waiting on the owner");
@@ -639,9 +626,6 @@ function drawDepmap() {
       if (id) g.addEventListener("click", () => openItem(id));
     });
   });
-  const ry = H - 22, rx = 6 + 2 * (cw + gap);
-  add(s, "rect", { x: rx, y: ry, width: cw, height: 20, rx: 6, fill: css("--warn-soft"), stroke: css("--warn") });
-  add(s, "text", { x: rx + cw / 2, y: ry + 14, "text-anchor": "middle", style: `fill:${css("--warn")};font-weight:600` }, "M11.17 waits for N");
   host.innerHTML = ""; host.appendChild(s);
 }
 
@@ -653,7 +637,7 @@ function renderDecided() {
 function drawEffort() {
   const host = document.getElementById("effort");
   const keys = Object.keys(SESSIONS), W = 400, rowH = 34, L = 128, R = 14, H = keys.length * rowH + 30, max = 240;
-  const SHORT = { A: "The factor N", B: "In the window", C: "Reference book", D: "Optional" };
+  const SHORT = { B: "In the window", C: "Reference book", D: "Optional" };
   const s = svg(W, H, "Estimated owner time per work session, in minutes");
   const x = (m) => L + (W - L - R) * m / max;
   [0, 60, 120, 180, 240].forEach(m => { add(s, "line", { x1: x(m), x2: x(m), y1: 4, y2: H - 22, stroke: css("--line") }); add(s, "text", { x: x(m), y: H - 8, "text-anchor": "middle" }, m === 0 ? "0" : (m / 60) + " h"); });
