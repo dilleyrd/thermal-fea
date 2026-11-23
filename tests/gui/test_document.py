@@ -175,6 +175,45 @@ def test_classify_change() -> None:
     assert classify_change(base, to_json(other)) == "results"
 
 
+def selection_json(changed: str | None = None, **mesh: object) -> dict:
+    """Model JSON with two curve selections; ``changed`` gets a different definition."""
+    data = to_json(small_model())
+    data["selections"]["wall"] = {"dim": 1, "fingerprints": [[1.0]]}
+    data["selections"]["loose"] = {"dim": 1, "fingerprints": [[2.0]]}
+    if changed is not None:
+        data["selections"][changed]["fingerprints"] = [[9.0]]
+    data["mesh_settings"].update(mesh)
+    return data
+
+
+def test_selection_in_structured_surfaces_is_mesh() -> None:
+    before = selection_json(structured_surfaces=["wall"])
+    assert classify_change(before, selection_json("wall", structured_surfaces=["wall"])) == "mesh"
+
+
+def test_selection_in_refinement_is_mesh() -> None:
+    refinement = {
+        "selection": "wall",
+        "size_min": 0.01,
+        "size_max": 0.1,
+        "dist_min": 0.0,
+        "dist_max": 0.1,
+    }
+    before = selection_json(refinements=[refinement])
+    assert classify_change(before, selection_json("wall", refinements=[refinement])) == "mesh"
+
+
+def test_selection_used_as_mesh_key_is_mesh() -> None:
+    before = selection_json(curve_sizes={"wall": 0.1})
+    assert classify_change(before, selection_json("wall", curve_sizes={"wall": 0.1})) == "mesh"
+
+
+def test_unused_selection_is_results() -> None:
+    before = selection_json(structured_surfaces=["wall"], refinements=[])
+    after = selection_json("loose", structured_surfaces=["wall"], refinements=[])
+    assert classify_change(before, after) == "results"
+
+
 def test_geometry_edit_marks_everything_stale(qtbot, tmp_path: Path) -> None:
     doc = solved_document(qtbot, tmp_path)
     assert flags(doc) == (False, False, False)

@@ -445,7 +445,7 @@ Boundary Conditions, Flow (Streams, Network), Enclosures, Analysis Settings, Sol
   `initial_dt <= 0` when it is set. Tests: each case, in the CLI and in `validate`.
   Extended by Q29 (`REVIEW-2.md` 2.1-13f): also `dt_min`, `time_tol`, `rtol`, `ttol` and
   `max_dT_per_step` must be > 0.
-- [ ] **M11.13 [A] Mesh out of date after selection edits.** `REVIEW.md` finding 5; Q28.3.
+- [x] **M11.13 [A] Mesh out of date after selection edits.** `REVIEW.md` finding 5; Q28.3.
   `gui/document.py: classify_change` also counts the selection names listed in
   `structured_surfaces` and in each refinement's `selection`. Tests: editing either kind
   of selection returns `"mesh"`; editing an unused selection still returns `"results"`.

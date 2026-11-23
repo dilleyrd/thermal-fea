@@ -8,7 +8,8 @@ model JSON (:func:`thermalfea.model.serialize.to_json`) before and after:
 * top-level key ``"geometry"`` (the geometry operations) differs -> geometry, mesh and
   results are stale;
 * otherwise ``"mesh_settings"`` or ``"analysis"`` differs, or a selection whose name is
-  used as a key inside ``mesh_settings`` (curve/point sizes, divisions) was added,
+  used as a key inside ``mesh_settings`` (curve/point sizes, divisions) or stored as a
+  value there (``structured_surfaces``, a refinement's ``selection``) was added,
   removed or redefined -> mesh and results are stale;
 * otherwise any other difference (materials, regions, loads, streams, settings, other
   selections, ...) -> results are stale.
@@ -82,6 +83,21 @@ def _dict_keys(value: Any) -> set[str]:
     return keys
 
 
+def _mesh_selection_names(mesh_settings: Any) -> set[str]:
+    """Selection names stored as values in mesh settings: ``structured_surfaces`` (a list
+    of names) and each refinement's ``selection``."""
+    names: set[str] = set()
+    if not isinstance(mesh_settings, dict):
+        return names
+    surfaces = mesh_settings.get("structured_surfaces")
+    if isinstance(surfaces, list):
+        names |= {s for s in surfaces if isinstance(s, str)}
+    for refinement in mesh_settings.get("refinements") or []:
+        if isinstance(refinement, dict) and isinstance(refinement.get("selection"), str):
+            names.add(refinement["selection"])
+    return names
+
+
 def classify_change(before: dict[str, Any], after: dict[str, Any]) -> str:
     """Return what a change between two model JSONs invalidates.
 
@@ -105,7 +121,12 @@ def classify_change(before: dict[str, Any], after: dict[str, Any]) -> str:
         "analysis"
     ):
         return "mesh"
-    used = _dict_keys(a.get("mesh_settings")) | _dict_keys(b.get("mesh_settings"))
+    used = (
+        _dict_keys(a.get("mesh_settings"))
+        | _dict_keys(b.get("mesh_settings"))
+        | _mesh_selection_names(a.get("mesh_settings"))
+        | _mesh_selection_names(b.get("mesh_settings"))
+    )
     sa, sb = a["selections"], b["selections"]
     if any(sa.get(n) != sb.get(n) for n in used & (set(sa) | set(sb))):
         return "mesh"
