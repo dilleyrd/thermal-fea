@@ -161,7 +161,7 @@ to check the energy balance by hand; and how the answer changes with the mass fl
 <strong>File &gt; Open...</strong> to compare with your own. If you have not used the program before, do
 <a href="../t4-plate/">Tutorial 1</a> first: it explains the selection procedure used below in detail.</p>
 <h2 id="the-problem">The problem<a class="headerlink" href="#the-problem" title="Permanent link">&para;</a></h2>
-<p>The plate is a strip of 6061-T6 aluminium, 200 mm long, 10 mm thick and 50 mm deep. Components
+<p>The plate is a strip of 2024-T6 aluminum, 200 mm long, 10 mm thick and 50 mm deep. Components
 mounted on its top face put 20 kW/m² into it. Over the whole top face that is
 20 000 × 0.2 × 0.05 = <strong>200 W</strong>. Water at 300 K enters a flat channel along the bottom face
 and flows from the left end to the right end. The channel is 50 mm wide (as wide as the plate
@@ -200,7 +200,7 @@ as the plate is deep.</p>
 </tr>
 <tr>
 <td>Material</td>
-<td>Aluminium 6061-T6, from the library: k = 167 W/(m K)</td>
+<td>Aluminum, Alloy 2024-T6, from the library: k = 177 W/(m K)</td>
 </tr>
 <tr>
 <td>Heat flux on the top edge</td>
@@ -240,9 +240,9 @@ as the plate is deep.</p>
 </tr>
 </tbody>
 </table>
-<p>The water properties (density 997 kg/m³, viscosity 8.55e-4 Pa s, conductivity 0.613 W/(m K),
-specific heat 4179 J/(kg K) at 300 K) come from the library table for water, which covers 280 K
-to 360 K. The water here stays between 300 K and 302.4 K, so the program does not warn.</p>
+<p>The water properties (density 996.6 kg/m³, viscosity 8.537e-4 Pa s, conductivity 0.6095 W/(m K),
+specific heat 4181 J/(kg K) at 300 K) come from the library table for water, which covers 280 K
+to 370 K. The water here stays between 300 K and 302.4 K, so the program does not warn.</p>
 <p><strong>Temperature units.</strong> Everything is in kelvin, the default.</p>
 <h2 id="steps">Steps<a class="headerlink" href="#steps" title="Permanent link">&para;</a></h2>
 <h3 id="1-draw-the-geometry">1. Draw the geometry<a class="headerlink" href="#1-draw-the-geometry" title="Permanent link">&para;</a></h3>
@@ -255,8 +255,8 @@ to 360 K. The water here stays between 300 K and 302.4 K, so the program does no
 wheel if you cannot hit the edges later. A middle-button drag pans.</p>
 <h3 id="2-take-the-material-from-the-library">2. Take the material from the library<a class="headerlink" href="#2-take-the-material-from-the-library" title="Permanent link">&para;</a></h3>
 <ol>
-<li>Choose <strong>Tools &gt; Material library...</strong>. On the <strong>Built-in</strong> tab select <strong>Aluminium 6061-T6</strong>
-   and press <strong>Copy into model</strong>. A node "Aluminium 6061-T6" appears under <strong>Materials</strong>.
+<li>Choose <strong>Tools &gt; Material library...</strong>. On the <strong>Built-in</strong> tab select <strong>Aluminum, Alloy 2024-T6</strong>
+   and press <strong>Copy into model</strong>. A node "Aluminum, Alloy 2024-T6" appears under <strong>Materials</strong>.
    Close the window.</li>
 </ol>
 <h3 id="3-assign-it-to-the-plate">3. Assign it to the plate<a class="headerlink" href="#3-assign-it-to-the-plate" title="Permanent link">&para;</a></h3>
@@ -264,7 +264,7 @@ wheel if you cannot hit the edges later. A middle-button drag pans.</p>
 <li>Right-click <strong>Regions</strong> and choose <strong>Add region</strong>. The panel "Region" opens.</li>
 <li>Open the box of the "Selection" field and choose <strong>all</strong> (every surface of the model, here
    the one plate).</li>
-<li>"Material" already reads "Aluminium 6061-T6". In "Thickness" type <code>0.05</code> and press Enter.</li>
+<li>"Material" already reads "Aluminum, Alloy 2024-T6". In "Thickness" type <code>0.05</code> and press Enter.</li>
 </ol>
 <h3 id="4-enter-the-loads">4. Enter the loads<a class="headerlink" href="#4-enter-the-loads" title="Permanent link">&para;</a></h3>
 <p><strong>The heat flux of the components.</strong></p>
@@ -383,12 +383,12 @@ the stream, solved together in one system.</p>
 <td>Stream 1</td>
 <td>in_plane</td>
 <td>0.02</td>
-<td>917.291</td>
+<td>923.245</td>
 <td>laminar</td>
-<td>776.587</td>
-<td>72.8141</td>
+<td>772.433</td>
+<td>72.3679</td>
 <td>300</td>
-<td>302.393</td>
+<td>302.392</td>
 <td>200</td>
 </tr>
 </tbody>
@@ -422,23 +422,23 @@ the stream, solved together in one system.</p>
 </tr>
 <tr>
 <td>Reynolds number</td>
-<td>917 (laminar)</td>
+<td>923 (laminar)</td>
 </tr>
 <tr>
 <td>Mean heat-transfer coefficient</td>
-<td>776.6 W/(m² K)</td>
+<td>772.4 W/(m² K)</td>
 </tr>
 <tr>
 <td>Pressure drop</td>
-<td>72.8 Pa</td>
+<td>72.4 Pa</td>
 </tr>
 <tr>
 <td>Hottest point of the plate</td>
-<td>328.77 K</td>
+<td>328.82 K</td>
 </tr>
 <tr>
 <td>Coolest point of the plate</td>
-<td>326.33 K</td>
+<td>326.49 K</td>
 </tr>
 </tbody>
 </table>
@@ -451,25 +451,25 @@ plate and the water is across the film (step 7 of the hand check below).</p>
 <p>Use the water properties of the library at 300 K, as listed above.</p>
 <ol>
 <li><strong>Hydraulic diameter.</strong> D_h = 4 A / P = 4 × 1e-4 / 0.104 = 3.846 mm.</li>
-<li><strong>Velocity.</strong> V = ṁ / (ρ A) = 0.02 / (997 × 1e-4) = 0.2006 m/s.</li>
-<li><strong>Reynolds number.</strong> Re = ṁ D_h / (A μ) = 0.02 × 3.846e-3 / (1e-4 × 8.55e-4) = <strong>900</strong>.
-   This is below 2300, so the flow is laminar. The program reports 917.3. It takes the
+<li><strong>Velocity.</strong> V = ṁ / (ρ A) = 0.02 / (996.6 × 1e-4) = 0.2007 m/s.</li>
+<li><strong>Reynolds number.</strong> Re = ṁ D_h / (A μ) = 0.02 × 3.846e-3 / (1e-4 × 8.537e-4) = <strong>901</strong>.
+   This is below 2300, so the flow is laminar. The program reports 923.2. It takes the
    properties at the local water temperature, 300 K to 302.4 K, and the viscosity falls as the
-   water warms, so its Reynolds number is 2 % higher.</li>
+   water warms, so its Reynolds number is 2.5 % higher.</li>
 <li><strong>Heat-transfer coefficient.</strong> For laminar flow the Nusselt number is the table value,
-   4.86. h = Nu k / D_h = 4.86 × 0.613 / 3.846e-3 = <strong>774.6 W/(m² K)</strong>. The program's mean is
-   776.6, 0.3 % higher, for the same reason.</li>
+   4.86. h = Nu k / D_h = 4.86 × 0.6095 / 3.846e-3 = <strong>770.2 W/(m² K)</strong>. The program's mean is
+   772.4, 0.3 % higher, for the same reason.</li>
 <li><strong>Heat load.</strong> Q = q L depth = 20 000 × 0.2 × 0.05 = <strong>200 W</strong>.</li>
-<li><strong>Outlet temperature.</strong> ṁ c_p ΔT = Q gives ΔT = 200 / (0.02 × 4179) = <strong>2.393 K</strong>, so
-   T_out = 302.393 K. The program gives 302.393 K: it takes c_p at the inlet temperature,
+<li><strong>Outlet temperature.</strong> ṁ c_p ΔT = Q gives ΔT = 200 / (0.02 × 4180.64) = <strong>2.392 K</strong>, so
+   T_out = 302.392 K. The program gives 302.392 K: it takes c_p at the inlet temperature,
    exactly as in this calculation.</li>
 <li><strong>Wall above the water.</strong> The bottom edge carries the same flux density as the top edge,
-   so the wall is q / h above the water: 20 000 / 774.6 = <strong>25.8 K</strong>. In the model, the mean
-   wall temperature at mid-length is 25.75 K above the water temperature there.</li>
+   so the wall is q / h above the water: 20 000 / 770.2 = <strong>26.0 K</strong>. In the model, the mean
+   wall temperature at mid-length is 25.89 K above the water temperature there.</li>
 <li><strong>Pressure drop.</strong> Δp = f (L / D_h) ρ V² / 2. For laminar flow f is close to 64 / Re
-   (Theory §9.2 uses it as the starting value of its flow iteration), here 64 / 900 = 0.0711.
-   With L / D_h = 0.2 / 3.846e-3 = 52.0 and ρ V² / 2 = 20.06 Pa, Δp ≈ 74.2 Pa. The program
-   gives 72.8 Pa, using the Reynolds number above and its own friction formula (Churchill, in
+   (Theory §9.2 uses it as the starting value of its flow iteration), here 64 / 901 = 0.0710.
+   With L / D_h = 0.2 / 3.846e-3 = 52.0 and ρ V² / 2 = 20.07 Pa, Δp ≈ 74.1 Pa. The program
+   gives 72.4 Pa, using the Reynolds number above and its own friction formula (Churchill, in
    Theory §8.1). The two differ by 2 %, which is the difference in the Reynolds number.</li>
 </ol>
 <h3 id="energy-balance">Energy balance<a class="headerlink" href="#energy-balance" title="Permanent link">&para;</a></h3>
@@ -502,30 +502,30 @@ the end of the log in the "Messages" dock, under "relative imbalance".</p>
 <tbody>
 <tr>
 <td>0.005</td>
-<td>244</td>
+<td>249</td>
 <td>laminar</td>
-<td>782.7</td>
-<td>17.1</td>
+<td>779.2</td>
+<td>16.8</td>
 <td>309.57</td>
-<td>334.08</td>
+<td>334.06</td>
 </tr>
 <tr>
 <td>0.02</td>
-<td>917</td>
+<td>923</td>
 <td>laminar</td>
-<td>776.6</td>
-<td>72.8</td>
+<td>772.4</td>
+<td>72.4</td>
 <td>302.39</td>
-<td>328.77</td>
+<td>328.82</td>
 </tr>
 <tr>
 <td>0.1</td>
-<td>4516</td>
+<td>4527</td>
 <td>turbulent</td>
-<td>5407</td>
+<td>5398</td>
 <td>1019</td>
 <td>300.48</td>
-<td>305.32</td>
+<td>305.26</td>
 </tr>
 </tbody>
 </table>
@@ -536,12 +536,12 @@ What changes is how warm the water gets and how hot the plate runs.</p>
   cross-section, so h barely changes (it changes a little because the water properties
   change). A faster flow lowers the outlet temperature (309.57 K to 302.39 K) and so the plate
   temperature, but only through the water temperature: the difference between the wall and
-  the water at mid-length stays at about 26 K (25.5 K and 25.75 K).</li>
-<li>At 0.1 kg/s the Reynolds number, 4516, is above 4000 and the program switches to the
+  the water at mid-length stays at about 26 K (25.6 K and 25.9 K).</li>
+<li>At 0.1 kg/s the Reynolds number, 4527, is above 4000 and the program switches to the
   turbulent correlation (Gnielinski, Theory §8.1). The coefficient rises by a factor of seven
   and the difference between the wall and the water at mid-length falls from about 26 K to
   3.7 K. The plate runs at 305.3 K
-  instead of 328.8 K. The price is a pressure drop 14 times as large: 1019 Pa against 72.8 Pa.</li>
+  instead of 328.8 K. The price is a pressure drop 14 times as large: 1019 Pa against 72.4 Pa.</li>
 <li>Between Reynolds numbers of 2300 and 4000 the program interpolates between the laminar and the
   turbulent values, so h rises smoothly through the transition.</li>
 </ul>

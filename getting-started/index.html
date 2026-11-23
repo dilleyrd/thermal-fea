@@ -423,7 +423,7 @@ geo.rectangle(0.0, 0.0, 0.2, 0.1)
 built = api.build(model)
 api.select_curves(model, built, name=&quot;bottom&quot;, where=lambda c: abs(c.center[1]) &lt; 1e-9)
 api.select_curves(model, built, name=&quot;top&quot;, where=lambda c: abs(c.center[1] - 0.1) &lt; 1e-9)
-api.assign_region(model, &quot;all&quot;, material=&quot;Aluminium 6061-T6&quot;)
+api.assign_region(model, &quot;all&quot;, material=&quot;Aluminum, Alloy 2024-T6&quot;)
 model.bcs.append(FixedTemperature(&quot;base&quot;, &quot;bottom&quot;, T=373.15))
 model.bcs.append(Convection(&quot;cooling&quot;, &quot;top&quot;, h=25.0, T_inf=293.15))
 model.mesh_settings.global_size = 0.01

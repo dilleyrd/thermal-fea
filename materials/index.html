@@ -79,6 +79,34 @@
     </li>
     <li class="toctree-l3"><a class="reference internal" href="#water">Water</a>
     </li>
+    <li class="toctree-l3"><a class="reference internal" href="#ammonia">Ammonia</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#carbon-dioxide">Carbon Dioxide</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#carbon-monoxide">Carbon Monoxide</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#helium">Helium</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#hydrogen">Hydrogen</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#nitrogen">Nitrogen</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#oxygen">Oxygen</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#water-vapor-steam">Water Vapor (Steam)</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#engine-oil-unused">Engine Oil (Unused)</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#ethylene-glycol">Ethylene Glycol</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#glycerin">Glycerin</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#refrigerant-134a">Refrigerant-134a</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#refrigerant-22">Refrigerant-22</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#mercury">Mercury</a>
+    </li>
         </ul>
     </li>
     </ul>
@@ -125,9 +153,9 @@
 Do not edit it here: change the source and run the script again.</p>
 </div>
 <p>The built-in library holds solids (conductivity, density and specific heat) and fluids (temperature tables of the properties the convection correlations need). Open it in the program with Tools &gt; Material library.... You can add your own solids and fluids; they are stored in <code>%APPDATA%/ThermalFEA/materials.json</code>.</p>
-<p>The project documents say the values are "from standard heat-transfer textbook tables". The specific reference text and edition: source not yet recorded; to be confirmed in the release check, task M11.1. Check a value against your own source before relying on it.</p>
+<p>Every value comes from Bergman, Lavine, Incropera and DeWitt, <em>Fundamentals of Heat and Mass Transfer</em>, 7th ed., Wiley, 2011, Appendix A, or from the NIST Chemistry WebBook (water). The source of each entry is listed with it.</p>
 <h2 id="solids">Solids<a class="headerlink" href="#solids" title="Permanent link">&para;</a></h2>
-<p>Every built-in solid is isotropic and has constant properties, quoted near 300 K. A material you create yourself may instead use a table against temperature, or an orthotropic conductivity.</p>
+<p>Every built-in solid has constant properties, quoted at 300 K. Most are isotropic; four are orthotropic and list a second conductivity k2 across the material axis. A material you create yourself may instead use a table against temperature.</p>
 <table>
 <thead>
 <tr>
@@ -135,68 +163,946 @@ Do not edit it here: change the source and run the script again.</p>
 <th>k [W/(m K)]</th>
 <th>ρ [kg/m³]</th>
 <th>c_p [J/(kg K)]</th>
+<th>Source</th>
+<th>Note</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td>Aluminium 6061-T6</td>
-<td>167 (constant)</td>
-<td>2700 (constant)</td>
-<td>896 (constant)</td>
+<td>Aluminum, Pure</td>
+<td>237 (constant)</td>
+<td>2702 (constant)</td>
+<td>903 (constant)</td>
+<td>Incropera et al., Fundamentals of Heat and Mass Transfer, 7th ed., 2011, Table A.1, p. 983, 300 K</td>
+<td></td>
+</tr>
+<tr>
+<td>Aluminum, Alloy 2024-T6</td>
+<td>177 (constant)</td>
+<td>2770 (constant)</td>
+<td>875 (constant)</td>
+<td>Incropera et al., Fundamentals of Heat and Mass Transfer, 7th ed., 2011, Table A.1, p. 983, 300 K</td>
+<td>4.5% Cu, 1.5% Mg, 0.6% Mn</td>
+</tr>
+<tr>
+<td>Aluminum, Alloy 195, Cast</td>
+<td>168 (constant)</td>
+<td>2790 (constant)</td>
+<td>883 (constant)</td>
+<td>Incropera et al., Fundamentals of Heat and Mass Transfer, 7th ed., 2011, Table A.1, p. 983, 300 K</td>
+<td>4.5% Cu</td>
+</tr>
+<tr>
+<td>Beryllium</td>
+<td>200 (constant)</td>
+<td>1850 (constant)</td>
+<td>1825 (constant)</td>
+<td>Incropera et al., Fundamentals of Heat and Mass Transfer, 7th ed., 2011, Table A.1, p. 983, 300 K</td>
+<td></td>
+</tr>
+<tr>
+<td>Bismuth</td>
+<td>7.86 (constant)</td>
+<td>9780 (constant)</td>
+<td>122 (constant)</td>
+<td>Incropera et al., Fundamentals of Heat and Mass Transfer, 7th ed., 2011, Table A.1, p. 983, 300 K</td>
+<td></td>
+</tr>
+<tr>
+<td>Boron, Table A.1</td>
+<td>27 (constant)</td>
+<td>2500 (constant)</td>
+<td>1107 (constant)</td>
+<td>Incropera et al., Fundamentals of Heat and Mass Transfer, 7th ed., 2011, Table A.1, p. 983, 300 K</td>
+<td></td>
+</tr>
+<tr>
+<td>Cadmium</td>
+<td>96.8 (constant)</td>
+<td>8650 (constant)</td>
+<td>231 (constant)</td>
+<td>Incropera et al., Fundamentals of Heat and Mass Transfer, 7th ed., 2011, Table A.1, p. 983, 300 K</td>
+<td></td>
+</tr>
+<tr>
+<td>Chromium</td>
+<td>93.7 (constant)</td>
+<td>7160 (constant)</td>
+<td>449 (constant)</td>
+<td>Incropera et al., Fundamentals of Heat and Mass Transfer, 7th ed., 2011, Table A.1, p. 983, 300 K</td>
+<td></td>
+</tr>
+<tr>
+<td>Cobalt</td>
+<td>99.2 (constant)</td>
+<td>8862 (constant)</td>
+<td>421 (constant)</td>
+<td>Incropera et al., Fundamentals of Heat and Mass Transfer, 7th ed., 2011, Table A.1, p. 983, 300 K</td>
+<td></td>
 </tr>
 <tr>
 <td>Copper (pure)</td>
 <td>401 (constant)</td>
 <td>8933 (constant)</td>
 <td>385 (constant)</td>
+<td>Incropera et al., Fundamentals of Heat and Mass Transfer, 7th ed., 2011, Table A.1, p. 983, 300 K</td>
+<td></td>
+</tr>
+<tr>
+<td>Copper, Commercial bronze</td>
+<td>52 (constant)</td>
+<td>8800 (constant)</td>
+<td>420 (constant)</td>
+<td>Incropera et al., Fundamentals of Heat and Mass Transfer, 7th ed., 2011, Table A.1, p. 983, 300 K</td>
+<td>90% Cu, 10% Al</td>
+</tr>
+<tr>
+<td>Copper, Phosphor gear bronze</td>
+<td>54 (constant)</td>
+<td>8780 (constant)</td>
+<td>355 (constant)</td>
+<td>Incropera et al., Fundamentals of Heat and Mass Transfer, 7th ed., 2011, Table A.1, p. 983, 300 K</td>
+<td>89% Cu, 11% Sn</td>
+</tr>
+<tr>
+<td>Copper, Cartridge brass</td>
+<td>110 (constant)</td>
+<td>8530 (constant)</td>
+<td>380 (constant)</td>
+<td>Incropera et al., Fundamentals of Heat and Mass Transfer, 7th ed., 2011, Table A.1, p. 983, 300 K</td>
+<td>70% Cu, 30% Zn</td>
+</tr>
+<tr>
+<td>Copper, Constantan</td>
+<td>23 (constant)</td>
+<td>8920 (constant)</td>
+<td>384 (constant)</td>
+<td>Incropera et al., Fundamentals of Heat and Mass Transfer, 7th ed., 2011, Table A.1, p. 983, 300 K</td>
+<td>55% Cu, 45% Ni</td>
+</tr>
+<tr>
+<td>Germanium</td>
+<td>59.9 (constant)</td>
+<td>5360 (constant)</td>
+<td>322 (constant)</td>
+<td>Incropera et al., Fundamentals of Heat and Mass Transfer, 7th ed., 2011, Table A.1, p. 983, 300 K</td>
+<td></td>
+</tr>
+<tr>
+<td>Gold</td>
+<td>317 (constant)</td>
+<td>19300 (constant)</td>
+<td>129 (constant)</td>
+<td>Incropera et al., Fundamentals of Heat and Mass Transfer, 7th ed., 2011, Table A.1, p. 984, 300 K</td>
+<td></td>
+</tr>
+<tr>
+<td>Iridium</td>
+<td>147 (constant)</td>
+<td>22500 (constant)</td>
+<td>130 (constant)</td>
+<td>Incropera et al., Fundamentals of Heat and Mass Transfer, 7th ed., 2011, Table A.1, p. 984, 300 K</td>
+<td></td>
+</tr>
+<tr>
+<td>Iron, Pure</td>
+<td>80.2 (constant)</td>
+<td>7870 (constant)</td>
+<td>447 (constant)</td>
+<td>Incropera et al., Fundamentals of Heat and Mass Transfer, 7th ed., 2011, Table A.1, p. 984, 300 K</td>
+<td></td>
+</tr>
+<tr>
+<td>Iron, Armco</td>
+<td>72.7 (constant)</td>
+<td>7870 (constant)</td>
+<td>447 (constant)</td>
+<td>Incropera et al., Fundamentals of Heat and Mass Transfer, 7th ed., 2011, Table A.1, p. 984, 300 K</td>
+<td>99.75% pure</td>
+</tr>
+<tr>
+<td>Carbon steels, Plain carbon</td>
+<td>60.5 (constant)</td>
+<td>7854 (constant)</td>
+<td>434 (constant)</td>
+<td>Incropera et al., Fundamentals of Heat and Mass Transfer, 7th ed., 2011, Table A.1, p. 984, 300 K</td>
+<td>Mn ≤ 1%, Si ≤ 0.1%</td>
 </tr>
 <tr>
 <td>Carbon steel AISI 1010</td>
 <td>63.9 (constant)</td>
 <td>7832 (constant)</td>
 <td>434 (constant)</td>
+<td>Incropera et al., Fundamentals of Heat and Mass Transfer, 7th ed., 2011, Table A.1, p. 984, 300 K</td>
+<td></td>
+</tr>
+<tr>
+<td>Carbon steels, Carbon–silicon</td>
+<td>51.9 (constant)</td>
+<td>7817 (constant)</td>
+<td>446 (constant)</td>
+<td>Incropera et al., Fundamentals of Heat and Mass Transfer, 7th ed., 2011, Table A.1, p. 984, 300 K</td>
+<td>Mn ≤ 1%, 0.1% &lt; Si ≤ 0.6%</td>
+</tr>
+<tr>
+<td>Carbon steels, Carbon–manganese–silicon</td>
+<td>41 (constant)</td>
+<td>8131 (constant)</td>
+<td>434 (constant)</td>
+<td>Incropera et al., Fundamentals of Heat and Mass Transfer, 7th ed., 2011, Table A.1, p. 984, 300 K</td>
+<td>1% &lt; Mn ≤ 1.65%, 0.1% &lt; Si ≤ 0.6%</td>
+</tr>
+<tr>
+<td>Chromium (low) steels, 1/2Cr–1/4Mo–Si</td>
+<td>37.7 (constant)</td>
+<td>7822 (constant)</td>
+<td>444 (constant)</td>
+<td>Incropera et al., Fundamentals of Heat and Mass Transfer, 7th ed., 2011, Table A.1, p. 984, 300 K</td>
+<td>0.18% C, 0.65% Cr, 0.23% Mo, 0.6% Si</td>
+</tr>
+<tr>
+<td>Chromium (low) steels, 1 Cr–1/2Mo</td>
+<td>42.3 (constant)</td>
+<td>7858 (constant)</td>
+<td>442 (constant)</td>
+<td>Incropera et al., Fundamentals of Heat and Mass Transfer, 7th ed., 2011, Table A.1, p. 984, 300 K</td>
+<td>0.16% C, 1% Cr, 0.54% Mo, 0.39% Si</td>
+</tr>
+<tr>
+<td>Chromium (low) steels, 1 Cr–V</td>
+<td>48.9 (constant)</td>
+<td>7836 (constant)</td>
+<td>443 (constant)</td>
+<td>Incropera et al., Fundamentals of Heat and Mass Transfer, 7th ed., 2011, Table A.1, p. 984, 300 K</td>
+<td>0.2% C, 1.02% Cr, 0.15% V</td>
+</tr>
+<tr>
+<td>Stainless steels, AISI 302</td>
+<td>15.1 (constant)</td>
+<td>8055 (constant)</td>
+<td>480 (constant)</td>
+<td>Incropera et al., Fundamentals of Heat and Mass Transfer, 7th ed., 2011, Table A.1, p. 985, 300 K</td>
+<td></td>
 </tr>
 <tr>
 <td>Stainless steel 304</td>
 <td>14.9 (constant)</td>
 <td>7900 (constant)</td>
 <td>477 (constant)</td>
+<td>Incropera et al., Fundamentals of Heat and Mass Transfer, 7th ed., 2011, Table A.1, p. 985, 300 K</td>
+<td></td>
 </tr>
 <tr>
-<td>Titanium Ti-6Al-4V</td>
-<td>6.7 (constant)</td>
-<td>4430 (constant)</td>
-<td>526 (constant)</td>
+<td>Stainless steels, AISI 316</td>
+<td>13.4 (constant)</td>
+<td>8238 (constant)</td>
+<td>468 (constant)</td>
+<td>Incropera et al., Fundamentals of Heat and Mass Transfer, 7th ed., 2011, Table A.1, p. 985, 300 K</td>
+<td></td>
+</tr>
+<tr>
+<td>Stainless steels, AISI 347</td>
+<td>14.2 (constant)</td>
+<td>7978 (constant)</td>
+<td>480 (constant)</td>
+<td>Incropera et al., Fundamentals of Heat and Mass Transfer, 7th ed., 2011, Table A.1, p. 985, 300 K</td>
+<td></td>
+</tr>
+<tr>
+<td>Lead</td>
+<td>35.3 (constant)</td>
+<td>11340 (constant)</td>
+<td>129 (constant)</td>
+<td>Incropera et al., Fundamentals of Heat and Mass Transfer, 7th ed., 2011, Table A.1, p. 985, 300 K</td>
+<td></td>
+</tr>
+<tr>
+<td>Magnesium</td>
+<td>156 (constant)</td>
+<td>1740 (constant)</td>
+<td>1024 (constant)</td>
+<td>Incropera et al., Fundamentals of Heat and Mass Transfer, 7th ed., 2011, Table A.1, p. 985, 300 K</td>
+<td></td>
+</tr>
+<tr>
+<td>Molybdenum</td>
+<td>138 (constant)</td>
+<td>10240 (constant)</td>
+<td>251 (constant)</td>
+<td>Incropera et al., Fundamentals of Heat and Mass Transfer, 7th ed., 2011, Table A.1, p. 985, 300 K</td>
+<td></td>
+</tr>
+<tr>
+<td>Nickel, Pure</td>
+<td>90.7 (constant)</td>
+<td>8900 (constant)</td>
+<td>444 (constant)</td>
+<td>Incropera et al., Fundamentals of Heat and Mass Transfer, 7th ed., 2011, Table A.1, p. 985, 300 K</td>
+<td></td>
+</tr>
+<tr>
+<td>Nickel, Nichrome</td>
+<td>12 (constant)</td>
+<td>8400 (constant)</td>
+<td>420 (constant)</td>
+<td>Incropera et al., Fundamentals of Heat and Mass Transfer, 7th ed., 2011, Table A.1, p. 985, 300 K</td>
+<td>80% Ni, 20% Cr</td>
+</tr>
+<tr>
+<td>Nickel, Inconel X-750</td>
+<td>11.7 (constant)</td>
+<td>8510 (constant)</td>
+<td>439 (constant)</td>
+<td>Incropera et al., Fundamentals of Heat and Mass Transfer, 7th ed., 2011, Table A.1, p. 985, 300 K</td>
+<td>73% Ni, 15% Cr, 6.7% Fe</td>
+</tr>
+<tr>
+<td>Niobium</td>
+<td>53.7 (constant)</td>
+<td>8570 (constant)</td>
+<td>265 (constant)</td>
+<td>Incropera et al., Fundamentals of Heat and Mass Transfer, 7th ed., 2011, Table A.1, p. 985, 300 K</td>
+<td></td>
+</tr>
+<tr>
+<td>Palladium</td>
+<td>71.8 (constant)</td>
+<td>12020 (constant)</td>
+<td>244 (constant)</td>
+<td>Incropera et al., Fundamentals of Heat and Mass Transfer, 7th ed., 2011, Table A.1, p. 985, 300 K</td>
+<td></td>
+</tr>
+<tr>
+<td>Platinum, Pure</td>
+<td>71.6 (constant)</td>
+<td>21450 (constant)</td>
+<td>133 (constant)</td>
+<td>Incropera et al., Fundamentals of Heat and Mass Transfer, 7th ed., 2011, Table A.1, p. 985, 300 K</td>
+<td></td>
+</tr>
+<tr>
+<td>Platinum, Alloy 60Pt–40Rh</td>
+<td>47 (constant)</td>
+<td>16630 (constant)</td>
+<td>162 (constant)</td>
+<td>Incropera et al., Fundamentals of Heat and Mass Transfer, 7th ed., 2011, Table A.1, p. 985, 300 K</td>
+<td>60% Pt, 40% Rh</td>
+</tr>
+<tr>
+<td>Rhenium</td>
+<td>47.9 (constant)</td>
+<td>21100 (constant)</td>
+<td>136 (constant)</td>
+<td>Incropera et al., Fundamentals of Heat and Mass Transfer, 7th ed., 2011, Table A.1, p. 985, 300 K</td>
+<td></td>
+</tr>
+<tr>
+<td>Rhodium</td>
+<td>150 (constant)</td>
+<td>12450 (constant)</td>
+<td>243 (constant)</td>
+<td>Incropera et al., Fundamentals of Heat and Mass Transfer, 7th ed., 2011, Table A.1, p. 985, 300 K</td>
+<td></td>
 </tr>
 <tr>
 <td>Silicon</td>
 <td>148 (constant)</td>
 <td>2330 (constant)</td>
 <td>712 (constant)</td>
+<td>Incropera et al., Fundamentals of Heat and Mass Transfer, 7th ed., 2011, Table A.1, p. 985, 300 K</td>
+<td></td>
+</tr>
+<tr>
+<td>Silver</td>
+<td>429 (constant)</td>
+<td>10500 (constant)</td>
+<td>235 (constant)</td>
+<td>Incropera et al., Fundamentals of Heat and Mass Transfer, 7th ed., 2011, Table A.1, p. 985, 300 K</td>
+<td></td>
+</tr>
+<tr>
+<td>Tantalum</td>
+<td>57.5 (constant)</td>
+<td>16600 (constant)</td>
+<td>140 (constant)</td>
+<td>Incropera et al., Fundamentals of Heat and Mass Transfer, 7th ed., 2011, Table A.1, p. 985, 300 K</td>
+<td></td>
+</tr>
+<tr>
+<td>Thorium</td>
+<td>54 (constant)</td>
+<td>11700 (constant)</td>
+<td>118 (constant)</td>
+<td>Incropera et al., Fundamentals of Heat and Mass Transfer, 7th ed., 2011, Table A.1, p. 985, 300 K</td>
+<td></td>
+</tr>
+<tr>
+<td>Tin</td>
+<td>66.6 (constant)</td>
+<td>7310 (constant)</td>
+<td>227 (constant)</td>
+<td>Incropera et al., Fundamentals of Heat and Mass Transfer, 7th ed., 2011, Table A.1, p. 985, 300 K</td>
+<td></td>
+</tr>
+<tr>
+<td>Titanium</td>
+<td>21.9 (constant)</td>
+<td>4500 (constant)</td>
+<td>522 (constant)</td>
+<td>Incropera et al., Fundamentals of Heat and Mass Transfer, 7th ed., 2011, Table A.1, p. 986, 300 K</td>
+<td></td>
+</tr>
+<tr>
+<td>Tungsten</td>
+<td>174 (constant)</td>
+<td>19300 (constant)</td>
+<td>132 (constant)</td>
+<td>Incropera et al., Fundamentals of Heat and Mass Transfer, 7th ed., 2011, Table A.1, p. 986, 300 K</td>
+<td></td>
+</tr>
+<tr>
+<td>Uranium</td>
+<td>27.6 (constant)</td>
+<td>19070 (constant)</td>
+<td>116 (constant)</td>
+<td>Incropera et al., Fundamentals of Heat and Mass Transfer, 7th ed., 2011, Table A.1, p. 986, 300 K</td>
+<td></td>
+</tr>
+<tr>
+<td>Vanadium</td>
+<td>30.7 (constant)</td>
+<td>6100 (constant)</td>
+<td>489 (constant)</td>
+<td>Incropera et al., Fundamentals of Heat and Mass Transfer, 7th ed., 2011, Table A.1, p. 986, 300 K</td>
+<td></td>
+</tr>
+<tr>
+<td>Zinc</td>
+<td>116 (constant)</td>
+<td>7140 (constant)</td>
+<td>389 (constant)</td>
+<td>Incropera et al., Fundamentals of Heat and Mass Transfer, 7th ed., 2011, Table A.1, p. 986, 300 K</td>
+<td></td>
+</tr>
+<tr>
+<td>Zirconium</td>
+<td>22.7 (constant)</td>
+<td>6570 (constant)</td>
+<td>278 (constant)</td>
+<td>Incropera et al., Fundamentals of Heat and Mass Transfer, 7th ed., 2011, Table A.1, p. 986, 300 K</td>
+<td></td>
+</tr>
+<tr>
+<td>Aluminum oxide, sapphire</td>
+<td>46 (constant)</td>
+<td>3970 (constant)</td>
+<td>765 (constant)</td>
+<td>Incropera et al., Fundamentals of Heat and Mass Transfer, 7th ed., 2011, Table A.2, p. 987, 300 K</td>
+<td></td>
 </tr>
 <tr>
 <td>Alumina (polycrystalline)</td>
 <td>36 (constant)</td>
 <td>3970 (constant)</td>
 <td>765 (constant)</td>
+<td>Incropera et al., Fundamentals of Heat and Mass Transfer, 7th ed., 2011, Table A.2, p. 987, 300 K</td>
+<td></td>
 </tr>
 <tr>
-<td>Soda-lime glass</td>
-<td>1.4 (constant)</td>
+<td>Beryllium oxide</td>
+<td>272 (constant)</td>
+<td>3000 (constant)</td>
+<td>1030 (constant)</td>
+<td>Incropera et al., Fundamentals of Heat and Mass Transfer, 7th ed., 2011, Table A.2, p. 987, 300 K</td>
+<td></td>
+</tr>
+<tr>
+<td>Boron, Table A.2</td>
+<td>27.6 (constant)</td>
 <td>2500 (constant)</td>
-<td>750 (constant)</td>
+<td>1105 (constant)</td>
+<td>Incropera et al., Fundamentals of Heat and Mass Transfer, 7th ed., 2011, Table A.2, p. 987, 300 K</td>
+<td></td>
+</tr>
+<tr>
+<td>Carbon, Diamond, type IIa insulator</td>
+<td>2300 (constant)</td>
+<td>3500 (constant)</td>
+<td>509 (constant)</td>
+<td>Incropera et al., Fundamentals of Heat and Mass Transfer, 7th ed., 2011, Table A.2, p. 987, 300 K</td>
+<td></td>
+</tr>
+<tr>
+<td>Pyroceram, Corning 9606</td>
+<td>3.98 (constant)</td>
+<td>2600 (constant)</td>
+<td>808 (constant)</td>
+<td>Incropera et al., Fundamentals of Heat and Mass Transfer, 7th ed., 2011, Table A.2, p. 987, 300 K</td>
+<td></td>
+</tr>
+<tr>
+<td>Silicon carbide</td>
+<td>490 (constant)</td>
+<td>3160 (constant)</td>
+<td>675 (constant)</td>
+<td>Incropera et al., Fundamentals of Heat and Mass Transfer, 7th ed., 2011, Table A.2, p. 988, 300 K</td>
+<td></td>
+</tr>
+<tr>
+<td>Silicon dioxide, polycrystalline (fused silica)</td>
+<td>1.38 (constant)</td>
+<td>2220 (constant)</td>
+<td>745 (constant)</td>
+<td>Incropera et al., Fundamentals of Heat and Mass Transfer, 7th ed., 2011, Table A.2, p. 988, 300 K</td>
+<td></td>
+</tr>
+<tr>
+<td>Silicon nitride</td>
+<td>16 (constant)</td>
+<td>2400 (constant)</td>
+<td>691 (constant)</td>
+<td>Incropera et al., Fundamentals of Heat and Mass Transfer, 7th ed., 2011, Table A.2, p. 988, 300 K</td>
+<td></td>
+</tr>
+<tr>
+<td>Sulfur</td>
+<td>0.206 (constant)</td>
+<td>2070 (constant)</td>
+<td>708 (constant)</td>
+<td>Incropera et al., Fundamentals of Heat and Mass Transfer, 7th ed., 2011, Table A.2, p. 988, 300 K</td>
+<td></td>
+</tr>
+<tr>
+<td>Thorium dioxide</td>
+<td>13 (constant)</td>
+<td>9110 (constant)</td>
+<td>235 (constant)</td>
+<td>Incropera et al., Fundamentals of Heat and Mass Transfer, 7th ed., 2011, Table A.2, p. 988, 300 K</td>
+<td></td>
+</tr>
+<tr>
+<td>Titanium dioxide, polycrystalline</td>
+<td>8.4 (constant)</td>
+<td>4157 (constant)</td>
+<td>710 (constant)</td>
+<td>Incropera et al., Fundamentals of Heat and Mass Transfer, 7th ed., 2011, Table A.2, p. 988, 300 K</td>
+<td></td>
+</tr>
+<tr>
+<td>Plywood</td>
+<td>0.12 (constant)</td>
+<td>545 (constant)</td>
+<td>1215 (constant)</td>
+<td>Incropera et al., Fundamentals of Heat and Mass Transfer, 7th ed., 2011, Table A.3, p. 989, 300 K</td>
+<td></td>
+</tr>
+<tr>
+<td>Sheathing, regular density</td>
+<td>0.055 (constant)</td>
+<td>290 (constant)</td>
+<td>1300 (constant)</td>
+<td>Incropera et al., Fundamentals of Heat and Mass Transfer, 7th ed., 2011, Table A.3, p. 989, 300 K</td>
+<td></td>
+</tr>
+<tr>
+<td>Acoustic tile</td>
+<td>0.058 (constant)</td>
+<td>290 (constant)</td>
+<td>1340 (constant)</td>
+<td>Incropera et al., Fundamentals of Heat and Mass Transfer, 7th ed., 2011, Table A.3, p. 989, 300 K</td>
+<td></td>
+</tr>
+<tr>
+<td>Hardboard, siding</td>
+<td>0.094 (constant)</td>
+<td>640 (constant)</td>
+<td>1170 (constant)</td>
+<td>Incropera et al., Fundamentals of Heat and Mass Transfer, 7th ed., 2011, Table A.3, p. 989, 300 K</td>
+<td></td>
+</tr>
+<tr>
+<td>Hardboard, high density</td>
+<td>0.15 (constant)</td>
+<td>1010 (constant)</td>
+<td>1380 (constant)</td>
+<td>Incropera et al., Fundamentals of Heat and Mass Transfer, 7th ed., 2011, Table A.3, p. 989, 300 K</td>
+<td></td>
+</tr>
+<tr>
+<td>Particle board, low density</td>
+<td>0.078 (constant)</td>
+<td>590 (constant)</td>
+<td>1300 (constant)</td>
+<td>Incropera et al., Fundamentals of Heat and Mass Transfer, 7th ed., 2011, Table A.3, p. 989, 300 K</td>
+<td></td>
+</tr>
+<tr>
+<td>Particle board, high density</td>
+<td>0.17 (constant)</td>
+<td>1000 (constant)</td>
+<td>1300 (constant)</td>
+<td>Incropera et al., Fundamentals of Heat and Mass Transfer, 7th ed., 2011, Table A.3, p. 989, 300 K</td>
+<td></td>
+</tr>
+<tr>
+<td>Woods, Hardwoods (oak, maple)</td>
+<td>0.16 (constant)</td>
+<td>720 (constant)</td>
+<td>1255 (constant)</td>
+<td>Incropera et al., Fundamentals of Heat and Mass Transfer, 7th ed., 2011, Table A.3, p. 989, 300 K</td>
+<td></td>
+</tr>
+<tr>
+<td>Woods, Softwoods (fir, pine)</td>
+<td>0.12 (constant)</td>
+<td>510 (constant)</td>
+<td>1380 (constant)</td>
+<td>Incropera et al., Fundamentals of Heat and Mass Transfer, 7th ed., 2011, Table A.3, p. 989, 300 K</td>
+<td></td>
+</tr>
+<tr>
+<td>Cement mortar</td>
+<td>0.72 (constant)</td>
+<td>1860 (constant)</td>
+<td>780 (constant)</td>
+<td>Incropera et al., Fundamentals of Heat and Mass Transfer, 7th ed., 2011, Table A.3, p. 989, 300 K</td>
+<td></td>
+</tr>
+<tr>
+<td>Brick, common</td>
+<td>0.72 (constant)</td>
+<td>1920 (constant)</td>
+<td>835 (constant)</td>
+<td>Incropera et al., Fundamentals of Heat and Mass Transfer, 7th ed., 2011, Table A.3, p. 989, 300 K</td>
+<td></td>
+</tr>
+<tr>
+<td>Gypsum plaster, sand aggregate</td>
+<td>0.22 (constant)</td>
+<td>1680 (constant)</td>
+<td>1085 (constant)</td>
+<td>Incropera et al., Fundamentals of Heat and Mass Transfer, 7th ed., 2011, Table A.3, p. 989, 300 K</td>
+<td></td>
+</tr>
+<tr>
+<td>Glass fiber, coated; duct liner</td>
+<td>0.038 (constant)</td>
+<td>32 (constant)</td>
+<td>835 (constant)</td>
+<td>Incropera et al., Fundamentals of Heat and Mass Transfer, 7th ed., 2011, Table A.3, p. 990, 300 K</td>
+<td></td>
+</tr>
+<tr>
+<td>Cellular glass</td>
+<td>0.058 (constant)</td>
+<td>145 (constant)</td>
+<td>1000 (constant)</td>
+<td>Incropera et al., Fundamentals of Heat and Mass Transfer, 7th ed., 2011, Table A.3, p. 990, 300 K</td>
+<td></td>
+</tr>
+<tr>
+<td>Glass fiber, organic bonded</td>
+<td>0.036 (constant)</td>
+<td>105 (constant)</td>
+<td>795 (constant)</td>
+<td>Incropera et al., Fundamentals of Heat and Mass Transfer, 7th ed., 2011, Table A.3, p. 990, 300 K</td>
+<td></td>
+</tr>
+<tr>
+<td>Polystyrene, expanded, Extruded (R-12)</td>
+<td>0.027 (constant)</td>
+<td>55 (constant)</td>
+<td>1210 (constant)</td>
+<td>Incropera et al., Fundamentals of Heat and Mass Transfer, 7th ed., 2011, Table A.3, p. 990, 300 K</td>
+<td></td>
+</tr>
+<tr>
+<td>Polystyrene, expanded, Molded beads</td>
+<td>0.04 (constant)</td>
+<td>16 (constant)</td>
+<td>1210 (constant)</td>
+<td>Incropera et al., Fundamentals of Heat and Mass Transfer, 7th ed., 2011, Table A.3, p. 990, 300 K</td>
+<td></td>
+</tr>
+<tr>
+<td>Wood, shredded/cemented</td>
+<td>0.087 (constant)</td>
+<td>350 (constant)</td>
+<td>1590 (constant)</td>
+<td>Incropera et al., Fundamentals of Heat and Mass Transfer, 7th ed., 2011, Table A.3, p. 990, 300 K</td>
+<td></td>
+</tr>
+<tr>
+<td>Cork</td>
+<td>0.039 (constant)</td>
+<td>120 (constant)</td>
+<td>1800 (constant)</td>
+<td>Incropera et al., Fundamentals of Heat and Mass Transfer, 7th ed., 2011, Table A.3, p. 990, 300 K</td>
+<td></td>
+</tr>
+<tr>
+<td>Glass fiber, poured or blown</td>
+<td>0.043 (constant)</td>
+<td>16 (constant)</td>
+<td>835 (constant)</td>
+<td>Incropera et al., Fundamentals of Heat and Mass Transfer, 7th ed., 2011, Table A.3, p. 990, 300 K</td>
+<td></td>
+</tr>
+<tr>
+<td>Vermiculite, flakes (80 kg/m3)</td>
+<td>0.068 (constant)</td>
+<td>80 (constant)</td>
+<td>835 (constant)</td>
+<td>Incropera et al., Fundamentals of Heat and Mass Transfer, 7th ed., 2011, Table A.3, p. 990, 300 K</td>
+<td></td>
+</tr>
+<tr>
+<td>Vermiculite, flakes (160 kg/m3)</td>
+<td>0.063 (constant)</td>
+<td>160 (constant)</td>
+<td>1000 (constant)</td>
+<td>Incropera et al., Fundamentals of Heat and Mass Transfer, 7th ed., 2011, Table A.3, p. 990, 300 K</td>
+<td></td>
+</tr>
+<tr>
+<td>Urethane, two-part mixture; rigid foam</td>
+<td>0.026 (constant)</td>
+<td>70 (constant)</td>
+<td>1045 (constant)</td>
+<td>Incropera et al., Fundamentals of Heat and Mass Transfer, 7th ed., 2011, Table A.3, p. 990, 300 K</td>
+<td></td>
+</tr>
+<tr>
+<td>Asphalt</td>
+<td>0.062 (constant)</td>
+<td>2115 (constant)</td>
+<td>920 (constant)</td>
+<td>Incropera et al., Fundamentals of Heat and Mass Transfer, 7th ed., 2011, Table A.3, p. 993, 300 K</td>
+<td></td>
+</tr>
+<tr>
+<td>Bakelite</td>
+<td>1.4 (constant)</td>
+<td>1300 (constant)</td>
+<td>1465 (constant)</td>
+<td>Incropera et al., Fundamentals of Heat and Mass Transfer, 7th ed., 2011, Table A.3, p. 993, 300 K</td>
+<td></td>
+</tr>
+<tr>
+<td>Clay</td>
+<td>1.3 (constant)</td>
+<td>1460 (constant)</td>
+<td>880 (constant)</td>
+<td>Incropera et al., Fundamentals of Heat and Mass Transfer, 7th ed., 2011, Table A.3, p. 993, 300 K</td>
+<td></td>
+</tr>
+<tr>
+<td>Coal, anthracite</td>
+<td>0.26 (constant)</td>
+<td>1350 (constant)</td>
+<td>1260 (constant)</td>
+<td>Incropera et al., Fundamentals of Heat and Mass Transfer, 7th ed., 2011, Table A.3, p. 993, 300 K</td>
+<td></td>
 </tr>
 <tr>
 <td>Concrete (stone mix)</td>
 <td>1.4 (constant)</td>
 <td>2300 (constant)</td>
 <td>880 (constant)</td>
+<td>Incropera et al., Fundamentals of Heat and Mass Transfer, 7th ed., 2011, Table A.3, p. 993, 300 K</td>
+<td></td>
 </tr>
 <tr>
-<td>FR-4 (through-thickness)</td>
-<td>0.3 (constant)</td>
-<td>1850 (constant)</td>
+<td>Cotton</td>
+<td>0.06 (constant)</td>
+<td>80 (constant)</td>
+<td>1300 (constant)</td>
+<td>Incropera et al., Fundamentals of Heat and Mass Transfer, 7th ed., 2011, Table A.3, p. 993, 300 K</td>
+<td></td>
+</tr>
+<tr>
+<td>Foodstuffs, Banana</td>
+<td>0.481 (constant)</td>
+<td>980 (constant)</td>
+<td>3350 (constant)</td>
+<td>Incropera et al., Fundamentals of Heat and Mass Transfer, 7th ed., 2011, Table A.3, p. 993, 300 K</td>
+<td>75.7% water content</td>
+</tr>
+<tr>
+<td>Foodstuffs, Apple, red</td>
+<td>0.513 (constant)</td>
+<td>840 (constant)</td>
+<td>3600 (constant)</td>
+<td>Incropera et al., Fundamentals of Heat and Mass Transfer, 7th ed., 2011, Table A.3, p. 993, 300 K</td>
+<td>75% water content</td>
+</tr>
+<tr>
+<td>Soda-lime glass</td>
+<td>1.4 (constant)</td>
+<td>2500 (constant)</td>
+<td>750 (constant)</td>
+<td>Incropera et al., Fundamentals of Heat and Mass Transfer, 7th ed., 2011, Table A.3, p. 993, 300 K</td>
+<td></td>
+</tr>
+<tr>
+<td>Glass, Pyrex</td>
+<td>1.4 (constant)</td>
+<td>2225 (constant)</td>
+<td>835 (constant)</td>
+<td>Incropera et al., Fundamentals of Heat and Mass Transfer, 7th ed., 2011, Table A.3, p. 993, 300 K</td>
+<td></td>
+</tr>
+<tr>
+<td>Paper</td>
+<td>0.18 (constant)</td>
+<td>930 (constant)</td>
+<td>1340 (constant)</td>
+<td>Incropera et al., Fundamentals of Heat and Mass Transfer, 7th ed., 2011, Table A.3, p. 994, 300 K</td>
+<td></td>
+</tr>
+<tr>
+<td>Paraffin</td>
+<td>0.24 (constant)</td>
+<td>900 (constant)</td>
+<td>2890 (constant)</td>
+<td>Incropera et al., Fundamentals of Heat and Mass Transfer, 7th ed., 2011, Table A.3, p. 994, 300 K</td>
+<td></td>
+</tr>
+<tr>
+<td>Rock, Granite, Barre</td>
+<td>2.79 (constant)</td>
+<td>2630 (constant)</td>
+<td>775 (constant)</td>
+<td>Incropera et al., Fundamentals of Heat and Mass Transfer, 7th ed., 2011, Table A.3, p. 994, 300 K</td>
+<td></td>
+</tr>
+<tr>
+<td>Rock, Limestone, Salem</td>
+<td>2.15 (constant)</td>
+<td>2320 (constant)</td>
+<td>810 (constant)</td>
+<td>Incropera et al., Fundamentals of Heat and Mass Transfer, 7th ed., 2011, Table A.3, p. 994, 300 K</td>
+<td></td>
+</tr>
+<tr>
+<td>Rock, Marble, Halston</td>
+<td>2.8 (constant)</td>
+<td>2680 (constant)</td>
+<td>830 (constant)</td>
+<td>Incropera et al., Fundamentals of Heat and Mass Transfer, 7th ed., 2011, Table A.3, p. 994, 300 K</td>
+<td></td>
+</tr>
+<tr>
+<td>Rock, Quartzite, Sioux</td>
+<td>5.38 (constant)</td>
+<td>2640 (constant)</td>
+<td>1105 (constant)</td>
+<td>Incropera et al., Fundamentals of Heat and Mass Transfer, 7th ed., 2011, Table A.3, p. 994, 300 K</td>
+<td></td>
+</tr>
+<tr>
+<td>Rock, Sandstone, Berea</td>
+<td>2.9 (constant)</td>
+<td>2150 (constant)</td>
+<td>745 (constant)</td>
+<td>Incropera et al., Fundamentals of Heat and Mass Transfer, 7th ed., 2011, Table A.3, p. 994, 300 K</td>
+<td></td>
+</tr>
+<tr>
+<td>Rubber, vulcanized, Soft</td>
+<td>0.13 (constant)</td>
 <td>1100 (constant)</td>
+<td>2010 (constant)</td>
+<td>Incropera et al., Fundamentals of Heat and Mass Transfer, 7th ed., 2011, Table A.3, p. 994, 300 K</td>
+<td></td>
+</tr>
+<tr>
+<td>Sand</td>
+<td>0.27 (constant)</td>
+<td>1515 (constant)</td>
+<td>800 (constant)</td>
+<td>Incropera et al., Fundamentals of Heat and Mass Transfer, 7th ed., 2011, Table A.3, p. 994, 300 K</td>
+<td></td>
+</tr>
+<tr>
+<td>Soil</td>
+<td>0.52 (constant)</td>
+<td>2050 (constant)</td>
+<td>1840 (constant)</td>
+<td>Incropera et al., Fundamentals of Heat and Mass Transfer, 7th ed., 2011, Table A.3, p. 994, 300 K</td>
+<td></td>
+</tr>
+<tr>
+<td>Wood, cross grain, Fir</td>
+<td>0.11 (constant)</td>
+<td>415 (constant)</td>
+<td>2720 (constant)</td>
+<td>Incropera et al., Fundamentals of Heat and Mass Transfer, 7th ed., 2011, Table A.3, p. 994, 300 K</td>
+<td></td>
+</tr>
+<tr>
+<td>Wood, cross grain, Oak</td>
+<td>0.17 (constant)</td>
+<td>545 (constant)</td>
+<td>2385 (constant)</td>
+<td>Incropera et al., Fundamentals of Heat and Mass Transfer, 7th ed., 2011, Table A.3, p. 994, 300 K</td>
+<td></td>
+</tr>
+<tr>
+<td>Wood, cross grain, Yellow pine</td>
+<td>0.15 (constant)</td>
+<td>640 (constant)</td>
+<td>2805 (constant)</td>
+<td>Incropera et al., Fundamentals of Heat and Mass Transfer, 7th ed., 2011, Table A.3, p. 994, 300 K</td>
+<td></td>
+</tr>
+<tr>
+<td>Wood, radial, Oak</td>
+<td>0.19 (constant)</td>
+<td>545 (constant)</td>
+<td>2385 (constant)</td>
+<td>Incropera et al., Fundamentals of Heat and Mass Transfer, 7th ed., 2011, Table A.3, p. 994, 300 K</td>
+<td></td>
+</tr>
+<tr>
+<td>Wood, radial, Fir</td>
+<td>0.14 (constant)</td>
+<td>420 (constant)</td>
+<td>2720 (constant)</td>
+<td>Incropera et al., Fundamentals of Heat and Mass Transfer, 7th ed., 2011, Table A.3, p. 994, 300 K</td>
+<td></td>
+</tr>
+<tr>
+<td>Boron fiber epoxy (30% vol) composite</td>
+<td>2.29 (constant), k2 = 0.59 (constant)</td>
+<td>2080 (constant)</td>
+<td>1122 (constant)</td>
+<td>Incropera et al., Fundamentals of Heat and Mass Transfer, 7th ed., 2011, Table A.2, p. 987, 300 K</td>
+<td>Orthotropic: k along the material axis (parallel to the fibers), k2 across it.</td>
+</tr>
+<tr>
+<td>Graphite, pyrolytic</td>
+<td>1950 (constant), k2 = 5.7 (constant)</td>
+<td>2210 (constant)</td>
+<td>709 (constant)</td>
+<td>Incropera et al., Fundamentals of Heat and Mass Transfer, 7th ed., 2011, Table A.2, p. 987, 300 K</td>
+<td>Orthotropic: k along the material axis (parallel to the layers), k2 across it.</td>
+</tr>
+<tr>
+<td>Graphite fiber epoxy (25% vol) composite</td>
+<td>11.1 (constant), k2 = 0.87 (constant)</td>
+<td>1400 (constant)</td>
+<td>935 (constant)</td>
+<td>Incropera et al., Fundamentals of Heat and Mass Transfer, 7th ed., 2011, Table A.2, p. 987, 300 K</td>
+<td>Orthotropic: k along the material axis (parallel to the fibers), k2 across it.</td>
+</tr>
+<tr>
+<td>Silicon dioxide, crystalline (quartz)</td>
+<td>10.4 (constant), k2 = 6.21 (constant)</td>
+<td>2650 (constant)</td>
+<td>745 (constant)</td>
+<td>Incropera et al., Fundamentals of Heat and Mass Transfer, 7th ed., 2011, Table A.2, p. 988, 300 K</td>
+<td>Orthotropic: k along the material axis (parallel to the c axis), k2 across it.</td>
 </tr>
 </tbody>
 </table>
@@ -204,8 +1110,10 @@ Do not edit it here: change the source and run the script again.</p>
 <p>Fluid properties are tables against temperature, interpolated linearly. Outside the table the end values are used and a warning is logged. For an ideal gas the expansion coefficient is β = 1/T_film; for a liquid it comes from the β column.</p>
 <h3 id="air">Air<a class="headerlink" href="#air" title="Permanent link">&para;</a></h3>
 <ul>
+<li>Source: Incropera et al., Fundamentals of Heat and Mass Transfer, 7th ed., 2011, Table A.4, p. 995</li>
+<li>Note: Gas at atmospheric pressure; the densities are those of 1 bar.</li>
 <li>Ideal gas: yes</li>
-<li>Temperature range of the tables: 250 K to 1000 K (9 points)</li>
+<li>Temperature range of the tables: 100 K to 3000 K (35 points)</li>
 <li>Tabulated properties: ρ [kg/m³], c_p [J/(kg K)], μ [Pa s], k [W/(m K)] (β is not tabulated; 1/T_film is used)</li>
 </ul>
 <table>
@@ -219,6 +1127,27 @@ Do not edit it here: change the source and run the script again.</p>
 </tr>
 </thead>
 <tbody>
+<tr>
+<td>100</td>
+<td>3.5562</td>
+<td>1032</td>
+<td>7.11e-06</td>
+<td>0.00934</td>
+</tr>
+<tr>
+<td>150</td>
+<td>2.3364</td>
+<td>1012</td>
+<td>1.034e-05</td>
+<td>0.0138</td>
+</tr>
+<tr>
+<td>200</td>
+<td>1.7458</td>
+<td>1007</td>
+<td>1.325e-05</td>
+<td>0.0181</td>
+</tr>
 <tr>
 <td>250</td>
 <td>1.3947</td>
@@ -262,11 +1191,39 @@ Do not edit it here: change the source and run the script again.</p>
 <td>0.0407</td>
 </tr>
 <tr>
+<td>550</td>
+<td>0.6329</td>
+<td>1040</td>
+<td>2.884e-05</td>
+<td>0.0439</td>
+</tr>
+<tr>
 <td>600</td>
 <td>0.5804</td>
 <td>1051</td>
 <td>3.058e-05</td>
 <td>0.0469</td>
+</tr>
+<tr>
+<td>650</td>
+<td>0.5356</td>
+<td>1063</td>
+<td>3.225e-05</td>
+<td>0.0497</td>
+</tr>
+<tr>
+<td>700</td>
+<td>0.4975</td>
+<td>1075</td>
+<td>3.388e-05</td>
+<td>0.0524</td>
+</tr>
+<tr>
+<td>750</td>
+<td>0.4643</td>
+<td>1087</td>
+<td>3.546e-05</td>
+<td>0.0549</td>
 </tr>
 <tr>
 <td>800</td>
@@ -276,18 +1233,153 @@ Do not edit it here: change the source and run the script again.</p>
 <td>0.0573</td>
 </tr>
 <tr>
+<td>850</td>
+<td>0.4097</td>
+<td>1110</td>
+<td>3.843e-05</td>
+<td>0.0596</td>
+</tr>
+<tr>
+<td>900</td>
+<td>0.3868</td>
+<td>1121</td>
+<td>3.981e-05</td>
+<td>0.062</td>
+</tr>
+<tr>
+<td>950</td>
+<td>0.3666</td>
+<td>1131</td>
+<td>4.113e-05</td>
+<td>0.0643</td>
+</tr>
+<tr>
 <td>1000</td>
 <td>0.3482</td>
 <td>1141</td>
 <td>4.244e-05</td>
 <td>0.0667</td>
 </tr>
+<tr>
+<td>1100</td>
+<td>0.3166</td>
+<td>1159</td>
+<td>4.49e-05</td>
+<td>0.0715</td>
+</tr>
+<tr>
+<td>1200</td>
+<td>0.2902</td>
+<td>1175</td>
+<td>4.73e-05</td>
+<td>0.0763</td>
+</tr>
+<tr>
+<td>1300</td>
+<td>0.2679</td>
+<td>1189</td>
+<td>4.96e-05</td>
+<td>0.082</td>
+</tr>
+<tr>
+<td>1400</td>
+<td>0.2488</td>
+<td>1207</td>
+<td>5.3e-05</td>
+<td>0.091</td>
+</tr>
+<tr>
+<td>1500</td>
+<td>0.2322</td>
+<td>1230</td>
+<td>5.57e-05</td>
+<td>0.1</td>
+</tr>
+<tr>
+<td>1600</td>
+<td>0.2177</td>
+<td>1248</td>
+<td>5.84e-05</td>
+<td>0.106</td>
+</tr>
+<tr>
+<td>1700</td>
+<td>0.2049</td>
+<td>1267</td>
+<td>6.11e-05</td>
+<td>0.113</td>
+</tr>
+<tr>
+<td>1800</td>
+<td>0.1935</td>
+<td>1286</td>
+<td>6.37e-05</td>
+<td>0.12</td>
+</tr>
+<tr>
+<td>1900</td>
+<td>0.1833</td>
+<td>1307</td>
+<td>6.63e-05</td>
+<td>0.128</td>
+</tr>
+<tr>
+<td>2000</td>
+<td>0.1741</td>
+<td>1337</td>
+<td>6.89e-05</td>
+<td>0.137</td>
+</tr>
+<tr>
+<td>2100</td>
+<td>0.1658</td>
+<td>1372</td>
+<td>7.15e-05</td>
+<td>0.147</td>
+</tr>
+<tr>
+<td>2200</td>
+<td>0.1582</td>
+<td>1417</td>
+<td>7.4e-05</td>
+<td>0.16</td>
+</tr>
+<tr>
+<td>2300</td>
+<td>0.1513</td>
+<td>1478</td>
+<td>7.66e-05</td>
+<td>0.175</td>
+</tr>
+<tr>
+<td>2400</td>
+<td>0.1448</td>
+<td>1558</td>
+<td>7.92e-05</td>
+<td>0.196</td>
+</tr>
+<tr>
+<td>2500</td>
+<td>0.1389</td>
+<td>1665</td>
+<td>8.18e-05</td>
+<td>0.222</td>
+</tr>
+<tr>
+<td>3000</td>
+<td>0.1135</td>
+<td>2726</td>
+<td>9.55e-05</td>
+<td>0.486</td>
+</tr>
 </tbody>
 </table>
 <h3 id="water">Water<a class="headerlink" href="#water" title="Permanent link">&para;</a></h3>
 <ul>
+<li>Source: NIST Chemistry WebBook, SRD 69, Thermophysical Properties of Fluid Systems, water at 0.1 MPa, read 2026-11-23</li>
+<li>Note: Liquid water at 1 bar, rounded to 6 significant figures. beta = -(1/rho) d(rho)/dT from NIST densities 1 K apart (central difference).</li>
 <li>Ideal gas: no</li>
-<li>Temperature range of the tables: 280 K to 360 K (5 points)</li>
+<li>Temperature range of the tables: 280 K to 370 K (19 points)</li>
 <li>Tabulated properties: ρ [kg/m³], c_p [J/(kg K)], μ [Pa s], k [W/(m K)], β [1/K]</li>
 </ul>
 <table>
@@ -304,43 +1396,1955 @@ Do not edit it here: change the source and run the script again.</p>
 <tbody>
 <tr>
 <td>280</td>
-<td>1000</td>
-<td>4198</td>
-<td>0.001422</td>
-<td>0.582</td>
-<td>4.604e-05</td>
+<td>999.91</td>
+<td>4200.94</td>
+<td>0.00143357</td>
+<td>0.57198</td>
+<td>4.38284e-05</td>
+</tr>
+<tr>
+<td>285</td>
+<td>999.517</td>
+<td>4192.37</td>
+<td>0.00123921</td>
+<td>0.582589</td>
+<td>0.000112117</td>
+</tr>
+<tr>
+<td>290</td>
+<td>998.803</td>
+<td>4186.6</td>
+<td>0.00108397</td>
+<td>0.592297</td>
+<td>0.000172258</td>
+</tr>
+<tr>
+<td>295</td>
+<td>997.807</td>
+<td>4182.87</td>
+<td>0.000957811</td>
+<td>0.601236</td>
+<td>0.000226049</td>
 </tr>
 <tr>
 <td>300</td>
-<td>997</td>
-<td>4179</td>
-<td>0.000855</td>
-<td>0.613</td>
-<td>0.0002761</td>
+<td>996.556</td>
+<td>4180.64</td>
+<td>0.000853743</td>
+<td>0.609499</td>
+<td>0.000274797</td>
+</tr>
+<tr>
+<td>305</td>
+<td>995.075</td>
+<td>4179.52</td>
+<td>0.000766792</td>
+<td>0.617159</td>
+<td>0.00031948</td>
+</tr>
+<tr>
+<td>310</td>
+<td>993.383</td>
+<td>4179.24</td>
+<td>0.000693329</td>
+<td>0.624269</td>
+<td>0.000360847</td>
+</tr>
+<tr>
+<td>315</td>
+<td>991.496</td>
+<td>4179.63</td>
+<td>0.000630656</td>
+<td>0.63087</td>
+<td>0.000399483</td>
 </tr>
 <tr>
 <td>320</td>
-<td>989</td>
-<td>4180</td>
-<td>0.000577</td>
-<td>0.64</td>
-<td>0.0004367</td>
+<td>989.426</td>
+<td>4180.54</td>
+<td>0.000576726</td>
+<td>0.636995</td>
+<td>0.000435851</td>
+</tr>
+<tr>
+<td>325</td>
+<td>987.187</td>
+<td>4181.9</td>
+<td>0.000529966</td>
+<td>0.642668</td>
+<td>0.000470329</td>
+</tr>
+<tr>
+<td>330</td>
+<td>984.786</td>
+<td>4183.65</td>
+<td>0.000489147</td>
+<td>0.647911</td>
+<td>0.000503223</td>
+</tr>
+<tr>
+<td>335</td>
+<td>982.233</td>
+<td>4185.79</td>
+<td>0.000453296</td>
+<td>0.652739</td>
+<td>0.000534791</td>
 </tr>
 <tr>
 <td>340</td>
-<td>979</td>
-<td>4188</td>
-<td>0.00042</td>
-<td>0.66</td>
-<td>0.000566</td>
+<td>979.535</td>
+<td>4188.3</td>
+<td>0.000421633</td>
+<td>0.657167</td>
+<td>0.00056525</td>
+</tr>
+<tr>
+<td>345</td>
+<td>976.699</td>
+<td>4191.18</td>
+<td>0.000393529</td>
+<td>0.661208</td>
+<td>0.000594787</td>
+</tr>
+<tr>
+<td>350</td>
+<td>973.728</td>
+<td>4194.47</td>
+<td>0.000368469</td>
+<td>0.664873</td>
+<td>0.000623562</td>
+</tr>
+<tr>
+<td>355</td>
+<td>970.628</td>
+<td>4198.18</td>
+<td>0.000346029</td>
+<td>0.668172</td>
+<td>0.000651719</td>
 </tr>
 <tr>
 <td>360</td>
-<td>967</td>
-<td>4203</td>
-<td>0.000324</td>
-<td>0.674</td>
-<td>0.0006979</td>
+<td>967.403</td>
+<td>4202.34</td>
+<td>0.000325855</td>
+<td>0.671114</td>
+<td>0.000679384</td>
+</tr>
+<tr>
+<td>365</td>
+<td>964.057</td>
+<td>4206.99</td>
+<td>0.000307653</td>
+<td>0.673707</td>
+<td>0.000706673</td>
+</tr>
+<tr>
+<td>370</td>
+<td>960.591</td>
+<td>4212.15</td>
+<td>0.000291175</td>
+<td>0.675961</td>
+<td>0.000733693</td>
+</tr>
+</tbody>
+</table>
+<h3 id="ammonia">Ammonia<a class="headerlink" href="#ammonia" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Source: Incropera et al., Fundamentals of Heat and Mass Transfer, 7th ed., 2011, Table A.4, p. 995-996</li>
+<li>Note: Gas at atmospheric pressure; the densities are those of 1 bar.</li>
+<li>Ideal gas: yes</li>
+<li>Temperature range of the tables: 300 K to 580 K (15 points)</li>
+<li>Tabulated properties: ρ [kg/m³], c_p [J/(kg K)], μ [Pa s], k [W/(m K)] (β is not tabulated; 1/T_film is used)</li>
+</ul>
+<table>
+<thead>
+<tr>
+<th>T [K]</th>
+<th>ρ [kg/m³]</th>
+<th>c_p [J/(kg K)]</th>
+<th>μ [Pa s]</th>
+<th>k [W/(m K)]</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>300</td>
+<td>0.6894</td>
+<td>2158</td>
+<td>1.015e-05</td>
+<td>0.0247</td>
+</tr>
+<tr>
+<td>320</td>
+<td>0.6448</td>
+<td>2170</td>
+<td>1.09e-05</td>
+<td>0.0272</td>
+</tr>
+<tr>
+<td>340</td>
+<td>0.6059</td>
+<td>2192</td>
+<td>1.165e-05</td>
+<td>0.0293</td>
+</tr>
+<tr>
+<td>360</td>
+<td>0.5716</td>
+<td>2221</td>
+<td>1.24e-05</td>
+<td>0.0316</td>
+</tr>
+<tr>
+<td>380</td>
+<td>0.541</td>
+<td>2254</td>
+<td>1.31e-05</td>
+<td>0.034</td>
+</tr>
+<tr>
+<td>400</td>
+<td>0.5136</td>
+<td>2287</td>
+<td>1.38e-05</td>
+<td>0.037</td>
+</tr>
+<tr>
+<td>420</td>
+<td>0.4888</td>
+<td>2322</td>
+<td>1.45e-05</td>
+<td>0.0404</td>
+</tr>
+<tr>
+<td>440</td>
+<td>0.4664</td>
+<td>2357</td>
+<td>1.525e-05</td>
+<td>0.0435</td>
+</tr>
+<tr>
+<td>460</td>
+<td>0.446</td>
+<td>2393</td>
+<td>1.59e-05</td>
+<td>0.0463</td>
+</tr>
+<tr>
+<td>480</td>
+<td>0.4273</td>
+<td>2430</td>
+<td>1.665e-05</td>
+<td>0.0492</td>
+</tr>
+<tr>
+<td>500</td>
+<td>0.4101</td>
+<td>2467</td>
+<td>1.73e-05</td>
+<td>0.0525</td>
+</tr>
+<tr>
+<td>520</td>
+<td>0.3942</td>
+<td>2504</td>
+<td>1.8e-05</td>
+<td>0.0545</td>
+</tr>
+<tr>
+<td>540</td>
+<td>0.3795</td>
+<td>2540</td>
+<td>1.865e-05</td>
+<td>0.0575</td>
+</tr>
+<tr>
+<td>560</td>
+<td>0.3708</td>
+<td>2577</td>
+<td>1.93e-05</td>
+<td>0.0606</td>
+</tr>
+<tr>
+<td>580</td>
+<td>0.3533</td>
+<td>2613</td>
+<td>1.995e-05</td>
+<td>0.0638</td>
+</tr>
+</tbody>
+</table>
+<h3 id="carbon-dioxide">Carbon Dioxide<a class="headerlink" href="#carbon-dioxide" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Source: Incropera et al., Fundamentals of Heat and Mass Transfer, 7th ed., 2011, Table A.4, p. 996</li>
+<li>Note: Gas at atmospheric pressure; the densities are those of 1 bar.</li>
+<li>Ideal gas: yes</li>
+<li>Temperature range of the tables: 280 K to 800 K (15 points)</li>
+<li>Tabulated properties: ρ [kg/m³], c_p [J/(kg K)], μ [Pa s], k [W/(m K)] (β is not tabulated; 1/T_film is used)</li>
+</ul>
+<table>
+<thead>
+<tr>
+<th>T [K]</th>
+<th>ρ [kg/m³]</th>
+<th>c_p [J/(kg K)]</th>
+<th>μ [Pa s]</th>
+<th>k [W/(m K)]</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>280</td>
+<td>1.9022</td>
+<td>830</td>
+<td>1.4e-05</td>
+<td>0.0152</td>
+</tr>
+<tr>
+<td>300</td>
+<td>1.773</td>
+<td>851</td>
+<td>1.49e-05</td>
+<td>0.01655</td>
+</tr>
+<tr>
+<td>320</td>
+<td>1.6609</td>
+<td>872</td>
+<td>1.56e-05</td>
+<td>0.01805</td>
+</tr>
+<tr>
+<td>340</td>
+<td>1.5618</td>
+<td>891</td>
+<td>1.65e-05</td>
+<td>0.0197</td>
+</tr>
+<tr>
+<td>360</td>
+<td>1.4743</td>
+<td>908</td>
+<td>1.73e-05</td>
+<td>0.0212</td>
+</tr>
+<tr>
+<td>380</td>
+<td>1.3961</td>
+<td>926</td>
+<td>1.81e-05</td>
+<td>0.02275</td>
+</tr>
+<tr>
+<td>400</td>
+<td>1.3257</td>
+<td>942</td>
+<td>1.9e-05</td>
+<td>0.0243</td>
+</tr>
+<tr>
+<td>450</td>
+<td>1.1782</td>
+<td>981</td>
+<td>2.1e-05</td>
+<td>0.0283</td>
+</tr>
+<tr>
+<td>500</td>
+<td>1.0594</td>
+<td>1020</td>
+<td>2.31e-05</td>
+<td>0.0325</td>
+</tr>
+<tr>
+<td>550</td>
+<td>0.9625</td>
+<td>1050</td>
+<td>2.51e-05</td>
+<td>0.0366</td>
+</tr>
+<tr>
+<td>600</td>
+<td>0.8826</td>
+<td>1080</td>
+<td>2.7e-05</td>
+<td>0.0407</td>
+</tr>
+<tr>
+<td>650</td>
+<td>0.8143</td>
+<td>1100</td>
+<td>2.88e-05</td>
+<td>0.0445</td>
+</tr>
+<tr>
+<td>700</td>
+<td>0.7564</td>
+<td>1130</td>
+<td>3.05e-05</td>
+<td>0.0481</td>
+</tr>
+<tr>
+<td>750</td>
+<td>0.7057</td>
+<td>1150</td>
+<td>3.21e-05</td>
+<td>0.0517</td>
+</tr>
+<tr>
+<td>800</td>
+<td>0.6614</td>
+<td>1170</td>
+<td>3.37e-05</td>
+<td>0.0551</td>
+</tr>
+</tbody>
+</table>
+<h3 id="carbon-monoxide">Carbon Monoxide<a class="headerlink" href="#carbon-monoxide" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Source: Incropera et al., Fundamentals of Heat and Mass Transfer, 7th ed., 2011, Table A.4, p. 996-997</li>
+<li>Note: Gas at atmospheric pressure; the densities are those of 1 bar.</li>
+<li>Ideal gas: yes</li>
+<li>Temperature range of the tables: 200 K to 800 K (19 points)</li>
+<li>Tabulated properties: ρ [kg/m³], c_p [J/(kg K)], μ [Pa s], k [W/(m K)] (β is not tabulated; 1/T_film is used)</li>
+</ul>
+<table>
+<thead>
+<tr>
+<th>T [K]</th>
+<th>ρ [kg/m³]</th>
+<th>c_p [J/(kg K)]</th>
+<th>μ [Pa s]</th>
+<th>k [W/(m K)]</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>200</td>
+<td>1.6888</td>
+<td>1045</td>
+<td>1.27e-05</td>
+<td>0.017</td>
+</tr>
+<tr>
+<td>220</td>
+<td>1.5341</td>
+<td>1044</td>
+<td>1.37e-05</td>
+<td>0.019</td>
+</tr>
+<tr>
+<td>240</td>
+<td>1.4055</td>
+<td>1043</td>
+<td>1.47e-05</td>
+<td>0.0206</td>
+</tr>
+<tr>
+<td>260</td>
+<td>1.2967</td>
+<td>1043</td>
+<td>1.57e-05</td>
+<td>0.0221</td>
+</tr>
+<tr>
+<td>280</td>
+<td>1.2038</td>
+<td>1042</td>
+<td>1.66e-05</td>
+<td>0.0236</td>
+</tr>
+<tr>
+<td>300</td>
+<td>1.1233</td>
+<td>1043</td>
+<td>1.75e-05</td>
+<td>0.025</td>
+</tr>
+<tr>
+<td>320</td>
+<td>1.0529</td>
+<td>1043</td>
+<td>1.84e-05</td>
+<td>0.0263</td>
+</tr>
+<tr>
+<td>340</td>
+<td>0.9909</td>
+<td>1044</td>
+<td>1.93e-05</td>
+<td>0.0278</td>
+</tr>
+<tr>
+<td>360</td>
+<td>0.9357</td>
+<td>1045</td>
+<td>2.02e-05</td>
+<td>0.0291</td>
+</tr>
+<tr>
+<td>380</td>
+<td>0.8864</td>
+<td>1047</td>
+<td>2.1e-05</td>
+<td>0.0305</td>
+</tr>
+<tr>
+<td>400</td>
+<td>0.8421</td>
+<td>1049</td>
+<td>2.18e-05</td>
+<td>0.0318</td>
+</tr>
+<tr>
+<td>450</td>
+<td>0.7483</td>
+<td>1055</td>
+<td>2.37e-05</td>
+<td>0.035</td>
+</tr>
+<tr>
+<td>500</td>
+<td>0.67352</td>
+<td>1065</td>
+<td>2.54e-05</td>
+<td>0.0381</td>
+</tr>
+<tr>
+<td>550</td>
+<td>0.61226</td>
+<td>1076</td>
+<td>2.71e-05</td>
+<td>0.0411</td>
+</tr>
+<tr>
+<td>600</td>
+<td>0.56126</td>
+<td>1088</td>
+<td>2.86e-05</td>
+<td>0.044</td>
+</tr>
+<tr>
+<td>650</td>
+<td>0.51806</td>
+<td>1101</td>
+<td>3.01e-05</td>
+<td>0.047</td>
+</tr>
+<tr>
+<td>700</td>
+<td>0.48102</td>
+<td>1114</td>
+<td>3.15e-05</td>
+<td>0.05</td>
+</tr>
+<tr>
+<td>750</td>
+<td>0.44899</td>
+<td>1127</td>
+<td>3.29e-05</td>
+<td>0.0528</td>
+</tr>
+<tr>
+<td>800</td>
+<td>0.42095</td>
+<td>1140</td>
+<td>3.43e-05</td>
+<td>0.0555</td>
+</tr>
+</tbody>
+</table>
+<h3 id="helium">Helium<a class="headerlink" href="#helium" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Source: Incropera et al., Fundamentals of Heat and Mass Transfer, 7th ed., 2011, Table A.4, p. 997</li>
+<li>Note: Gas at atmospheric pressure; the densities are those of 1 atm.</li>
+<li>Ideal gas: yes</li>
+<li>Temperature range of the tables: 100 K to 1000 K (11 points)</li>
+<li>Tabulated properties: ρ [kg/m³], c_p [J/(kg K)], μ [Pa s], k [W/(m K)] (β is not tabulated; 1/T_film is used)</li>
+</ul>
+<table>
+<thead>
+<tr>
+<th>T [K]</th>
+<th>ρ [kg/m³]</th>
+<th>c_p [J/(kg K)]</th>
+<th>μ [Pa s]</th>
+<th>k [W/(m K)]</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>100</td>
+<td>0.4871</td>
+<td>5193</td>
+<td>9.63e-06</td>
+<td>0.073</td>
+</tr>
+<tr>
+<td>120</td>
+<td>0.406</td>
+<td>5193</td>
+<td>1.07e-05</td>
+<td>0.0819</td>
+</tr>
+<tr>
+<td>140</td>
+<td>0.3481</td>
+<td>5193</td>
+<td>1.18e-05</td>
+<td>0.0907</td>
+</tr>
+<tr>
+<td>180</td>
+<td>0.2708</td>
+<td>5193</td>
+<td>1.39e-05</td>
+<td>0.1072</td>
+</tr>
+<tr>
+<td>220</td>
+<td>0.2216</td>
+<td>5193</td>
+<td>1.6e-05</td>
+<td>0.1231</td>
+</tr>
+<tr>
+<td>260</td>
+<td>0.1875</td>
+<td>5193</td>
+<td>1.8e-05</td>
+<td>0.137</td>
+</tr>
+<tr>
+<td>300</td>
+<td>0.1625</td>
+<td>5193</td>
+<td>1.99e-05</td>
+<td>0.152</td>
+</tr>
+<tr>
+<td>400</td>
+<td>0.1219</td>
+<td>5193</td>
+<td>2.43e-05</td>
+<td>0.187</td>
+</tr>
+<tr>
+<td>500</td>
+<td>0.09754</td>
+<td>5193</td>
+<td>2.83e-05</td>
+<td>0.22</td>
+</tr>
+<tr>
+<td>700</td>
+<td>0.06969</td>
+<td>5193</td>
+<td>3.5e-05</td>
+<td>0.278</td>
+</tr>
+<tr>
+<td>1000</td>
+<td>0.04879</td>
+<td>5193</td>
+<td>4.46e-05</td>
+<td>0.354</td>
+</tr>
+</tbody>
+</table>
+<h3 id="hydrogen">Hydrogen<a class="headerlink" href="#hydrogen" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Source: Incropera et al., Fundamentals of Heat and Mass Transfer, 7th ed., 2011, Table A.4, p. 997-998</li>
+<li>Note: Gas at atmospheric pressure; the densities are those of 1 bar.</li>
+<li>Ideal gas: yes</li>
+<li>Temperature range of the tables: 100 K to 2000 K (25 points)</li>
+<li>Tabulated properties: ρ [kg/m³], c_p [J/(kg K)], μ [Pa s], k [W/(m K)] (β is not tabulated; 1/T_film is used)</li>
+</ul>
+<table>
+<thead>
+<tr>
+<th>T [K]</th>
+<th>ρ [kg/m³]</th>
+<th>c_p [J/(kg K)]</th>
+<th>μ [Pa s]</th>
+<th>k [W/(m K)]</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>100</td>
+<td>0.24255</td>
+<td>11230</td>
+<td>4.21e-06</td>
+<td>0.067</td>
+</tr>
+<tr>
+<td>150</td>
+<td>0.16156</td>
+<td>12600</td>
+<td>5.6e-06</td>
+<td>0.101</td>
+</tr>
+<tr>
+<td>200</td>
+<td>0.12115</td>
+<td>13540</td>
+<td>6.81e-06</td>
+<td>0.131</td>
+</tr>
+<tr>
+<td>250</td>
+<td>0.09693</td>
+<td>14060</td>
+<td>7.89e-06</td>
+<td>0.157</td>
+</tr>
+<tr>
+<td>300</td>
+<td>0.08078</td>
+<td>14310</td>
+<td>8.96e-06</td>
+<td>0.183</td>
+</tr>
+<tr>
+<td>350</td>
+<td>0.06924</td>
+<td>14430</td>
+<td>9.88e-06</td>
+<td>0.204</td>
+</tr>
+<tr>
+<td>400</td>
+<td>0.06059</td>
+<td>14480</td>
+<td>1.082e-05</td>
+<td>0.226</td>
+</tr>
+<tr>
+<td>450</td>
+<td>0.05386</td>
+<td>14500</td>
+<td>1.172e-05</td>
+<td>0.247</td>
+</tr>
+<tr>
+<td>500</td>
+<td>0.04848</td>
+<td>14520</td>
+<td>1.264e-05</td>
+<td>0.266</td>
+</tr>
+<tr>
+<td>550</td>
+<td>0.04407</td>
+<td>14530</td>
+<td>1.343e-05</td>
+<td>0.285</td>
+</tr>
+<tr>
+<td>600</td>
+<td>0.0404</td>
+<td>14550</td>
+<td>1.424e-05</td>
+<td>0.305</td>
+</tr>
+<tr>
+<td>700</td>
+<td>0.03463</td>
+<td>14610</td>
+<td>1.578e-05</td>
+<td>0.342</td>
+</tr>
+<tr>
+<td>800</td>
+<td>0.0303</td>
+<td>14700</td>
+<td>1.724e-05</td>
+<td>0.378</td>
+</tr>
+<tr>
+<td>900</td>
+<td>0.02694</td>
+<td>14830</td>
+<td>1.865e-05</td>
+<td>0.412</td>
+</tr>
+<tr>
+<td>1000</td>
+<td>0.02424</td>
+<td>14990</td>
+<td>2.013e-05</td>
+<td>0.448</td>
+</tr>
+<tr>
+<td>1100</td>
+<td>0.02204</td>
+<td>15170</td>
+<td>2.13e-05</td>
+<td>0.488</td>
+</tr>
+<tr>
+<td>1200</td>
+<td>0.0202</td>
+<td>15370</td>
+<td>2.262e-05</td>
+<td>0.528</td>
+</tr>
+<tr>
+<td>1300</td>
+<td>0.01865</td>
+<td>15590</td>
+<td>2.385e-05</td>
+<td>0.568</td>
+</tr>
+<tr>
+<td>1400</td>
+<td>0.01732</td>
+<td>15810</td>
+<td>2.507e-05</td>
+<td>0.61</td>
+</tr>
+<tr>
+<td>1500</td>
+<td>0.01616</td>
+<td>16020</td>
+<td>2.627e-05</td>
+<td>0.655</td>
+</tr>
+<tr>
+<td>1600</td>
+<td>0.0152</td>
+<td>16280</td>
+<td>2.737e-05</td>
+<td>0.697</td>
+</tr>
+<tr>
+<td>1700</td>
+<td>0.0143</td>
+<td>16580</td>
+<td>2.849e-05</td>
+<td>0.742</td>
+</tr>
+<tr>
+<td>1800</td>
+<td>0.0135</td>
+<td>16960</td>
+<td>2.961e-05</td>
+<td>0.786</td>
+</tr>
+<tr>
+<td>1900</td>
+<td>0.0128</td>
+<td>17490</td>
+<td>3.072e-05</td>
+<td>0.835</td>
+</tr>
+<tr>
+<td>2000</td>
+<td>0.0121</td>
+<td>18250</td>
+<td>3.182e-05</td>
+<td>0.878</td>
+</tr>
+</tbody>
+</table>
+<h3 id="nitrogen">Nitrogen<a class="headerlink" href="#nitrogen" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Source: Incropera et al., Fundamentals of Heat and Mass Transfer, 7th ed., 2011, Table A.4, p. 998</li>
+<li>Note: Gas at atmospheric pressure; the densities are those of 1 bar.</li>
+<li>Ideal gas: yes</li>
+<li>Temperature range of the tables: 100 K to 1300 K (18 points)</li>
+<li>Tabulated properties: ρ [kg/m³], c_p [J/(kg K)], μ [Pa s], k [W/(m K)] (β is not tabulated; 1/T_film is used)</li>
+</ul>
+<table>
+<thead>
+<tr>
+<th>T [K]</th>
+<th>ρ [kg/m³]</th>
+<th>c_p [J/(kg K)]</th>
+<th>μ [Pa s]</th>
+<th>k [W/(m K)]</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>100</td>
+<td>3.4388</td>
+<td>1070</td>
+<td>6.88e-06</td>
+<td>0.00958</td>
+</tr>
+<tr>
+<td>150</td>
+<td>2.2594</td>
+<td>1050</td>
+<td>1.006e-05</td>
+<td>0.0139</td>
+</tr>
+<tr>
+<td>200</td>
+<td>1.6883</td>
+<td>1043</td>
+<td>1.292e-05</td>
+<td>0.0183</td>
+</tr>
+<tr>
+<td>250</td>
+<td>1.3488</td>
+<td>1042</td>
+<td>1.549e-05</td>
+<td>0.0222</td>
+</tr>
+<tr>
+<td>300</td>
+<td>1.1233</td>
+<td>1041</td>
+<td>1.782e-05</td>
+<td>0.0259</td>
+</tr>
+<tr>
+<td>350</td>
+<td>0.9625</td>
+<td>1042</td>
+<td>2e-05</td>
+<td>0.0293</td>
+</tr>
+<tr>
+<td>400</td>
+<td>0.8425</td>
+<td>1045</td>
+<td>2.204e-05</td>
+<td>0.0327</td>
+</tr>
+<tr>
+<td>450</td>
+<td>0.7485</td>
+<td>1050</td>
+<td>2.396e-05</td>
+<td>0.0358</td>
+</tr>
+<tr>
+<td>500</td>
+<td>0.6739</td>
+<td>1056</td>
+<td>2.577e-05</td>
+<td>0.0389</td>
+</tr>
+<tr>
+<td>550</td>
+<td>0.6124</td>
+<td>1065</td>
+<td>2.747e-05</td>
+<td>0.0417</td>
+</tr>
+<tr>
+<td>600</td>
+<td>0.5615</td>
+<td>1075</td>
+<td>2.908e-05</td>
+<td>0.0446</td>
+</tr>
+<tr>
+<td>700</td>
+<td>0.4812</td>
+<td>1098</td>
+<td>3.21e-05</td>
+<td>0.0499</td>
+</tr>
+<tr>
+<td>800</td>
+<td>0.4211</td>
+<td>1122</td>
+<td>3.491e-05</td>
+<td>0.0548</td>
+</tr>
+<tr>
+<td>900</td>
+<td>0.3743</td>
+<td>1146</td>
+<td>3.753e-05</td>
+<td>0.0597</td>
+</tr>
+<tr>
+<td>1000</td>
+<td>0.3368</td>
+<td>1167</td>
+<td>3.999e-05</td>
+<td>0.0647</td>
+</tr>
+<tr>
+<td>1100</td>
+<td>0.3062</td>
+<td>1187</td>
+<td>4.232e-05</td>
+<td>0.07</td>
+</tr>
+<tr>
+<td>1200</td>
+<td>0.2807</td>
+<td>1204</td>
+<td>4.453e-05</td>
+<td>0.0758</td>
+</tr>
+<tr>
+<td>1300</td>
+<td>0.2591</td>
+<td>1219</td>
+<td>4.662e-05</td>
+<td>0.081</td>
+</tr>
+</tbody>
+</table>
+<h3 id="oxygen">Oxygen<a class="headerlink" href="#oxygen" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Source: Incropera et al., Fundamentals of Heat and Mass Transfer, 7th ed., 2011, Table A.4, p. 998-999</li>
+<li>Note: Gas at atmospheric pressure; the densities are those of 1 bar.</li>
+<li>Ideal gas: yes</li>
+<li>Temperature range of the tables: 100 K to 1300 K (18 points)</li>
+<li>Tabulated properties: ρ [kg/m³], c_p [J/(kg K)], μ [Pa s], k [W/(m K)] (β is not tabulated; 1/T_film is used)</li>
+</ul>
+<table>
+<thead>
+<tr>
+<th>T [K]</th>
+<th>ρ [kg/m³]</th>
+<th>c_p [J/(kg K)]</th>
+<th>μ [Pa s]</th>
+<th>k [W/(m K)]</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>100</td>
+<td>3.945</td>
+<td>962</td>
+<td>7.64e-06</td>
+<td>0.00925</td>
+</tr>
+<tr>
+<td>150</td>
+<td>2.585</td>
+<td>921</td>
+<td>1.148e-05</td>
+<td>0.0138</td>
+</tr>
+<tr>
+<td>200</td>
+<td>1.93</td>
+<td>915</td>
+<td>1.475e-05</td>
+<td>0.0183</td>
+</tr>
+<tr>
+<td>250</td>
+<td>1.542</td>
+<td>915</td>
+<td>1.786e-05</td>
+<td>0.0226</td>
+</tr>
+<tr>
+<td>300</td>
+<td>1.284</td>
+<td>920</td>
+<td>2.072e-05</td>
+<td>0.0268</td>
+</tr>
+<tr>
+<td>350</td>
+<td>1.1</td>
+<td>929</td>
+<td>2.335e-05</td>
+<td>0.0296</td>
+</tr>
+<tr>
+<td>400</td>
+<td>0.962</td>
+<td>942</td>
+<td>2.582e-05</td>
+<td>0.033</td>
+</tr>
+<tr>
+<td>450</td>
+<td>0.8554</td>
+<td>956</td>
+<td>2.814e-05</td>
+<td>0.0363</td>
+</tr>
+<tr>
+<td>500</td>
+<td>0.7698</td>
+<td>972</td>
+<td>3.033e-05</td>
+<td>0.0412</td>
+</tr>
+<tr>
+<td>550</td>
+<td>0.6998</td>
+<td>988</td>
+<td>3.24e-05</td>
+<td>0.0441</td>
+</tr>
+<tr>
+<td>600</td>
+<td>0.6414</td>
+<td>1003</td>
+<td>3.437e-05</td>
+<td>0.0473</td>
+</tr>
+<tr>
+<td>700</td>
+<td>0.5498</td>
+<td>1031</td>
+<td>3.808e-05</td>
+<td>0.0528</td>
+</tr>
+<tr>
+<td>800</td>
+<td>0.481</td>
+<td>1054</td>
+<td>4.152e-05</td>
+<td>0.0589</td>
+</tr>
+<tr>
+<td>900</td>
+<td>0.4275</td>
+<td>1074</td>
+<td>4.472e-05</td>
+<td>0.0649</td>
+</tr>
+<tr>
+<td>1000</td>
+<td>0.3848</td>
+<td>1090</td>
+<td>4.77e-05</td>
+<td>0.071</td>
+</tr>
+<tr>
+<td>1100</td>
+<td>0.3498</td>
+<td>1103</td>
+<td>5.055e-05</td>
+<td>0.0758</td>
+</tr>
+<tr>
+<td>1200</td>
+<td>0.3206</td>
+<td>1115</td>
+<td>5.325e-05</td>
+<td>0.0819</td>
+</tr>
+<tr>
+<td>1300</td>
+<td>0.296</td>
+<td>1125</td>
+<td>5.884e-05</td>
+<td>0.0871</td>
+</tr>
+</tbody>
+</table>
+<h3 id="water-vapor-steam">Water Vapor (Steam)<a class="headerlink" href="#water-vapor-steam" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Source: Incropera et al., Fundamentals of Heat and Mass Transfer, 7th ed., 2011, Table A.4, p. 999</li>
+<li>Note: Gas at atmospheric pressure; the densities are those of 1 atm.</li>
+<li>Ideal gas: yes</li>
+<li>Temperature range of the tables: 380 K to 850 K (11 points)</li>
+<li>Tabulated properties: ρ [kg/m³], c_p [J/(kg K)], μ [Pa s], k [W/(m K)] (β is not tabulated; 1/T_film is used)</li>
+</ul>
+<table>
+<thead>
+<tr>
+<th>T [K]</th>
+<th>ρ [kg/m³]</th>
+<th>c_p [J/(kg K)]</th>
+<th>μ [Pa s]</th>
+<th>k [W/(m K)]</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>380</td>
+<td>0.5863</td>
+<td>2060</td>
+<td>1.271e-05</td>
+<td>0.0246</td>
+</tr>
+<tr>
+<td>400</td>
+<td>0.5542</td>
+<td>2014</td>
+<td>1.344e-05</td>
+<td>0.0261</td>
+</tr>
+<tr>
+<td>450</td>
+<td>0.4902</td>
+<td>1980</td>
+<td>1.525e-05</td>
+<td>0.0299</td>
+</tr>
+<tr>
+<td>500</td>
+<td>0.4405</td>
+<td>1985</td>
+<td>1.704e-05</td>
+<td>0.0339</td>
+</tr>
+<tr>
+<td>550</td>
+<td>0.4005</td>
+<td>1997</td>
+<td>1.884e-05</td>
+<td>0.0379</td>
+</tr>
+<tr>
+<td>600</td>
+<td>0.3652</td>
+<td>2026</td>
+<td>2.067e-05</td>
+<td>0.0422</td>
+</tr>
+<tr>
+<td>650</td>
+<td>0.338</td>
+<td>2056</td>
+<td>2.247e-05</td>
+<td>0.0464</td>
+</tr>
+<tr>
+<td>700</td>
+<td>0.314</td>
+<td>2085</td>
+<td>2.426e-05</td>
+<td>0.0505</td>
+</tr>
+<tr>
+<td>750</td>
+<td>0.2931</td>
+<td>2119</td>
+<td>2.604e-05</td>
+<td>0.0549</td>
+</tr>
+<tr>
+<td>800</td>
+<td>0.2739</td>
+<td>2152</td>
+<td>2.786e-05</td>
+<td>0.0592</td>
+</tr>
+<tr>
+<td>850</td>
+<td>0.2579</td>
+<td>2186</td>
+<td>2.969e-05</td>
+<td>0.0637</td>
+</tr>
+</tbody>
+</table>
+<h3 id="engine-oil-unused">Engine Oil (Unused)<a class="headerlink" href="#engine-oil-unused" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Source: Incropera et al., Fundamentals of Heat and Mass Transfer, 7th ed., 2011, Table A.5 (saturated liquids), p. 1000</li>
+<li>Note: Saturated liquid.</li>
+<li>Ideal gas: no</li>
+<li>Temperature range of the tables: 273 K to 430 K (17 points)</li>
+<li>Tabulated properties: ρ [kg/m³], c_p [J/(kg K)], μ [Pa s], k [W/(m K)], β [1/K]</li>
+</ul>
+<table>
+<thead>
+<tr>
+<th>T [K]</th>
+<th>ρ [kg/m³]</th>
+<th>c_p [J/(kg K)]</th>
+<th>μ [Pa s]</th>
+<th>k [W/(m K)]</th>
+<th>β [1/K]</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>273</td>
+<td>899.1</td>
+<td>1796</td>
+<td>3.85</td>
+<td>0.147</td>
+<td>0.0007</td>
+</tr>
+<tr>
+<td>280</td>
+<td>895.3</td>
+<td>1827</td>
+<td>2.17</td>
+<td>0.144</td>
+<td>0.0007</td>
+</tr>
+<tr>
+<td>290</td>
+<td>890</td>
+<td>1868</td>
+<td>0.999</td>
+<td>0.145</td>
+<td>0.0007</td>
+</tr>
+<tr>
+<td>300</td>
+<td>884.1</td>
+<td>1909</td>
+<td>0.486</td>
+<td>0.145</td>
+<td>0.0007</td>
+</tr>
+<tr>
+<td>310</td>
+<td>877.9</td>
+<td>1951</td>
+<td>0.253</td>
+<td>0.145</td>
+<td>0.0007</td>
+</tr>
+<tr>
+<td>320</td>
+<td>871.8</td>
+<td>1993</td>
+<td>0.141</td>
+<td>0.143</td>
+<td>0.0007</td>
+</tr>
+<tr>
+<td>330</td>
+<td>865.8</td>
+<td>2035</td>
+<td>0.0836</td>
+<td>0.141</td>
+<td>0.0007</td>
+</tr>
+<tr>
+<td>340</td>
+<td>859.9</td>
+<td>2076</td>
+<td>0.0531</td>
+<td>0.139</td>
+<td>0.0007</td>
+</tr>
+<tr>
+<td>350</td>
+<td>853.9</td>
+<td>2118</td>
+<td>0.0356</td>
+<td>0.138</td>
+<td>0.0007</td>
+</tr>
+<tr>
+<td>360</td>
+<td>847.8</td>
+<td>2161</td>
+<td>0.0252</td>
+<td>0.138</td>
+<td>0.0007</td>
+</tr>
+<tr>
+<td>370</td>
+<td>841.8</td>
+<td>2206</td>
+<td>0.0186</td>
+<td>0.137</td>
+<td>0.0007</td>
+</tr>
+<tr>
+<td>380</td>
+<td>836</td>
+<td>2250</td>
+<td>0.0141</td>
+<td>0.136</td>
+<td>0.0007</td>
+</tr>
+<tr>
+<td>390</td>
+<td>830.6</td>
+<td>2294</td>
+<td>0.011</td>
+<td>0.135</td>
+<td>0.0007</td>
+</tr>
+<tr>
+<td>400</td>
+<td>825.1</td>
+<td>2337</td>
+<td>0.00874</td>
+<td>0.134</td>
+<td>0.0007</td>
+</tr>
+<tr>
+<td>410</td>
+<td>818.9</td>
+<td>2381</td>
+<td>0.00698</td>
+<td>0.133</td>
+<td>0.0007</td>
+</tr>
+<tr>
+<td>420</td>
+<td>812.1</td>
+<td>2427</td>
+<td>0.00564</td>
+<td>0.133</td>
+<td>0.0007</td>
+</tr>
+<tr>
+<td>430</td>
+<td>806.5</td>
+<td>2471</td>
+<td>0.0047</td>
+<td>0.132</td>
+<td>0.0007</td>
+</tr>
+</tbody>
+</table>
+<h3 id="ethylene-glycol">Ethylene Glycol<a class="headerlink" href="#ethylene-glycol" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Source: Incropera et al., Fundamentals of Heat and Mass Transfer, 7th ed., 2011, Table A.5 (saturated liquids), p. 1000</li>
+<li>Note: Saturated liquid.</li>
+<li>Ideal gas: no</li>
+<li>Temperature range of the tables: 273 K to 373 K (12 points)</li>
+<li>Tabulated properties: ρ [kg/m³], c_p [J/(kg K)], μ [Pa s], k [W/(m K)], β [1/K]</li>
+</ul>
+<table>
+<thead>
+<tr>
+<th>T [K]</th>
+<th>ρ [kg/m³]</th>
+<th>c_p [J/(kg K)]</th>
+<th>μ [Pa s]</th>
+<th>k [W/(m K)]</th>
+<th>β [1/K]</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>273</td>
+<td>1130.8</td>
+<td>2294</td>
+<td>0.0651</td>
+<td>0.242</td>
+<td>0.00065</td>
+</tr>
+<tr>
+<td>280</td>
+<td>1125.8</td>
+<td>2323</td>
+<td>0.042</td>
+<td>0.244</td>
+<td>0.00065</td>
+</tr>
+<tr>
+<td>290</td>
+<td>1118.8</td>
+<td>2368</td>
+<td>0.0247</td>
+<td>0.248</td>
+<td>0.00065</td>
+</tr>
+<tr>
+<td>300</td>
+<td>1114.4</td>
+<td>2415</td>
+<td>0.0157</td>
+<td>0.252</td>
+<td>0.00065</td>
+</tr>
+<tr>
+<td>310</td>
+<td>1103.7</td>
+<td>2460</td>
+<td>0.0107</td>
+<td>0.255</td>
+<td>0.00065</td>
+</tr>
+<tr>
+<td>320</td>
+<td>1096.2</td>
+<td>2505</td>
+<td>0.00757</td>
+<td>0.258</td>
+<td>0.00065</td>
+</tr>
+<tr>
+<td>330</td>
+<td>1089.5</td>
+<td>2549</td>
+<td>0.00561</td>
+<td>0.26</td>
+<td>0.00065</td>
+</tr>
+<tr>
+<td>340</td>
+<td>1083.8</td>
+<td>2592</td>
+<td>0.00431</td>
+<td>0.261</td>
+<td>0.00065</td>
+</tr>
+<tr>
+<td>350</td>
+<td>1079</td>
+<td>2637</td>
+<td>0.00342</td>
+<td>0.261</td>
+<td>0.00065</td>
+</tr>
+<tr>
+<td>360</td>
+<td>1074</td>
+<td>2682</td>
+<td>0.00278</td>
+<td>0.261</td>
+<td>0.00065</td>
+</tr>
+<tr>
+<td>370</td>
+<td>1066.7</td>
+<td>2728</td>
+<td>0.00228</td>
+<td>0.262</td>
+<td>0.00065</td>
+</tr>
+<tr>
+<td>373</td>
+<td>1058.5</td>
+<td>2742</td>
+<td>0.00215</td>
+<td>0.263</td>
+<td>0.00065</td>
+</tr>
+</tbody>
+</table>
+<h3 id="glycerin">Glycerin<a class="headerlink" href="#glycerin" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Source: Incropera et al., Fundamentals of Heat and Mass Transfer, 7th ed., 2011, Table A.5 (saturated liquids), p. 1000</li>
+<li>Note: Saturated liquid.</li>
+<li>Ideal gas: no</li>
+<li>Temperature range of the tables: 273 K to 320 K (6 points)</li>
+<li>Tabulated properties: ρ [kg/m³], c_p [J/(kg K)], μ [Pa s], k [W/(m K)], β [1/K]</li>
+</ul>
+<table>
+<thead>
+<tr>
+<th>T [K]</th>
+<th>ρ [kg/m³]</th>
+<th>c_p [J/(kg K)]</th>
+<th>μ [Pa s]</th>
+<th>k [W/(m K)]</th>
+<th>β [1/K]</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>273</td>
+<td>1276</td>
+<td>2261</td>
+<td>10.6</td>
+<td>0.282</td>
+<td>0.00047</td>
+</tr>
+<tr>
+<td>280</td>
+<td>1271.9</td>
+<td>2298</td>
+<td>5.34</td>
+<td>0.284</td>
+<td>0.00047</td>
+</tr>
+<tr>
+<td>290</td>
+<td>1265.8</td>
+<td>2367</td>
+<td>1.85</td>
+<td>0.286</td>
+<td>0.00048</td>
+</tr>
+<tr>
+<td>300</td>
+<td>1259.9</td>
+<td>2427</td>
+<td>0.799</td>
+<td>0.286</td>
+<td>0.00048</td>
+</tr>
+<tr>
+<td>310</td>
+<td>1253.9</td>
+<td>2490</td>
+<td>0.352</td>
+<td>0.286</td>
+<td>0.00049</td>
+</tr>
+<tr>
+<td>320</td>
+<td>1247.2</td>
+<td>2564</td>
+<td>0.21</td>
+<td>0.287</td>
+<td>0.0005</td>
+</tr>
+</tbody>
+</table>
+<h3 id="refrigerant-134a">Refrigerant-134a<a class="headerlink" href="#refrigerant-134a" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Source: Incropera et al., Fundamentals of Heat and Mass Transfer, 7th ed., 2011, Table A.5 (saturated liquids), p. 1001</li>
+<li>Note: Saturated liquid.</li>
+<li>Ideal gas: no</li>
+<li>Temperature range of the tables: 230 K to 370 K (15 points)</li>
+<li>Tabulated properties: ρ [kg/m³], c_p [J/(kg K)], μ [Pa s], k [W/(m K)], β [1/K]</li>
+</ul>
+<table>
+<thead>
+<tr>
+<th>T [K]</th>
+<th>ρ [kg/m³]</th>
+<th>c_p [J/(kg K)]</th>
+<th>μ [Pa s]</th>
+<th>k [W/(m K)]</th>
+<th>β [1/K]</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>230</td>
+<td>1426.8</td>
+<td>1249</td>
+<td>0.0004912</td>
+<td>0.1121</td>
+<td>0.00202</td>
+</tr>
+<tr>
+<td>240</td>
+<td>1397.7</td>
+<td>1267</td>
+<td>0.0004202</td>
+<td>0.1073</td>
+<td>0.00211</td>
+</tr>
+<tr>
+<td>250</td>
+<td>1367.9</td>
+<td>1287</td>
+<td>0.0003633</td>
+<td>0.1025</td>
+<td>0.00223</td>
+</tr>
+<tr>
+<td>260</td>
+<td>1337.1</td>
+<td>1308</td>
+<td>0.0003166</td>
+<td>0.0979</td>
+<td>0.00236</td>
+</tr>
+<tr>
+<td>270</td>
+<td>1305.1</td>
+<td>1333</td>
+<td>0.0002775</td>
+<td>0.0934</td>
+<td>0.00253</td>
+</tr>
+<tr>
+<td>280</td>
+<td>1271.8</td>
+<td>1361</td>
+<td>0.0002443</td>
+<td>0.089</td>
+<td>0.00273</td>
+</tr>
+<tr>
+<td>290</td>
+<td>1236.8</td>
+<td>1393</td>
+<td>0.0002156</td>
+<td>0.0846</td>
+<td>0.00298</td>
+</tr>
+<tr>
+<td>300</td>
+<td>1199.7</td>
+<td>1432</td>
+<td>0.0001905</td>
+<td>0.0803</td>
+<td>0.0033</td>
+</tr>
+<tr>
+<td>310</td>
+<td>1159.9</td>
+<td>1481</td>
+<td>0.000168</td>
+<td>0.0761</td>
+<td>0.00373</td>
+</tr>
+<tr>
+<td>320</td>
+<td>1116.8</td>
+<td>1543</td>
+<td>0.0001478</td>
+<td>0.0718</td>
+<td>0.00433</td>
+</tr>
+<tr>
+<td>330</td>
+<td>1069.1</td>
+<td>1627</td>
+<td>0.0001292</td>
+<td>0.0675</td>
+<td>0.00519</td>
+</tr>
+<tr>
+<td>340</td>
+<td>1015</td>
+<td>1751</td>
+<td>0.0001118</td>
+<td>0.0631</td>
+<td>0.00657</td>
+</tr>
+<tr>
+<td>350</td>
+<td>951.3</td>
+<td>1961</td>
+<td>9.51e-05</td>
+<td>0.0586</td>
+<td>0.0091</td>
+</tr>
+<tr>
+<td>360</td>
+<td>870.1</td>
+<td>2437</td>
+<td>7.81e-05</td>
+<td>0.0541</td>
+<td>0.01539</td>
+</tr>
+<tr>
+<td>370</td>
+<td>740.3</td>
+<td>5105</td>
+<td>5.8e-05</td>
+<td>0.0518</td>
+<td>0.05524</td>
+</tr>
+</tbody>
+</table>
+<h3 id="refrigerant-22">Refrigerant-22<a class="headerlink" href="#refrigerant-22" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Source: Incropera et al., Fundamentals of Heat and Mass Transfer, 7th ed., 2011, Table A.5 (saturated liquids), p. 1001</li>
+<li>Note: Saturated liquid.</li>
+<li>Ideal gas: no</li>
+<li>Temperature range of the tables: 230 K to 360 K (14 points)</li>
+<li>Tabulated properties: ρ [kg/m³], c_p [J/(kg K)], μ [Pa s], k [W/(m K)], β [1/K]</li>
+</ul>
+<table>
+<thead>
+<tr>
+<th>T [K]</th>
+<th>ρ [kg/m³]</th>
+<th>c_p [J/(kg K)]</th>
+<th>μ [Pa s]</th>
+<th>k [W/(m K)]</th>
+<th>β [1/K]</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>230</td>
+<td>1416</td>
+<td>1087</td>
+<td>0.0003558</td>
+<td>0.1145</td>
+<td>0.00205</td>
+</tr>
+<tr>
+<td>240</td>
+<td>1386.6</td>
+<td>1100</td>
+<td>0.0003145</td>
+<td>0.1098</td>
+<td>0.00216</td>
+</tr>
+<tr>
+<td>250</td>
+<td>1356.3</td>
+<td>1117</td>
+<td>0.0002796</td>
+<td>0.1052</td>
+<td>0.00229</td>
+</tr>
+<tr>
+<td>260</td>
+<td>1324.9</td>
+<td>1137</td>
+<td>0.0002497</td>
+<td>0.1007</td>
+<td>0.00245</td>
+</tr>
+<tr>
+<td>270</td>
+<td>1292.1</td>
+<td>1161</td>
+<td>0.0002235</td>
+<td>0.0962</td>
+<td>0.00263</td>
+</tr>
+<tr>
+<td>280</td>
+<td>1257.9</td>
+<td>1189</td>
+<td>0.0002005</td>
+<td>0.0917</td>
+<td>0.00286</td>
+</tr>
+<tr>
+<td>290</td>
+<td>1221.7</td>
+<td>1223</td>
+<td>0.0001798</td>
+<td>0.0872</td>
+<td>0.00315</td>
+</tr>
+<tr>
+<td>300</td>
+<td>1183.4</td>
+<td>1265</td>
+<td>0.000161</td>
+<td>0.0826</td>
+<td>0.00351</td>
+</tr>
+<tr>
+<td>310</td>
+<td>1142.2</td>
+<td>1319</td>
+<td>0.0001438</td>
+<td>0.0781</td>
+<td>0.004</td>
+</tr>
+<tr>
+<td>320</td>
+<td>1097.4</td>
+<td>1391</td>
+<td>0.0001278</td>
+<td>0.0734</td>
+<td>0.00469</td>
+</tr>
+<tr>
+<td>330</td>
+<td>1047.5</td>
+<td>1495</td>
+<td>0.0001127</td>
+<td>0.0686</td>
+<td>0.00575</td>
+</tr>
+<tr>
+<td>340</td>
+<td>990.1</td>
+<td>1665</td>
+<td>9.8e-05</td>
+<td>0.0636</td>
+<td>0.00756</td>
+</tr>
+<tr>
+<td>350</td>
+<td>920.1</td>
+<td>1997</td>
+<td>8.31e-05</td>
+<td>0.0583</td>
+<td>0.01135</td>
+</tr>
+<tr>
+<td>360</td>
+<td>823.4</td>
+<td>3001</td>
+<td>6.68e-05</td>
+<td>0.0531</td>
+<td>0.02388</td>
+</tr>
+</tbody>
+</table>
+<h3 id="mercury">Mercury<a class="headerlink" href="#mercury" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Source: Incropera et al., Fundamentals of Heat and Mass Transfer, 7th ed., 2011, Table A.5 (saturated liquids), p. 1001</li>
+<li>Note: Saturated liquid.</li>
+<li>Ideal gas: no</li>
+<li>Temperature range of the tables: 273 K to 600 K (8 points)</li>
+<li>Tabulated properties: ρ [kg/m³], c_p [J/(kg K)], μ [Pa s], k [W/(m K)], β [1/K]</li>
+</ul>
+<table>
+<thead>
+<tr>
+<th>T [K]</th>
+<th>ρ [kg/m³]</th>
+<th>c_p [J/(kg K)]</th>
+<th>μ [Pa s]</th>
+<th>k [W/(m K)]</th>
+<th>β [1/K]</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>273</td>
+<td>13595</td>
+<td>140.4</td>
+<td>0.001688</td>
+<td>8.18</td>
+<td>0.000181</td>
+</tr>
+<tr>
+<td>300</td>
+<td>13529</td>
+<td>139.3</td>
+<td>0.001523</td>
+<td>8.54</td>
+<td>0.000181</td>
+</tr>
+<tr>
+<td>350</td>
+<td>13407</td>
+<td>137.7</td>
+<td>0.001309</td>
+<td>9.18</td>
+<td>0.000181</td>
+</tr>
+<tr>
+<td>400</td>
+<td>13287</td>
+<td>136.5</td>
+<td>0.001171</td>
+<td>9.8</td>
+<td>0.000181</td>
+</tr>
+<tr>
+<td>450</td>
+<td>13167</td>
+<td>135.7</td>
+<td>0.001075</td>
+<td>10.4</td>
+<td>0.000181</td>
+</tr>
+<tr>
+<td>500</td>
+<td>13048</td>
+<td>135.3</td>
+<td>0.001007</td>
+<td>10.95</td>
+<td>0.000182</td>
+</tr>
+<tr>
+<td>550</td>
+<td>12929</td>
+<td>135.2</td>
+<td>0.000953</td>
+<td>11.45</td>
+<td>0.000184</td>
+</tr>
+<tr>
+<td>600</td>
+<td>12809</td>
+<td>135.5</td>
+<td>0.000911</td>
+<td>11.95</td>
+<td>0.000187</td>
 </tr>
 </tbody>
 </table>

@@ -168,16 +168,15 @@ message that says so; it is never solved with that part left out.</p>
 <li><strong>The window has not been reviewed on a real screen.</strong> The human gate M8.G (build two
   verification cases in the window and list every point of friction) is not done. Every
   window test so far ran without a screen. Expect findings in layout and usability.</li>
-<li><strong>The property tables and the correlations are not yet checked against a reference
-  text.</strong> The material tables are "from standard heat-transfer textbook tables" and no
-  reference or edition is recorded. For the correlations the project records only the
-  names it gives in the theory text (Churchill-Bernstein, Churchill-Chu, Gnielinski,
-  Dittus-Boelter, Churchill 1977). The check is task M11.1, a human task. Until then
-  <a href="../materials/">Materials</a> and <a href="../correlations/">Correlations</a> say "source not yet
-  recorded".</li>
+<li><strong>Property and correlation sources.</strong> Since 2026-11-23 every built-in property comes from
+  Incropera et al., <em>Fundamentals of Heat and Mass Transfer</em>, 7th ed. (2011), Appendix A,
+  except water, which comes from the NIST Chemistry WebBook. Every correlation cites its
+  equation in that book, except the Churchill 1977 friction factor. See
+  <a href="../materials/">Materials</a> and <a href="../correlations/">Correlations</a>. One printed value looks
+  like a misprint and is kept as printed: oxygen μ at 1300 K (open question Q30).</li>
 <li><strong>Not yet done:</strong> the verification report (task M11.2), the performance benchmark
   (M11.3) and the release review (M11.6).</li>
-<li><strong>Several choices await the owner's confirmation</strong> (open questions Q11, Q14, Q17.2,
+<li><strong>Several choices await the owner's confirmation</strong> (open questions Q11, Q14,
   Q18.2, Q20, Q21, Q22, Q23, Q24, Q25). The entries below say which.</li>
 </ul>
 <h2 id="modelling">Modelling<a class="headerlink" href="#modelling" title="Permanent link">&para;</a></h2>
@@ -254,13 +253,14 @@ message that says so; it is never solved with that part left out.</p>
 <li><strong>A correlation outside its validity range is still evaluated.</strong> One warning is logged
   for each boundary condition and solve. Check the range on the
   <a href="../correlations/">Correlations</a> page.</li>
-<li><strong>The characteristic length of a plate is the length of the selection</strong> in this version,
-  not area divided by perimeter, which the theory table lists for horizontal plates (open
-  question Q17.2, awaiting confirmation). An explicit characteristic length always wins.
-  Cylinders need one.</li>
+<li><strong>The automatic characteristic length</strong> of a plate or vertical channel is the length of the
+  selection. For horizontal plates it is half of that, the book's area/perimeter of a strip
+  or ring. Cylinders, spheres and non-circular sections need a length. The jets take theirs
+  from the nozzle size. An explicit characteristic length always wins.</li>
 <li><strong>Internal duct flow is not a convection boundary condition.</strong> Use a stream.</li>
-<li><strong>The Dittus-Boelter option</strong> replaces Gnielinski for turbulent flow; its range
-  (Re at least 1e4) is not enforced in the transition region.</li>
+<li><strong>The Dittus-Boelter and Sieder-Tate options</strong> replace Gnielinski for turbulent flow.
+  Their ranges (Re at least 1e4) are not enforced in the transition region, and a stream
+  logs no validity warnings for them; the heat-transfer calculator does.</li>
 <li><strong>Fluid properties outside the table</strong> keep the end values and log one warning for each
   fluid. For an ideal gas the expansion coefficient is still 1/T.</li>
 <li><strong>Fluid thermal storage is neglected:</strong> the fluid in a stream is quasi-steady. A stream
@@ -295,7 +295,8 @@ message that says so; it is never solved with that part left out.</p>
 <p>A code review on 2026-11-20 (<code>REVIEW.md</code> in the repository) found nine defects. All nine
 are fixed: three in restart (see <a href="#time-stepping-and-restart">Time stepping and restart</a>)
 and six by tasks M11.12–M11.16 on 2026-11-22. A second review, of 2026-11-21
-(<code>REVIEW-2.md</code>), is being worked through as tasks M11.17–M11.36.</p>
+(<code>REVIEW-2.md</code>), is being worked through as tasks M11.17–M11.36. The property tables and correlations were
+rebuilt from the reference text on 2026-11-23 (tasks M11.37–M11.42).</p>
 <h2 id="the-window">The window<a class="headerlink" href="#the-window" title="Permanent link">&para;</a></h2>
 <ul>
 <li><strong>Animation export to GIF blocks the window</strong> while a long animation is written.</li>

@@ -105,6 +105,8 @@
         <ul>
     <li class="toctree-l3"><a class="reference internal" href="#sec-8-1">§8.1 Internal duct flow</a>
     </li>
+    <li class="toctree-l3"><a class="reference internal" href="#sec-8-2">§8.2 Correlations of [I] that are not used</a>
+    </li>
         </ul>
     </li>
     <li class="toctree-l2"><a class="reference internal" href="#sec-9">§9 Flow solver</a>
@@ -352,6 +354,9 @@ h_min = smallest element edge length.</p>
   Report imbalance / max(|terms|).</li>
 </ul>
 <h2 id="sec-8">§8 Convection from correlations<a class="headerlink" href="#sec-8" title="Permanent link">&para;</a></h2>
+<p>Source of every correlation in §8 and §8.1, unless a row names another: <strong>[I]</strong> Bergman,
+Lavine, Incropera and DeWitt, <em>Fundamentals of Heat and Mass Transfer</em>, 7th ed., Wiley, 2011.
+The equation numbers below are the book's (owner's decision, 2026-11-23).</p>
 <p>h = Nu · k_f / L_c. Fluid properties at the <strong>film temperature</strong> T_film = (T_s + T∞)/2
 unless the correlation states otherwise. T_s is the wall temperature of the <em>previous
 nonlinear iteration</em> (lagged), either local (at each integration point; default) or the
@@ -366,6 +371,7 @@ For ideal gases β = 1/T_film; for liquids β comes from the property table.</p>
 <th>Formula</th>
 <th>L_c</th>
 <th>Validity</th>
+<th>[I]</th>
 </tr>
 </thead>
 <tbody>
@@ -374,14 +380,16 @@ For ideal gases β = 1/T_film; for liquids β comes from the property table.</p>
 <td>Flat plate, parallel flow, average</td>
 <td>Re ≤ 5e5: Nu = 0.664 Re^½ Pr^⅓; else Nu = (0.037 Re^0.8 − 871) Pr^⅓</td>
 <td>plate length</td>
-<td>Pr ≥ 0.6, Re ≤ 1e8</td>
+<td>Pr ≥ 0.6; when Re &gt; 5e5 also Pr ≤ 60 and Re ≤ 1e8</td>
+<td>7.30, 7.38</td>
 </tr>
 <tr>
 <td><code>plate_forced_local</code></td>
 <td>Flat plate, local at distance x from leading edge</td>
 <td>Re_x ≤ 5e5: Nu_x = 0.332 Re_x^½ Pr^⅓; else Nu_x = 0.0296 Re_x^0.8 Pr^⅓</td>
 <td>x</td>
-<td>Pr ≥ 0.6</td>
+<td>Pr ≥ 0.6; when Re_x &gt; 5e5 also Pr ≤ 60 and Re_x ≤ 1e8</td>
+<td>7.23, 7.36</td>
 </tr>
 <tr>
 <td><code>cylinder_crossflow</code></td>
@@ -389,12 +397,86 @@ For ideal gases β = 1/T_film; for liquids β comes from the property table.</p>
 <td>Nu = 0.3 + 0.62 Re^½ Pr^⅓ [1+(0.4/Pr)^⅔]^(−¼) [1+(Re/282000)^⅝]^(⅘)</td>
 <td>diameter</td>
 <td>Re·Pr ≥ 0.2</td>
+<td>7.54</td>
+</tr>
+<tr>
+<td><code>square_corner_crossflow</code></td>
+<td>Square cylinder, a corner facing the flow, gas</td>
+<td>Nu = 0.304 Re^0.59 Pr^⅓</td>
+<td>D = diagonal (width across the flow)</td>
+<td>6000 ≤ Re ≤ 60000</td>
+<td>7.52, Table 7.3</td>
+</tr>
+<tr>
+<td><code>square_face_crossflow</code></td>
+<td>Square cylinder, a face facing the flow, gas</td>
+<td>Nu = 0.158 Re^0.66 Pr^⅓</td>
+<td>D = side</td>
+<td>5000 ≤ Re ≤ 60000</td>
+<td>7.52, Table 7.3</td>
+</tr>
+<tr>
+<td><code>hexagon_face_crossflow</code></td>
+<td>Hexagonal cylinder, a face facing the flow, gas</td>
+<td>Re ≤ 20400: Nu = 0.164 Re^0.638 Pr^⅓; else Nu = 0.039 Re^0.78 Pr^⅓</td>
+<td>D = corner-to-corner width across the flow</td>
+<td>5200 ≤ Re ≤ 105000</td>
+<td>7.52, Table 7.3</td>
+</tr>
+<tr>
+<td><code>hexagon_corner_crossflow</code></td>
+<td>Hexagonal cylinder, a corner facing the flow, gas</td>
+<td>Nu = 0.150 Re^0.638 Pr^⅓</td>
+<td>D = face-to-face width across the flow</td>
+<td>4500 ≤ Re ≤ 90700</td>
+<td>7.52, Table 7.3</td>
+</tr>
+<tr>
+<td><code>plate_front_crossflow</code></td>
+<td>Thin plate across the flow, upstream face, gas</td>
+<td>Nu = 0.667 Re^0.500 Pr^⅓</td>
+<td>D = plate height across the flow</td>
+<td>10000 ≤ Re ≤ 50000</td>
+<td>7.52, Table 7.3</td>
+</tr>
+<tr>
+<td><code>plate_back_crossflow</code></td>
+<td>Thin plate across the flow, downstream face, gas</td>
+<td>Nu = 0.191 Re^0.667 Pr^⅓</td>
+<td>D = plate height across the flow</td>
+<td>7000 ≤ Re ≤ 80000</td>
+<td>7.52, Table 7.3</td>
+</tr>
+<tr>
+<td><code>sphere_forced</code></td>
+<td>Sphere in a free stream (Whitaker)</td>
+<td>Nu = 2 + (0.4 Re^½ + 0.06 Re^⅔) Pr^0.4 (μ/μ_s)^¼. <strong>All properties at T∞</strong>, except μ_s at T_s</td>
+<td>diameter</td>
+<td>0.71 ≤ Pr ≤ 380, 3.5 ≤ Re ≤ 7.6e4, 1.0 ≤ μ/μ_s ≤ 3.2</td>
+<td>7.56</td>
+</tr>
+<tr>
+<td><code>slot_jet</code></td>
+<td>Single slot nozzle impinging on the surface, average over |x| ≤ x_r from the jet's centre line (Martin)</td>
+<td>Nu / Pr^0.42 = 3.06 / (0.5/A_r + H/W + 2.78) · Re^m, m = 0.695 − [1/(4 A_r) + (H/(2W))^1.33 + 3.06]^(−1), A_r = W/(2 x_r); Re = V 2W/ν with V the jet exit velocity</td>
+<td>2W</td>
+<td>3000 ≤ Re ≤ 9e4, 2 ≤ H/W ≤ 10, 0.025 ≤ A_r ≤ 0.125</td>
+<td>7.75, 7.76</td>
+</tr>
+<tr>
+<td><code>round_jet</code></td>
+<td>Single round nozzle impinging on the surface, average over r ≤ r_r from the jet's axis (Martin)</td>
+<td>Nu / Pr^0.42 = G · 2 Re^½ (1 + 0.005 Re^0.55)^½, G = 2 A_r^½ (1 − 2.2 A_r^½) / (1 + 0.2 (H/D − 6) A_r^½), A_r = D²/(4 r_r²); Re = V D/ν with V the jet exit velocity</td>
+<td>D (nozzle)</td>
+<td>2000 ≤ Re ≤ 4e5, 2 ≤ H/D ≤ 12, 0.004 ≤ A_r ≤ 0.04</td>
+<td>7.71, 7.72</td>
 </tr>
 <tr>
 <td><code>duct_internal</code></td>
 <td>Internal flow, circular or by hydraulic diameter</td>
 <td>see §8.1</td>
 <td>D_h</td>
+<td></td>
 <td></td>
 </tr>
 <tr>
@@ -403,27 +485,39 @@ For ideal gases β = 1/T_film; for liquids β comes from the property table.</p>
 <td>Nu = {0.825 + 0.387 Ra^(1/6) / [1+(0.492/Pr)^(9/16)]^(8/27)}²</td>
 <td>height</td>
 <td>all Ra</td>
+<td>9.26</td>
+</tr>
+<tr>
+<td><code>vplate_natural_laminar</code></td>
+<td>Vertical plate, laminar (Churchill–Chu; slightly more accurate than 9.26 for Ra ≤ 1e9)</td>
+<td>Nu = 0.68 + 0.670 Ra^¼ / [1+(0.492/Pr)^(9/16)]^(4/9)</td>
+<td>height</td>
+<td>Ra ≤ 1e9</td>
+<td>9.27</td>
 </tr>
 <tr>
 <td><code>inclined_natural</code></td>
-<td>Plate inclined θ from vertical</td>
+<td>Plate inclined θ from vertical: the top face of a cold plate or the bottom face of a hot plate</td>
 <td>as <code>vplate_natural</code> with g → g cos θ</td>
 <td>length</td>
-<td>θ ≤ 60°</td>
+<td>0 ≤ θ ≤ 60°; for the other face [I] makes no recommendation (see below)</td>
+<td>9.26, §9.6.2</td>
 </tr>
 <tr>
 <td><code>hplate_up_natural</code></td>
 <td>Horizontal, hot face up or cold face down</td>
 <td>Ra ≤ 1e7: Nu = 0.54 Ra^¼; else Nu = 0.15 Ra^⅓</td>
 <td>area/perimeter</td>
-<td>1e4 ≤ Ra ≤ 1e11</td>
+<td>1e4 ≤ Ra ≤ 1e11; when Ra ≤ 1e7 also Pr ≥ 0.7</td>
+<td>9.30, 9.31</td>
 </tr>
 <tr>
 <td><code>hplate_down_natural</code></td>
 <td>Horizontal, hot face down or cold face up</td>
-<td>Nu = 0.27 Ra^¼</td>
+<td>Nu = 0.52 Ra^(1/5)</td>
 <td>area/perimeter</td>
-<td>1e5 ≤ Ra ≤ 1e10</td>
+<td>1e4 ≤ Ra ≤ 1e9, Pr ≥ 0.7</td>
+<td>9.32</td>
 </tr>
 <tr>
 <td><code>hcyl_natural</code></td>
@@ -431,11 +525,37 @@ For ideal gases β = 1/T_film; for liquids β comes from the property table.</p>
 <td>Nu = {0.60 + 0.387 Ra^(1/6) / [1+(0.559/Pr)^(9/16)]^(8/27)}²</td>
 <td>diameter</td>
 <td>Ra ≤ 1e12</td>
+<td>9.34</td>
+</tr>
+<tr>
+<td><code>sphere_natural</code></td>
+<td>Sphere (Churchill)</td>
+<td>Nu = 2 + 0.589 Ra^¼ / [1+(0.469/Pr)^(9/16)]^(4/9)</td>
+<td>diameter</td>
+<td>Pr ≥ 0.7, Ra ≤ 1e11</td>
+<td>9.35</td>
+</tr>
+<tr>
+<td><code>vchannel_natural</code></td>
+<td>Vertical channel between two parallel isothermal plates, both at T_s (Bar-Cohen–Rohsenow)</td>
+<td>Nu_S = [576/(Ra_S S/L)² + 2.87/(Ra_S S/L)^½]^(−½), Ra_S = Ra with L → S; h = Nu_S k_f / S</td>
+<td>S (plate spacing); L = channel height</td>
+<td>none stated</td>
+<td>9.45, Table 9.3</td>
+</tr>
+<tr>
+<td><code>vchannel_one_side_natural</code></td>
+<td>Vertical channel, this plate at T_s, the opposite plate adiabatic (Bar-Cohen–Rohsenow)</td>
+<td>Nu_S = [144/(Ra_S S/L)² + 2.87/(Ra_S S/L)^½]^(−½), Ra_S and h as above</td>
+<td>S; L = channel height</td>
+<td>none stated</td>
+<td>9.45, Table 9.3</td>
 </tr>
 <tr>
 <td><code>power_law</code></td>
 <td>User form</td>
 <td>h = C · |T_s − T∞|ⁿ</td>
+<td>—</td>
 <td>—</td>
 <td>—</td>
 </tr>
@@ -446,54 +566,198 @@ of (T_s − T∞) and the declared face direction. Outside a validity range: sti
 and emit one warning per boundary condition per solve.
 <code>plate_forced_local</code> needs the leading-edge point and flow direction; x is the distance of
 the integration point from the leading edge along the flow direction (minimum x = 1e-6 m).</p>
+<p><code>inclined_natural</code>: when the face direction is declared, a face for which [I] makes no
+recommendation counts as outside the validity range: the top face (<code>up</code>) of a hot plate
+(T_s &gt; T∞), or the bottom face (<code>down</code>) of a cold plate. When no face direction is declared,
+this is not checked.</p>
+<p><strong>Characteristic lengths in a 2D model.</strong></p>
+<ul>
+<li><strong>Horizontal plates.</strong> [I] defines L = A_s/P (Eq. 9.29). In a planar model a horizontal
+  face is a strip of unit depth, so A_s/P is half the strip's width; [I] Example 9.3 uses w/2
+  in the same way. In an axisymmetric model, a horizontal ring from r_i to r_o gives
+  A_s/P = (r_o − r_i)/2. Either way, the automatic L_c of <code>hplate_up_natural</code> and
+  <code>hplate_down_natural</code> is <strong>half the total length of the selection</strong>. This settles Q17.2.</li>
+<li><strong>Other correlations.</strong> For the other plate correlations and the vertical channels
+  (channel height), the automatic L_c is the total length of the selection.</li>
+<li><strong>Diameters.</strong> The cylinder, sphere and non-circular cylinder correlations need L_c (the
+  diameter or D) given.</li>
+<li><strong>An explicit L_c always overrides the automatic one.</strong></li>
+</ul>
+<p><strong>Extra inputs</strong> (Data §8 <code>params</code>):</p>
+<ul>
+<li><strong>Vertical channels:</strong> <code>S</code>, the plate spacing [m].</li>
+<li><strong><code>slot_jet</code>:</strong> <code>W</code>, the slot width [m]; <code>H</code>, the nozzle-to-surface distance [m]; <code>x_r</code>,
+  the half-width of the region averaged over [m]. The default <code>x_r</code> is half the total length
+  of the selection.</li>
+<li><strong><code>round_jet</code>:</strong> <code>D</code>, the nozzle diameter [m]; <code>H</code> [m]; <code>r_r</code>, the radius of the region
+  averaged over [m]. In an axisymmetric model the default <code>r_r</code> is the largest radial
+  coordinate of the selection; a planar model must give <code>r_r</code>.</li>
+<li><strong>The jets take their L_c from these inputs</strong>, so a given L_c is refused.</li>
+</ul>
 <h3 id="sec-8-1">§8.1 Internal duct flow<a class="headerlink" href="#sec-8-1" title="Permanent link">&para;</a></h3>
 <p>Re = ṁ D_h /(A μ), D_h = 4A/P_wet. Properties at the bulk fluid temperature.</p>
 <ul>
-<li>Laminar (Re ≤ 2300): Nu_lam from the table below.</li>
-<li>Turbulent (Re ≥ 4000): Gnielinski
+<li>Laminar (Re ≤ 2300): Nu_lam from the tables below ([I] Tables 8.1 and 8.2).</li>
+<li>Turbulent (Re ≥ 4000): Gnielinski ([I] 8.62, with f from 8.21)
   Nu = (f/8)(Re − 1000) Pr / [1 + 12.7 (f/8)^½ (Pr^⅔ − 1)], f = (0.790 ln Re − 1.64)⁻²
-  (valid 0.5 ≤ Pr ≤ 2000, Re ≤ 5e6).</li>
+  (valid 0.5 ≤ Pr ≤ 2000, 3000 ≤ Re ≤ 5e6).</li>
 <li>Transition (2300 &lt; Re &lt; 4000): linear interpolation in Re between Nu_lam and
-  Nu_Gnielinski(Re = 4000).</li>
+  Nu_Gnielinski(Re = 4000). [I] gives no transition correlation; this rule is the program's.</li>
 </ul>
 <table>
 <thead>
 <tr>
-<th>Cross-section</th>
+<th>Cross-section (<code>cross_section</code>)</th>
 <th>Nu_lam, constant wall T</th>
 <th>Nu_lam, constant flux</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td>Circular</td>
+<td>Circular (<code>circular</code>)</td>
 <td>3.66</td>
 <td>4.36</td>
 </tr>
 <tr>
-<td>Parallel plates, both heated</td>
+<td>Parallel plates, both heated (<code>parallel_plates</code>)</td>
 <td>7.54</td>
 <td>8.23</td>
 </tr>
 <tr>
-<td>Parallel plates, one side insulated</td>
+<td>Parallel plates, one side insulated (<code>parallel_plates_one_side</code>)</td>
 <td>4.86</td>
 <td>5.39</td>
 </tr>
 <tr>
-<td>Square</td>
+<td>Square (<code>square</code>)</td>
 <td>2.98</td>
 <td>3.61</td>
 </tr>
+<tr>
+<td>Rectangle, sides b/a = 1.43 (<code>rectangle_1_43</code>)</td>
+<td>3.08</td>
+<td>3.73</td>
+</tr>
+<tr>
+<td>Rectangle, b/a = 2.0 (<code>rectangle_2</code>)</td>
+<td>3.39</td>
+<td>4.12</td>
+</tr>
+<tr>
+<td>Rectangle, b/a = 3.0 (<code>rectangle_3</code>)</td>
+<td>3.96</td>
+<td>4.79</td>
+</tr>
+<tr>
+<td>Rectangle, b/a = 4.0 (<code>rectangle_4</code>)</td>
+<td>4.44</td>
+<td>5.33</td>
+</tr>
+<tr>
+<td>Rectangle, b/a = 8.0 (<code>rectangle_8</code>)</td>
+<td>5.60</td>
+<td>6.49</td>
+</tr>
+<tr>
+<td>Triangle (<code>triangle</code>)</td>
+<td>2.49</td>
+<td>3.11</td>
+</tr>
 </tbody>
 </table>
-<p>Default is the constant-wall-temperature value. Optional user selection: Dittus–Boelter,
-Nu = 0.023 Re^0.8 Pr^n, n = 0.4 if wall hotter than fluid, else 0.3 (Re ≥ 1e4).</p>
-<p>Friction factor, all regimes (Churchill 1977), roughness e:
+<p><strong>Concentric annulus</strong>, one surface at constant temperature and the other insulated
+([I] Table 8.2). D_h = D_o − D_i. The stream gives <code>diameter_ratio</code> = D_i/D_o. Nu is
+linearly interpolated in D_i/D_o between the rows; the program, not [I], sets that rule.</p>
+<table>
+<thead>
+<tr>
+<th>D_i/D_o</th>
+<th>Nu_i: inner surface heated (<code>annulus_inner</code>)</th>
+<th>Nu_o: outer surface heated (<code>annulus_outer</code>)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>0</td>
+<td>—</td>
+<td>3.66</td>
+</tr>
+<tr>
+<td>0.05</td>
+<td>17.46</td>
+<td>4.06</td>
+</tr>
+<tr>
+<td>0.10</td>
+<td>11.56</td>
+<td>4.11</td>
+</tr>
+<tr>
+<td>0.25</td>
+<td>7.37</td>
+<td>4.23</td>
+</tr>
+<tr>
+<td>0.50</td>
+<td>5.74</td>
+<td>4.43</td>
+</tr>
+<tr>
+<td>1.00</td>
+<td>4.86</td>
+<td>4.86</td>
+</tr>
+</tbody>
+</table>
+<ul>
+<li><code>annulus_inner</code> needs 0.05 ≤ D_i/D_o ≤ 1. <code>annulus_outer</code> needs 0 ≤ D_i/D_o ≤ 1.</li>
+<li>[I] gives only constant-temperature values for the annulus, so a constant-flux request is
+  refused.</li>
+</ul>
+<p>Default is the constant-wall-temperature value. Optional user selections, each replacing
+Gnielinski as the turbulent formula (the laminar value and the transition rule are kept):</p>
+<ul>
+<li><strong>Dittus–Boelter</strong> ([I] 8.60): Nu = 0.023 Re^0.8 Pr^n. n = 0.4 if the wall is hotter
+  than the fluid, else 0.3. Valid for 0.6 ≤ Pr ≤ 160 and Re ≥ 1e4.</li>
+<li><strong>Sieder–Tate</strong> ([I] 8.61): Nu = 0.027 Re^(4/5) Pr^(1/3) (μ/μ_s)^0.14. μ_s is taken at the
+  cell's mean wall temperature T̄_w; the other properties at the bulk temperature. Valid for
+  0.7 ≤ Pr ≤ 16700 and Re ≥ 1e4. [I] recommends it for flows with large property variation,
+  such as oils.</li>
+</ul>
+<p>Friction factor, all regimes (Churchill 1977, not in [I]), roughness e:
 f = 8 [ (8/Re)¹² + (A + B)^(−1.5) ]^(1/12),
 A = [2.457 ln( 1 / ((7/Re)^0.9 + 0.27 e/D_h) )]¹⁶, B = (37530/Re)¹⁶</p>
 <p>Pressure drop of a duct of length L with minor-loss coefficient K_minor:
 Δp = (f L/D_h + K_minor) · ρ V²/2, V = ṁ/(ρ A).</p>
+<h3 id="sec-8-2">§8.2 Correlations of [I] that are not used<a class="headerlink" href="#sec-8-2" title="Permanent link">&para;</a></h3>
+<p>Recorded so that no task adds them without a decision:</p>
+<ul>
+<li><strong>Circular cylinder, Hilpert ([I] 7.52, Table 7.2) and Zukauskas (7.53).</strong> These cover the
+  same case as Churchill–Bernstein (7.54), which is kept. <strong>Horizontal cylinder, Morgan
+  (9.33, Table 9.1)</strong> is not used either; Churchill–Chu (9.34) is kept.</li>
+<li><strong>Liquid-metal forms</strong>: the flat plate (7.32) and fully developed tube flow (8.64, 8.65).
+  Mercury is the only liquid metal built in. Other correlations used outside their Pr range
+  warn as usual.</li>
+<li><strong>Flat plate with uniform surface flux (7.45–7.48) or an unheated starting length
+  (7.60–7.64).</strong> The surface conditions these assume are not known to a load.</li>
+<li><strong>Tube banks (7.58, 7.59), packed beds (7.81), falling drops (7.57), and arrays of jets
+  (7.73, 7.77).</strong> These need array geometry and a mean fluid temperature that a single-surface
+  load does not have.</li>
+<li><strong>Laminar entry lengths (8.57, 8.58).</strong> These give a Nusselt number averaged from the inlet
+  to x, but the stream needs a local value in each cell.</li>
+<li><strong>Colebrook friction (8.20) and laminar f·Re of non-circular sections (Table 8.1).</strong>
+  Churchill 1977 is kept; it applies to circular ducts and to D_h. Using Table 8.1's f·Re
+  would need a rule for joining it to the turbulent branch, which [I] does not give
+  (OPEN_QUESTIONS Q30).</li>
+<li><strong>Isoflux vertical channels (9.46), inclined channels (9.47), and the isolated-plate
+  optimum spacings (Table 9.3).</strong> The isothermal form 9.45 is used.</li>
+<li><strong>Enclosures: rectangular cavities, concentric cylinders and spheres (9.49–9.63).</strong> They
+  couple two surfaces across a cavity, and a convection load sees only one ambient
+  temperature (Q30).</li>
+<li><strong>Mixed free and forced convection (9.64).</strong> This needs two correlations in one load
+  (Q30).</li>
+<li><strong>Boiling and condensation (chapter 10).</strong> The fluids here do not change phase.</li>
+</ul>
 <h2 id="sec-9">§9 Flow solver<a class="headerlink" href="#sec-9" title="Permanent link">&para;</a></h2>
 <h3 id="sec-9-1">§9.1 Stream (fluid temperature along a wall)<a class="headerlink" href="#sec-9-1" title="Permanent link">&para;</a></h3>
 <p>A stream is a 1D fluid path with mass flow ṁ [kg/s], inlet temperature T_in, flow area A,
