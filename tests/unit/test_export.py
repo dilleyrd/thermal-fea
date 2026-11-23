@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import csv
 import shutil
+import subprocess
 import xml.etree.ElementTree as ET
 from pathlib import Path
 
@@ -282,11 +283,27 @@ def test_given_colour_limits_are_kept(results: Results, tmp_path: Path) -> None:
         assert img.n_frames == 2
 
 
-def test_mp4_needs_ffmpeg(results: Results, tmp_path: Path) -> None:
-    if shutil.which("ffmpeg") is not None:
-        pytest.skip("ffmpeg is installed here")
+def test_mp4_needs_ffmpeg(
+    results: Results, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setattr(export.shutil, "which", lambda _name: None)  # as on a machine without it
     with pytest.raises(ModelError, match="ffmpeg"):
         export.animation(results, tmp_path / "anim.mp4", steps=[0])
+
+
+@pytest.mark.skipif(shutil.which("ffmpeg") is None, reason="ffmpeg is not installed")
+def test_mp4_is_written_with_ffmpeg(results: Results, tmp_path: Path) -> None:
+    out = export.animation(results, tmp_path / "anim.mp4", steps=[0, 1, 2], dpi=40)
+    data = out.read_bytes()
+    assert data[4:8] == b"ftyp"  # an MP4 (ISO base media) file
+    probe = shutil.which("ffprobe")
+    if probe is not None:
+        frames = subprocess.run(
+            [probe, "-v", "error", "-count_frames", "-select_streams", "v:0",
+             "-show_entries", "stream=nb_read_frames", "-of", "csv=p=0", str(out)],
+            capture_output=True, text=True, check=True, timeout=60,
+        ).stdout.strip()
+        assert int(frames) == 3
 
 
 @pytest.mark.parametrize(

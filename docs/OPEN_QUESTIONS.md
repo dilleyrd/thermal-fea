@@ -11,7 +11,8 @@ Work that is finished but still needs a person to look at it. Until then the tas
 - _None open._ M5.G (plots for V-10 and V-17) was reviewed by the owner on 2026-11-16:
   the images, the animation and the CSV files look fine. More testing of the
   visualisation with a wider range of boundary conditions is planned by the owner after
-  the build is complete. Still untested: MP4 export (ffmpeg is not installed).
+  the build is complete. MP4 export is tested since 2026-11-23, when ffmpeg was installed
+  on the development machine (`test_mp4_is_written_with_ffmpeg`).
 
 ## Q1 — `Material` field order (Data §6) — raised in M1.8
 

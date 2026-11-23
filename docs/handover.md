@@ -130,7 +130,9 @@ As of 2026-11-16:
   None of these is a task; do not add them without the owner asking.
 - Awaiting the owner's confirmation, none blocking: Q11, Q14, Q17.2, Q18.2, Q20, Q21, Q22, Q23, Q24, Q25, Q26.
 - Known gaps, recorded in Q21 and Q24: a few read-outs are still SI only (Q24.5); GIF export blocks the window; the stream "pick path points" toggle
-  does not exclude the probe and the chart path pick; MP4 export is untested (no ffmpeg).
+  does not exclude the probe and the chart path pick. MP4 export is tested since
+  2026-11-23 (ffmpeg 9.1 installed with winget; a shell started before the install may
+  not have it on PATH, and the test is then skipped).
 - Defects found while writing the user guide (M11.4), not fixed, listed in Q26.4: the
   window has no control to make a model axisymmetric; the stream panel shows "Constant 0"
   for an unset mass flow; the HTC calculator has no cross-section input; a new correlation

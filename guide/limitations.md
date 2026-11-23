@@ -179,8 +179,8 @@ rebuilt from the reference text on 2026-11-23 (tasks M11.37–M11.42).
 ## The window
 
 - **Animation export to GIF blocks the window** while a long animation is written.
-- **Animation export to MP4 is untested** because ffmpeg is not installed on the
-  development machine.
+- **Animation export to MP4 needs ffmpeg** on the PATH (for example
+  `winget install Gyan.FFmpeg`); without it, write a GIF.
 - **Probe, chart path pick and the stream "pick path points" toggle all listen to
   viewport clicks.** The probe and the chart path pick exclude each other, but the stream
   toggle does not switch the others off, and it leaves the selection mode at "None" when
