@@ -374,3 +374,76 @@ def test_time_step_settings_of_a_steady_model_are_not_checked() -> None:
     model.solution.initial_dt = 0.0
     model.solution.time_tol = 0.0
     assert validate(model, built, mesh) == []
+
+
+# ------------------------------------------------ M11.15: position and time in temperatures
+
+
+def _absolute(model: Model, built: object, mesh: object) -> list[str]:
+    return [i.name for i in validate(model, built, mesh) if i.code == "non-absolute-temperature"]
+
+
+@pytest.mark.parametrize("with_mesh", [True, False])
+def test_position_dependent_ambient_is_sampled_where_it_applies(with_mesh: bool) -> None:
+    model, built, mesh = good()
+    mesh = mesh if with_mesh else None
+    model.bcs[1] = bcs.RadiationAmbient("rad", "east", emissivity=0.8, T_inf=Expression("300*x"))
+    assert _absolute(model, built, mesh) == []  # east is at x = 1 m: 300 K, not 0 K
+    model.bcs[1] = bcs.RadiationAmbient("rad", "west", emissivity=0.8, T_inf=Expression("300*x"))
+    assert _absolute(model, built, mesh) == ["rad"]  # west is at x = 0: 0 K, refused as before
+
+
+def test_position_dependent_fixed_temperature_with_radiation() -> None:
+    model, built, mesh = good()
+    model.bcs[1] = bcs.RadiationAmbient("rad", "east", emissivity=0.8, T_inf=300.0)
+    model.bcs[0] = bcs.FixedTemperature("hot", "east", T=Expression("300*x"))
+    assert _absolute(model, built, mesh) == []
+    model.bcs[0] = bcs.FixedTemperature("hot", "west", T=Expression("300*x"))
+    assert _absolute(model, built, mesh) == ["hot"]
+
+
+def test_constant_zero_kelvin_is_still_refused() -> None:
+    model, built, mesh = good()
+    model.bcs[1] = bcs.RadiationAmbient("rad", "east", emissivity=0.8, T_inf=0.0)
+    assert _absolute(model, built, mesh) == ["rad"]
+
+
+def test_position_dependent_value_without_points_is_unknown() -> None:
+    model, built, mesh = good()
+    model.bcs[1] = bcs.RadiationAmbient("rad", "nowhere", emissivity=0.8,
+                                        T_inf=Expression("300*x"))
+    found = validate(model, built, mesh)
+    assert "unknown-selection" in codes(found)  # reported for the selection, not as 0 K
+    assert "non-absolute-temperature" not in codes(found)
+
+
+def test_position_dependent_initial_condition_needs_the_mesh_nodes() -> None:
+    """The whole domain is sampled at the mesh nodes; without a mesh it is unknown (the
+    corners of the bounding box could lie outside the shape)."""
+    model, built, mesh = good()
+    model.solution.kind = "transient"
+    model.bcs[1] = bcs.RadiationAmbient("rad", "east", emissivity=0.8, T_inf=300.0)
+    model.initial_condition = InitialCondition("expression", value=Expression("300*x"))
+    assert _absolute(model, built, mesh) == ["initial condition"]  # 0 K on the west edge
+    assert _absolute(model, built, None) == []  # no points: unknown, never blocks
+
+
+@pytest.mark.parametrize(("end_time", "refused"), [(100.0, True), (10.0, False)])
+def test_time_table_is_sampled_over_the_run(end_time: float, refused: bool) -> None:
+    model, built, mesh = good()
+    model.solution.kind = "transient"
+    model.solution.end_time = end_time
+    drop = Table([0.0, 50.0], [300.0, 0.0], "t")
+    model.bcs[1] = bcs.RadiationAmbient("rad", "east", emissivity=0.8, T_inf=drop)
+    assert (_absolute(model, built, mesh) == ["rad"]) is refused
+
+
+def test_time_expression_is_sampled_at_start_and_end() -> None:
+    model, built, mesh = good()
+    model.solution.kind = "transient"
+    model.solution.end_time = 100.0
+    model.bcs[1] = bcs.RadiationAmbient("rad", "east", emissivity=0.8,
+                                        T_inf=Expression("300 - 3*t"))
+    assert _absolute(model, built, mesh) == ["rad"]  # 0 K at the end of the run
+    model.solution.end_time = 10.0
+    assert _absolute(model, built, mesh) == []

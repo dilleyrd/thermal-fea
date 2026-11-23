@@ -8,7 +8,7 @@ it.
 from __future__ import annotations
 
 import logging
-from collections.abc import Iterable
+from collections.abc import Callable, Iterable
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Literal
 
@@ -36,7 +36,7 @@ log = logging.getLogger(__name__)
 #: The user power law h = C |dT|^n needs no fluid properties.
 NO_FLUID = "power_law"
 AXIS_TOL = 1e-9  # axisymmetric: nodes may lie this fraction of L left of the axis
-SURFACE_DIM, CURVE_DIM = 2, 1
+SURFACE_DIM, CURVE_DIM, POINT_DIM = 2, 1, 0
 _INTERFACE_SIDES = 2
 
 
@@ -82,11 +82,54 @@ def raise_if_errors(issues: Iterable[Issue]) -> None:
 # ---------------------------------------------------------------------------- helpers
 
 
-def _sample(fn: Function | None) -> float | None:
-    """Value of a function at t = 0 if it does not depend on temperature, else ``None``."""
+#: Where a located value is evaluated: points [m] as an (n, 2) array, ``None`` if unknown.
+Locator = Callable[["Iterable[str] | None"], "np.ndarray | None"]
+
+
+def _sample_times(model: Model, fn: Function, over_run: bool) -> list[float]:
+    """Times at which a function is evaluated (Q28.5, Q29).
+
+    A function without time dependence is sampled at t = 0. A steady model uses the steady
+    time. A transient model uses the function's breakpoints inside [0, end_time] plus the
+    start and the end; an expression of t exposes no breakpoints, so it is sampled at t = 0
+    and at end_time only.
+    """
+    from ..solver.steady import STEADY_TIME  # lazy: keep the model layer light
+
+    if not fn.depends_on_time or not over_run:
+        return [0.0]
+    if model.solution.kind != "transient":
+        return [STEADY_TIME]
+    end = float(model.solution.end_time)
+    if not end > 0.0:
+        return [0.0]
+    inside = [float(b) for b in fn.breakpoints() if 0.0 <= b <= end]
+    return sorted({0.0, end, *inside})
+
+
+def _sample(
+    fn: Function | None,
+    points: np.ndarray | None = None,
+    times: Iterable[float] = (0.0,),
+) -> list[float] | None:
+    """Smallest and largest value of a function over the sample points and times.
+
+    Returns ``None`` (unknown) if the function depends on temperature, or if it depends on
+    position and no points are available. Otherwise one value if the extremes coincide,
+    else ``[min, max]``. Position dependence is read from an expression's variable names
+    (the Function protocol has no such flag yet, M11.23).
+    """
     if fn is None or fn.depends_on_T:
         return None
-    return float(np.max(np.asarray(fn(t=0.0))))
+    x: np.ndarray | float = 0.0
+    y: np.ndarray | float = 0.0
+    if frozenset(getattr(fn, "_names", ())) & {"x", "y"}:
+        if points is None or len(points) == 0:
+            return None
+        x, y = points[:, 0], points[:, 1]
+    values = np.concatenate([np.asarray(fn(t=t, x=x, y=y), dtype=float).ravel() for t in times])
+    lo, hi = float(np.min(values)), float(np.max(values))
+    return [lo] if lo == hi else [lo, hi]
 
 
 def _extremes(fn: Function, lo: float, hi: float) -> tuple[float, float]:
@@ -99,28 +142,39 @@ def _extremes(fn: Function, lo: float, hi: float) -> tuple[float, float]:
     return min(values), max(values)
 
 
-def _known_temperatures(model: Model) -> list[tuple[float, str, str]]:
-    """Temperatures the model states explicitly: (value [K], kind, name)."""
+def _known_temperatures(
+    model: Model, locate: Locator | None = None
+) -> list[tuple[float, str, str]]:
+    """Temperatures the model states explicitly: (value [K], kind, name).
+
+    ``locate(selection names)`` gives the points a load applies to (``None`` names: the
+    whole domain). A varying value contributes its smallest and its largest value.
+    """
+    where: Locator = locate or (lambda _names: None)
     found: list[tuple[float, str, str]] = []
+
+    def add(fn: Function | None, names: Iterable[str] | None, kind: str, name: str,
+            over_run: bool = True) -> None:
+        if fn is None or fn.depends_on_T:
+            return
+        values = _sample(fn, where(names), _sample_times(model, fn, over_run))
+        found.extend((v, kind, name) for v in values or [])
+
     for bc in model.bcs:
         if not bc.active:
             continue
         for attr in ("T", "T_inf"):
-            value = _sample(getattr(bc, attr, None)) if hasattr(bc, attr) else None
-            if value is not None:
-                found.append((value, "bc", bc.name))
+            if hasattr(bc, attr):
+                add(getattr(bc, attr), [bc.selection], "bc", bc.name)
     for stream in model.streams:
-        value = _sample(stream.T_inlet)
-        if value is not None:
-            found.append((value, "stream", stream.name))
+        add(stream.T_inlet, list(stream.walls), "stream", stream.name)
     for enclosure in model.enclosures:
-        value = _sample(enclosure.T_ambient)
-        if value is not None:
-            found.append((value, "enclosure", enclosure.name))
+        add(enclosure.T_ambient, [s.selection for s in enclosure.surfaces], "enclosure",
+            enclosure.name)
     ic = model.initial_condition
     if model.solution.kind == "transient":
-        if ic.kind in ("uniform", "expression") and (value := _sample(ic.value)) is not None:
-            found.append((value, "model", "initial condition"))
+        if ic.kind in ("uniform", "expression"):
+            add(ic.value, None, "model", "initial condition", over_run=False)
         for region, value in (ic.per_region or {}).items():
             found.append((float(value), "model", f"initial condition of {region}"))
     return found
@@ -235,10 +289,42 @@ class _Checker:
                        "temperature reference (a fixed temperature, convection, radiation or "
                        "a stream); without one the temperature level is undetermined")
 
+    def points_of(self, names: Iterable[str] | None) -> np.ndarray | None:
+        """Points [m] of the selections (``None``: the whole domain), or ``None`` if unknown.
+
+        Mesh nodes of the curves (or of the whole mesh) when the mesh is given, else the
+        sampled curve polylines or the geometric points themselves. Only points that lie
+        on the entities are used: a surface, or the whole domain without a mesh, has no
+        such points here and is unknown (Q28.5), because the corners of a bounding box can
+        lie outside the shape and give a temperature that does not occur.
+        """
+        built, mesh = self.built, self.mesh
+        if names is None:
+            return np.asarray(mesh.nodes)[:, :2] if mesh is not None else None
+        chunks: list[np.ndarray] = []
+        for name in names:
+            selection = self.model.selections.get(name)
+            tags = self.tags.get(name)
+            if selection is None or not tags:
+                return None
+            if mesh is not None and selection.dim == CURVE_DIM:
+                for block in mesh.facets_on(tags):
+                    chunks.append(np.asarray(mesh.nodes)[np.unique(block.conn), :2])
+                continue
+            for tag in tags:
+                if selection.dim == CURVE_DIM and tag in built.curve_polylines:
+                    chunks.append(np.asarray(built.curve_polylines[tag])[:, :2])
+                    continue
+                fp = built.entities(selection.dim).get(tag)
+                if selection.dim != POINT_DIM or fp is None:
+                    return None  # no points on the entity itself: unknown
+                chunks.append(np.asarray(fp.center[:2], dtype=float).reshape(1, 2))
+        return np.vstack(chunks) if chunks else None
+
     def absolute_temperatures(self) -> list[tuple[float, str, str]]:
         """With radiation, every temperature must be absolute (> 0 K)."""
         model = self.model
-        known = _known_temperatures(model)
+        known = _known_temperatures(model, self.points_of)
         radiation = any(bc.active and isinstance(bc, RadiationAmbient) for bc in model.bcs) or bool(
             model.enclosures
         )

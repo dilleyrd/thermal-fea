@@ -453,7 +453,7 @@ Boundary Conditions, Flow (Streams, Network), Enclosures, Analysis Settings, Sol
   `post/path.py`, a point not found among the nearest candidates is tested against every
   element whose bounding box holds it. Tests: the reviewer's case (a point just inside a
   large quadrilateral next to small ones) is found, and a point outside still gives -1.
-- [ ] **M11.15 [B] Position-dependent temperatures in validation.** `REVIEW.md` finding 7;
+- [x] **M11.15 [B] Position-dependent temperatures in validation.** `REVIEW.md` finding 7;
   Q28.5. Tests: `T = 300*x` on a boundary at x = 1 m, with radiation, does not block the
   solve; a constant 0 K still does. Extended by Q29 (`REVIEW-2.md` 2.1-13d): a time table
   is also sampled over the run, not only at t = 0.
