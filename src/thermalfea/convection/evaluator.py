@@ -66,18 +66,48 @@ _GIVEN_LENGTH = frozenset(
 """Correlations whose L_c (a diameter or D) must be given (Theory §8, Diameters)."""
 
 _CHANNELS = ("vchannel_natural", "vchannel_one_side_natural")
-_PARAM_KEYS = ("theta_deg", "x0", "y0", "dir_x", "dir_y", "C", "n", "S")
+_JETS = ("slot_jet", "round_jet")
+_POSITIVE_PARAMS = ("S", "W", "H", "x_r", "D", "r_r")
+_PARAM_KEYS = ("theta_deg", "x0", "y0", "dir_x", "dir_y", "C", "n", *_POSITIVE_PARAMS)
 _REQUIRED_PARAMS: dict[str, tuple[str, ...]] = {
     _INCLINED: ("theta_deg",),
     _LOCAL: ("x0", "y0", "dir_x", "dir_y"),
     _USER: ("C", "n"),
     **{channel: ("S",) for channel in _CHANNELS},
+    "slot_jet": ("W", "H"),
+    "round_jet": ("D", "H"),
 }
 
 
 def _scalar(value: Any) -> Any:
     """0-d arrays become NumPy scalars; other arrays are returned unchanged."""
     return np.asarray(value)[()]
+
+
+_JET_KEYS = ("H_over_W", "H_over_D", "A_r")
+
+
+def _jet_length(correlation: str, params: dict[str, float] | None) -> float:
+    """L_c of a jet: 2W (slot) or D (round), from the inputs (Theory §8)."""
+    given = params or {}
+    key = "W" if correlation == "slot_jet" else "D"
+    if not given.get(key, 0.0) > 0.0:
+        raise ModelError(f"correlation {correlation!r} needs the input {key} (> 0)")
+    return 2.0 * given[key] if key == "W" else given[key]
+
+
+def _jet_ratios(correlation: str, params: dict[str, float] | None) -> dict[str, float]:
+    """H/W (or H/D) and A_r of a jet from its inputs (Theory §8)."""
+    given = params or {}
+    slot = correlation == "slot_jet"
+    names = ("W", "H", "x_r") if slot else ("D", "H", "r_r")
+    missing = [n for n in names if not given.get(n, 0.0) > 0.0]
+    if missing:
+        raise ModelError(f"correlation {correlation!r} needs the input(s) {missing} (> 0)")
+    width, H, region = (given[n] for n in names)
+    if slot:
+        return {"H_over_W": H / width, "A_r": width / (2.0 * region)}
+    return {"H_over_D": H / width, "A_r": width**2 / (4.0 * region**2)}
 
 
 def film_coefficient(
@@ -150,6 +180,8 @@ def film_coefficient(
     if fluid is None:
         raise ModelError(f"correlation {info.id!r} needs a fluid")
 
+    if info.id in _JETS:
+        length = _jet_length(info.id, params)
     if info.id == _SPHERE_FORCED:
         # Theory §8: all properties at T_inf, except mu_s at T_s.
         T_film = T_inf_a + 0.0 * T_s_a
@@ -173,6 +205,9 @@ def film_coefficient(
             raise ModelError(f"correlation {info.id!r} needs a velocity")
         Re = c.reynolds(p.rho, velocity, length, p.mu)
         values["Re"] = values["Re_x"] = numbers["Re"] = Re
+        if info.id in _JETS:
+            values.update(_jet_ratios(info.id, params))
+            numbers.update({k: values[k] for k in _JET_KEYS if k in values})
     else:
         g = c.G * np.cos(np.radians(theta_deg)) if info.id == _INCLINED else c.G
         if info.id in _CHANNELS:
@@ -232,9 +267,13 @@ class CorrelationConvectionTerm(ConvectionTerm):
         missing = [k for k in _REQUIRED_PARAMS.get(self.info.id, ()) if k not in bc.params]
         if missing:
             raise ModelError(f"{bc.name}: {bc.correlation!r} needs the params {missing}")
-        if "S" in bc.params and not float(bc.params["S"]) > 0.0:
+        for key in _POSITIVE_PARAMS:
+            if key in bc.params and not float(bc.params[key]) > 0.0:
+                raise ModelError(f"{bc.name}: {key} must be positive; got {bc.params[key]}")
+        if self.info.id in _JETS and bc.char_length is not None:
             raise ModelError(
-                f"{bc.name}: the plate spacing S must be positive; got {bc.params['S']}"
+                f"{bc.name}: {bc.correlation!r} takes its length from its inputs "
+                "(2W or D); char_length is not allowed"
             )
         if self.info.kind == "forced" and bc.velocity is None:
             raise ModelError(f"{bc.name}: {bc.correlation!r} needs a velocity")
@@ -276,6 +315,15 @@ class CorrelationConvectionTerm(ConvectionTerm):
             self._length = float(sum(b.geom.dS.sum() for b in self._batches))
             if self.info.id in _HPLATES:
                 self._length *= 0.5  # L = A_s/P of a horizontal face (Theory §8, Q17.2)
+        if self.info.id == "slot_jet" and "x_r" not in self.params:
+            self.params["x_r"] = 0.5 * float(sum(b.geom.dS.sum() for b in self._batches))
+        if self.info.id == "round_jet" and "r_r" not in self.params:
+            if not problem.mesh.axisymmetric:
+                raise ModelError(
+                    f"{self.name}: 'round_jet' in a planar model needs the param r_r"
+                )
+            nodes = problem.mesh.nodes
+            self.params["r_r"] = float(max(nodes[b.conn, 0].max() for b in self._batches))
         self.reset_warnings()
         if self.fluid is not None:
             reset_clamp_warning(self.fluid)
@@ -315,6 +363,9 @@ class CorrelationConvectionTerm(ConvectionTerm):
             values["Ra"] = numbers["Ra"]
         if "mu_ratio" in numbers:
             values["mu_ratio"] = numbers["mu_ratio"]
+        for key in _JET_KEYS:
+            if key in numbers:
+                values[key] = numbers[key]
         if self.info.id == _INCLINED:
             values["theta_deg"] = self.params["theta_deg"]
         cases: list[tuple[c.CorrelationInfo, ndarray | None]] = [(self.info, None)]

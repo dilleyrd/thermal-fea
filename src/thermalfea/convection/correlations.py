@@ -309,6 +309,53 @@ def nu_sphere_forced(Re: ArrayLike, Pr: ArrayLike, mu_ratio: ArrayLike) -> Any:
     return _ret(2.0 + (0.4 * Re_a**0.5 + 0.06 * Re_a ** (2.0 / 3.0)) * Pr_a**0.4 * ratio**0.25)
 
 
+def nu_slot_jet(Re: ArrayLike, Pr: ArrayLike, H_over_W: ArrayLike, A_r: ArrayLike) -> Any:
+    """Single slot nozzle, average over ``|x| <= x_r`` (Martin, Theory §8).
+
+    ``Nu/Pr^0.42 = 3.06/(0.5/A_r + H/W + 2.78) Re^m``,
+    ``m = 0.695 - [1/(4 A_r) + (H/(2W))^1.33 + 3.06]^(-1)``; ``Nu = h 2W/k_f``.
+
+    Parameters
+    ----------
+    Re : array_like
+        ``V 2W/nu`` with V the jet exit velocity (dimensionless).
+    Pr : array_like
+        Prandtl number (dimensionless).
+    H_over_W : array_like
+        Nozzle-to-surface distance over the slot width (dimensionless).
+    A_r : array_like
+        ``W/(2 x_r)`` (dimensionless).
+    """
+    Re_a, Pr_a = np.asarray(Re, dtype=float), np.asarray(Pr, dtype=float)
+    HW, Ar = np.asarray(H_over_W, dtype=float), np.asarray(A_r, dtype=float)
+    m = 0.695 - (1.0 / (4.0 * Ar) + (HW / 2.0) ** 1.33 + 3.06) ** -1
+    return _ret(Pr_a**0.42 * 3.06 / (0.5 / Ar + HW + 2.78) * Re_a**m)
+
+
+def nu_round_jet(Re: ArrayLike, Pr: ArrayLike, H_over_D: ArrayLike, A_r: ArrayLike) -> Any:
+    """Single round nozzle, average over ``r <= r_r`` (Martin, Theory §8).
+
+    ``Nu/Pr^0.42 = G 2 Re^(1/2) (1 + 0.005 Re^0.55)^(1/2)``,
+    ``G = 2 A_r^(1/2) (1 - 2.2 A_r^(1/2)) / (1 + 0.2 (H/D - 6) A_r^(1/2))``; ``Nu = h D/k_f``.
+
+    Parameters
+    ----------
+    Re : array_like
+        ``V D/nu`` with V the jet exit velocity (dimensionless).
+    Pr : array_like
+        Prandtl number (dimensionless).
+    H_over_D : array_like
+        Nozzle-to-surface distance over the nozzle diameter (dimensionless).
+    A_r : array_like
+        ``D^2/(4 r_r^2)`` (dimensionless).
+    """
+    Re_a, Pr_a = np.asarray(Re, dtype=float), np.asarray(Pr, dtype=float)
+    HD, Ar = np.asarray(H_over_D, dtype=float), np.asarray(A_r, dtype=float)
+    root = Ar**0.5
+    G = 2.0 * root * (1.0 - 2.2 * root) / (1.0 + 0.2 * (HD - 6.0) * root)
+    return _ret(Pr_a**0.42 * G * 2.0 * Re_a**0.5 * (1.0 + 0.005 * Re_a**0.55) ** 0.5)
+
+
 # --------------------------------------------------------------------------- natural convection
 
 
@@ -968,6 +1015,32 @@ CORRELATIONS: dict[str, CorrelationInfo] = {
         description="Sphere in a free stream (Whitaker)",
         length="diameter",
         source=f"{_I} Eq. 7.56",
+    ),
+    "slot_jet": CorrelationInfo(
+        id="slot_jet",
+        function=nu_slot_jet,
+        inputs=("Re", "Pr", "H_over_W", "A_r"),
+        kind="forced",
+        validity={"Re": (3000, 9e4), "H_over_W": (2, 10), "A_r": (0.025, 0.125)},
+        description=(
+            "Single slot nozzle impinging on the surface, average over |x| ≤ x_r from the "
+            "jet's centre line (Martin)"
+        ),
+        length="2W",
+        source=f"{_I} Eq. 7.75, 7.76",
+    ),
+    "round_jet": CorrelationInfo(
+        id="round_jet",
+        function=nu_round_jet,
+        inputs=("Re", "Pr", "H_over_D", "A_r"),
+        kind="forced",
+        validity={"Re": (2000, 4e5), "H_over_D": (2, 12), "A_r": (0.004, 0.04)},
+        description=(
+            "Single round nozzle impinging on the surface, average over r ≤ r_r from the "
+            "jet's axis (Martin)"
+        ),
+        length="D (nozzle)",
+        source=f"{_I} Eq. 7.71, 7.72",
     ),
     "duct_internal": CorrelationInfo(
         id="duct_internal",

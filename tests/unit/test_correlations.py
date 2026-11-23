@@ -22,6 +22,8 @@ IDS = [
     "plate_front_crossflow",
     "plate_back_crossflow",
     "sphere_forced",
+    "slot_jet",
+    "round_jet",
     "duct_internal",
     "vplate_natural",
     "vplate_natural_laminar",
@@ -46,6 +48,8 @@ VALIDITY = {
     "plate_front_crossflow": {"Re": (10000, 50000)},
     "plate_back_crossflow": {"Re": (7000, 80000)},
     "sphere_forced": {"Pr": (0.71, 380), "Re": (3.5, 7.6e4), "mu_ratio": (1.0, 3.2)},
+    "slot_jet": {"Re": (3000, 9e4), "H_over_W": (2, 10), "A_r": (0.025, 0.125)},
+    "round_jet": {"Re": (2000, 4e5), "H_over_D": (2, 12), "A_r": (0.004, 0.04)},
     "duct_internal": {"Pr": (0.5, 2000), "Re": (None, 5e6)},
     "vplate_natural": {},
     "vplate_natural_laminar": {"Ra": (None, 1e9)},
@@ -300,3 +304,26 @@ def test_vplate_laminar_and_sphere_natural_bounds() -> None:
     assert n_msgs("sphere_natural", Ra=1e11 * 1.01, Pr=0.7) == 1
     assert n_msgs("sphere_natural", Ra=1e6, Pr=0.69) == 1
     assert n_msgs("sphere_natural", Ra=1e6, Pr=0.7) == 0
+
+
+# ---------------------------------------------------------------- M11.41 jets
+
+_JET_OK = {
+    "slot_jet": {"Re": 1e4, "Pr": 0.7, "H_over_W": 5.0, "A_r": 0.05},
+    "round_jet": {"Re": 1e4, "Pr": 0.7, "H_over_D": 5.0, "A_r": 0.02},
+}
+
+
+@pytest.mark.parametrize("key", list(_JET_OK))
+def test_jet_bounds_inside_and_outside(key: str) -> None:
+    ok = _JET_OK[key]
+    assert n_msgs(key, **ok) == 0
+    for name, (lo, hi) in VALIDITY[key].items():
+        for edge in (lo, hi):
+            assert n_msgs(key, **{**ok, name: edge}) == 0, (name, edge)
+        for bad in (lo * 0.99, hi * 1.01):
+            msgs = c.check_validity(c.CORRELATIONS[key], **{**ok, name: bad})
+            assert len(msgs) == 1 and name in msgs[0], (name, bad)
+    assert n_msgs(key, **{**ok, "A_r": np.array([ok["A_r"], 1.0])}) == 1
+    # no Pr bound is stated
+    assert n_msgs(key, **{**ok, "Pr": 1e-3}) == 0 and n_msgs(key, **{**ok, "Pr": 1e3}) == 0

@@ -718,7 +718,9 @@ def htc(
         Wall and fluid temperatures [K], both above 0.
     **inputs
         ``length`` [m] (A_s/P for the horizontal plates), ``velocity`` [m/s],
-        ``theta_deg`` [deg], ``S`` [m] (plate spacing, vertical channels), ``face_direction``
+        ``theta_deg`` [deg], ``S`` [m] (plate spacing, vertical channels),
+        ``W``, ``H``, ``x_r`` [m] (``slot_jet``), ``D``, ``H``, ``r_r`` [m] (``round_jet``);
+        the jets take no ``length``; ``face_direction``
         (``"up"``/``"down"``), ``x`` [m] (``plate_forced_local``), ``C`` and ``n``
         (``power_law``), ``multiplier`` (default 1.0), and for ``duct_internal``:
         ``mass_flow`` [kg/s], ``area`` [m^2], ``wetted_perimeter`` [m], ``cross_section``,

@@ -482,3 +482,14 @@ def test_vertical_channels_are_offered_with_the_spacing_input(calc) -> None:
         pick(calc.correlation_box, cid)
         assert set(calc.visible_inputs()) == {"length", "S"}
         assert "Not stated" in calc.validity_label.text()
+
+
+def test_jets_are_offered_with_their_inputs(calc) -> None:
+    offered = [calc.correlation_box.itemText(i) for i in range(calc.correlation_box.count())]
+    for cid, names in (
+        ("slot_jet", {"velocity", "W", "H", "x_r"}),
+        ("round_jet", {"velocity", "D", "H", "r_r"}),
+    ):
+        assert cid in offered
+        pick(calc.correlation_box, cid)
+        assert set(calc.visible_inputs()) == names

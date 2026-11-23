@@ -34,6 +34,8 @@ For ideal gases β = 1/T\_film; for liquids β comes from the property table.
 | [`plate_front_crossflow`](#corr-plate-front-crossflow) | Thin plate across the flow, upstream face, gas | D = plate height across the flow | 10000 ≤ Re ≤ 50000 |
 | [`plate_back_crossflow`](#corr-plate-back-crossflow) | Thin plate across the flow, downstream face, gas | D = plate height across the flow | 7000 ≤ Re ≤ 80000 |
 | [`sphere_forced`](#corr-sphere-forced) | Sphere in a free stream (Whitaker) | diameter | 0.71 ≤ Pr ≤ 380, 3.5 ≤ Re ≤ 7.6e4, 1.0 ≤ μ/μ\_s ≤ 3.2 |
+| [`slot_jet`](#corr-slot-jet) | Single slot nozzle impinging on the surface, average over |x| ≤ x\_r from the jet's centre line (Martin) | 2W | 3000 ≤ Re ≤ 9e4, 2 ≤ H/W ≤ 10, 0.025 ≤ A\_r ≤ 0.125 |
+| [`round_jet`](#corr-round-jet) | Single round nozzle impinging on the surface, average over r ≤ r\_r from the jet's axis (Martin) | D (nozzle) | 2000 ≤ Re ≤ 4e5, 2 ≤ H/D ≤ 12, 0.004 ≤ A\_r ≤ 0.04 |
 | [`duct_internal`](#corr-duct-internal) | Internal flow, circular or by hydraulic diameter | D\_h | Gnielinski: 0.5 ≤ Pr ≤ 2000, 3000 ≤ Re ≤ 5e6. Dittus–Boelter: 0.6 ≤ Pr ≤ 160 and Re ≥ 1e4. (The validity column of the §8 table is empty for this entry; the ranges are those stated in §8.1.) |
 | [`vplate_natural`](#corr-vplate-natural) | Vertical plate (Churchill–Chu) | height | all Ra |
 | [`vplate_natural_laminar`](#corr-vplate-natural-laminar) | Vertical plate, laminar (Churchill–Chu; slightly more accurate than 9.26 for Ra ≤ 1e9) | height | Ra ≤ 1e9 |
@@ -197,6 +199,36 @@ Nu = 2 + (0.4 Re^½ + 0.06 Re^⅔) Pr^0.4 (μ/μ_s)^¼. **All properties at T∞
 - **Validity range (as recorded):** 0.71 ≤ Pr ≤ 380, 3.5 ≤ Re ≤ 7.6e4, 1.0 ≤ μ/μ\_s ≤ 3.2
 - **Theory section:** [Theory §8](theory.md#sec-8)
 - **Literature source:** Incropera 7th ed. Eq. 7.56.
+
+### `slot_jet`: Single slot nozzle impinging on the surface, average over |x| ≤ x\_r from the jet's centre line (Martin) {#corr-slot-jet}
+
+Formula (copied from the theory document):
+
+```text
+Nu / Pr^0.42 = 3.06 / (0.5/A_r + H/W + 2.78) · Re^m, m = 0.695 − [1/(4 A_r) + (H/(2W))^1.33 + 3.06]^(−1), A_r = W/(2 x_r); Re = V 2W/ν with V the jet exit velocity
+```
+
+- **Characteristic length L_c:** 2W
+- **Inputs:** `velocity`, `W`, `H`, `x_r`, the surface and fluid temperatures, and the fluid (the keyword inputs of `thermalfea.api.htc`).
+- **Fluid properties evaluated at:** Fluid properties at the film temperature T\_film = (T\_s + T∞)/2.
+- **Validity range (as recorded):** 3000 ≤ Re ≤ 9e4, 2 ≤ H/W ≤ 10, 0.025 ≤ A\_r ≤ 0.125
+- **Theory section:** [Theory §8](theory.md#sec-8)
+- **Literature source:** Incropera 7th ed. Eq. 7.75, 7.76.
+
+### `round_jet`: Single round nozzle impinging on the surface, average over r ≤ r\_r from the jet's axis (Martin) {#corr-round-jet}
+
+Formula (copied from the theory document):
+
+```text
+Nu / Pr^0.42 = G · 2 Re^½ (1 + 0.005 Re^0.55)^½, G = 2 A_r^½ (1 − 2.2 A_r^½) / (1 + 0.2 (H/D − 6) A_r^½), A_r = D²/(4 r_r²); Re = V D/ν with V the jet exit velocity
+```
+
+- **Characteristic length L_c:** D (nozzle)
+- **Inputs:** `velocity`, `D`, `H`, `r_r`, the surface and fluid temperatures, and the fluid (the keyword inputs of `thermalfea.api.htc`).
+- **Fluid properties evaluated at:** Fluid properties at the film temperature T\_film = (T\_s + T∞)/2.
+- **Validity range (as recorded):** 2000 ≤ Re ≤ 4e5, 2 ≤ H/D ≤ 12, 0.004 ≤ A\_r ≤ 0.04
+- **Theory section:** [Theory §8](theory.md#sec-8)
+- **Literature source:** Incropera 7th ed. Eq. 7.71, 7.72.
 
 ### `duct_internal`: Internal flow, circular or by hydraulic diameter {#corr-duct-internal}
 

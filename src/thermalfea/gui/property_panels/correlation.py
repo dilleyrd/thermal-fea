@@ -71,6 +71,26 @@ _PREVIEW_FIELDS: dict[str, FieldSpec] = {
         "S", "Plate spacing S", "float", quantity="length", minimum=0.0, optional=True,
         tooltip="Spacing S of the vertical channel plates.",
     ),
+    "W": FieldSpec(
+        "W", "Slot width W", "float", quantity="length", minimum=0.0, optional=True,
+        tooltip="Width W of the slot nozzle.",
+    ),
+    "D": FieldSpec(
+        "D", "Nozzle diameter D", "float", quantity="length", minimum=0.0, optional=True,
+        tooltip="Diameter D of the round nozzle.",
+    ),
+    "H": FieldSpec(
+        "H", "Nozzle-to-surface distance H", "float", quantity="length", minimum=0.0,
+        optional=True, tooltip="Distance H from the nozzle to the surface.",
+    ),
+    "x_r": FieldSpec(
+        "x_r", "Half-width x_r", "float", quantity="length", minimum=0.0, optional=True,
+        tooltip="Half-width of the region averaged over.",
+    ),
+    "r_r": FieldSpec(
+        "r_r", "Radius r_r", "float", quantity="length", minimum=0.0, optional=True,
+        tooltip="Radius of the region averaged over.",
+    ),
     "C": FieldSpec("C", "C", "float", optional=True, tooltip="Coefficient C of the power law."),
     "n": FieldSpec("n", "n", "float", optional=True, tooltip="Exponent n of the power law."),
     "mass_flow": FieldSpec(
@@ -265,7 +285,7 @@ class CorrelationPanel(FormPanel):
                 continue
             if key == "velocity" and isinstance(obj.velocity, Constant):
                 continue
-            if key in ("theta_deg", "S", "C", "n") and key in obj.params:
+            if key in obj.params and key not in ("length", "velocity"):
                 continue
             needed.append(key)
         return needed

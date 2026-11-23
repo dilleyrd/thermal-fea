@@ -17,7 +17,7 @@ from ..core.errors import ModelError
 from ..materials import library
 from ..materials.material import Fluid
 from . import correlations as c
-from .evaluator import MIN_DISTANCE, film_coefficient
+from .evaluator import MIN_DISTANCE, _jet_length, film_coefficient
 from .fluid_props import fluid_props
 
 PLATE_TRANSITION_RE = 5e5
@@ -39,6 +39,7 @@ _FORCED_PLATES = ("plate_forced_avg", "plate_forced_local")
 _LOCAL = "plate_forced_local"
 _INCLINED = "inclined_natural"
 _CHANNELS = ("vchannel_natural", "vchannel_one_side_natural")
+_JETS = ("slot_jet", "round_jet")
 _DUCT = "duct_internal"
 _USER = "power_law"
 _TEMPERATURE_CLAMP = "fluid temperature outside the property table; end values are used"
@@ -48,6 +49,11 @@ _INPUT_KEYS = frozenset(
         "velocity",
         "theta_deg",
         "S",
+        "W",
+        "H",
+        "x_r",
+        "D",
+        "r_r",
         "face_direction",
         "x",
         "C",
@@ -151,6 +157,8 @@ def htc(
         horizontal plates, which a boundary condition takes as half the selection length),
         ``velocity`` [m/s] (forced), ``theta_deg`` [deg] (``inclined_natural``), ``S`` [m]
         (plate spacing of the vertical channels; ``length`` is then the channel height),
+        ``W``, ``H``, ``x_r`` [m] (``slot_jet``) and ``D``, ``H``, ``r_r`` [m] (``round_jet``;
+        the jets take their length from these, so ``length`` is refused),
         ``face_direction``
         (``"up"``/``"down"``, horizontal plates), ``x`` [m] (``plate_forced_local``),
         ``C`` and ``n`` (``power_law``), ``multiplier`` (default 1.0, > 0), and for
@@ -227,6 +235,13 @@ def _fluid_correlation(
         if x < 0.0:
             raise ModelError(f"x must not be negative; got {x}")
         length = max(x, MIN_DISTANCE)
+    elif info.id in _JETS:
+        if inputs.get("length") is not None:
+            raise ModelError(
+                f"correlation {info.id!r} takes its length from its inputs (2W or D); "
+                "length is not allowed"
+            )
+        length = None
     else:
         _need(info.id, inputs, "length")
         length = _positive("length", inputs["length"])
@@ -244,6 +259,11 @@ def _fluid_correlation(
     if info.id in _CHANNELS:
         _need(info.id, inputs, "S")
         params = {"S": _positive("S", inputs["S"])}
+    if info.id in _JETS:
+        names = ("W", "H", "x_r") if info.id == "slot_jet" else ("D", "H", "r_r")
+        _need(info.id, inputs, *names)
+        params = {n: _positive(n, inputs[n]) for n in names}
+        length = _jet_length(info.id, params)
     face = inputs.get("face_direction")
     if face is not None and face not in ("up", "down"):
         raise ModelError(f"face_direction must be 'up', 'down' or None; got {face!r}")
@@ -277,6 +297,9 @@ def _fluid_correlation(
         values["Ra"] = Ra
     if "mu_ratio" in numbers:
         values["mu_ratio"] = float(numbers["mu_ratio"])
+    for key in ("H_over_W", "H_over_D", "A_r"):
+        if key in numbers:
+            values[key] = float(numbers[key])
     if info.id == _INCLINED:
         values["theta_deg"] = theta_deg
     warnings = c.check_validity(c.CORRELATIONS[used], **values)

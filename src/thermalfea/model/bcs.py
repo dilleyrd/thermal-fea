@@ -129,7 +129,10 @@ class CorrelationConvection(BoundaryCondition):
         from vertical [deg], ``inclined_natural``); ``"x0"``, ``"y0"`` (leading-edge point
         [m]) and ``"dir_x"``, ``"dir_y"`` (flow direction, need not be normalised) for
         ``plate_forced_local``; ``"C"`` and ``"n"`` for ``power_law``;
-        ``"S"`` (plate spacing [m]) for ``vchannel_natural`` and ``vchannel_one_side_natural``.
+        ``"S"`` (plate spacing [m]) for ``vchannel_natural`` and ``vchannel_one_side_natural``;
+        ``"W"``, ``"H"``, ``"x_r"`` [m] for ``slot_jet`` (``x_r`` defaults to half the selection
+        length) and ``"D"``, ``"H"``, ``"r_r"`` [m] for ``round_jet`` (``r_r`` defaults to the
+        largest radial coordinate of the selection in an axisymmetric model).
     """
 
     correlation: str

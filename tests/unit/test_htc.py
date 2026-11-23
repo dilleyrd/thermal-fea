@@ -460,3 +460,51 @@ def test_vchannel_uses_the_spacing_for_ra_and_h(name: str) -> None:
         htc(name, "Air", 350.0, 300.0, S=S)
     with pytest.raises(ModelError):
         htc(name, "Air", 350.0, 300.0, length=L, S=0.0)
+
+
+# ------------------------------------------------------------------------------ M11.41
+
+
+def test_slot_jet_htc() -> None:
+    W, H, x_r, V = 0.005, 0.025, 0.04, 20.0
+    res = htc("slot_jet", "Air", 350.0, 300.0, velocity=V, W=W, H=H, x_r=x_r)
+    p = AIR.props(325.0)
+    Re = c.reynolds(p.rho, V, 2 * W, p.mu)
+    Nu = c.nu_slot_jet(Re, p.Pr, H / W, W / (2 * x_r))
+    assert res.T_film == 325.0 and res.length == pytest.approx(2 * W)
+    assert res.Re == pytest.approx(Re, rel=1e-12)
+    assert res.Nu == pytest.approx(Nu, rel=1e-12)
+    assert res.h == pytest.approx(Nu * p.k / (2 * W), rel=1e-12)
+    assert res.warnings == []
+
+
+def test_round_jet_htc() -> None:
+    D, H, r_r, V = 0.01, 0.05, 0.05, 30.0
+    res = htc("round_jet", "Air", 350.0, 300.0, velocity=V, D=D, H=H, r_r=r_r)
+    p = AIR.props(325.0)
+    Re = c.reynolds(p.rho, V, D, p.mu)
+    Nu = c.nu_round_jet(Re, p.Pr, H / D, D**2 / (4 * r_r**2))
+    assert res.length == D
+    assert res.Re == pytest.approx(Re, rel=1e-12)
+    assert res.Nu == pytest.approx(Nu, rel=1e-12)
+    assert res.h == pytest.approx(Nu * p.k / D, rel=1e-12)
+    assert res.warnings == []
+
+
+def test_jet_htc_refusals_and_warnings() -> None:
+    good = {"velocity": 20.0, "W": 0.005, "H": 0.025, "x_r": 0.04}
+    with pytest.raises(ModelError, match="length"):
+        htc("slot_jet", "Air", 350.0, 300.0, length=0.01, **good)
+    for key in ("W", "H", "x_r", "velocity"):
+        with pytest.raises(ModelError):
+            htc("slot_jet", "Air", 350.0, 300.0, **{k: v for k, v in good.items() if k != key})
+    good = {"velocity": 30.0, "D": 0.01, "H": 0.05, "r_r": 0.05}
+    with pytest.raises(ModelError, match="length"):
+        htc("round_jet", "Air", 350.0, 300.0, length=0.01, **good)
+    for key in ("D", "H", "r_r"):
+        with pytest.raises(ModelError):
+            htc("round_jet", "Air", 350.0, 300.0, **{k: v for k, v in good.items() if k != key})
+    # H/D = 30 and A_r = 1e-5 are outside the ranges
+    res = htc("round_jet", "Air", 350.0, 300.0, **{**good, "H": 0.3, "r_r": 1.0})
+    assert any("H_over_D" in w for w in res.warnings)
+    assert any("A_r" in w for w in res.warnings)

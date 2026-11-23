@@ -169,6 +169,36 @@ CORRELATION_INFO: dict[str, CorrelationInfo] = {
         inputs=("length", "velocity"),
         source="docs/theory.md §8, correlation table",
     ),
+    "slot_jet": CorrelationInfo(
+        title=(
+            "Single slot nozzle impinging on the surface, average over |x| ≤ x_r from the "
+            "jet's centre line (Martin)"
+        ),
+        formula=(
+            "Nu / Pr^0.42 = 3.06 / (0.5/A_r + H/W + 2.78) · Re^m, "
+            "m = 0.695 − [1/(4 A_r) + (H/(2W))^1.33 + 3.06]^(−1), A_r = W/(2 x_r); "
+            "Re = V 2W/ν with V the jet exit velocity"
+        ),
+        validity="3000 ≤ Re ≤ 9e4, 2 ≤ H/W ≤ 10, 0.025 ≤ A_r ≤ 0.125",
+        length="2W",
+        inputs=("velocity", "W", "H", "x_r"),
+        source="docs/theory.md §8, correlation table",
+    ),
+    "round_jet": CorrelationInfo(
+        title=(
+            "Single round nozzle impinging on the surface, average over r ≤ r_r from the "
+            "jet's axis (Martin)"
+        ),
+        formula=(
+            "Nu / Pr^0.42 = G · 2 Re^½ (1 + 0.005 Re^0.55)^½, "
+            "G = 2 A_r^½ (1 − 2.2 A_r^½) / (1 + 0.2 (H/D − 6) A_r^½), A_r = D²/(4 r_r²); "
+            "Re = V D/ν with V the jet exit velocity"
+        ),
+        validity="2000 ≤ Re ≤ 4e5, 2 ≤ H/D ≤ 12, 0.004 ≤ A_r ≤ 0.04",
+        length="D (nozzle)",
+        inputs=("velocity", "D", "H", "r_r"),
+        source="docs/theory.md §8, correlation table",
+    ),
     "duct_internal": CorrelationInfo(
         title="Internal flow, circular or by hydraulic diameter",
         formula=_DUCT_FORMULA,

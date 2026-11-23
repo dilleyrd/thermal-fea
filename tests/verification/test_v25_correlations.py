@@ -330,3 +330,36 @@ def test_vchannel_array_inputs() -> None:
     got = c.nu_vchannel_natural(x, 1.0)
     for i, v in enumerate(x):
         rel_eq(float(got[i]), c.nu_vchannel_natural(float(v), 1.0))
+
+
+# ------------------------------------------------------------------ M11.40/41: jets
+
+
+@pytest.mark.parametrize(
+    ("Re", "HW", "Ar"),
+    [(3000.0, 2.0, 0.025), (2e4, 5.0, 0.06), (9e4, 10.0, 0.125), (1e4, 8.0, 0.1)],
+)
+def test_slot_jet(Re: float, HW: float, Ar: float) -> None:
+    m = 0.695 - (1 / (4 * Ar) + (HW / 2) ** 1.33 + 3.06) ** -1
+    want = PR**0.42 * 3.06 / (0.5 / Ar + HW + 2.78) * Re**m
+    rel_eq(c.nu_slot_jet(Re, PR, HW, Ar), want)
+
+
+@pytest.mark.parametrize(
+    ("Re", "HD", "Ar"),
+    [(2000.0, 2.0, 0.004), (3e4, 6.0, 0.02), (4e5, 12.0, 0.04), (1e5, 9.0, 0.01)],
+)
+def test_round_jet(Re: float, HD: float, Ar: float) -> None:
+    G = 2 * Ar**0.5 * (1 - 2.2 * Ar**0.5) / (1 + 0.2 * (HD - 6) * Ar**0.5)
+    want = PR**0.42 * G * 2 * Re**0.5 * (1 + 0.005 * Re**0.55) ** 0.5
+    rel_eq(c.nu_round_jet(Re, PR, HD, Ar), want)
+
+
+def test_jet_array_inputs() -> None:
+    Re, Ar = np.array([5e3, 5e4]), np.array([0.03, 0.1])
+    got = c.nu_slot_jet(Re, PR, 4.0, Ar)
+    for i in range(2):
+        rel_eq(float(got[i]), c.nu_slot_jet(float(Re[i]), PR, 4.0, float(Ar[i])))
+    got = c.nu_round_jet(Re, PR, 4.0, Ar / 5)
+    for i in range(2):
+        rel_eq(float(got[i]), c.nu_round_jet(float(Re[i]), PR, 4.0, float(Ar[i] / 5)))

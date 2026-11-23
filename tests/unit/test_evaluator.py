@@ -594,3 +594,107 @@ def test_model_with_a_vertical_channel_solves(name: str) -> None:
     term = problem.terms[-1]
     h = term.mean_coefficient(make_state(problem, result.T))
     assert k * (400.0 - T_s) / length == pytest.approx(h * (T_s - 300.0), rel=1e-5)
+
+
+# --------------------------------------------------------------------------------- M11.41
+
+
+def _jet_bc(name: str, params: dict, **kw):
+    return CorrelationConvection("j", "top", name, "Air", 300.0, velocity=20.0, params=params, **kw)
+
+
+@pytest.mark.parametrize(
+    ("name", "params"),
+    [("slot_jet", {"W": 0.01}), ("slot_jet", {"H": 0.05}), ("round_jet", {"D": 0.01}),
+     ("round_jet", {"H": 0.05})],
+)
+def test_jets_need_their_params(name: str, params: dict) -> None:
+    with pytest.raises(ModelError, match="needs the params"):
+        build(_jet_bc(name, params))
+
+
+@pytest.mark.parametrize("name", ["slot_jet", "round_jet"])
+def test_jets_refuse_char_length(name: str) -> None:
+    params = {"W": 0.01, "H": 0.05} if name == "slot_jet" else {"D": 0.01, "H": 0.05, "r_r": 0.1}
+    with pytest.raises(ModelError, match="char_length"):
+        build(_jet_bc(name, params, char_length=0.1))
+
+
+def test_jet_params_must_be_positive() -> None:
+    with pytest.raises(ModelError, match="x_r"):
+        build(_jet_bc("slot_jet", {"W": 0.01, "H": 0.05, "x_r": 0.0}))
+
+
+def _jet_h(name: str, T_s: float, V: float, L: float, nu_args) -> float:
+    p = AIR.props(0.5 * (T_s + 300.0))
+    Re = c.reynolds(p.rho, V, L, p.mu)
+    fn = c.nu_slot_jet if name == "slot_jet" else c.nu_round_jet
+    return fn(Re, p.Pr, *nu_args) * p.k / L
+
+
+def test_slot_jet_x_r_default_is_half_the_selection_length() -> None:
+    W, H = 0.01, 0.05
+    problem, term = build(_jet_bc("slot_jet", {"W": W, "H": H}))
+    total = sum(b.geom.dS.sum() for b in term._batches)
+    assert term.params["x_r"] == pytest.approx(0.5 * total, rel=1e-12)
+    s = make_state(problem, 350.0)
+    want = _jet_h("slot_jet", 350.0, 20.0, 2 * W, (H / W, W / (2 * 0.5 * total)))
+    for _b, values in points(term, problem, s):
+        np.testing.assert_allclose(values, want, rtol=1e-12)
+    # an explicit x_r wins
+    problem, term = build(_jet_bc("slot_jet", {"W": W, "H": H, "x_r": 0.3}))
+    assert term.params["x_r"] == 0.3
+    want = _jet_h("slot_jet", 350.0, 20.0, 2 * W, (H / W, W / 0.6))
+    for _b, values in points(term, problem, make_state(problem, 350.0)):
+        np.testing.assert_allclose(values, want, rtol=1e-12)
+
+
+def test_round_jet_planar_needs_r_r() -> None:
+    with pytest.raises(ModelError, match="r_r"):
+        build(_jet_bc("round_jet", {"D": 0.01, "H": 0.05}))
+    D, H = 0.01, 0.05
+    problem, term = build(_jet_bc("round_jet", {"D": D, "H": H, "r_r": 0.2}))
+    want = _jet_h("round_jet", 350.0, 20.0, D, (H / D, D**2 / (4 * 0.2**2)))
+    for _b, values in points(term, problem, make_state(problem, 350.0)):
+        np.testing.assert_allclose(values, want, rtol=1e-12)
+
+
+def test_round_jet_axisymmetric_r_r_default_is_the_largest_radius() -> None:
+    D, H = 0.01, 0.05
+    # the top edge runs from r = 0.1 to r = 0.1 + 2.0
+    problem, term = build(_jet_bc("round_jet", {"D": D, "H": H}), axisymmetric=True,
+                          origin=(0.1, 0.0))
+    assert term.params["r_r"] == pytest.approx(2.1, rel=1e-12)
+    want = _jet_h("round_jet", 350.0, 20.0, D, (H / D, D**2 / (4 * 2.1**2)))
+    for _b, values in points(term, problem, make_state(problem, 350.0)):
+        np.testing.assert_allclose(values, want, rtol=1e-12)
+
+
+def test_jet_validity_warns_once(caplog: pytest.LogCaptureFixture) -> None:
+    # H/W = 50 is outside 2..10
+    problem, term = build(_jet_bc("slot_jet", {"W": 0.01, "H": 0.5, "x_r": 0.1}))
+    s = make_state(problem, 350.0)
+    with caplog.at_level(logging.WARNING, logger=LOGGER):
+        points(term, problem, s)
+        points(term, problem, s)
+    msgs = [m for m in warnings_of(caplog) if "H_over_W" in m]
+    assert len(msgs) == 1
+
+
+@pytest.mark.parametrize("name", ["slot_jet", "round_jet"])
+def test_model_with_a_jet_solves(name: str) -> None:
+    length, k = 0.1, 50.0
+    params = {"W": 0.005, "H": 0.025, "x_r": 0.04} if name == "slot_jet" else {
+        "D": 0.01, "H": 0.05, "r_r": 0.05}
+    bcs = (
+        FixedTemperature("hot", "left", T=400.0),
+        CorrelationConvection("conv", "right", name, "Air", 300.0, velocity=20.0, params=params),
+    )
+    problem = make_problem("Q4", size=(length, length / 10), cells=(10, 1), bcs=bcs)
+    result = steady_solution(problem)
+    assert result.converged
+    T_s = float(result.T[np.isclose(problem.mesh.nodes[:, 0], length)].mean())
+    assert 300.0 < T_s < 400.0
+    term = problem.terms[-1]
+    h = term.mean_coefficient(make_state(problem, result.T))
+    assert k * (400.0 - T_s) / length == pytest.approx(h * (T_s - 300.0), rel=1e-5)
