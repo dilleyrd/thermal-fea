@@ -7,8 +7,12 @@ got stuck, guessed, or were surprised into the friction log at the end.
 
 Every menu name, button text, field label and tree node below was read from the source, and
 both procedures were run end to end by a script that drives the same widgets (the V-10 run
-is `tests/gui/test_end_to_end.py`). The GUI itself has never been opened on a real screen
-until you do it now, so layout, sizes and look are exactly what the gate is meant to find.
+is `tests/gui/test_end_to_end.py`). On 2026-11-23 a script also followed these steps in the
+real window on a real screen: every count and answer below came out as stated (V-10
+18.2064 degC; V-17 worst relative error 1.4e-3). A page with the steps, the screenshots
+of that run and a friction log is at https://claude.ai/artifact/AVKWHDY1Pa6YZ22go6weAH.
+No person has used the window yet, so ease of use is exactly what the gate is meant to
+find.
 
 ## 0. Starting the GUI
 

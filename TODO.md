@@ -14,7 +14,10 @@ N = 100 for D1. Two items remain. The interactive version is
 
 ## 1. M8.G human gate: build V-10 and V-17 in the window — 60–120 min
 
-No person has used the program on a real screen; every GUI test runs offscreen. The
+No person has used the program on a real screen; every GUI test runs offscreen. On
+2026-11-23 a script followed the walkthrough in the real window and reproduced every
+number in it. The session guide with its screenshots and a friction log that is saved as
+you type is at https://claude.ai/artifact/AVKWHDY1Pa6YZ22go6weAH (private to you). The
 steps:
 1. Start the program with `.venv\Scripts\python.exe -m thermalfea.gui.app`.
 2. Follow `docs/gui-walkthrough.md` to build V-10 and V-17 from an empty model, and
