@@ -199,50 +199,86 @@ class Fluid:
     def props(self, T: ndarray) -> FluidProps   # linear interpolation, clamp at ends + warning
 ```
 
-### Built-in solids (`materials/data/solids.json`), constant values near 300 K
+### Built-in property sources (owner's decision, 2026-11-23; `docs/property-verification.md`)
 
-| Name | k [W/m·K] | ρ [kg/m³] | c_p [J/kg·K] |
-|---|---|---|---|
-| Aluminium 6061-T6 | 167 | 2700 | 896 |
-| Copper (pure) | 401 | 8933 | 385 |
-| Carbon steel AISI 1010 | 63.9 | 7832 | 434 |
-| Stainless steel 304 | 14.9 | 7900 | 477 |
-| Titanium Ti-6Al-4V | 6.7 | 4430 | 526 |
-| Silicon | 148 | 2330 | 712 |
-| Alumina (polycrystalline) | 36.0 | 3970 | 765 |
-| Soda-lime glass | 1.4 | 2500 | 750 |
-| Concrete (stone mix) | 1.4 | 2300 | 880 |
-| FR-4 (through-thickness) | 0.3 | 1850 | 1100 |
+Every built-in value comes from one of two sources. Nothing is estimated or interpolated when
+a table is built:
+- **[I]**: Bergman, Lavine, Incropera and DeWitt, *Fundamentals of Heat and Mass Transfer*,
+  7th ed., Wiley, 2011, Appendix A. The page numbers are the book's own.
+- **[N]**: NIST Chemistry WebBook, SRD 69, *Thermophysical Properties of Fluid Systems*, read
+  on 2026-11-23.
+
+Each entry in the data files carries a `source` string, and may carry a `note`. These are
+documentation only: `Material.from_json` and `Fluid.from_json` ignore them, and user-library
+entries need neither. A material or fluid is built in only if the source gives every value it
+needs; anything with a missing value is left out.
+
+### Built-in solids (`materials/data/solids.json`), constant values at 300 K
+
+- **Contents.** Every material of [I] Tables A.1, A.2 and A.3 for which ρ, c_p and k are all
+  printed at 300 K. That is 113 isotropic materials.
+  - **Orthotropic.** Four more come from Table A.2, which gives k parallel and perpendicular to
+    an axis: boron fiber epoxy (30% vol), pyrolytic graphite, graphite fiber epoxy (25% vol)
+    and crystalline quartz. Each is built with `k` along the material axis and `k2` across
+    it.
+- **Names.**
+  - Most are as printed, written "group, row" where the book groups rows (for example
+    "Aluminum, Alloy 2024-T6"). A composition printed in parentheses after a name goes into
+    the `note`.
+  - Boron is in both Table A.1 and Table A.2 with different values, so the two are named
+    "Boron, Table A.1" and "Boron, Table A.2".
+  - The two vermiculite rows are named by their densities.
+  - Five materials keep their earlier names: "Copper (pure)", "Carbon steel AISI 1010",
+    "Stainless steel 304", "Alumina (polycrystalline)" and "Soda-lime glass". "Silicon" and
+    "Concrete (stone mix)" are printed that way already.
+- **Removed on 2026-11-23** because [I] does not contain them: Aluminium 6061-T6, Titanium
+  Ti-6Al-4V and FR-4. Models saved with them keep their own copies, because a model stores
+  its materials.
+- **The full list** with values is generated into the guide (`guide/materials.md`). Spot
+  values that tests check:
+
+| Name | k [W/m·K] | ρ [kg/m³] | c_p [J/kg·K] | Source |
+|---|---|---|---|---|
+| Aluminum, Alloy 2024-T6 | 177 | 2770 | 875 | [I] A.1, p. 983 |
+| Copper (pure) | 401 | 8933 | 385 | [I] A.1, p. 983 |
+| Stainless steel 304 | 14.9 | 7900 | 477 | [I] A.1, p. 985 |
+| Alumina (polycrystalline) | 36.0 | 3970 | 765 | [I] A.2, p. 987 |
+| Graphite, pyrolytic | 1950 along, 5.70 across | 2210 | 709 | [I] A.2, p. 987 |
+| Concrete (stone mix) | 1.4 | 2300 | 880 | [I] A.3, p. 993 |
 
 ### Built-in fluids (`materials/data/fluids.json`)
 
-Air at 1 atm (`ideal_gas = true`):
+Every row printed in the source is used, except rows with a missing value. Properties are
+interpolated linearly between rows and held at the end rows outside them (Theory §8).
 
-| T [K] | ρ | c_p | μ ×10⁷ [Pa·s] | k ×10³ [W/m·K] |
-|---|---|---|---|---|
-| 250 | 1.3947 | 1006 | 159.6 | 22.3 |
-| 300 | 1.1614 | 1007 | 184.6 | 26.3 |
-| 350 | 0.9950 | 1009 | 208.2 | 30.0 |
-| 400 | 0.8711 | 1014 | 230.1 | 33.8 |
-| 450 | 0.7740 | 1021 | 250.7 | 37.3 |
-| 500 | 0.6964 | 1030 | 270.1 | 40.7 |
-| 600 | 0.5804 | 1051 | 305.8 | 46.9 |
-| 800 | 0.4354 | 1099 | 369.8 | 57.3 |
-| 1000 | 0.3482 | 1141 | 424.4 | 66.7 |
+| Fluid | Source | Rows (T range) | Notes |
+|---|---|---|---|
+| Air | [I] A.4, p. 995 | 35 (100–3000 K) | ideal gas; densities are those of **1 bar** |
+| Water | [N], liquid at 0.1 MPa | 19 (280–370 K, every 5 K) | β = −(1/ρ) ∂ρ/∂T, a central difference of [N] densities at T ± 0.5 K (agrees with the IAPWS-95 value to 0.04 %); values rounded to 6 significant figures. The table starts at 280 K because β < 0 below 277 K |
+| Ammonia, Carbon Dioxide, Carbon Monoxide, Hydrogen, Nitrogen, Oxygen | [I] A.4, pp. 995–999 | all rows | ideal gases; densities are those of 1 bar |
+| Helium | [I] A.4, p. 997 | 11 of 24 | ideal gas, 1 atm. The other 13 rows print no ρ (one also no μ, k) and are left out |
+| Water Vapor (Steam) | [I] A.4, p. 999 | 11 (380–850 K) | ideal gas, 1 atm |
+| Engine Oil (Unused), Ethylene Glycol, Glycerin, Refrigerant-134a, Refrigerant-22, Mercury | [I] A.5, pp. 1000–1001 | all rows | saturated liquids; β from the table |
 
-Water, saturated liquid:
+The pressures were found by comparing each gas's densities with CoolProp 8.1.0 at 1 bar and at
+1 atm. Every gas matches one of them to within 0.05 %. Table A.7 (liquid metals) is not used,
+because it gives no β. Spot rows that tests check:
 
-| T [K] | ρ | c_p | μ ×10⁶ [Pa·s] | k [W/m·K] | β ×10⁶ [1/K] |
-|---|---|---|---|---|---|
-| 280 | 1000 | 4198 | 1422 | 0.582 | 46.04 |
-| 300 | 997 | 4179 | 855 | 0.613 | 276.1 |
-| 320 | 989 | 4180 | 577 | 0.640 | 436.7 |
-| 340 | 979 | 4188 | 420 | 0.660 | 566.0 |
-| 360 | 967 | 4203 | 324 | 0.674 | 697.9 |
+| Fluid | T [K] | ρ | c_p | μ [Pa·s] | k [W/m·K] | β [1/K] |
+|---|---|---|---|---|---|---|
+| Air | 300 | 1.1614 | 1007 | 184.6e-7 | 0.0263 | (1/T) |
+| Air | 3000 | 0.1135 | 2726 | 955e-7 | 0.486 | (1/T) |
+| Water | 300 | 996.556 | 4180.64 | 8.53743e-4 | 0.609499 | 2.74797e-4 |
+| Water | 360 | 967.403 | 4202.34 | 3.25855e-4 | 0.671114 | 6.79384e-4 |
+| Ethylene Glycol | 300 | 1114.4 | 2415 | 1.57e-2 | 0.252 | 0.65e-3 |
 
-These values are from standard heat-transfer textbook tables. **A human must spot-check
-both tables against a reference before release (task M11.1).** Users can add their own
-solids and fluids; user libraries are stored in `%APPDATA%/ThermalFEA/materials.json`.
+**Known doubtful value:** the book's oxygen row at 1300 K prints μ·10⁷ = 588.4, but its own ν
+(188.6e-6) gives 558.4, and the steps between rows suggest a misprint. It is kept as printed
+(OPEN_QUESTIONS Q30). The book's water β at 360 K (697.9e-6) is not used, since water comes
+from [N].
+
+Users can add their own solids and fluids; user libraries are stored in
+`%APPDATA%/ThermalFEA/materials.json`.
 
 ## §7 Units
 
@@ -267,7 +303,7 @@ and `US customary` (`UnitSettings.preset`); further quantities `velocity`, `area
 | `HeatGeneration` | surfaces | `Q: Function` [W/m³] |
 | `HeatPower` | surfaces | `P: Function` [W] total |
 | `Convection` | curves | `h: Function`, `T_inf: Function` |
-| `CorrelationConvection` | curves | `correlation: str` (Theory §8 ID), `fluid: str`, `T_inf: Function`, `velocity: Function \| None`, `char_length: float \| None` (auto from geometry if None), `face_direction: up \| down \| None`, `wall_T_mode: local \| average`, `multiplier: float = 1` |
+| `CorrelationConvection` | curves | `correlation: str` (Theory §8 ID), `fluid: str`, `T_inf: Function`, `velocity: Function \| None`, `char_length: float \| None` (auto from geometry if None), `face_direction: up \| down \| None`, `wall_T_mode: local \| average`, `multiplier: float = 1`, `params: dict[str, float]` (keys per correlation, Theory §8: `theta_deg`; `x0, y0, dir_x, dir_y`; `C, n`; `S`; `W, H, x_r`; `D, H, r_r`) |
 | `RadiationAmbient` | curves | `emissivity: Function`, `T_inf: Function` |
 | `Symmetry` / `Adiabatic` | curves | none (documentation only; contributes nothing) |
 
@@ -294,14 +330,18 @@ class Stream:
     walls: list[str]                     # curve selections wetted by the stream
     flow_area: float                     # m²
     wetted_perimeter: float              # m, for D_h
-    cross_section: Literal["circular", "parallel_plates", "parallel_plates_one_side", "square"]
+    cross_section: Literal["circular", "parallel_plates", "parallel_plates_one_side", "square",
+                           "rectangle_1_43", "rectangle_2", "rectangle_3", "rectangle_4",
+                           "rectangle_8", "triangle", "annulus_inner", "annulus_outer"]
+                                         # Theory §8.1 (added 2026-11-23)
     roughness: float = 0.0
     mass_flow: Function | None           # kg/s; None when taken from a network branch
     T_inlet: Function
     path: list[tuple[float, float]] | None    # polyline inlet -> outlet (in_plane only)
     n_cells: int | None = None           # default: one per wall edge along the path
-    nu_option: Literal["auto", "dittus_boelter"] = "auto"
+    nu_option: Literal["auto", "dittus_boelter", "sieder_tate"] = "auto"
     h_multiplier: float = 1.0
+    diameter_ratio: float | None = None  # D_i/D_o, annulus cross-sections only (Theory §8.1)
 
 @dataclass
 class FlowNetwork:

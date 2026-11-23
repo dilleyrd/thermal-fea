@@ -282,7 +282,7 @@ def test_validity_warning_is_returned() -> None:
 
 
 def test_property_table_warning_is_returned() -> None:
-    res = htc("vplate_natural", "Air", 5000.0, 300.0, length=0.5)
+    res = htc("vplate_natural", "Air", 8000.0, 300.0, length=0.5)
     assert res.warnings == [
         "fluid temperature outside the property table; end values are used"
     ]
@@ -333,3 +333,29 @@ def test_api_wrapper_matches_calculator() -> None:
     assert via_api == direct
     assert api.HtcResult is calculator.HtcResult
     assert isinstance(via_api, api.HtcResult)
+
+
+# ------------------------------------------------------------------------------- M11.38
+
+
+def test_inclined_face_warning_in_the_calculator() -> None:
+    kw = dict(length=0.5, theta_deg=30.0)
+    assert any("face" in w for w in htc("inclined_natural", "Air", 400.0, 300.0,
+                                        face_direction="up", **kw).warnings)
+    assert any("face" in w for w in htc("inclined_natural", "Air", 250.0, 300.0,
+                                        face_direction="down", **kw).warnings)
+    assert htc("inclined_natural", "Air", 400.0, 300.0, face_direction="down", **kw).warnings == []
+    assert htc("inclined_natural", "Air", 250.0, 300.0, face_direction="up", **kw).warnings == []
+    assert htc("inclined_natural", "Air", 400.0, 300.0, **kw).warnings == []
+
+
+def test_duct_dittus_boelter_validity_only_when_selected() -> None:
+    m_dot = _mass_flow(5000.0)
+    common = dict(mass_flow=m_dot, area=AREA, wetted_perimeter=PERIM)
+    plain = htc("duct_internal", "Water", T_WALL, T_BULK, **common)
+    db = htc("duct_internal", "Water", T_WALL, T_BULK, option="dittus_boelter", **common)
+    assert plain.warnings == []
+    assert len(db.warnings) == 1 and "Re" in db.warnings[0]  # Re = 5000 < 1e4
+    ok = htc("duct_internal", "Water", T_WALL, T_BULK, option="dittus_boelter",
+             **dict(common, mass_flow=_mass_flow(2e4)))
+    assert ok.warnings == []

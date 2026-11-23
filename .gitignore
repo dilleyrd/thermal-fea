@@ -14,3 +14,5 @@ examples/output/
 site/
 # local Claude Code permission settings
 .claude/settings.json
+# the reference textbook is kept locally for checking, never committed (owner, 2026-11-23)
+docs/*.pdf

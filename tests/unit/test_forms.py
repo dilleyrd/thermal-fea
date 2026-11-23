@@ -135,7 +135,8 @@ def test_default_instance_and_names() -> None:
     assert forms.copy_name("Convection 1", ["Convection 1"]) == "Convection 2"
     assert forms.copy_name("Plate", ["Plate", "Plate 2"]) == "Plate 3"
     # digits that belong to the name are not a counter
-    assert forms.copy_name("Aluminium 6061-T6", ["Aluminium 6061-T6"]) == "Aluminium 6061-T6 2"
+    grade = "Aluminum, Alloy 2024-T6"
+    assert forms.copy_name(grade, [grade]) == f"{grade} 2"
     assert forms.copy_name("Steel 1020", ["Steel 1020"], keep_digits=True) == "Steel 1020 2"
 
 

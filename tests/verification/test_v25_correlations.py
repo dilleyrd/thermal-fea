@@ -80,9 +80,9 @@ def test_hplate_up_natural(Ra: float) -> None:
     rel_eq(c.nu_hplate_up_natural(Ra), want)
 
 
-@pytest.mark.parametrize("Ra", [1e5, 1e7, 1e9])
+@pytest.mark.parametrize("Ra", [1e4, 1e5, 1e7, 1e9])
 def test_hplate_down_natural(Ra: float) -> None:
-    rel_eq(c.nu_hplate_down_natural(Ra), 0.27 * Ra**0.25)
+    rel_eq(c.nu_hplate_down_natural(Ra), 0.52 * Ra ** (1 / 5))
 
 
 @pytest.mark.parametrize("Ra", [1e4, 1e8, 1e11])

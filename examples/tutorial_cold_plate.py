@@ -1,6 +1,6 @@
 """Tutorial 3 (``guide/tutorials/cold-plate.md``): an aluminium cold plate cooled by water.
 
-A strip of 6061-T6 aluminium, 200 mm long and 10 mm thick, 50 mm deep, carries a uniform
+A strip of 2024-T6 aluminum, 200 mm long and 10 mm thick, 50 mm deep, carries a uniform
 heat flux of 20 kW/m^2 on its top edge (components mounted on it: 200 W in all). Water at
 300 K flows along the bottom edge in a flat channel 50 mm wide and 2 mm high, at 0.02 kg/s;
 the stream model supplies the heat-transfer coefficient (internal duct correlation) and the
@@ -30,7 +30,7 @@ from thermalfea.post import flow, plots
 
 NAME = "cold-plate"
 LENGTH, THICKNESS, DEPTH = 0.20, 0.01, 0.05  # m: plate length (x), thickness (y), depth
-MATERIAL = "Aluminium 6061-T6"
+MATERIAL = "Aluminum, Alloy 2024-T6"
 FLUX = 20000.0  # W/m^2 on the top edge
 GAP = 0.002  # m, channel height; the channel is as wide as the plate is deep
 FLUID, CROSS_SECTION = "Water", "parallel_plates_one_side"

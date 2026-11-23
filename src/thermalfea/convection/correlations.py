@@ -216,7 +216,8 @@ def nu_inclined_natural(Ra: ArrayLike, Pr: ArrayLike) -> Any:
 
     Same formula as :func:`nu_vplate_natural`; the caller computes ``Ra`` with
     ``g cos(theta)`` in place of ``g``, where theta is the inclination from vertical
-    (valid for theta <= 60 degrees).
+    (valid for theta <= 60 degrees, and only for the face for which [I] makes a
+    recommendation; see :func:`inclined_face_messages`).
 
     Parameters
     ----------
@@ -245,7 +246,7 @@ def nu_hplate_up_natural(Ra: ArrayLike) -> Any:
 def nu_hplate_down_natural(Ra: ArrayLike) -> Any:
     """Horizontal plate, hot face down or cold face up (Theory §8).
 
-    ``Nu = 0.27 Ra^(1/4)``.
+    ``Nu = 0.52 Ra^(1/5)``.
 
     Parameters
     ----------
@@ -253,7 +254,7 @@ def nu_hplate_down_natural(Ra: ArrayLike) -> Any:
         Rayleigh number based on area/perimeter (dimensionless).
     """
     Ra_a = np.asarray(Ra, dtype=float)
-    return _ret(0.27 * Ra_a**0.25)
+    return _ret(0.52 * Ra_a**0.2)
 
 
 def nu_hcyl_natural(Ra: ArrayLike, Pr: ArrayLike) -> Any:
@@ -506,16 +507,79 @@ def hydraulic_diameter(area: ArrayLike, wetted_perimeter: ArrayLike) -> Any:
 # --------------------------------------------------------------------------- registry
 
 
-def check_validity(info: CorrelationInfo, **values: ArrayLike) -> list[str]:
+@dataclass(frozen=True)
+class ConditionalBound:
+    """A validity bound that applies only where another quantity is in a range.
+
+    The bound ``[lo, hi]`` on ``key`` is checked at the elements where the quantity
+    ``when`` satisfies all of the given conditions: ``> gt``, ``<= le``, ``>= ge`` (a
+    condition left as ``None`` is not applied). Example: Theory §8 ``plate_forced_avg``,
+    "when Re > 5e5 also Pr <= 60" is ``ConditionalBound("Pr", None, 60, "Re", gt=5e5)``.
+    """
+
+    key: str
+    lo: float | None
+    hi: float | None
+    when: str
+    gt: float | None = None
+    le: float | None = None
+    ge: float | None = None
+
+    def applies(self, values: dict[str, ArrayLike]) -> Any:
+        """Boolean mask (or scalar) of the points where the condition holds."""
+        w = np.asarray(values[self.when], dtype=float)
+        mask = np.ones(w.shape, dtype=bool)
+        if self.gt is not None:
+            mask &= w > self.gt
+        if self.le is not None:
+            mask &= w <= self.le
+        if self.ge is not None:
+            mask &= w >= self.ge
+        return mask
+
+    def condition_text(self) -> str:
+        parts = []
+        if self.gt is not None:
+            parts.append(f"{self.when} > {self.gt}")
+        if self.ge is not None:
+            parts.append(f"{self.when} >= {self.ge}")
+        if self.le is not None:
+            parts.append(f"{self.when} <= {self.le}")
+        return " and ".join(parts)
+
+
+DITTUS_BOELTER_BOUNDS: tuple[ConditionalBound, ...] = (
+    ConditionalBound("Pr", 0.6, 160, "Re", ge=RE_TURBULENT),
+    ConditionalBound("Re", 1e4, None, "Re", ge=RE_TURBULENT),
+)
+"""Validity of Dittus-Boelter (Theory §8.1), checked only when the user selected it and
+only where it is the turbulent formula in use (Re >= 4000); pass to ``check_validity``."""
+
+
+def _range_text(lo: float | None, hi: float | None) -> str:
+    return f"[{'-inf' if lo is None else lo}, {'inf' if hi is None else hi}]"
+
+
+def check_validity(
+    info: CorrelationInfo,
+    *,
+    extra_bounds: tuple[ConditionalBound, ...] = (),
+    **values: ArrayLike,
+) -> list[str]:
     """Return one message for each supplied quantity outside its validity range.
 
     A quantity is out of range if any element of its value is outside ``[min, max]``.
     Quantities that the correlation does not restrict, and bounds of ``None``, are ignored.
+    The conditional bounds of the entry (``info.conditional``) and ``extra_bounds`` are
+    checked only at the elements where their condition holds; a bound whose ``key`` or
+    ``when`` quantity is not supplied is skipped.
 
     Parameters
     ----------
     info : CorrelationInfo
         Registry entry to check against.
+    extra_bounds : tuple of ConditionalBound, optional
+        Further conditional bounds (e.g. :data:`DITTUS_BOELTER_BOUNDS`).
     **values : array_like
         Values by validity key (``"Re"``, ``"Pr"``, ``"Ra"``, ``"RePr"``, ``"theta_deg"``).
     """
@@ -528,9 +592,48 @@ def check_validity(info: CorrelationInfo, **values: ArrayLike) -> list[str]:
         bad_low = lo is not None and bool(np.any(arr < lo))
         bad_high = hi is not None and bool(np.any(arr > hi))
         if bad_low or bad_high:
-            bounds = f"[{'-inf' if lo is None else lo}, {'inf' if hi is None else hi}]"
-            messages.append(f"{info.id}: {key} outside validity range {bounds}")
+            messages.append(f"{info.id}: {key} outside validity range {_range_text(lo, hi)}")
+    for bound in (*info.conditional, *extra_bounds):
+        if bound.key not in values or bound.when not in values:
+            continue
+        mask = bound.applies(values)
+        arr = np.broadcast_to(np.asarray(values[bound.key], dtype=float), mask.shape)[mask]
+        bad_low = bound.lo is not None and bool(np.any(arr < bound.lo))
+        bad_high = bound.hi is not None and bool(np.any(arr > bound.hi))
+        if bad_low or bad_high:
+            messages.append(
+                f"{info.id}: {bound.key} outside validity range "
+                f"{_range_text(bound.lo, bound.hi)} when {bound.condition_text()}"
+            )
     return messages
+
+
+def inclined_face_messages(face_direction: str | None, dT: ArrayLike) -> list[str]:
+    """Message when the declared face of an inclined plate is one [I] does not cover.
+
+    [I] recommends ``inclined_natural`` for the top face of a cold plate and the bottom
+    face of a hot plate (Theory §8). With the declared face ``"up"`` a hot plate
+    (``dT = T_s - T_inf > 0``), or with ``"down"`` a cold plate (``dT < 0``), is outside the
+    validity range. An undeclared face (``None``) is not checked.
+
+    Parameters
+    ----------
+    face_direction : {"up", "down"} or None
+        Declared face direction.
+    dT : array_like
+        ``T_s - T_inf`` [K]; any element outside the range gives the message.
+    """
+    if face_direction is None:
+        return []
+    arr = np.asarray(dT, dtype=float)
+    bad = bool(np.any(arr > 0.0)) if face_direction == "up" else bool(np.any(arr < 0.0))
+    if not bad:
+        return []
+    state = "hot" if face_direction == "up" else "cold"
+    return [
+        f"inclined_natural: the {face_direction} face of a {state} plate is outside the "
+        "validity range (no recommendation in the reference text)"
+    ]
 
 
 @dataclass(frozen=True)
@@ -549,6 +652,9 @@ class CorrelationInfo:
         ``"forced"``, ``"natural"``, ``"internal"`` or ``"user"``.
     validity : dict
         Quantity name to ``(min, max)``; ``None`` means unbounded.
+    conditional : tuple of ConditionalBound
+        Bounds that apply only where another quantity is in a range (branch-dependent
+        validity); empty for most entries.
     description : str
         The "Situation" text of the theory table.
     length : str
@@ -565,9 +671,12 @@ class CorrelationInfo:
     description: str
     length: str
     source: str
+    conditional: tuple[ConditionalBound, ...] = ()
 
 
-_THEORY = "docs/theory.md §8"
+_I = "Incropera 7th ed."
+"""Reference text [I] of Theory §8 (Bergman, Lavine, Incropera, DeWitt)."""
+_PLATE_TURBULENT_PR = ConditionalBound("Pr", None, 60, "Re", gt=5e5)
 
 CORRELATIONS: dict[str, CorrelationInfo] = {
     "plate_forced_avg": CorrelationInfo(
@@ -578,17 +687,19 @@ CORRELATIONS: dict[str, CorrelationInfo] = {
         validity={"Pr": (0.6, None), "Re": (None, 1e8)},
         description="Flat plate, parallel flow, average",
         length="plate length",
-        source=_THEORY,
+        source=f"{_I} Eq. 7.30, 7.38",
+        conditional=(_PLATE_TURBULENT_PR,),
     ),
     "plate_forced_local": CorrelationInfo(
         id="plate_forced_local",
         function=nu_plate_forced_local,
         inputs=("Re_x", "Pr"),
         kind="forced",
-        validity={"Pr": (0.6, None)},
+        validity={"Pr": (0.6, None), "Re": (None, 1e8)},
         description="Flat plate, local at distance x from leading edge",
         length="x",
-        source=_THEORY,
+        source=f"{_I} Eq. 7.23, 7.36",
+        conditional=(_PLATE_TURBULENT_PR,),
     ),
     "cylinder_crossflow": CorrelationInfo(
         id="cylinder_crossflow",
@@ -598,7 +709,7 @@ CORRELATIONS: dict[str, CorrelationInfo] = {
         validity={"RePr": (0.2, None)},
         description="Cylinder in cross flow (Churchill–Bernstein)",
         length="diameter",
-        source="Churchill–Bernstein",
+        source=f"{_I} Eq. 7.54",
     ),
     "duct_internal": CorrelationInfo(
         id="duct_internal",
@@ -608,7 +719,7 @@ CORRELATIONS: dict[str, CorrelationInfo] = {
         validity={"Pr": (0.5, 2000), "Re": (None, 5e6)},
         description="Internal flow, circular or by hydraulic diameter",
         length="D_h",
-        source="Gnielinski; Dittus–Boelter; laminar values tabulated in docs/theory.md §8.1",
+        source=f"{_I} Eq. 8.62 (f from 8.21), Eq. 8.60, Tables 8.1, 8.2",
     ),
     "vplate_natural": CorrelationInfo(
         id="vplate_natural",
@@ -618,7 +729,7 @@ CORRELATIONS: dict[str, CorrelationInfo] = {
         validity={},
         description="Vertical plate (Churchill–Chu)",
         length="height",
-        source="Churchill–Chu",
+        source=f"{_I} Eq. 9.26",
     ),
     "inclined_natural": CorrelationInfo(
         id="inclined_natural",
@@ -628,7 +739,7 @@ CORRELATIONS: dict[str, CorrelationInfo] = {
         validity={"theta_deg": (None, 60)},
         description="Plate inclined θ from vertical",
         length="length",
-        source="Churchill–Chu",
+        source=f"{_I} Eq. 9.26, Sec. 9.6.2",
     ),
     "hplate_up_natural": CorrelationInfo(
         id="hplate_up_natural",
@@ -638,17 +749,18 @@ CORRELATIONS: dict[str, CorrelationInfo] = {
         validity={"Ra": (1e4, 1e11)},
         description="Horizontal, hot face up or cold face down",
         length="area/perimeter",
-        source=_THEORY,
+        source=f"{_I} Eq. 9.30, 9.31",
+        conditional=(ConditionalBound("Pr", 0.7, None, "Ra", le=1e7),),
     ),
     "hplate_down_natural": CorrelationInfo(
         id="hplate_down_natural",
         function=nu_hplate_down_natural,
         inputs=("Ra",),
         kind="natural",
-        validity={"Ra": (1e5, 1e10)},
+        validity={"Ra": (1e4, 1e9), "Pr": (0.7, None)},
         description="Horizontal, hot face down or cold face up",
         length="area/perimeter",
-        source=_THEORY,
+        source=f"{_I} Eq. 9.32",
     ),
     "hcyl_natural": CorrelationInfo(
         id="hcyl_natural",
@@ -658,7 +770,7 @@ CORRELATIONS: dict[str, CorrelationInfo] = {
         validity={"Ra": (None, 1e12)},
         description="Horizontal cylinder (Churchill–Chu)",
         length="diameter",
-        source="Churchill–Chu",
+        source=f"{_I} Eq. 9.34",
     ),
     "power_law": CorrelationInfo(
         id="power_law",
@@ -668,7 +780,7 @@ CORRELATIONS: dict[str, CorrelationInfo] = {
         validity={},
         description="User form, h = C |T_s − T∞|^n (gives h directly)",
         length="none",
-        source=_THEORY,
+        source="user form; not from the reference text",
     ),
 }
 """Registry of the Theory §8 correlations, keyed by ID in table order."""

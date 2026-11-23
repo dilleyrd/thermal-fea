@@ -7,6 +7,7 @@ both, so the JSON files cannot drift from the plan.
 from __future__ import annotations
 
 import json
+import re
 from decimal import Decimal
 from pathlib import Path
 
@@ -39,43 +40,92 @@ def scaled(cell: str, scale: str = "1") -> float:
     return float(Decimal(cell) * Decimal(scale))
 
 
-SOLID_ROWS = doc_table("### Built-in solids")
-AIR_ROWS = doc_table("Air at 1 atm")
-WATER_ROWS = doc_table("Water, saturated liquid")
+SOLID_ROWS = doc_table("values that tests check")
+FLUID_ROWS = doc_table("### Built-in fluids")
+
+REMOVED = ("6061", "Ti-6Al-4V", "FR-4")
+ORTHOTROPIC = (
+    "Boron fiber epoxy (30% vol) composite",
+    "Graphite, pyrolytic",
+    "Graphite fiber epoxy (25% vol) composite",
+    "Silicon dioxide, crystalline (quartz)",
+)
+FLUID_NAMES = (
+    "Air", "Water", "Ammonia", "Carbon Dioxide", "Carbon Monoxide", "Helium", "Hydrogen",
+    "Nitrogen", "Oxygen", "Water Vapor (Steam)", "Engine Oil (Unused)", "Ethylene Glycol",
+    "Glycerin", "Refrigerant-134a", "Refrigerant-22", "Mercury",
+)
+
+
+def raw_solids() -> list[dict]:
+    return json.loads((DATA / "solids.json").read_text(encoding="utf-8"))
+
+
+def raw_fluids() -> list[dict]:
+    return json.loads((DATA / "fluids.json").read_text(encoding="utf-8"))
 
 
 def test_doc_tables_were_found() -> None:
-    assert len(SOLID_ROWS) == 10
-    assert len(AIR_ROWS) == 9
-    assert len(WATER_ROWS) == 5
+    assert len(SOLID_ROWS) == 6
+    assert len(FLUID_ROWS) == 6
 
 
 # ----------------------------------------------------------------------------- solids
 
 
-def test_every_solid_loads_and_equals_the_doc_table() -> None:
+def test_every_builtin_solid_loads() -> None:
     solids = library.solids()
-    assert list(solids) == [row[0] for row in SOLID_ROWS]
-    for name, k, rho, cp in SOLID_ROWS:
-        m = solids[name]
+    raw = raw_solids()
+    assert len(raw) == 117  # 113 isotropic + 4 orthotropic (Data section 6)
+    assert list(solids) == [item["name"] for item in raw]
+    assert len(set(solids)) == len(solids)
+    for item in raw:
+        m = solids[item["name"]]
         assert isinstance(m, Material)
-        assert m.name == name
-        assert m.k == Constant(scaled(k))
+        assert m.k == Constant(item["k"])
+        assert m.rho == Constant(item["rho"])
+        assert m.cp == Constant(item["cp"])
+        assert m.phase_change is None
+        assert not m.depends_on_T
+        assert re.search(r"Table A\.[123]\b", item["source"]), item["name"]
+
+
+def test_solid_spot_rows_match_the_doc_table_exactly() -> None:
+    solids = library.solids()
+    for name, k, rho, cp, source in SOLID_ROWS:
+        m = solids[name]
+        along = re.match(r"^([\d.]+) along, ([\d.]+) across$", k)
+        if along:
+            assert m.k == Constant(scaled(along.group(1)))
+            assert m.k2 == Constant(scaled(along.group(2)))
+            assert m.orthotropic
+        else:
+            assert m.k == Constant(scaled(k))
+            assert m.k2 is None
+            assert not m.orthotropic
         assert m.rho == Constant(scaled(rho))
         assert m.cp == Constant(scaled(cp))
-        assert m.k2 is None
-        assert m.phase_change is None
-        assert not m.orthotropic
-        assert not m.depends_on_T
-        assert m.k(T=300.0) == float(k)
+        table = re.search(r"A\.(\d)", source).group(0)
+        assert f"Table {table}" in next(i for i in raw_solids() if i["name"] == name)["source"]
 
 
-def test_solids_json_file_has_exactly_the_doc_numbers() -> None:
-    raw = json.loads((DATA / "solids.json").read_text(encoding="utf-8"))
-    expected = [
-        {"name": n, "k": scaled(k), "rho": scaled(r), "cp": scaled(c)} for n, k, r, c in SOLID_ROWS
-    ]
-    assert raw == expected
+def test_orthotropic_solids_have_k2() -> None:
+    raw = raw_solids()
+    assert sorted(i["name"] for i in raw if "k2" in i) == sorted(ORTHOTROPIC)
+    for name in ORTHOTROPIC:
+        m = library.solid(name)
+        assert m.orthotropic
+        assert m.k2() > 0.0
+    for m in library.solids().values():
+        assert m.orthotropic == (m.name in ORTHOTROPIC)
+
+
+def test_removed_solids_are_gone() -> None:
+    for name in library.solids():
+        assert not any(bad in name for bad in REMOVED), name
+    for bad in REMOVED:
+        with pytest.raises(ModelError, match="no solid"):
+            library.solid(f"Aluminium {bad}" if bad == "6061" else bad)
 
 
 def test_solid_lookup() -> None:
@@ -94,28 +144,38 @@ def test_solid_lookup() -> None:
 # ----------------------------------------------------------------------------- fluids
 
 
-def test_every_fluid_loads_and_equals_the_doc_table() -> None:
+def test_every_builtin_fluid_loads_with_ascending_rows_and_a_source() -> None:
     fluids = library.fluids()
-    assert sorted(fluids) == ["Air", "Water"]
+    assert list(fluids) == list(FLUID_NAMES)
+    for item in raw_fluids():
+        fluid = fluids[item["name"]]
+        assert isinstance(fluid, Fluid)
+        assert fluid.T == item["T"]
+        assert all(b > a for a, b in zip(fluid.T, fluid.T[1:], strict=False)), fluid.name
+        assert len(fluid.T) == len(fluid.rho) == len(fluid.cp) == len(fluid.mu) == len(fluid.k)
+        src = item["source"]
+        assert any(t in src for t in ("Table A.4", "Table A.5", "NIST")), fluid.name
+        if fluid.name == "Water":
+            assert "NIST" in src and fluid.ideal_gas is False and fluid.beta is not None
+        elif "Table A.4" in src:
+            assert fluid.ideal_gas is True and fluid.beta is None, fluid.name
+        else:
+            assert "Table A.5" in src and fluid.ideal_gas is False and fluid.beta is not None
 
-    air = fluids["Air"]
-    assert isinstance(air, Fluid)
-    assert air.ideal_gas is True
-    assert air.beta is None
-    assert air.T == [scaled(r[0]) for r in AIR_ROWS]
-    assert air.rho == [scaled(r[1]) for r in AIR_ROWS]
-    assert air.cp == [scaled(r[2]) for r in AIR_ROWS]
-    assert air.mu == [scaled(r[3], "1e-7") for r in AIR_ROWS]
-    assert air.k == [scaled(r[4], "1e-3") for r in AIR_ROWS]
 
-    water = fluids["Water"]
-    assert water.ideal_gas is False
-    assert water.T == [scaled(r[0]) for r in WATER_ROWS]
-    assert water.rho == [scaled(r[1]) for r in WATER_ROWS]
-    assert water.cp == [scaled(r[2]) for r in WATER_ROWS]
-    assert water.mu == [scaled(r[3], "1e-6") for r in WATER_ROWS]
-    assert water.k == [scaled(r[4]) for r in WATER_ROWS]
-    assert water.beta == [scaled(r[5], "1e-6") for r in WATER_ROWS]
+def test_fluid_row_counts_and_ranges_match_the_doc_table() -> None:
+    fluids = library.fluids()
+    checked = 0
+    for name, _source, rows, _notes in FLUID_ROWS:
+        match = re.match(r"^(\d+) \((\d+)–(\d+) K", rows)
+        if match is None or "," in name:
+            continue
+        count, lo, hi = (int(g) for g in match.groups())
+        fluid = fluids[name]
+        assert (len(fluid.T), fluid.T[0], fluid.T[-1]) == (count, lo, hi), name
+        checked += 1
+    assert checked == 3  # Air, Water, Water Vapor (Steam)
+    assert list(fluids["Water"].T) == [280.0 + 5.0 * i for i in range(19)]
 
 
 def test_fluid_values_are_si() -> None:
@@ -126,10 +186,27 @@ def test_fluid_values_are_si() -> None:
     assert air.rho[i] == 1.1614
     water = library.fluid("WATER")
     j = water.T.index(300.0)
-    assert water.mu[j] == pytest.approx(855e-6, rel=1e-15)
-    assert water.beta[j] == pytest.approx(276.1e-6, rel=1e-15)
+    assert 990.0 < water.rho[j] < 1000.0
+    assert 4100.0 < water.cp[j] < 4250.0
+    assert 8.0e-4 < water.mu[j] < 9.0e-4
+    assert 0.59 < water.k[j] < 0.62
+    assert 2.0e-4 < water.beta[j] < 3.5e-4
     with pytest.raises(ModelError, match="no fluid"):
-        library.fluid("Mercury")
+        library.fluid("Unobtainium")
+
+
+def test_no_removed_name_remains_in_src_examples_or_guide() -> None:
+    suffixes = {".py", ".md", ".json", ".tfea", ".txt", ".csv", ".toml", ".yaml", ".yml"}
+    found = []
+    for folder in ("src", "examples", "guide"):
+        for path in (ROOT / folder).rglob("*"):
+            if not path.is_file() or path.suffix not in suffixes:
+                continue
+            text = path.read_text(encoding="utf-8", errors="ignore")
+            for bad in ("6061-T6", "Ti-6Al-4V", "FR-4"):
+                if bad in text:
+                    found.append((path.relative_to(ROOT).as_posix(), bad))
+    assert found == []
 
 
 # ------------------------------------------------------------------ classes and JSON

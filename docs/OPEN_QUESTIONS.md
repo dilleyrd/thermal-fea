@@ -257,9 +257,13 @@ and may return `False` to cancel. A fixed-step run takes its step from
    area/perimeter = L/2). **Done for now:** the task text — the selection length — for all
    plate correlations; cylinders require `char_length`. An explicit `char_length` always
    overrides. **To confirm** which is intended for horizontal plates.
+   **Settled 2026-11-23:** [I] Eq. 9.29 defines L = A_s/P, which is half the selection
+   length in a 2D model (Theory §8; Q30). Task M11.38.
 3. **Dittus–Boelter as the "optional user selection"** for ducts: it replaces Gnielinski as
    the turbulent formula; the laminar value and the linear transition between Re = 2300 and
    4000 are kept. Its stated range (Re ≥ 1e4) is not enforced in the transition region.
+   *Since M11.38 its [I] range (0.6 ≤ Pr ≤ 160, Re ≥ 1e4) is checked where it is used,
+   at Re ≥ 4000; still not in the transition region.*
 4. **Validity range of `duct_internal`.** The table leaves it blank; the Gnielinski range
    of §8.1 is used (0.5 ≤ Pr ≤ 2000, Re ≤ 5e6).
 5. **`duct_internal` is not offered as a boundary condition**; internal flow belongs to
@@ -267,6 +271,7 @@ and may return `False` to cancel. A fixed-step run takes its step from
 6. **Sources.** `CorrelationInfo.source` holds only the names the theory document gives
    (Churchill–Bernstein, Churchill–Chu, Gnielinski, Dittus–Boelter) and otherwise
    "docs/theory.md §8". Textbook citations are left for the human check of M11.1.
+   *Done in M11.38: every source cites [I] with its equation numbers (Theory §8).*
 7. **"Lagged" wall temperature** is the current Newton iterate: the tangent carries no
    dh/dT, which is the lagging Theory §8 describes. No separate state is kept.
 8. **"Once per BC per solve"** for validity warnings: once per compiled problem, since a
@@ -763,8 +768,45 @@ commit 314093c) and in the evaluation, §4.
     - **Confirmed as documented:** Q1, Q14, Q18.2, Q20.2–8, Q21, Q22 (except 22.5, see
       D12), Q23.1–5, Q24, Q25, Q26.1 and 26.3, and all earlier interim choices (Q2, Q4,
       Q6–Q10, Q12, Q13, Q15, Q16, Q19).
-    - **Still open:** Q17.2 (with M11.1).
+    - **Still open:** Q17.2 (with M11.1). *Settled 2026-11-23 by [I] Eq. 9.29 and
+      Example 9.3: L = A_s/P, half the selection length (Theory §8, Q30).*
     - **Guide publishing** stays manual; GIF is enough (no ffmpeg).
+
+## Q30 — properties and correlations from the reference text (M11.37–M11.42) — raised 2026-11-23
+
+The owner's decisions of 2026-11-23, on `docs/property-verification.md`:
+- **Air** is labelled 1 bar, and uses every row of [I] Table A.4.
+- **Water** uses NIST rows every 5 K, and β from NIST.
+- **Solids:** only materials in [I], with every material it gives added; 6061-T6,
+  Ti-6Al-4V and FR-4 are removed.
+- **Correlations:** those of [I], plus the useful ones not yet applied.
+- **The PDF** of [I] is kept in `docs/`, git-ignored.
+
+These are written into Data §6 and Theory §8. The remaining points:
+
+1. **Oxygen at 1300 K** ([I] Table A.4, p. 999). μ·10⁷ is printed as 588.4. The same row's
+   ν·10⁶ = 188.6 gives 558.4. The steps from the rows below are +27.0, then +55.9 (they would
+   be +25.9 with 558.4). Very likely a misprint. **Kept as printed**; the owner may correct it.
+2. **Helium and water vapour are at 1 atm, the other gases at 1 bar.** A CoolProp check of
+   every A.4 density gives a match to 0.05 % for one pressure or the other. Each entry's note
+   says which.
+3. **Water starts at 280 K.** NIST gives β < 0 below 277 K, where water is densest. A
+   negative β makes Ra negative, and the natural-convection formulas take fractional powers
+   of Ra. Below 280 K the end row is used, with the usual warning.
+4. **Three seeds for later decisions**, recorded in Theory §8.2:
+   - **(a)** Enclosure correlations ([I] 9.49–9.63) would need a load that couples two
+     surfaces across a cavity.
+   - **(b)** Mixed convection (9.64) would need a load that names a forced and a natural
+     correlation.
+   - **(c)** The laminar f·Re of non-circular ducts (Table 8.1) would need a rule for joining
+     it to Churchill's turbulent branch.
+
+   None is planned. Each needs the owner's choice.
+5. **Names.** The seven materials that stay keep their library names. The others use the
+   book's wording ("group, row").
+6. **Linear interpolation in the annulus table** (Theory §8.1) is the program's rule. Nu_i
+   changes quickly between D_i/D_o = 0.05 and 0.10 (17.46 to 11.56), so values between rows
+   are approximate there.
 
 ## Q13 — choices made in the verification examples — raised in M3.G
 

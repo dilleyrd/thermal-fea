@@ -567,7 +567,61 @@ Boundary Conditions, Flow (Streams, Network), Enclosures, Analysis Settings, Sol
   fixed temperature on a geometry point at the end of a contact curve fixes the nodes on
   both sides of the contact. Tests: both copies of the node are prescribed; V-35 still
   passes.
+- [x] **M11.37 [A] Property tables from the reference text and NIST.** Q30; Data §6
+  (owner, 2026-11-23).
+  - **The data files.** `fluids.json` and `solids.json` hold the Data §6 contents, each entry
+    with `source` and optional `note` (and `k2` for the four orthotropic solids).
+  - **The materials page.** `scripts/build_guide.py` accepts those keys, and its generated
+    page lists every material with its source.
+  - **Removed materials.** Examples, tutorials, their saved models and the guide replace
+    Aluminium 6061-T6 with "Aluminum, Alloy 2024-T6". Pages whose numbers follow from the
+    material or from the water table are regenerated: the tutorial pages, their hand
+    calculations and their tests.
+  - **Tests.**
+    - Every built-in entry loads.
+    - The Data §6 spot rows match exactly.
+    - Each fluid's rows ascend, and its source says Table A.4/A.5 or NIST.
+    - The orthotropic four have `k2`.
+    - No removed name is left in `src`, `examples` or `guide`.
+    - The whole suite passes.
+- [x] **M11.38 [B] Correlations checked against the reference text.** Theory §8, §8.1 as
+  rewritten on 2026-11-23; Q17.2 settled.
+  - **Formula.** `hplate_down_natural` becomes Nu = 0.52 Ra^(1/5).
+  - **Validity ranges** as in the new table: the Pr ≤ 60 branch of the turbulent plate
+    forms, Pr ≥ 0.7 for horizontal plates and for the hot-face-down plate, the Gnielinski
+    Re ≥ 3000, and the Dittus–Boelter Pr range.
+  - **Inclined plates.** The face check of `inclined_natural` is added.
+  - **Horizontal-plate length.** The automatic L_c of the horizontal plates becomes half the
+    selection length.
+  - **Citations.** Every `CorrelationInfo.source` cites [I] with its equation number, and the
+    display texts of `correlation_info.py` follow the theory.
+  - **Tests.** V-25 cases for the changed formula, each new validity rule, and the half
+    length.
+- [ ] **M11.39 [B] Non-circular cylinders and spheres.** Theory §8 rows
+  `square_corner_crossflow`, `square_face_crossflow`, `hexagon_face_crossflow`,
+  `hexagon_corner_crossflow`, `plate_front_crossflow`, `plate_back_crossflow`,
+  `sphere_forced` (properties at T∞, μ_s at T_s), `sphere_natural` and
+  `vplate_natural_laminar`.
+  - Each correlation is in the registry, in `api.htc`, in the evaluator, in the window's
+    correlation list, and in the generated guide.
+  - **Tests:** V-25 spot checks for each (branches and validity), and a solved model with
+    each kind of input.
+- [ ] **M11.40 [B] Vertical channels.** Theory §8 `vchannel_natural` and
+  `vchannel_one_side_natural`, with the param `S`. The rest is as M11.39.
+- [ ] **M11.41 [B] Impinging jets.** Theory §8 `slot_jet` and `round_jet`.
+  - **Params:** `W`/`D`, `H`, `x_r`/`r_r`, with the stated defaults.
+  - **Refusals:** a planar `round_jet` without `r_r`, and any `char_length`.
+  - The rest is as M11.39.
+- [ ] **M11.42 [B] Duct sections and Sieder–Tate.** Theory §8.1.
+  - **Cross-sections:** the new ones, and the annulus with `Stream.diameter_ratio`
+    (Data §8). Its range is checked, and a constant-flux request is refused.
+  - **Turbulent option:** `nu_option = "sieder_tate"`, with μ_s at the cell's mean wall
+    temperature.
+  - **Window and saved files:** the stream form offers both; saved files keep loading, and
+    the new field defaults to None.
+  - **Tests:** the laminar table values, the annulus interpolation and its limits, a
+    Sieder–Tate stream against the formula, and V-27–V-29 still pass.
 - [ ] **M11.6 [C] Release review.** Check every item of Plan §6; resolve or document every
   entry in `docs/OPEN_QUESTIONS.md`. Version 1 excludes the held features M9 and M10.2 and
   their cases V-22a–d, V-23, V-24 and V-36 (owner, 2026-11-22, Q29.15); the guide's
-  limitations say so. Depends on M11.7–M11.36, M8.G and M11.1.
+  limitations say so. Depends on M11.7–M11.42, M8.G and M11.1.

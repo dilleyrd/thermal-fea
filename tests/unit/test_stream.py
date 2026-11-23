@@ -208,7 +208,7 @@ def test_errors() -> None:
         (dict(h_multiplier=0.0), "h_multiplier"),
         (dict(T_inlet=Expression("T")), "cannot depend on T"),
         (dict(h_override=Expression("T")), "time only"),
-        (dict(fluid="Mercury"), "no fluid named"),
+        (dict(fluid="Unobtainium"), "no fluid named"),
     ):
         with pytest.raises(ModelError, match=message):
             StreamTerm(stream(**changes))

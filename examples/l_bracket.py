@@ -69,7 +69,7 @@ def make_model() -> tuple[Model, BuiltGeometry]:
     )
     api.select_points(model, built, "corner", where=lambda p: max(map(abs, p.center)) < tol)
 
-    api.assign_region(model, "body", material="Aluminium 6061-T6", thickness=0.01)
+    api.assign_region(model, "body", material="Aluminum, Alloy 2024-T6", thickness=0.01)
     api.assign_region(model, "inset", material="Copper (pure)", thickness=0.01)
 
     model.mesh_settings.global_size = SIZE

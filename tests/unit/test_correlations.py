@@ -26,13 +26,13 @@ IDS = [
 
 VALIDITY = {
     "plate_forced_avg": {"Pr": (0.6, None), "Re": (None, 1e8)},
-    "plate_forced_local": {"Pr": (0.6, None)},
+    "plate_forced_local": {"Pr": (0.6, None), "Re": (None, 1e8)},
     "cylinder_crossflow": {"RePr": (0.2, None)},
     "duct_internal": {"Pr": (0.5, 2000), "Re": (None, 5e6)},
     "vplate_natural": {},
     "inclined_natural": {"theta_deg": (None, 60)},
     "hplate_up_natural": {"Ra": (1e4, 1e11)},
-    "hplate_down_natural": {"Ra": (1e5, 1e10)},
+    "hplate_down_natural": {"Ra": (1e4, 1e9), "Pr": (0.7, None)},
     "hcyl_natural": {"Ra": (None, 1e12)},
     "power_law": {},
 }
@@ -75,7 +75,7 @@ def test_check_validity_one_message_per_violated_quantity() -> None:
 
 def test_check_validity_array_any_element_violates() -> None:
     info = c.CORRELATIONS["hplate_down_natural"]
-    assert len(c.check_validity(info, Ra=np.array([1e6, 1e5 - 1, 1e7]))) == 1
+    assert len(c.check_validity(info, Ra=np.array([1e6, 1e4 - 1, 1e7]))) == 1
     assert c.check_validity(info, Ra=np.array([1e6, 1e7])) == []
 
 
@@ -151,3 +151,78 @@ def test_correlations_module_imports_no_model_mesh_solver_materials() -> None:
         "thermalfea.materials",
     ):
         assert forbidden not in src
+
+
+# ---------------------------------------------------------------- M11.38 validity rules
+
+
+def n_msgs(key: str, **values: float | np.ndarray) -> int:
+    return len(c.check_validity(c.CORRELATIONS[key], **values))
+
+
+@pytest.mark.parametrize("key", ["plate_forced_avg", "plate_forced_local"])
+def test_plate_forced_pr_lower_bound_always(key: str) -> None:
+    for Re in (1e3, 1e6):
+        assert n_msgs(key, Re=Re, Pr=0.6) == 0
+        assert n_msgs(key, Re=Re, Pr=0.59) == 1
+
+
+@pytest.mark.parametrize("key", ["plate_forced_avg", "plate_forced_local"])
+def test_plate_forced_pr_upper_bound_only_when_turbulent(key: str) -> None:
+    assert n_msgs(key, Re=5e5, Pr=100.0) == 0  # laminar branch: no upper Pr bound
+    assert n_msgs(key, Re=5e5 + 1, Pr=60.0) == 0
+    msgs = c.check_validity(c.CORRELATIONS[key], Re=1e6, Pr=60.1)
+    assert len(msgs) == 1 and "Pr" in msgs[0] and "Re > 500000.0" in msgs[0]
+    # array: one point turbulent with a large Pr is enough
+    assert n_msgs(key, Re=np.array([1e3, 1e6]), Pr=np.array([100.0, 0.7])) == 0
+    assert n_msgs(key, Re=np.array([1e3, 1e6]), Pr=np.array([0.7, 100.0])) == 1
+
+
+@pytest.mark.parametrize("key", ["plate_forced_avg", "plate_forced_local"])
+def test_plate_forced_re_upper_bound(key: str) -> None:
+    assert n_msgs(key, Re=1e8, Pr=0.7) == 0
+    assert n_msgs(key, Re=1e8 * 1.01, Pr=0.7) == 1
+
+
+def test_hplate_up_pr_bound_only_below_1e7() -> None:
+    key = "hplate_up_natural"
+    assert n_msgs(key, Ra=1e6, Pr=0.7) == 0
+    assert n_msgs(key, Ra=1e6, Pr=0.69) == 1
+    assert n_msgs(key, Ra=1e7, Pr=0.69) == 1  # Ra <= 1e7 includes 1e7
+    assert n_msgs(key, Ra=1e7 + 1, Pr=0.01) == 0
+    assert n_msgs(key, Ra=1e11, Pr=0.7) == 0
+    assert n_msgs(key, Ra=1e11 * 1.01, Pr=0.7) == 1
+    assert n_msgs(key, Ra=1e4 - 1, Pr=0.7) == 1
+
+
+def test_hplate_down_ranges() -> None:
+    key = "hplate_down_natural"
+    assert n_msgs(key, Ra=1e4, Pr=0.7) == 0
+    assert n_msgs(key, Ra=1e9, Pr=0.7) == 0
+    assert n_msgs(key, Ra=1e4 - 1, Pr=0.7) == 1
+    assert n_msgs(key, Ra=1e9 * 1.01, Pr=0.7) == 1
+    assert n_msgs(key, Ra=1e6, Pr=0.69) == 1
+    assert n_msgs(key, Ra=1e11, Pr=0.7) == 1  # above the new 1e9 bound
+
+
+def test_duct_dittus_boelter_bounds_only_when_selected() -> None:
+    info = c.CORRELATIONS["duct_internal"]
+    db = c.DITTUS_BOELTER_BOUNDS
+    assert c.check_validity(info, extra_bounds=db, Re=2e4, Pr=0.6) == []
+    assert c.check_validity(info, extra_bounds=db, Re=2e4, Pr=160.0) == []
+    assert len(c.check_validity(info, extra_bounds=db, Re=2e4, Pr=161.0)) == 1
+    assert len(c.check_validity(info, extra_bounds=db, Re=2e4, Pr=0.45)) == 2  # + Gnielinski
+    assert len(c.check_validity(info, extra_bounds=db, Re=5e3, Pr=1.0)) == 1  # Re < 1e4
+    assert c.check_validity(info, extra_bounds=db, Re=1e4, Pr=1.0) == []
+    assert c.check_validity(info, Re=5e3, Pr=1.0) == []  # not selected
+    assert c.check_validity(info, extra_bounds=db, Re=1e3, Pr=1.0) == []  # laminar
+
+
+def test_inclined_face_messages() -> None:
+    f = c.inclined_face_messages
+    assert len(f("up", 50.0)) == 1  # top face of a hot plate
+    assert f("up", -50.0) == []  # top face of a cold plate
+    assert len(f("down", -50.0)) == 1  # bottom face of a cold plate
+    assert f("down", 50.0) == []
+    assert f(None, 50.0) == [] and f(None, -50.0) == []
+    assert len(f("up", np.array([-5.0, 5.0]))) == 1

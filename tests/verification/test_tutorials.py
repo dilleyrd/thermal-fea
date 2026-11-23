@@ -152,7 +152,7 @@ def test_fin_the_suggested_first_step_warns_on_this_mesh(caplog) -> None:
         common.solve(model, built)
     messages = [r.getMessage() for r in caplog.records if r.levelno >= logging.WARNING]
     assert len(messages) == 1 and "oscillate" in messages[0]
-    assert messages[0].startswith("the time step of 0.0389 s is below h^2 rho c / (6 k) in 86 %")
+    assert messages[0].startswith("the time step of 0.0367 s is below h^2 rho c / (6 k) in 86 %")
     assert "lumped capacitance" in messages[0] and "finer mesh" in messages[0]
 
 
@@ -166,10 +166,10 @@ def test_fin_hand_calculation(fin_logged) -> None:
     assert hand["T_film"] == 400.0 and hand["warnings"] == []
     assert hand["h_rad"] == pytest.approx(12.34, abs=5e-3)
     assert hand["h_total"] == pytest.approx(20.91, abs=5e-3)
-    assert (hand["k"], hand["rho"], hand["cp"]) == (167.0, 2700.0, 896.0)
+    assert (hand["k"], hand["rho"], hand["cp"]) == (177.0, 2770.0, 875.0)
     assert hand["area"] == approx(0.02) and hand["volume"] == approx(1e-4)
-    assert hand["biot"] == pytest.approx(6.3e-4, abs=5e-6)
-    assert hand["tau"] == pytest.approx(578.0, abs=0.5)
+    assert hand["biot"] == pytest.approx(5.9e-4, abs=5e-6)
+    assert hand["tau"] == pytest.approx(579.4, abs=0.5)
     assert hand["q_initial"] == pytest.approx(83.7, abs=0.05)
     # the program's heat loss at the first step agrees with the hand value to 0.3 %
     first = ref["split_first"]
@@ -186,27 +186,27 @@ def test_fin_results_of_the_page(fin_logged) -> None:
     assert ref["t_first"] == 1.0
     assert ref["n_steps_3600"] == 218 and ref["n_steps_7200"] == 248
     assert ref["time_end"] == 7200.0
-    assert ref["T_end"] == pytest.approx(306.14, abs=5e-3)
-    assert ref["T_later"] == pytest.approx(300.67, abs=5e-3)
+    assert ref["T_end"] == pytest.approx(306.17, abs=5e-3)
+    assert ref["T_later"] == pytest.approx(300.68, abs=5e-3)
     # nearly isothermal: the Biot number is tiny
-    assert ref["spread_first"] == pytest.approx(0.066, abs=5e-4)
+    assert ref["spread_first"] == pytest.approx(0.062, abs=5e-4)
     assert ref["spread_end"] < 1e-3
     first, end, later = ref["split_first"], ref["split_end"], ref["split_later"]
     assert (first["conv"], first["rad"]) == (approx(34.2, 2e-3), approx(49.2, 2e-3))
     assert first["rad_share"] == pytest.approx(0.590, abs=5e-4)
-    assert (end["conv"], end["rad"]) == (approx(0.457, 2e-3), approx(0.620, 2e-3))
+    assert (end["conv"], end["rad"]) == (approx(0.460, 2e-3), approx(0.623, 2e-3))
     assert end["rad_share"] == pytest.approx(0.575, abs=5e-4)
-    assert (later["conv"], later["rad"]) == (approx(0.0288, 5e-3), approx(0.0659, 5e-3))
+    assert (later["conv"], later["rad"]) == (approx(0.0291, 5e-3), approx(0.0664, 5e-3))
     assert later["rad_share"] == pytest.approx(0.695, abs=5e-4)
     # the share dips to about one half and rises again
     assert ref["share_min"] == pytest.approx(0.496, abs=5e-4)
-    assert 1000.0 < ref["t_share_min"] < 1200.0 and ref["t_share_min"] == approx(1078.0, 2e-3)
+    assert 1000.0 < ref["t_share_min"] < 1200.0 and ref["t_share_min"] == approx(1081.0, 2e-3)
 
 
 def test_fin_energy_balance_every_step(fin_logged) -> None:
     ref, _ = fin_logged
     assert ref["worst_imbalance_3600"] < 1e-5 and ref["worst_imbalance"] < 1e-5
-    assert ref["worst_imbalance"] == pytest.approx(1.46e-6, rel=0.02)
+    assert ref["worst_imbalance"] == pytest.approx(7.1e-7, rel=0.02)
     assert ref["worst_imbalance"] < BALANCE_TRANSIENT
     results = ref["results"]
     balance = results.energy_balance()
@@ -295,18 +295,21 @@ def test_cold_plate_hand_calculation(cold_logged) -> None:
     ref, _ = cold_logged
     hand = ref["hand"]
     assert hand["D_h"] == pytest.approx(3.846e-3, abs=5e-7)
-    assert hand["velocity"] == pytest.approx(0.2006, abs=5e-5)
-    assert (hand["k"], hand["mu"], hand["rho"], hand["cp"]) == (0.613, 8.55e-4, 997.0, 4179.0)
-    assert hand["Re"] == pytest.approx(900.0, abs=0.5)
-    assert hand["h"] == pytest.approx(774.6, abs=0.05)
+    assert hand["velocity"] == pytest.approx(0.2007, abs=5e-5)
+    assert (hand["k"], hand["mu"], hand["rho"], hand["cp"]) == (
+        0.609499, 8.53743e-4, 996.556, 4180.64
+    )
+    assert hand["Re"] == pytest.approx(901.0, abs=0.5)
+    assert hand["h"] == pytest.approx(770.2, abs=0.05)
     assert hand["heat"] == 200.0
-    assert ref["dT_hand"] == pytest.approx(2.393, abs=5e-4)
+    assert ref["dT_hand"] == pytest.approx(2.392, abs=5e-4)
     assert ref["dT"] == pytest.approx(ref["dT_hand"], rel=1e-8)  # c_p at the inlet temperature
-    assert hand["superheat"] == pytest.approx(25.82, abs=5e-3)
-    assert hand["dp"] == pytest.approx(74.2, abs=0.05)  # f = 64/Re, L/D_h, rho V^2/2
+    assert hand["superheat"] == pytest.approx(25.97, abs=5e-3)
+    assert hand["dp"] == pytest.approx(74.1, abs=0.05)  # f = 64/Re, L/D_h, rho V^2/2
     assert abs(hand["dp"] / ref["dp"] - 1.0) < 0.03
-    # the program uses the water properties along the path: within 2 % of the inlet values
-    assert abs(ref["Re"] / hand["Re"] - 1.0) < 0.02 and abs(ref["h_mean"] / hand["h"] - 1) < 3e-3
+    # the program uses the water properties along the path: within 3 % of the inlet values
+    # (2 % with the old 20 K water table; 3 % since the NIST table, owner 2026-11-23)
+    assert abs(ref["Re"] / hand["Re"] - 1.0) < 0.03 and abs(ref["h_mean"] / hand["h"] - 1) < 3e-3
 
 
 def test_cold_plate_results_of_the_page(cold_logged) -> None:
@@ -314,14 +317,14 @@ def test_cold_plate_results_of_the_page(cold_logged) -> None:
     assert ref["regime"] == "laminar" and ref["n_cells"] == 40 and ref["iterations"] == 3
     assert ref["case"].mesh.n_nodes == 126 and ref["case"].mesh.n_elements == 166
     assert ref["mass_flow"] == 0.02 and ref["T_in"] == 300.0
-    assert ref["Re"] == pytest.approx(917.0, abs=0.5)
-    assert ref["h_mean"] == pytest.approx(776.6, abs=0.05)
-    assert ref["dp"] == pytest.approx(72.8, abs=0.05)
+    assert ref["Re"] == pytest.approx(923.0, abs=0.5)
+    assert ref["h_mean"] == pytest.approx(772.4, abs=0.05)
+    assert ref["dp"] == pytest.approx(72.4, abs=0.05)
     assert ref["T_out"] == pytest.approx(302.39, abs=5e-3)
     assert ref["heat"] == pytest.approx(200.0, abs=1e-6)
-    assert ref["T_max"] == pytest.approx(328.77, abs=5e-3)
-    assert ref["T_min"] == pytest.approx(326.33, abs=5e-3)
-    assert ref["superheat_mid"] == pytest.approx(25.75, abs=5e-3)
+    assert ref["T_max"] == pytest.approx(328.82, abs=5e-3)
+    assert ref["T_min"] == pytest.approx(326.49, abs=5e-3)
+    assert ref["superheat_mid"] == pytest.approx(25.89, abs=5e-3)
     assert abs(ref["superheat_mid"] / ref["hand"]["superheat"] - 1.0) < 5e-3
 
 
@@ -343,24 +346,24 @@ def test_cold_plate_what_if_table(cold_logged) -> None:
     low, high = ref["what_if"]
     # mass flow, Re, regime, h, dp, T_out, T_max
     assert (low["mass_flow"], low["regime"]) == (0.005, "laminar")
-    assert low["Re"] == pytest.approx(244.0, abs=0.5)
-    assert low["h_mean"] == pytest.approx(782.7, abs=0.05)
-    assert low["dp"] == pytest.approx(17.1, abs=0.05)
+    assert low["Re"] == pytest.approx(249.0, abs=0.5)
+    assert low["h_mean"] == pytest.approx(779.2, abs=0.05)
+    assert low["dp"] == pytest.approx(16.8, abs=0.05)
     assert low["T_out"] == pytest.approx(309.57, abs=5e-3)
-    assert low["T_max"] == pytest.approx(334.08, abs=5e-3)
+    assert low["T_max"] == pytest.approx(334.06, abs=5e-3)
     assert (high["mass_flow"], high["regime"]) == (0.1, "turbulent")
-    assert high["Re"] == pytest.approx(4516.0, abs=0.5)
-    assert high["h_mean"] == pytest.approx(5407.0, abs=0.5)
+    assert high["Re"] == pytest.approx(4527.0, abs=0.5)
+    assert high["h_mean"] == pytest.approx(5398.0, abs=0.5)
     assert high["dp"] == pytest.approx(1019.0, abs=0.5)
     assert high["T_out"] == pytest.approx(300.48, abs=5e-3)
-    assert high["T_max"] == pytest.approx(305.32, abs=5e-3)
+    assert high["T_max"] == pytest.approx(305.26, abs=5e-3)
     assert high["heat"] == pytest.approx(200.0, abs=1e-6) == pytest.approx(low["heat"], abs=1e-6)
     # wall above the water at mid-length: about 26 K while laminar, 3.7 K when turbulent
-    assert low["superheat_mid"] == pytest.approx(25.5, abs=0.05)
-    assert ref["superheat_mid"] == pytest.approx(25.75, abs=0.005)
+    assert low["superheat_mid"] == pytest.approx(25.6, abs=0.05)
+    assert ref["superheat_mid"] == pytest.approx(25.89, abs=0.005)
     assert high["superheat_mid"] == pytest.approx(3.7, abs=0.05)
     assert ref["T_max"] - low["T_max"] < 0 < ref["T_max"] - high["T_max"]
-    assert ref["T_max"] - high["T_max"] == pytest.approx(23.4, abs=0.05)
+    assert ref["T_max"] - high["T_max"] == pytest.approx(23.6, abs=0.05)
     assert high["h_mean"] > 6.5 * ref["h_mean"] and high["dp"] > 13.0 * ref["dp"]
 
 

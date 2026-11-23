@@ -67,9 +67,9 @@ def test_geometry_and_regions(result: dict, example) -> None:
     total = sum(fp.measure for fp in built.surfaces.values())
     assert total == pytest.approx(exact["body"] + exact["inset"], rel=1e-10)
     assert [(r.selection, r.material) for r in model.regions] == [
-        ("body", "Aluminium 6061-T6"), ("inset", "Copper (pure)"),
+        ("body", "Aluminum, Alloy 2024-T6"), ("inset", "Copper (pure)"),
     ]
-    assert set(model.materials) == {"Aluminium 6061-T6", "Copper (pure)"}
+    assert set(model.materials) == {"Aluminum, Alloy 2024-T6", "Copper (pure)"}
     # every surface has exactly one region
     covered = [t for r in model.regions for t in model.selections[r.selection].tags]
     assert sorted(covered) == sorted(built.surfaces)

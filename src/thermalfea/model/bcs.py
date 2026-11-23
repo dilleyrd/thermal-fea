@@ -116,7 +116,8 @@ class CorrelationConvection(BoundaryCondition):
     velocity : Function, optional
         Free-stream velocity [m/s], for forced-convection correlations.
     char_length : float, optional
-        Characteristic length [m]; taken from the geometry when ``None``.
+        Characteristic length [m]; when ``None``, the total length of the selection (half
+        of it for the horizontal plates, where L_c = A_s/P).
     face_direction : {"up", "down"}, optional
         Orientation of a horizontal plate; chosen automatically when ``None``.
     wall_T_mode : {"local", "average"}

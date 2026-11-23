@@ -87,7 +87,9 @@ def test_missing_material() -> None:
 
 def test_missing_fluid() -> None:
     model, built, mesh = good()
-    model.bcs.append(bcs.CorrelationConvection("nat", "east", "vplate_natural", "Mercury", 300.0))
+    model.bcs.append(
+        bcs.CorrelationConvection("nat", "east", "vplate_natural", "Unobtainium", 300.0)
+    )
     model.streams.append(bcs.Stream(
         name="s", fluid="Oil", mode="through_plane", walls=["east"], flow_area=1e-4,
         wetted_perimeter=0.04, cross_section="circular", T_inlet=300.0, mass_flow=0.1))

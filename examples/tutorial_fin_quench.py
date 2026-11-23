@@ -1,6 +1,6 @@
 """Tutorial 2 (``guide/tutorials/fin-quench.md``): a hot aluminium fin cooling in still air.
 
-A vertical plate of 6061-T6 aluminium (10 mm thick, 100 mm high, 100 mm deep) starts at
+A vertical plate of 2024-T6 aluminum (10 mm thick, 100 mm high, 100 mm deep) starts at
 500 K in air at 300 K. Both faces lose heat by natural convection (the vertical-plate
 correlation, air properties at the film temperature) and by radiation to the surroundings
 (emissivity 0.8); the two ends are insulated. The run is transient with automatic time
@@ -36,7 +36,7 @@ NAME = "fin-quench"
 #: Names of the loads as the GUI gives them (the tree names a new load "<kind> <n>").
 CONVECTION, RADIATION = "Correlation Convection 1", "Radiation to Ambient 1"
 THICKNESS, HEIGHT, DEPTH = 0.01, 0.10, 0.10  # m: plate thickness (x), height (y), depth
-MATERIAL = "Aluminium 6061-T6"
+MATERIAL = "Aluminum, Alloy 2024-T6"
 T_INIT, T_AMBIENT, EMISSIVITY = 500.0, 300.0, 0.8  # K, K, -
 CORRELATION, FLUID = "vplate_natural", "Air"
 MESH_SIZE = 0.005  # m

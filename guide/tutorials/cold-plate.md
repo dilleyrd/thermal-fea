@@ -18,7 +18,7 @@ The finished model is in [models/cold-plate.tfea](models/cold-plate.tfea); open 
 
 ## The problem
 
-The plate is a strip of 6061-T6 aluminium, 200 mm long, 10 mm thick and 50 mm deep. Components
+The plate is a strip of 2024-T6 aluminum, 200 mm long, 10 mm thick and 50 mm deep. Components
 mounted on its top face put 20 kW/m² into it. Over the whole top face that is
 20 000 × 0.2 × 0.05 = **200 W**. Water at 300 K enters a flat channel along the bottom face
 and flows from the left end to the right end. The channel is 50 mm wide (as wide as the plate
@@ -49,7 +49,7 @@ as the plate is deep.
 | Item | Value |
 |---|---|
 | Geometry | rectangle 0.2 m (x) by 0.01 m (y); depth 0.05 m ("Thickness" of the region) |
-| Material | Aluminium 6061-T6, from the library: k = 167 W/(m K) |
+| Material | Aluminum, Alloy 2024-T6, from the library: k = 177 W/(m K) |
 | Heat flux on the top edge | 20 000 W/m², into the plate (200 W in all) |
 | Left and right edges | adiabatic |
 | Fluid | Water, inlet temperature 300 K, mass flow 0.02 kg/s |
@@ -60,9 +60,9 @@ as the plate is deep.
 | Mesh | global element size 0.005 m (126 nodes, 166 elements) |
 | Analysis | steady |
 
-The water properties (density 997 kg/m³, viscosity 8.55e-4 Pa s, conductivity 0.613 W/(m K),
-specific heat 4179 J/(kg K) at 300 K) come from the library table for water, which covers 280 K
-to 360 K. The water here stays between 300 K and 302.4 K, so the program does not warn.
+The water properties (density 996.6 kg/m³, viscosity 8.537e-4 Pa s, conductivity 0.6095 W/(m K),
+specific heat 4181 J/(kg K) at 300 K) come from the library table for water, which covers 280 K
+to 370 K. The water here stays between 300 K and 302.4 K, so the program does not warn.
 
 **Temperature units.** Everything is in kelvin, the default.
 
@@ -79,8 +79,8 @@ wheel if you cannot hit the edges later. A middle-button drag pans.
 
 ### 2. Take the material from the library
 
-1. Choose **Tools > Material library...**. On the **Built-in** tab select **Aluminium 6061-T6**
-   and press **Copy into model**. A node "Aluminium 6061-T6" appears under **Materials**.
+1. Choose **Tools > Material library...**. On the **Built-in** tab select **Aluminum, Alloy 2024-T6**
+   and press **Copy into model**. A node "Aluminum, Alloy 2024-T6" appears under **Materials**.
    Close the window.
 
 ### 3. Assign it to the plate
@@ -88,7 +88,7 @@ wheel if you cannot hit the edges later. A middle-button drag pans.
 1. Right-click **Regions** and choose **Add region**. The panel "Region" opens.
 2. Open the box of the "Selection" field and choose **all** (every surface of the model, here
    the one plate).
-3. "Material" already reads "Aluminium 6061-T6". In "Thickness" type `0.05` and press Enter.
+3. "Material" already reads "Aluminum, Alloy 2024-T6". In "Thickness" type `0.05` and press Enter.
 
 ### 4. Enter the loads
 
@@ -170,7 +170,7 @@ the stream, solved together in one system.
 
    | Stream | Mode | Mass flow [kg/s] | Re | Regime | Mean h [W/(m^2 K)] | dp [Pa] | T_in [K] | T_out [K] | Heat [W] |
    |---|---|---|---|---|---|---|---|---|---|
-   | Stream 1 | in_plane | 0.02 | 917.291 | laminar | 776.587 | 72.8141 | 300 | 302.393 | 200 |
+   | Stream 1 | in_plane | 0.02 | 923.245 | laminar | 772.433 | 72.3679 | 300 | 302.392 | 200 |
 
    "Heat" is the heat the water picks up from the wall. "Mean h" is the average of the
    coefficient over the cells.
@@ -191,11 +191,11 @@ the stream, solved together in one system.
 |---|---|
 | Water outlet temperature | 302.39 K (rise 2.39 K) |
 | Heat picked up by the water | 200.0 W |
-| Reynolds number | 917 (laminar) |
-| Mean heat-transfer coefficient | 776.6 W/(m² K) |
-| Pressure drop | 72.8 Pa |
-| Hottest point of the plate | 328.77 K |
-| Coolest point of the plate | 326.33 K |
+| Reynolds number | 923 (laminar) |
+| Mean heat-transfer coefficient | 772.4 W/(m² K) |
+| Pressure drop | 72.4 Pa |
+| Hottest point of the plate | 328.82 K |
+| Coolest point of the plate | 326.49 K |
 
 The plate is hottest at the outlet end of the top face, where the water is warmest, and coolest
 at the inlet end of the bottom face. The whole plate lies within 2.5 K, because the aluminium
@@ -209,25 +209,25 @@ plate and the water is across the film (step 7 of the hand check below).
 Use the water properties of the library at 300 K, as listed above.
 
 1. **Hydraulic diameter.** D_h = 4 A / P = 4 × 1e-4 / 0.104 = 3.846 mm.
-2. **Velocity.** V = ṁ / (ρ A) = 0.02 / (997 × 1e-4) = 0.2006 m/s.
-3. **Reynolds number.** Re = ṁ D_h / (A μ) = 0.02 × 3.846e-3 / (1e-4 × 8.55e-4) = **900**.
-   This is below 2300, so the flow is laminar. The program reports 917.3. It takes the
+2. **Velocity.** V = ṁ / (ρ A) = 0.02 / (996.6 × 1e-4) = 0.2007 m/s.
+3. **Reynolds number.** Re = ṁ D_h / (A μ) = 0.02 × 3.846e-3 / (1e-4 × 8.537e-4) = **901**.
+   This is below 2300, so the flow is laminar. The program reports 923.2. It takes the
    properties at the local water temperature, 300 K to 302.4 K, and the viscosity falls as the
-   water warms, so its Reynolds number is 2 % higher.
+   water warms, so its Reynolds number is 2.5 % higher.
 4. **Heat-transfer coefficient.** For laminar flow the Nusselt number is the table value,
-   4.86. h = Nu k / D_h = 4.86 × 0.613 / 3.846e-3 = **774.6 W/(m² K)**. The program's mean is
-   776.6, 0.3 % higher, for the same reason.
+   4.86. h = Nu k / D_h = 4.86 × 0.6095 / 3.846e-3 = **770.2 W/(m² K)**. The program's mean is
+   772.4, 0.3 % higher, for the same reason.
 5. **Heat load.** Q = q L depth = 20 000 × 0.2 × 0.05 = **200 W**.
-6. **Outlet temperature.** ṁ c_p ΔT = Q gives ΔT = 200 / (0.02 × 4179) = **2.393 K**, so
-   T_out = 302.393 K. The program gives 302.393 K: it takes c_p at the inlet temperature,
+6. **Outlet temperature.** ṁ c_p ΔT = Q gives ΔT = 200 / (0.02 × 4180.64) = **2.392 K**, so
+   T_out = 302.392 K. The program gives 302.392 K: it takes c_p at the inlet temperature,
    exactly as in this calculation.
 7. **Wall above the water.** The bottom edge carries the same flux density as the top edge,
-   so the wall is q / h above the water: 20 000 / 774.6 = **25.8 K**. In the model, the mean
-   wall temperature at mid-length is 25.75 K above the water temperature there.
+   so the wall is q / h above the water: 20 000 / 770.2 = **26.0 K**. In the model, the mean
+   wall temperature at mid-length is 25.89 K above the water temperature there.
 8. **Pressure drop.** Δp = f (L / D_h) ρ V² / 2. For laminar flow f is close to 64 / Re
-   (Theory §9.2 uses it as the starting value of its flow iteration), here 64 / 900 = 0.0711.
-   With L / D_h = 0.2 / 3.846e-3 = 52.0 and ρ V² / 2 = 20.06 Pa, Δp ≈ 74.2 Pa. The program
-   gives 72.8 Pa, using the Reynolds number above and its own friction formula (Churchill, in
+   (Theory §9.2 uses it as the starting value of its flow iteration), here 64 / 901 = 0.0710.
+   With L / D_h = 0.2 / 3.846e-3 = 52.0 and ρ V² / 2 = 20.07 Pa, Δp ≈ 74.1 Pa. The program
+   gives 72.4 Pa, using the Reynolds number above and its own friction formula (Churchill, in
    Theory §8.1). The two differ by 2 %, which is the difference in the Reynolds number.
 
 ### Energy balance
@@ -249,9 +249,9 @@ the end of the log in the "Messages" dock, under "relative imbalance".
 
 | Mass flow [kg/s] | Re | Regime | Mean h [W/(m² K)] | Δp [Pa] | T_out [K] | Hottest point of the plate [K] |
 |---|---|---|---|---|---|---|
-| 0.005 | 244 | laminar | 782.7 | 17.1 | 309.57 | 334.08 |
-| 0.02 | 917 | laminar | 776.6 | 72.8 | 302.39 | 328.77 |
-| 0.1 | 4516 | turbulent | 5407 | 1019 | 300.48 | 305.32 |
+| 0.005 | 249 | laminar | 779.2 | 16.8 | 309.57 | 334.06 |
+| 0.02 | 923 | laminar | 772.4 | 72.4 | 302.39 | 328.82 |
+| 0.1 | 4527 | turbulent | 5398 | 1019 | 300.48 | 305.26 |
 
 The heat picked up is 200 W in all three cases: it is set by the components, not by the water.
 What changes is how warm the water gets and how hot the plate runs.
@@ -260,12 +260,12 @@ What changes is how warm the water gets and how hot the plate runs.
   cross-section, so h barely changes (it changes a little because the water properties
   change). A faster flow lowers the outlet temperature (309.57 K to 302.39 K) and so the plate
   temperature, but only through the water temperature: the difference between the wall and
-  the water at mid-length stays at about 26 K (25.5 K and 25.75 K).
-- At 0.1 kg/s the Reynolds number, 4516, is above 4000 and the program switches to the
+  the water at mid-length stays at about 26 K (25.6 K and 25.9 K).
+- At 0.1 kg/s the Reynolds number, 4527, is above 4000 and the program switches to the
   turbulent correlation (Gnielinski, Theory §8.1). The coefficient rises by a factor of seven
   and the difference between the wall and the water at mid-length falls from about 26 K to
   3.7 K. The plate runs at 305.3 K
-  instead of 328.8 K. The price is a pressure drop 14 times as large: 1019 Pa against 72.8 Pa.
+  instead of 328.8 K. The price is a pressure drop 14 times as large: 1019 Pa against 72.4 Pa.
 - Between Reynolds numbers of 2300 and 4000 the program interpolates between the laminar and the
   turbulent values, so h rises smoothly through the transition.
 

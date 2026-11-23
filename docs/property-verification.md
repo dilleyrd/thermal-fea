@@ -1,5 +1,16 @@
 # Property verification and property libraries (2026-11-23)
 
+> **Decided and built on 2026-11-23 (OPEN_QUESTIONS Q30; tasks M11.37–M11.42).**
+> - **Air:** labelled 1 bar; all of Table A.4's rows are used.
+> - **Water:** NIST rows every 5 K, 280–370 K, with β from NIST.
+> - **Solids:** only materials from the book; every complete entry of Tables A.1–A.3 is
+>   added. 6061-T6, Ti-6Al-4V and FR-4 are removed.
+> - **Other fluids:** the gases of A.4 and the liquids of A.5 are added.
+> - **Correlations:** taken from the book (Theory §8).
+> - **CoolProp:** used only for these checks.
+>
+> The text below is the analysis as it stood before those decisions.
+
 Preparation for the owner's task M11.1. It checks the property tables in Data §6 against reference
 data, and it assesses three libraries as property sources. **Nothing in the code or the data has
 been changed.** Each choice below is the owner's to make, and none is yet in `docs/tasks.md`.

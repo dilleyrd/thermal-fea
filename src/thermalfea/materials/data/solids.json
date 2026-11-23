@@ -1,62 +1,847 @@
 [
   {
-    "name": "Aluminium 6061-T6",
-    "k": 167.0,
-    "rho": 2700.0,
-    "cp": 896.0
+    "name": "Aluminum, Pure",
+    "k": 237.0,
+    "rho": 2702.0,
+    "cp": 903.0,
+    "source": "Incropera et al., Fundamentals of Heat and Mass Transfer, 7th ed., 2011, Table A.1, p. 983, 300 K"
+  },
+  {
+    "name": "Aluminum, Alloy 2024-T6",
+    "k": 177.0,
+    "rho": 2770.0,
+    "cp": 875.0,
+    "source": "Incropera et al., Fundamentals of Heat and Mass Transfer, 7th ed., 2011, Table A.1, p. 983, 300 K",
+    "note": "4.5% Cu, 1.5% Mg, 0.6% Mn"
+  },
+  {
+    "name": "Aluminum, Alloy 195, Cast",
+    "k": 168.0,
+    "rho": 2790.0,
+    "cp": 883.0,
+    "source": "Incropera et al., Fundamentals of Heat and Mass Transfer, 7th ed., 2011, Table A.1, p. 983, 300 K",
+    "note": "4.5% Cu"
+  },
+  {
+    "name": "Beryllium",
+    "k": 200.0,
+    "rho": 1850.0,
+    "cp": 1825.0,
+    "source": "Incropera et al., Fundamentals of Heat and Mass Transfer, 7th ed., 2011, Table A.1, p. 983, 300 K"
+  },
+  {
+    "name": "Bismuth",
+    "k": 7.86,
+    "rho": 9780.0,
+    "cp": 122.0,
+    "source": "Incropera et al., Fundamentals of Heat and Mass Transfer, 7th ed., 2011, Table A.1, p. 983, 300 K"
+  },
+  {
+    "name": "Boron, Table A.1",
+    "k": 27.0,
+    "rho": 2500.0,
+    "cp": 1107.0,
+    "source": "Incropera et al., Fundamentals of Heat and Mass Transfer, 7th ed., 2011, Table A.1, p. 983, 300 K"
+  },
+  {
+    "name": "Cadmium",
+    "k": 96.8,
+    "rho": 8650.0,
+    "cp": 231.0,
+    "source": "Incropera et al., Fundamentals of Heat and Mass Transfer, 7th ed., 2011, Table A.1, p. 983, 300 K"
+  },
+  {
+    "name": "Chromium",
+    "k": 93.7,
+    "rho": 7160.0,
+    "cp": 449.0,
+    "source": "Incropera et al., Fundamentals of Heat and Mass Transfer, 7th ed., 2011, Table A.1, p. 983, 300 K"
+  },
+  {
+    "name": "Cobalt",
+    "k": 99.2,
+    "rho": 8862.0,
+    "cp": 421.0,
+    "source": "Incropera et al., Fundamentals of Heat and Mass Transfer, 7th ed., 2011, Table A.1, p. 983, 300 K"
   },
   {
     "name": "Copper (pure)",
     "k": 401.0,
     "rho": 8933.0,
-    "cp": 385.0
+    "cp": 385.0,
+    "source": "Incropera et al., Fundamentals of Heat and Mass Transfer, 7th ed., 2011, Table A.1, p. 983, 300 K"
+  },
+  {
+    "name": "Copper, Commercial bronze",
+    "k": 52.0,
+    "rho": 8800.0,
+    "cp": 420.0,
+    "source": "Incropera et al., Fundamentals of Heat and Mass Transfer, 7th ed., 2011, Table A.1, p. 983, 300 K",
+    "note": "90% Cu, 10% Al"
+  },
+  {
+    "name": "Copper, Phosphor gear bronze",
+    "k": 54.0,
+    "rho": 8780.0,
+    "cp": 355.0,
+    "source": "Incropera et al., Fundamentals of Heat and Mass Transfer, 7th ed., 2011, Table A.1, p. 983, 300 K",
+    "note": "89% Cu, 11% Sn"
+  },
+  {
+    "name": "Copper, Cartridge brass",
+    "k": 110.0,
+    "rho": 8530.0,
+    "cp": 380.0,
+    "source": "Incropera et al., Fundamentals of Heat and Mass Transfer, 7th ed., 2011, Table A.1, p. 983, 300 K",
+    "note": "70% Cu, 30% Zn"
+  },
+  {
+    "name": "Copper, Constantan",
+    "k": 23.0,
+    "rho": 8920.0,
+    "cp": 384.0,
+    "source": "Incropera et al., Fundamentals of Heat and Mass Transfer, 7th ed., 2011, Table A.1, p. 983, 300 K",
+    "note": "55% Cu, 45% Ni"
+  },
+  {
+    "name": "Germanium",
+    "k": 59.9,
+    "rho": 5360.0,
+    "cp": 322.0,
+    "source": "Incropera et al., Fundamentals of Heat and Mass Transfer, 7th ed., 2011, Table A.1, p. 983, 300 K"
+  },
+  {
+    "name": "Gold",
+    "k": 317.0,
+    "rho": 19300.0,
+    "cp": 129.0,
+    "source": "Incropera et al., Fundamentals of Heat and Mass Transfer, 7th ed., 2011, Table A.1, p. 984, 300 K"
+  },
+  {
+    "name": "Iridium",
+    "k": 147.0,
+    "rho": 22500.0,
+    "cp": 130.0,
+    "source": "Incropera et al., Fundamentals of Heat and Mass Transfer, 7th ed., 2011, Table A.1, p. 984, 300 K"
+  },
+  {
+    "name": "Iron, Pure",
+    "k": 80.2,
+    "rho": 7870.0,
+    "cp": 447.0,
+    "source": "Incropera et al., Fundamentals of Heat and Mass Transfer, 7th ed., 2011, Table A.1, p. 984, 300 K"
+  },
+  {
+    "name": "Iron, Armco",
+    "k": 72.7,
+    "rho": 7870.0,
+    "cp": 447.0,
+    "source": "Incropera et al., Fundamentals of Heat and Mass Transfer, 7th ed., 2011, Table A.1, p. 984, 300 K",
+    "note": "99.75% pure"
+  },
+  {
+    "name": "Carbon steels, Plain carbon",
+    "k": 60.5,
+    "rho": 7854.0,
+    "cp": 434.0,
+    "source": "Incropera et al., Fundamentals of Heat and Mass Transfer, 7th ed., 2011, Table A.1, p. 984, 300 K",
+    "note": "Mn ≤ 1%, Si ≤ 0.1%"
   },
   {
     "name": "Carbon steel AISI 1010",
     "k": 63.9,
     "rho": 7832.0,
-    "cp": 434.0
+    "cp": 434.0,
+    "source": "Incropera et al., Fundamentals of Heat and Mass Transfer, 7th ed., 2011, Table A.1, p. 984, 300 K"
+  },
+  {
+    "name": "Carbon steels, Carbon–silicon",
+    "k": 51.9,
+    "rho": 7817.0,
+    "cp": 446.0,
+    "source": "Incropera et al., Fundamentals of Heat and Mass Transfer, 7th ed., 2011, Table A.1, p. 984, 300 K",
+    "note": "Mn ≤ 1%, 0.1% < Si ≤ 0.6%"
+  },
+  {
+    "name": "Carbon steels, Carbon–manganese–silicon",
+    "k": 41.0,
+    "rho": 8131.0,
+    "cp": 434.0,
+    "source": "Incropera et al., Fundamentals of Heat and Mass Transfer, 7th ed., 2011, Table A.1, p. 984, 300 K",
+    "note": "1% < Mn ≤ 1.65%, 0.1% < Si ≤ 0.6%"
+  },
+  {
+    "name": "Chromium (low) steels, 1/2Cr–1/4Mo–Si",
+    "k": 37.7,
+    "rho": 7822.0,
+    "cp": 444.0,
+    "source": "Incropera et al., Fundamentals of Heat and Mass Transfer, 7th ed., 2011, Table A.1, p. 984, 300 K",
+    "note": "0.18% C, 0.65% Cr, 0.23% Mo, 0.6% Si"
+  },
+  {
+    "name": "Chromium (low) steels, 1 Cr–1/2Mo",
+    "k": 42.3,
+    "rho": 7858.0,
+    "cp": 442.0,
+    "source": "Incropera et al., Fundamentals of Heat and Mass Transfer, 7th ed., 2011, Table A.1, p. 984, 300 K",
+    "note": "0.16% C, 1% Cr, 0.54% Mo, 0.39% Si"
+  },
+  {
+    "name": "Chromium (low) steels, 1 Cr–V",
+    "k": 48.9,
+    "rho": 7836.0,
+    "cp": 443.0,
+    "source": "Incropera et al., Fundamentals of Heat and Mass Transfer, 7th ed., 2011, Table A.1, p. 984, 300 K",
+    "note": "0.2% C, 1.02% Cr, 0.15% V"
+  },
+  {
+    "name": "Stainless steels, AISI 302",
+    "k": 15.1,
+    "rho": 8055.0,
+    "cp": 480.0,
+    "source": "Incropera et al., Fundamentals of Heat and Mass Transfer, 7th ed., 2011, Table A.1, p. 985, 300 K"
   },
   {
     "name": "Stainless steel 304",
     "k": 14.9,
     "rho": 7900.0,
-    "cp": 477.0
+    "cp": 477.0,
+    "source": "Incropera et al., Fundamentals of Heat and Mass Transfer, 7th ed., 2011, Table A.1, p. 985, 300 K"
   },
   {
-    "name": "Titanium Ti-6Al-4V",
-    "k": 6.7,
-    "rho": 4430.0,
-    "cp": 526.0
+    "name": "Stainless steels, AISI 316",
+    "k": 13.4,
+    "rho": 8238.0,
+    "cp": 468.0,
+    "source": "Incropera et al., Fundamentals of Heat and Mass Transfer, 7th ed., 2011, Table A.1, p. 985, 300 K"
+  },
+  {
+    "name": "Stainless steels, AISI 347",
+    "k": 14.2,
+    "rho": 7978.0,
+    "cp": 480.0,
+    "source": "Incropera et al., Fundamentals of Heat and Mass Transfer, 7th ed., 2011, Table A.1, p. 985, 300 K"
+  },
+  {
+    "name": "Lead",
+    "k": 35.3,
+    "rho": 11340.0,
+    "cp": 129.0,
+    "source": "Incropera et al., Fundamentals of Heat and Mass Transfer, 7th ed., 2011, Table A.1, p. 985, 300 K"
+  },
+  {
+    "name": "Magnesium",
+    "k": 156.0,
+    "rho": 1740.0,
+    "cp": 1024.0,
+    "source": "Incropera et al., Fundamentals of Heat and Mass Transfer, 7th ed., 2011, Table A.1, p. 985, 300 K"
+  },
+  {
+    "name": "Molybdenum",
+    "k": 138.0,
+    "rho": 10240.0,
+    "cp": 251.0,
+    "source": "Incropera et al., Fundamentals of Heat and Mass Transfer, 7th ed., 2011, Table A.1, p. 985, 300 K"
+  },
+  {
+    "name": "Nickel, Pure",
+    "k": 90.7,
+    "rho": 8900.0,
+    "cp": 444.0,
+    "source": "Incropera et al., Fundamentals of Heat and Mass Transfer, 7th ed., 2011, Table A.1, p. 985, 300 K"
+  },
+  {
+    "name": "Nickel, Nichrome",
+    "k": 12.0,
+    "rho": 8400.0,
+    "cp": 420.0,
+    "source": "Incropera et al., Fundamentals of Heat and Mass Transfer, 7th ed., 2011, Table A.1, p. 985, 300 K",
+    "note": "80% Ni, 20% Cr"
+  },
+  {
+    "name": "Nickel, Inconel X-750",
+    "k": 11.7,
+    "rho": 8510.0,
+    "cp": 439.0,
+    "source": "Incropera et al., Fundamentals of Heat and Mass Transfer, 7th ed., 2011, Table A.1, p. 985, 300 K",
+    "note": "73% Ni, 15% Cr, 6.7% Fe"
+  },
+  {
+    "name": "Niobium",
+    "k": 53.7,
+    "rho": 8570.0,
+    "cp": 265.0,
+    "source": "Incropera et al., Fundamentals of Heat and Mass Transfer, 7th ed., 2011, Table A.1, p. 985, 300 K"
+  },
+  {
+    "name": "Palladium",
+    "k": 71.8,
+    "rho": 12020.0,
+    "cp": 244.0,
+    "source": "Incropera et al., Fundamentals of Heat and Mass Transfer, 7th ed., 2011, Table A.1, p. 985, 300 K"
+  },
+  {
+    "name": "Platinum, Pure",
+    "k": 71.6,
+    "rho": 21450.0,
+    "cp": 133.0,
+    "source": "Incropera et al., Fundamentals of Heat and Mass Transfer, 7th ed., 2011, Table A.1, p. 985, 300 K"
+  },
+  {
+    "name": "Platinum, Alloy 60Pt–40Rh",
+    "k": 47.0,
+    "rho": 16630.0,
+    "cp": 162.0,
+    "source": "Incropera et al., Fundamentals of Heat and Mass Transfer, 7th ed., 2011, Table A.1, p. 985, 300 K",
+    "note": "60% Pt, 40% Rh"
+  },
+  {
+    "name": "Rhenium",
+    "k": 47.9,
+    "rho": 21100.0,
+    "cp": 136.0,
+    "source": "Incropera et al., Fundamentals of Heat and Mass Transfer, 7th ed., 2011, Table A.1, p. 985, 300 K"
+  },
+  {
+    "name": "Rhodium",
+    "k": 150.0,
+    "rho": 12450.0,
+    "cp": 243.0,
+    "source": "Incropera et al., Fundamentals of Heat and Mass Transfer, 7th ed., 2011, Table A.1, p. 985, 300 K"
   },
   {
     "name": "Silicon",
     "k": 148.0,
     "rho": 2330.0,
-    "cp": 712.0
+    "cp": 712.0,
+    "source": "Incropera et al., Fundamentals of Heat and Mass Transfer, 7th ed., 2011, Table A.1, p. 985, 300 K"
+  },
+  {
+    "name": "Silver",
+    "k": 429.0,
+    "rho": 10500.0,
+    "cp": 235.0,
+    "source": "Incropera et al., Fundamentals of Heat and Mass Transfer, 7th ed., 2011, Table A.1, p. 985, 300 K"
+  },
+  {
+    "name": "Tantalum",
+    "k": 57.5,
+    "rho": 16600.0,
+    "cp": 140.0,
+    "source": "Incropera et al., Fundamentals of Heat and Mass Transfer, 7th ed., 2011, Table A.1, p. 985, 300 K"
+  },
+  {
+    "name": "Thorium",
+    "k": 54.0,
+    "rho": 11700.0,
+    "cp": 118.0,
+    "source": "Incropera et al., Fundamentals of Heat and Mass Transfer, 7th ed., 2011, Table A.1, p. 985, 300 K"
+  },
+  {
+    "name": "Tin",
+    "k": 66.6,
+    "rho": 7310.0,
+    "cp": 227.0,
+    "source": "Incropera et al., Fundamentals of Heat and Mass Transfer, 7th ed., 2011, Table A.1, p. 985, 300 K"
+  },
+  {
+    "name": "Titanium",
+    "k": 21.9,
+    "rho": 4500.0,
+    "cp": 522.0,
+    "source": "Incropera et al., Fundamentals of Heat and Mass Transfer, 7th ed., 2011, Table A.1, p. 986, 300 K"
+  },
+  {
+    "name": "Tungsten",
+    "k": 174.0,
+    "rho": 19300.0,
+    "cp": 132.0,
+    "source": "Incropera et al., Fundamentals of Heat and Mass Transfer, 7th ed., 2011, Table A.1, p. 986, 300 K"
+  },
+  {
+    "name": "Uranium",
+    "k": 27.6,
+    "rho": 19070.0,
+    "cp": 116.0,
+    "source": "Incropera et al., Fundamentals of Heat and Mass Transfer, 7th ed., 2011, Table A.1, p. 986, 300 K"
+  },
+  {
+    "name": "Vanadium",
+    "k": 30.7,
+    "rho": 6100.0,
+    "cp": 489.0,
+    "source": "Incropera et al., Fundamentals of Heat and Mass Transfer, 7th ed., 2011, Table A.1, p. 986, 300 K"
+  },
+  {
+    "name": "Zinc",
+    "k": 116.0,
+    "rho": 7140.0,
+    "cp": 389.0,
+    "source": "Incropera et al., Fundamentals of Heat and Mass Transfer, 7th ed., 2011, Table A.1, p. 986, 300 K"
+  },
+  {
+    "name": "Zirconium",
+    "k": 22.7,
+    "rho": 6570.0,
+    "cp": 278.0,
+    "source": "Incropera et al., Fundamentals of Heat and Mass Transfer, 7th ed., 2011, Table A.1, p. 986, 300 K"
+  },
+  {
+    "name": "Aluminum oxide, sapphire",
+    "k": 46.0,
+    "rho": 3970.0,
+    "cp": 765.0,
+    "source": "Incropera et al., Fundamentals of Heat and Mass Transfer, 7th ed., 2011, Table A.2, p. 987, 300 K"
   },
   {
     "name": "Alumina (polycrystalline)",
     "k": 36.0,
     "rho": 3970.0,
-    "cp": 765.0
+    "cp": 765.0,
+    "source": "Incropera et al., Fundamentals of Heat and Mass Transfer, 7th ed., 2011, Table A.2, p. 987, 300 K"
   },
   {
-    "name": "Soda-lime glass",
-    "k": 1.4,
+    "name": "Beryllium oxide",
+    "k": 272.0,
+    "rho": 3000.0,
+    "cp": 1030.0,
+    "source": "Incropera et al., Fundamentals of Heat and Mass Transfer, 7th ed., 2011, Table A.2, p. 987, 300 K"
+  },
+  {
+    "name": "Boron, Table A.2",
+    "k": 27.6,
     "rho": 2500.0,
-    "cp": 750.0
+    "cp": 1105.0,
+    "source": "Incropera et al., Fundamentals of Heat and Mass Transfer, 7th ed., 2011, Table A.2, p. 987, 300 K"
+  },
+  {
+    "name": "Carbon, Diamond, type IIa insulator",
+    "k": 2300.0,
+    "rho": 3500.0,
+    "cp": 509.0,
+    "source": "Incropera et al., Fundamentals of Heat and Mass Transfer, 7th ed., 2011, Table A.2, p. 987, 300 K"
+  },
+  {
+    "name": "Pyroceram, Corning 9606",
+    "k": 3.98,
+    "rho": 2600.0,
+    "cp": 808.0,
+    "source": "Incropera et al., Fundamentals of Heat and Mass Transfer, 7th ed., 2011, Table A.2, p. 987, 300 K"
+  },
+  {
+    "name": "Silicon carbide",
+    "k": 490.0,
+    "rho": 3160.0,
+    "cp": 675.0,
+    "source": "Incropera et al., Fundamentals of Heat and Mass Transfer, 7th ed., 2011, Table A.2, p. 988, 300 K"
+  },
+  {
+    "name": "Silicon dioxide, polycrystalline (fused silica)",
+    "k": 1.38,
+    "rho": 2220.0,
+    "cp": 745.0,
+    "source": "Incropera et al., Fundamentals of Heat and Mass Transfer, 7th ed., 2011, Table A.2, p. 988, 300 K"
+  },
+  {
+    "name": "Silicon nitride",
+    "k": 16.0,
+    "rho": 2400.0,
+    "cp": 691.0,
+    "source": "Incropera et al., Fundamentals of Heat and Mass Transfer, 7th ed., 2011, Table A.2, p. 988, 300 K"
+  },
+  {
+    "name": "Sulfur",
+    "k": 0.206,
+    "rho": 2070.0,
+    "cp": 708.0,
+    "source": "Incropera et al., Fundamentals of Heat and Mass Transfer, 7th ed., 2011, Table A.2, p. 988, 300 K"
+  },
+  {
+    "name": "Thorium dioxide",
+    "k": 13.0,
+    "rho": 9110.0,
+    "cp": 235.0,
+    "source": "Incropera et al., Fundamentals of Heat and Mass Transfer, 7th ed., 2011, Table A.2, p. 988, 300 K"
+  },
+  {
+    "name": "Titanium dioxide, polycrystalline",
+    "k": 8.4,
+    "rho": 4157.0,
+    "cp": 710.0,
+    "source": "Incropera et al., Fundamentals of Heat and Mass Transfer, 7th ed., 2011, Table A.2, p. 988, 300 K"
+  },
+  {
+    "name": "Plywood",
+    "k": 0.12,
+    "rho": 545.0,
+    "cp": 1215.0,
+    "source": "Incropera et al., Fundamentals of Heat and Mass Transfer, 7th ed., 2011, Table A.3, p. 989, 300 K"
+  },
+  {
+    "name": "Sheathing, regular density",
+    "k": 0.055,
+    "rho": 290.0,
+    "cp": 1300.0,
+    "source": "Incropera et al., Fundamentals of Heat and Mass Transfer, 7th ed., 2011, Table A.3, p. 989, 300 K"
+  },
+  {
+    "name": "Acoustic tile",
+    "k": 0.058,
+    "rho": 290.0,
+    "cp": 1340.0,
+    "source": "Incropera et al., Fundamentals of Heat and Mass Transfer, 7th ed., 2011, Table A.3, p. 989, 300 K"
+  },
+  {
+    "name": "Hardboard, siding",
+    "k": 0.094,
+    "rho": 640.0,
+    "cp": 1170.0,
+    "source": "Incropera et al., Fundamentals of Heat and Mass Transfer, 7th ed., 2011, Table A.3, p. 989, 300 K"
+  },
+  {
+    "name": "Hardboard, high density",
+    "k": 0.15,
+    "rho": 1010.0,
+    "cp": 1380.0,
+    "source": "Incropera et al., Fundamentals of Heat and Mass Transfer, 7th ed., 2011, Table A.3, p. 989, 300 K"
+  },
+  {
+    "name": "Particle board, low density",
+    "k": 0.078,
+    "rho": 590.0,
+    "cp": 1300.0,
+    "source": "Incropera et al., Fundamentals of Heat and Mass Transfer, 7th ed., 2011, Table A.3, p. 989, 300 K"
+  },
+  {
+    "name": "Particle board, high density",
+    "k": 0.17,
+    "rho": 1000.0,
+    "cp": 1300.0,
+    "source": "Incropera et al., Fundamentals of Heat and Mass Transfer, 7th ed., 2011, Table A.3, p. 989, 300 K"
+  },
+  {
+    "name": "Woods, Hardwoods (oak, maple)",
+    "k": 0.16,
+    "rho": 720.0,
+    "cp": 1255.0,
+    "source": "Incropera et al., Fundamentals of Heat and Mass Transfer, 7th ed., 2011, Table A.3, p. 989, 300 K"
+  },
+  {
+    "name": "Woods, Softwoods (fir, pine)",
+    "k": 0.12,
+    "rho": 510.0,
+    "cp": 1380.0,
+    "source": "Incropera et al., Fundamentals of Heat and Mass Transfer, 7th ed., 2011, Table A.3, p. 989, 300 K"
+  },
+  {
+    "name": "Cement mortar",
+    "k": 0.72,
+    "rho": 1860.0,
+    "cp": 780.0,
+    "source": "Incropera et al., Fundamentals of Heat and Mass Transfer, 7th ed., 2011, Table A.3, p. 989, 300 K"
+  },
+  {
+    "name": "Brick, common",
+    "k": 0.72,
+    "rho": 1920.0,
+    "cp": 835.0,
+    "source": "Incropera et al., Fundamentals of Heat and Mass Transfer, 7th ed., 2011, Table A.3, p. 989, 300 K"
+  },
+  {
+    "name": "Gypsum plaster, sand aggregate",
+    "k": 0.22,
+    "rho": 1680.0,
+    "cp": 1085.0,
+    "source": "Incropera et al., Fundamentals of Heat and Mass Transfer, 7th ed., 2011, Table A.3, p. 989, 300 K"
+  },
+  {
+    "name": "Glass fiber, coated; duct liner",
+    "k": 0.038,
+    "rho": 32.0,
+    "cp": 835.0,
+    "source": "Incropera et al., Fundamentals of Heat and Mass Transfer, 7th ed., 2011, Table A.3, p. 990, 300 K"
+  },
+  {
+    "name": "Cellular glass",
+    "k": 0.058,
+    "rho": 145.0,
+    "cp": 1000.0,
+    "source": "Incropera et al., Fundamentals of Heat and Mass Transfer, 7th ed., 2011, Table A.3, p. 990, 300 K"
+  },
+  {
+    "name": "Glass fiber, organic bonded",
+    "k": 0.036,
+    "rho": 105.0,
+    "cp": 795.0,
+    "source": "Incropera et al., Fundamentals of Heat and Mass Transfer, 7th ed., 2011, Table A.3, p. 990, 300 K"
+  },
+  {
+    "name": "Polystyrene, expanded, Extruded (R-12)",
+    "k": 0.027,
+    "rho": 55.0,
+    "cp": 1210.0,
+    "source": "Incropera et al., Fundamentals of Heat and Mass Transfer, 7th ed., 2011, Table A.3, p. 990, 300 K"
+  },
+  {
+    "name": "Polystyrene, expanded, Molded beads",
+    "k": 0.04,
+    "rho": 16.0,
+    "cp": 1210.0,
+    "source": "Incropera et al., Fundamentals of Heat and Mass Transfer, 7th ed., 2011, Table A.3, p. 990, 300 K"
+  },
+  {
+    "name": "Wood, shredded/cemented",
+    "k": 0.087,
+    "rho": 350.0,
+    "cp": 1590.0,
+    "source": "Incropera et al., Fundamentals of Heat and Mass Transfer, 7th ed., 2011, Table A.3, p. 990, 300 K"
+  },
+  {
+    "name": "Cork",
+    "k": 0.039,
+    "rho": 120.0,
+    "cp": 1800.0,
+    "source": "Incropera et al., Fundamentals of Heat and Mass Transfer, 7th ed., 2011, Table A.3, p. 990, 300 K"
+  },
+  {
+    "name": "Glass fiber, poured or blown",
+    "k": 0.043,
+    "rho": 16.0,
+    "cp": 835.0,
+    "source": "Incropera et al., Fundamentals of Heat and Mass Transfer, 7th ed., 2011, Table A.3, p. 990, 300 K"
+  },
+  {
+    "name": "Vermiculite, flakes (80 kg/m3)",
+    "k": 0.068,
+    "rho": 80.0,
+    "cp": 835.0,
+    "source": "Incropera et al., Fundamentals of Heat and Mass Transfer, 7th ed., 2011, Table A.3, p. 990, 300 K"
+  },
+  {
+    "name": "Vermiculite, flakes (160 kg/m3)",
+    "k": 0.063,
+    "rho": 160.0,
+    "cp": 1000.0,
+    "source": "Incropera et al., Fundamentals of Heat and Mass Transfer, 7th ed., 2011, Table A.3, p. 990, 300 K"
+  },
+  {
+    "name": "Urethane, two-part mixture; rigid foam",
+    "k": 0.026,
+    "rho": 70.0,
+    "cp": 1045.0,
+    "source": "Incropera et al., Fundamentals of Heat and Mass Transfer, 7th ed., 2011, Table A.3, p. 990, 300 K"
+  },
+  {
+    "name": "Asphalt",
+    "k": 0.062,
+    "rho": 2115.0,
+    "cp": 920.0,
+    "source": "Incropera et al., Fundamentals of Heat and Mass Transfer, 7th ed., 2011, Table A.3, p. 993, 300 K"
+  },
+  {
+    "name": "Bakelite",
+    "k": 1.4,
+    "rho": 1300.0,
+    "cp": 1465.0,
+    "source": "Incropera et al., Fundamentals of Heat and Mass Transfer, 7th ed., 2011, Table A.3, p. 993, 300 K"
+  },
+  {
+    "name": "Clay",
+    "k": 1.3,
+    "rho": 1460.0,
+    "cp": 880.0,
+    "source": "Incropera et al., Fundamentals of Heat and Mass Transfer, 7th ed., 2011, Table A.3, p. 993, 300 K"
+  },
+  {
+    "name": "Coal, anthracite",
+    "k": 0.26,
+    "rho": 1350.0,
+    "cp": 1260.0,
+    "source": "Incropera et al., Fundamentals of Heat and Mass Transfer, 7th ed., 2011, Table A.3, p. 993, 300 K"
   },
   {
     "name": "Concrete (stone mix)",
     "k": 1.4,
     "rho": 2300.0,
-    "cp": 880.0
+    "cp": 880.0,
+    "source": "Incropera et al., Fundamentals of Heat and Mass Transfer, 7th ed., 2011, Table A.3, p. 993, 300 K"
   },
   {
-    "name": "FR-4 (through-thickness)",
-    "k": 0.3,
-    "rho": 1850.0,
-    "cp": 1100.0
+    "name": "Cotton",
+    "k": 0.06,
+    "rho": 80.0,
+    "cp": 1300.0,
+    "source": "Incropera et al., Fundamentals of Heat and Mass Transfer, 7th ed., 2011, Table A.3, p. 993, 300 K"
+  },
+  {
+    "name": "Foodstuffs, Banana",
+    "k": 0.481,
+    "rho": 980.0,
+    "cp": 3350.0,
+    "source": "Incropera et al., Fundamentals of Heat and Mass Transfer, 7th ed., 2011, Table A.3, p. 993, 300 K",
+    "note": "75.7% water content"
+  },
+  {
+    "name": "Foodstuffs, Apple, red",
+    "k": 0.513,
+    "rho": 840.0,
+    "cp": 3600.0,
+    "source": "Incropera et al., Fundamentals of Heat and Mass Transfer, 7th ed., 2011, Table A.3, p. 993, 300 K",
+    "note": "75% water content"
+  },
+  {
+    "name": "Soda-lime glass",
+    "k": 1.4,
+    "rho": 2500.0,
+    "cp": 750.0,
+    "source": "Incropera et al., Fundamentals of Heat and Mass Transfer, 7th ed., 2011, Table A.3, p. 993, 300 K"
+  },
+  {
+    "name": "Glass, Pyrex",
+    "k": 1.4,
+    "rho": 2225.0,
+    "cp": 835.0,
+    "source": "Incropera et al., Fundamentals of Heat and Mass Transfer, 7th ed., 2011, Table A.3, p. 993, 300 K"
+  },
+  {
+    "name": "Paper",
+    "k": 0.18,
+    "rho": 930.0,
+    "cp": 1340.0,
+    "source": "Incropera et al., Fundamentals of Heat and Mass Transfer, 7th ed., 2011, Table A.3, p. 994, 300 K"
+  },
+  {
+    "name": "Paraffin",
+    "k": 0.24,
+    "rho": 900.0,
+    "cp": 2890.0,
+    "source": "Incropera et al., Fundamentals of Heat and Mass Transfer, 7th ed., 2011, Table A.3, p. 994, 300 K"
+  },
+  {
+    "name": "Rock, Granite, Barre",
+    "k": 2.79,
+    "rho": 2630.0,
+    "cp": 775.0,
+    "source": "Incropera et al., Fundamentals of Heat and Mass Transfer, 7th ed., 2011, Table A.3, p. 994, 300 K"
+  },
+  {
+    "name": "Rock, Limestone, Salem",
+    "k": 2.15,
+    "rho": 2320.0,
+    "cp": 810.0,
+    "source": "Incropera et al., Fundamentals of Heat and Mass Transfer, 7th ed., 2011, Table A.3, p. 994, 300 K"
+  },
+  {
+    "name": "Rock, Marble, Halston",
+    "k": 2.8,
+    "rho": 2680.0,
+    "cp": 830.0,
+    "source": "Incropera et al., Fundamentals of Heat and Mass Transfer, 7th ed., 2011, Table A.3, p. 994, 300 K"
+  },
+  {
+    "name": "Rock, Quartzite, Sioux",
+    "k": 5.38,
+    "rho": 2640.0,
+    "cp": 1105.0,
+    "source": "Incropera et al., Fundamentals of Heat and Mass Transfer, 7th ed., 2011, Table A.3, p. 994, 300 K"
+  },
+  {
+    "name": "Rock, Sandstone, Berea",
+    "k": 2.9,
+    "rho": 2150.0,
+    "cp": 745.0,
+    "source": "Incropera et al., Fundamentals of Heat and Mass Transfer, 7th ed., 2011, Table A.3, p. 994, 300 K"
+  },
+  {
+    "name": "Rubber, vulcanized, Soft",
+    "k": 0.13,
+    "rho": 1100.0,
+    "cp": 2010.0,
+    "source": "Incropera et al., Fundamentals of Heat and Mass Transfer, 7th ed., 2011, Table A.3, p. 994, 300 K"
+  },
+  {
+    "name": "Sand",
+    "k": 0.27,
+    "rho": 1515.0,
+    "cp": 800.0,
+    "source": "Incropera et al., Fundamentals of Heat and Mass Transfer, 7th ed., 2011, Table A.3, p. 994, 300 K"
+  },
+  {
+    "name": "Soil",
+    "k": 0.52,
+    "rho": 2050.0,
+    "cp": 1840.0,
+    "source": "Incropera et al., Fundamentals of Heat and Mass Transfer, 7th ed., 2011, Table A.3, p. 994, 300 K"
+  },
+  {
+    "name": "Wood, cross grain, Fir",
+    "k": 0.11,
+    "rho": 415.0,
+    "cp": 2720.0,
+    "source": "Incropera et al., Fundamentals of Heat and Mass Transfer, 7th ed., 2011, Table A.3, p. 994, 300 K"
+  },
+  {
+    "name": "Wood, cross grain, Oak",
+    "k": 0.17,
+    "rho": 545.0,
+    "cp": 2385.0,
+    "source": "Incropera et al., Fundamentals of Heat and Mass Transfer, 7th ed., 2011, Table A.3, p. 994, 300 K"
+  },
+  {
+    "name": "Wood, cross grain, Yellow pine",
+    "k": 0.15,
+    "rho": 640.0,
+    "cp": 2805.0,
+    "source": "Incropera et al., Fundamentals of Heat and Mass Transfer, 7th ed., 2011, Table A.3, p. 994, 300 K"
+  },
+  {
+    "name": "Wood, radial, Oak",
+    "k": 0.19,
+    "rho": 545.0,
+    "cp": 2385.0,
+    "source": "Incropera et al., Fundamentals of Heat and Mass Transfer, 7th ed., 2011, Table A.3, p. 994, 300 K"
+  },
+  {
+    "name": "Wood, radial, Fir",
+    "k": 0.14,
+    "rho": 420.0,
+    "cp": 2720.0,
+    "source": "Incropera et al., Fundamentals of Heat and Mass Transfer, 7th ed., 2011, Table A.3, p. 994, 300 K"
+  },
+  {
+    "name": "Boron fiber epoxy (30% vol) composite",
+    "k": 2.29,
+    "k2": 0.59,
+    "rho": 2080.0,
+    "cp": 1122.0,
+    "source": "Incropera et al., Fundamentals of Heat and Mass Transfer, 7th ed., 2011, Table A.2, p. 987, 300 K",
+    "note": "Orthotropic: k along the material axis (parallel to the fibers), k2 across it."
+  },
+  {
+    "name": "Graphite, pyrolytic",
+    "k": 1950.0,
+    "k2": 5.7,
+    "rho": 2210.0,
+    "cp": 709.0,
+    "source": "Incropera et al., Fundamentals of Heat and Mass Transfer, 7th ed., 2011, Table A.2, p. 987, 300 K",
+    "note": "Orthotropic: k along the material axis (parallel to the layers), k2 across it."
+  },
+  {
+    "name": "Graphite fiber epoxy (25% vol) composite",
+    "k": 11.1,
+    "k2": 0.87,
+    "rho": 1400.0,
+    "cp": 935.0,
+    "source": "Incropera et al., Fundamentals of Heat and Mass Transfer, 7th ed., 2011, Table A.2, p. 987, 300 K",
+    "note": "Orthotropic: k along the material axis (parallel to the fibers), k2 across it."
+  },
+  {
+    "name": "Silicon dioxide, crystalline (quartz)",
+    "k": 10.4,
+    "k2": 6.21,
+    "rho": 2650.0,
+    "cp": 745.0,
+    "source": "Incropera et al., Fundamentals of Heat and Mass Transfer, 7th ed., 2011, Table A.2, p. 988, 300 K",
+    "note": "Orthotropic: k along the material axis (parallel to the c axis), k2 across it."
   }
 ]

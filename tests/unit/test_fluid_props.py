@@ -44,7 +44,7 @@ def test_table_rows_are_returned_exactly_for_water() -> None:
 
 def test_linear_interpolation_at_midpoint_air() -> None:
     air = library.fluid("Air")
-    lo, hi = table_row(air, 1), table_row(air, 2)  # 300 K and 350 K
+    lo, hi = table_row(air, 4), table_row(air, 5)  # 300 K and 350 K
     p = air.props(325.0)
     for name in FIELDS:
         assert float(getattr(p, name)) == pytest.approx((lo[name] + hi[name]) / 2, rel=1e-12)
@@ -52,8 +52,8 @@ def test_linear_interpolation_at_midpoint_air() -> None:
 
 def test_linear_interpolation_at_midpoint_water() -> None:
     water = library.fluid("Water")
-    lo, hi = table_row(water, 1), table_row(water, 2)  # 300 K and 320 K
-    p = water.props(310.0)
+    lo, hi = table_row(water, 5), table_row(water, 6)  # 305 K and 310 K
+    p = water.props(307.5)
     for name in FIELDS:
         assert float(getattr(p, name)) == pytest.approx((lo[name] + hi[name]) / 2, rel=1e-12)
 
@@ -71,8 +71,8 @@ def test_ideal_gas_beta_is_one_over_T_inside_and_outside_the_table() -> None:
 
 def test_liquid_beta_comes_from_the_table() -> None:
     water = library.fluid("Water")
-    expected = (water.beta[1] + water.beta[2]) / 2
-    assert float(water.props(310.0).beta) == pytest.approx(expected, rel=1e-12)
+    expected = (water.beta[5] + water.beta[6]) / 2  # 305 K and 310 K
+    assert float(water.props(307.5).beta) == pytest.approx(expected, rel=1e-12)
 
 
 # ------------------------------------------------------------------------- derived values
@@ -84,7 +84,7 @@ def test_derived_numbers_match_their_definitions() -> None:
     assert np.allclose(p.Pr, p.mu * p.cp / p.k, rtol=1e-14, atol=0.0)
     assert np.allclose(p.nu, p.mu / p.rho, rtol=1e-14, atol=0.0)
     assert np.allclose(p.alpha, p.k / (p.rho * p.cp), rtol=1e-14, atol=0.0)
-    row = table_row(air, 1)  # 300 K
+    row = table_row(air, 4)  # 300 K
     assert float(p.Pr[0]) == pytest.approx(row["mu"] * row["cp"] / row["k"], rel=1e-12)
     assert float(p.Pr[0]) == pytest.approx(0.707, abs=0.002)
 
@@ -139,25 +139,25 @@ def test_first_out_of_range_call_warns_once_and_names_the_fluid(
 ) -> None:
     caplog.set_level(logging.WARNING, logger=LOGGER)
     air = library.fluid("Air")
-    fluid_props(air, 200.0)
+    fluid_props(air, 50.0)
     records = [r for r in caplog.records if r.name == LOGGER]
     assert len(records) == 1
     assert records[0].levelno == logging.WARNING
     assert "Air" in records[0].getMessage()
 
     caplog.clear()
-    fluid_props(air, 150.0)
-    fluid_props(air, np.array([1200.0, 1300.0]))
+    fluid_props(air, 60.0)
+    fluid_props(air, np.array([3200.0, 3300.0]))
     assert [r for r in caplog.records if r.name == LOGGER] == []
 
     caplog.clear()
     fresh = library.fluid("Air")  # a different Fluid object warns once more
-    fluid_props(fresh, 200.0)
+    fluid_props(fresh, 50.0)
     assert len([r for r in caplog.records if r.name == LOGGER]) == 1
 
     caplog.clear()
     reset_clamp_warning(fresh)
-    fluid_props(fresh, 200.0)
+    fluid_props(fresh, 50.0)
     assert len([r for r in caplog.records if r.name == LOGGER]) == 1
 
 
@@ -187,7 +187,7 @@ def test_non_absolute_temperatures_raise(bad: float) -> None:
 def test_warning_does_not_change_fluid_equality_or_json() -> None:
     air = library.fluid("Air")
     before = air.to_json()
-    air.props(200.0)  # clamped, sets the warned state
+    air.props(50.0)  # clamped, sets the warned state
     assert air._clamp_warned is True
     assert "_clamp_warned" not in air.to_json()
     assert air.to_json() == before

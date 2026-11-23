@@ -52,7 +52,7 @@ def expected() -> dict[str, list[tuple[float, float]]]:
             (ra, 0.54 * ra**0.25 if ra <= 1e7 else 0.15 * ra ** (1.0 / 3.0))
             for ra in (1e5, 1e7, 1e7 + 1.0, 1e9)
         ],
-        "hplate_down_natural": [(ra, 0.27 * ra**0.25) for ra in (1e5, 1e7, 1e10)],
+        "hplate_down_natural": [(ra, 0.52 * ra ** (1.0 / 5.0)) for ra in (1e4, 1e7, 1e9)],
         "hcyl_natural": [
             (
                 ra,

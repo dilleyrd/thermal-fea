@@ -348,7 +348,7 @@ def test_fin_quench_in_the_gui(
     done = "step(s), 0 rejected, 0 Newton failure(s)"
     assert f"transient run finished at t = 3600 s: 217 {done}" in log
     assert any(m.startswith("energy balance [W]") and "relative imbalance" in m for m in log)
-    assert any("relative imbalance            -1.460e-06" in m for m in log)
+    assert any("relative imbalance            -2.821e-07" in m for m in log)
     results = results_of(ctx)
     node = centre_node(results)
     assert node == ref["node"]
@@ -493,8 +493,8 @@ def test_cold_plate_in_the_gui(
         flow_window.row_texts(flow_window.rows[0])
     )
     assert flow_window.row_texts(flow_window.rows[0]) == [
-        "Stream 1", "in_plane", "0.02", "917.291", "laminar", "776.587", "72.8141",
-        "300", "302.393", "200",
+        "Stream 1", "in_plane", "0.02", "923.245", "laminar", "772.433", "72.3679",
+        "300", "302.392", "200",
     ]
     assert int(results.iterations[-1]) == ref["iterations"] == 3
     summary = flow_window.rows[0]

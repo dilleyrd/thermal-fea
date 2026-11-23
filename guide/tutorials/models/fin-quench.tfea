@@ -80,21 +80,21 @@
     }
   },
   "materials": {
-    "Aluminium 6061-T6": {
+    "Aluminum, Alloy 2024-T6": {
       "cp": {
         "type": "constant",
-        "value": 896.0
+        "value": 875.0
       },
       "k": {
         "type": "constant",
-        "value": 167.0
+        "value": 177.0
       },
       "k2": null,
-      "name": "Aluminium 6061-T6",
+      "name": "Aluminum, Alloy 2024-T6",
       "phase_change": null,
       "rho": {
         "type": "constant",
-        "value": 2700.0
+        "value": 2770.0
       }
     }
   },
@@ -114,7 +114,7 @@
   "network": null,
   "regions": [
     {
-      "material": "Aluminium 6061-T6",
+      "material": "Aluminum, Alloy 2024-T6",
       "material_angle": 0.0,
       "selection": "all",
       "thickness": 0.1

@@ -18,7 +18,7 @@ The finished model is in [models/fin-quench.tfea](models/fin-quench.tfea); open 
 ## The problem
 
 The fin is a plate 10 mm thick, 100 mm high and 100 mm deep, standing upright. It is made of
-6061-T6 aluminium and starts at a uniform 500 K. The air around it is still, at 300 K. Both
+2024-T6 aluminum and starts at a uniform 500 K. The air around it is still, at 300 K. Both
 large faces lose heat by natural convection and by radiation. The two ends are insulated.
 The ends are a simplification: they are small, and insulating them keeps the model a plain
 plate in a plain environment.
@@ -30,7 +30,7 @@ vertical edges are the faces.
 | Item | Value |
 |---|---|
 | Geometry | rectangle 0.01 m (x) by 0.1 m (y); depth 0.1 m ("Thickness" of the region) |
-| Material | Aluminium 6061-T6, from the library: k = 167 W/(m K), density 2700 kg/m³, specific heat 896 J/(kg K) |
+| Material | Aluminum, Alloy 2024-T6, from the library: k = 177 W/(m K), density 2770 kg/m³, specific heat 875 J/(kg K) |
 | Initial temperature | 500 K, uniform |
 | Convection on the two faces | correlation `vplate_natural` (vertical plate, Churchill and Chu), fluid Air at 300 K, characteristic length 0.1 m |
 | Radiation on the two faces | emissivity 0.8, surroundings at 300 K |
@@ -41,7 +41,7 @@ vertical edges are the faces.
 
 The air properties (density, viscosity, conductivity, specific heat) come from the library
 table for air, at the film temperature, which is the mean of the surface and the air
-temperature. At the start that is (500 + 300)/2 = 400 K. The table covers 250 K to 1000 K,
+temperature. At the start that is (500 + 300)/2 = 400 K. The table covers 100 K to 3000 K,
 so every temperature of this run is inside it and the program will not warn.
 
 **Temperature units.** Everything is in kelvin, the default. The convection coefficient
@@ -63,9 +63,9 @@ wheel if you cannot hit the edges later. A middle-button drag pans.
 
 1. Choose **Tools > Material library...**. A window titled "Material library" opens, with a
    **Built-in** tab and a **User** tab.
-2. On the **Built-in** tab select **Aluminium 6061-T6**. Its properties are shown below the
+2. On the **Built-in** tab select **Aluminum, Alloy 2024-T6**. Its properties are shown below the
    list.
-3. Press **Copy into model**. A node "Aluminium 6061-T6" appears under **Materials** in the
+3. Press **Copy into model**. A node "Aluminum, Alloy 2024-T6" appears under **Materials** in the
    tree. Close the window.
 
 ### 3. Assign it to the plate
@@ -73,7 +73,7 @@ wheel if you cannot hit the edges later. A middle-button drag pans.
 1. Right-click **Regions** and choose **Add region**. The panel "Region" opens.
 2. Open the box of the "Selection" field and choose **all**. ("all" is made by the program: it
    is every surface of the model, here the one plate.)
-3. "Material" already reads "Aluminium 6061-T6", because it is the only material.
+3. "Material" already reads "Aluminum, Alloy 2024-T6", because it is the only material.
 4. In "Thickness" type `0.1` and press Enter.
 
 ### 4. Enter the loads
@@ -159,10 +159,10 @@ Radiation to Ambient 1 and Adiabatic 1. Their heat flows are reported under thes
    is stored).
 
 *Why set the first time step?* If the field is empty the program suggests a first step from
-the mesh and the material (0.0389 s for this plate). It then warns in the **Messages** dock:
+the mesh and the material (0.0367 s for this plate). It then warns in the **Messages** dock:
 
 ```
-the time step of 0.0389 s is below h^2 rho c / (6 k) in 86 % of the elements; with
+the time step of 0.0367 s is below h^2 rho c / (6 k) in 86 % of the elements; with
 consistent capacitance the temperatures may oscillate near sudden changes. Use lumped
 capacitance or a finer mesh.
 ```
@@ -244,9 +244,9 @@ The heat flows through the two conditions:
 | Quantity | Value |
 |---|---|
 | Stored steps to 3600 s / to 7200 s | 218 / 248 |
-| Temperature of the plate centre at 3600 s | 306.14 K |
-| Temperature of the plate centre at 7200 s | 300.67 K |
-| Largest temperature difference across the plate, after the first step | 0.066 K |
+| Temperature of the plate centre at 3600 s | 306.17 K |
+| Temperature of the plate centre at 7200 s | 300.68 K |
+| Largest temperature difference across the plate, after the first step | 0.062 K |
 | Largest temperature difference across the plate, at 3600 s | below 0.001 K |
 
 **How the heat loss is shared.** These are the heat flows leaving the plate through the two
@@ -255,12 +255,12 @@ conditions (for 0.1 m of depth), from the heat-flow history.
 | Time | Convection [W] | Radiation [W] | Radiation share |
 |---|---|---|---|
 | 1 s (first step) | 34.2 | 49.2 | 59.0 % |
-| 3600 s | 0.457 | 0.620 | 57.5 % |
-| 7200 s | 0.0288 | 0.0659 | 69.5 % |
+| 3600 s | 0.460 | 0.623 | 57.5 % |
+| 7200 s | 0.0291 | 0.0664 | 69.5 % |
 
 At the start radiation carries the larger part, because the plate is hot and radiation
 depends on the fourth power of the absolute temperature. While the plate is hot, radiation
-falls fastest and its share falls, to a minimum of 49.6 % at about 1080 s, where the two are
+falls fastest and its share falls, to a minimum of 49.6 % at about 1081 s, where the two are
 nearly equal. After that the share rises again: close to the air temperature the convection
 coefficient from the correlation falls proportionally more than the radiation coefficient
 does, and radiation carries most of the heat. The picture shows the whole curve:
@@ -282,18 +282,18 @@ and then check the time scale of the cooling. The formulas are the lumped-capaci
    temperature difference (T − T∞) gives an equivalent coefficient. With ε = 0.8,
    σ = 5.670374e-8 W/(m² K⁴), T = 500 K and T∞ = 300 K: 12.34 W/(m² K).
 4. **Total.** h = 8.58 + 12.34 = 20.91 W/(m² K).
-5. **Biot number.** Bi = 20.91 × 0.005 / 167 = 6.3e-4. This is far below 0.1, so the plate is
+5. **Biot number.** Bi = 20.91 × 0.005 / 177 = 5.9e-4. This is far below 0.1, so the plate is
    close to one temperature at every instant. The program agrees: the largest temperature
-   difference across the plate is 0.066 K after the first second and below 0.001 K at 3600 s.
+   difference across the plate is 0.062 K after the first second and below 0.001 K at 3600 s.
 6. **Time constant.** τ = ρ c V / (h A), with V = 0.01 × 0.1 × 0.1 = 1e-4 m³ and
-   A = 2 × 0.1 × 0.1 = 0.02 m² (two faces; the ends are insulated). ρ c V = 2700 × 896 ×
-   1e-4 = 241.9 J/K and h A = 20.91 × 0.02 = 0.418 W/K, so **τ = 578 s**.
+   A = 2 × 0.1 × 0.1 = 0.02 m² (two faces; the ends are insulated). ρ c V = 2770 × 875 ×
+   1e-4 = 242.4 J/K and h A = 20.91 × 0.02 = 0.418 W/K, so **τ = 579 s**.
 7. **Initial heat loss.** h A (T − T∞) = 0.418 × 200 = **83.7 W**. The program's first step
    (at t = 1 s) loses 34.2 + 49.2 = **83.4 W**. They agree to 0.3 %; the plate has already
    cooled by about 0.35 K during that first second.
 
 **The time constant does not describe the whole curve.** With a constant h the plate would
-cool as T∞ + (T₀ − T∞) e^(−t/τ), which gives 373.6 K at t = τ = 578 s. The finite-element
+cool as T∞ + (T₀ − T∞) e^(−t/τ), which gives 373.6 K at t = τ = 579 s. The finite-element
 model gives **388.3 K** there, about 15 K warmer. The reason is that h is not constant: it
 falls as the plate cools, in the correlation (smaller temperature difference, cooler air
 film) and in radiation (lower temperature), so the real cooling is slower than any single
@@ -304,8 +304,8 @@ fixed coefficient for a quench.
 
 Each step checks that heat generated plus heat entering through the boundaries equals the rate
 at which the stored energy changes. For a transient case the relative imbalance must be below
-1e-3. The largest value over all 247 steps, in both parts of the run, is 1.5e-6. The last
-step of the first part gave 1.460e-6, and you can read it in the message log, in the line
+1e-3. The largest value over all 247 steps, in both parts of the run, is 7.1e-7. The last
+step of the first part gave 2.821e-7, and you can read it in the message log, in the line
 "relative imbalance". **Results > Energy balance** shows the whole history.
 
 ## Things to try

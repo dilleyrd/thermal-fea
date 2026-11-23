@@ -51,7 +51,7 @@ def test_check_mode_writes_nothing(generator: ModuleType, tmp_path: Path, monkey
     assert list(tmp_path.iterdir()) == []
 
 
-def test_every_correlation_is_documented(pages: dict[str, str]) -> None:
+def test_every_correlation_is_documented(pages: dict[str, str], generator: ModuleType) -> None:
     from thermalfea.convection.correlation_info import CORRELATION_INFO
     from thermalfea.convection.correlations import CORRELATIONS
 
@@ -60,8 +60,10 @@ def test_every_correlation_is_documented(pages: dict[str, str]) -> None:
     for cid, info in CORRELATION_INFO.items():
         assert f"`{cid}`" in text
         assert info.formula in text
-        assert info.validity in text
-    assert "task M11.1" in text  # no literature source is recorded: the page says so
+        assert generator.escape_inline(info.validity).replace("|", "\\|") in text
+    assert "task M11.1" not in text  # sources recorded (M11.38): each entry cites them
+    for info in CORRELATIONS.values():
+        assert generator.escape_inline(info.source) in text
 
 
 def test_every_theory_heading_is_in_the_theory_page(pages: dict[str, str]) -> None:

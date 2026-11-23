@@ -36,9 +36,10 @@ GENERATED_NOTE = (
     "    Do not edit it here: change the source and run the script again."
 )
 
-#: Reported wherever the literature source of a correlation or a table is asked for.
-SOURCE_NOT_RECORDED = (
-    "source not yet recorded; to be confirmed in the release check, task M11.1"
+#: The reference text the correlations and most property tables come from (Theory §8).
+REFERENCE_TEXT = (
+    "Bergman, Lavine, Incropera and DeWitt, *Fundamentals of Heat and Mass Transfer*, "
+    "7th ed., Wiley, 2011"
 )
 
 # --------------------------------------------------------------------------------------
@@ -328,7 +329,7 @@ def correlations_page() -> str:
             f"- **Fluid properties evaluated at:** {where}",
             f"- **Validity range (as recorded):** {escape_inline(info.validity)}",
             f"- **Theory section:** {_section_links(info.source)}",
-            f"- **Literature source:** {SOURCE_NOT_RECORDED}.",
+            f"- **Literature source:** {escape_inline(CORRELATIONS[cid].source)}.",
         ]
         if cid == _DUCT_ID:
             lines.append(f"- **Note:** {_NOT_A_BC}")
@@ -352,10 +353,10 @@ def correlations_page() -> str:
         "",
         "## Literature sources",
         "",
-        "The theory document names the Churchill–Bernstein, Churchill–Chu, Gnielinski and "
-        "Dittus–Boelter relations and gives the year of the Churchill friction factor "
-        "(1977). It gives no reference text or edition for any correlation. "
-        f"For every entry the literature source is: {SOURCE_NOT_RECORDED}.",
+        f"Every correlation except the user power law comes from {REFERENCE_TEXT}; each "
+        "entry above gives its equation numbers. The Churchill friction factor (1977) is "
+        "not in that book. The correlations of the book that the program does not use, "
+        "and why, are listed in [Theory §8.2](theory.md#sec-8-2).",
     ]
     return "\n".join(lines) + "\n"
 
@@ -390,7 +391,7 @@ def materials_page() -> str:
     """Return the text of ``guide/materials.md``."""
     solids = _load_json("solids.json")
     fluids = _load_json("fluids.json")
-    known = {"name"} | {key for key, _ in _SOLID_COLUMNS}
+    known = {"name", "source", "note", "k2"} | {key for key, _ in _SOLID_COLUMNS}
     lines = [
         "# Material library",
         "",
@@ -403,18 +404,18 @@ def materials_page() -> str:
         "Open it in the program with Tools > Material library.... You can add your own "
         "solids and fluids; they are stored in `%APPDATA%/ThermalFEA/materials.json`.",
         "",
-        f"The project documents say the values are \"from standard heat-transfer textbook "
-        f"tables\". The specific reference text and edition: {SOURCE_NOT_RECORDED}. "
-        "Check a value against your own source before relying on it.",
+        "Every value comes from Bergman, Lavine, Incropera and DeWitt, *Fundamentals of "
+        "Heat and Mass Transfer*, 7th ed., Wiley, 2011, Appendix A, or from the NIST "
+        "Chemistry WebBook (water). The source of each entry is listed with it.",
         "",
         "## Solids",
         "",
-        "Every built-in solid is isotropic and has constant properties, quoted near 300 K. "
-        "A material you create yourself may instead use a table against temperature, "
-        "or an orthotropic conductivity.",
+        "Every built-in solid has constant properties, quoted at 300 K. Most are isotropic; "
+        "four are orthotropic and list a second conductivity k2 across the material axis. "
+        "A material you create yourself may instead use a table against temperature.",
         "",
-        "| Name | " + " | ".join(label for _, label in _SOLID_COLUMNS) + " |",
-        "|---|" + "---|" * len(_SOLID_COLUMNS),
+        "| Name | " + " | ".join(label for _, label in _SOLID_COLUMNS) + " | Source | Note |",
+        "|---|" + "---|" * len(_SOLID_COLUMNS) + "---|---|",
     ]
     for item in solids:
         extra = set(item) - known
@@ -424,11 +425,16 @@ def materials_page() -> str:
         for key, _ in _SOLID_COLUMNS:
             value = item[key]
             if isinstance(value, (int, float)):
-                cells.append(f"{_g(value)} (constant)")
+                text = f"{_g(value)} (constant)"
+                if key == "k" and item.get("k2") is not None:
+                    text += f", k2 = {_g(item['k2'])} (constant)"
+                cells.append(text)
             else:
                 temps = item.get("T")
                 span = f", {_g(min(temps))} to {_g(max(temps))} K" if temps else ""
                 cells.append(f"table{span}")
+        cells.append(escape_inline(item.get("source", "")))
+        cells.append(escape_inline(item.get("note", "")))
         lines.append(f"| {escape_inline(item['name'])} | " + " | ".join(cells) + " |")
     lines += [
         "",
@@ -445,6 +451,8 @@ def materials_page() -> str:
         lines += [
             f"### {escape_inline(item['name'])}",
             "",
+            f"- Source: {escape_inline(item.get('source', ''))}",
+            *([f"- Note: {escape_inline(item['note'])}"] if item.get("note") else []),
             f"- Ideal gas: {'yes' if item['ideal_gas'] else 'no'}",
             f"- Temperature range of the tables: {_g(min(temps))} K to {_g(max(temps))} K "
             f"({len(temps)} points)",

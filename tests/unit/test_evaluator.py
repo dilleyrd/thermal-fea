@@ -313,7 +313,7 @@ def test_property_table_warning(caplog: pytest.LogCaptureFixture) -> None:
     problem, term = build(nat("hot", char_length=0.5))
     with caplog.at_level(logging.WARNING, logger=LOGGER):
         for _ in range(2):
-            points(term, problem, make_state(problem, 5000.0))
+            points(term, problem, make_state(problem, 8000.0))
     found = warnings_of(caplog)
     assert len(found) == 1 and "hot" in found[0] and "table" in found[0]
 
@@ -386,3 +386,97 @@ def test_film_coefficient_helper_and_results() -> None:
     assert list(out) == ["h_mean:nat"] and out["h_mean:nat"][0] == pytest.approx(2.0 * h)
     with pytest.raises(ModelError, match="stream"):
         film_coefficient(c.CORRELATIONS["duct_internal"], AIR, 400.0, 300.0, 0.5)
+
+
+# ------------------------------------------------------------------------------- M11.38
+
+
+@pytest.mark.parametrize("name", ["hplate_up_natural", "hplate_down_natural"])
+@pytest.mark.parametrize("face", [None, "up", "down"])
+def test_horizontal_plate_automatic_length_is_half_the_selection(name: str, face) -> None:
+    from thermalfea import api
+
+    auto, t_auto = build(nat(correlation=name, face_direction=face))  # right edge: 1 m
+    explicit, t_explicit = build(nat(correlation=name, face_direction=face, char_length=0.5))
+    a = points(t_auto, auto, make_state(auto, 400.0))
+    e = points(t_explicit, explicit, make_state(explicit, 400.0))
+    for (_, x), (_, y) in zip(a, e, strict=True):
+        np.testing.assert_allclose(x, y, rtol=1e-13)
+    # the same h as the calculator at length = selection / 2
+    res = api.htc(name, "Air", 400.0, 300.0, length=0.5, face_direction=face)
+    np.testing.assert_allclose(a[0][1], res.h, rtol=1e-12)
+    # an explicit length overrides the half length
+    other, t_other = build(nat(correlation=name, face_direction=face, char_length=0.05))
+    o = points(t_other, other, make_state(other, 400.0))
+    res = api.htc(name, "Air", 400.0, 300.0, length=0.05, face_direction=face)
+    np.testing.assert_allclose(o[0][1], res.h, rtol=1e-12)
+    assert not np.allclose(a[0][1], o[0][1], rtol=1e-3)
+
+
+def test_horizontal_plate_length_two_curves() -> None:
+    problem = make_problem("Q4")
+    problem.named_entities["both"] = (1, [1, 2])  # bottom (2 m) + right (1 m)
+    attach(problem, nat("both", "both", correlation="hplate_up_natural"))
+    explicit = make_problem("Q4")
+    explicit.named_entities["both"] = (1, [1, 2])
+    attach(explicit, nat("both", "both", correlation="hplate_up_natural", char_length=1.5))
+    a = points(problem.terms[-1], problem, make_state(problem, 400.0))
+    e = points(explicit.terms[-1], explicit, make_state(explicit, 400.0))
+    for (_, x), (_, y) in zip(a, e, strict=True):
+        np.testing.assert_allclose(x, y, rtol=1e-13)
+
+
+def test_other_plate_correlations_keep_the_full_length() -> None:
+    auto, t_auto = build(nat())  # vplate_natural, right edge 1 m
+    fixed, t_fixed = build(nat(char_length=1.0))
+    (_, a), *_ = points(t_auto, auto, make_state(auto, 400.0))
+    (_, f), *_ = points(t_fixed, fixed, make_state(fixed, 400.0))
+    np.testing.assert_allclose(a, f, rtol=1e-13)
+
+
+@pytest.mark.parametrize(
+    ("face", "T_s", "warns"),
+    [("up", 400.0, True), ("up", 250.0, False), ("down", 250.0, True), ("down", 400.0, False),
+     (None, 400.0, False), (None, 250.0, False)],
+)
+def test_inclined_face_check(
+    caplog: pytest.LogCaptureFixture, face, T_s: float, warns: bool
+) -> None:
+    bc = nat("inc", correlation="inclined_natural", char_length=0.5, face_direction=face,
+             params={"theta_deg": 30.0})
+    problem, term = build(bc)
+    s = make_state(problem, T_s)
+    with caplog.at_level(logging.WARNING, logger=LOGGER):
+        for _ in range(3):
+            points(term, problem, s)
+    found = warnings_of(caplog)
+    assert len(found) == (1 if warns else 0)
+    if warns:
+        assert "inc" in found[0] and "inclined_natural" in found[0] and "face" in found[0]
+
+
+def test_inclined_theta_check_is_kept(caplog: pytest.LogCaptureFixture) -> None:
+    bc = nat("inc", correlation="inclined_natural", char_length=0.5, params={"theta_deg": 75.0})
+    problem, term = build(bc)
+    with caplog.at_level(logging.WARNING, logger=LOGGER):
+        points(term, problem, make_state(problem, 400.0))
+    assert any("theta_deg" in m for m in warnings_of(caplog))
+
+
+def test_hplate_up_pr_bound_through_the_term(caplog: pytest.LogCaptureFixture) -> None:
+    # Air at a film temperature of 500 K has Pr < 0.7. Pr >= 0.7 is required only for Ra <= 1e7.
+    for L, expect in ((0.1, True), (0.5, False)):  # Ra about 4e6 and 5e8
+        bc = nat("hp", "top", correlation="hplate_up_natural", char_length=L)
+        problem, term = build(bc)
+        caplog.clear()
+        with caplog.at_level(logging.WARNING, logger=LOGGER):
+            points(term, problem, make_state(problem, 700.0))
+        assert any("Pr" in m for m in warnings_of(caplog)) is expect, L
+
+
+def test_hplate_down_pr_bound_through_the_term(caplog: pytest.LogCaptureFixture) -> None:
+    bc = nat("hp", "top", correlation="hplate_down_natural", char_length=0.5)
+    problem, term = build(bc)
+    with caplog.at_level(logging.WARNING, logger=LOGGER):
+        points(term, problem, make_state(problem, 700.0))
+    assert any("Pr" in m for m in warnings_of(caplog))

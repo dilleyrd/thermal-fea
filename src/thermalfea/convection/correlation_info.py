@@ -1,7 +1,7 @@
 """Display text of the convection correlations: formula, validity range and inputs.
 
-The texts are copied from ``docs/theory.md`` §8 (the correlation table, lines 206-217) and
-§8.1 (internal duct flow, lines 225-243), keeping the notation of that document. Nothing
+The texts are copied from ``docs/theory.md`` §8 (the correlation table) and
+§8.1 (internal duct flow), keeping the notation of that document. Nothing
 here is computed; the numbers come from :mod:`thermalfea.convection.correlations`. The
 module has no Qt dependency, so a GUI, a report or a script can show the same text.
 
@@ -16,10 +16,10 @@ from dataclasses import dataclass
 #: Shown when the theory document gives no validity range for a correlation.
 NOT_STATED = "Not stated in the theory document."
 
-#: The relation every Nusselt-number correlation shares (docs/theory.md §8, line 198).
+#: The relation every Nusselt-number correlation shares (docs/theory.md §8).
 H_FROM_NU = "h = Nu · k_f / L_c"
 
-#: Film temperature rule (docs/theory.md §8, line 198).
+#: Film temperature rule (docs/theory.md §8).
 PROPERTIES_AT = "Fluid properties at the film temperature T_film = (T_s + T∞)/2."
 
 
@@ -70,27 +70,27 @@ _DUCT_FORMULA = (
 )
 
 _DUCT_VALIDITY = (
-    "Gnielinski: 0.5 ≤ Pr ≤ 2000, Re ≤ 5e6. Dittus–Boelter: Re ≥ 1e4. "
-    "(The validity column of the §8 table is empty for this entry; the ranges are those "
-    "stated in §8.1.)"
+    "Gnielinski: 0.5 ≤ Pr ≤ 2000, 3000 ≤ Re ≤ 5e6. Dittus–Boelter: 0.6 ≤ Pr ≤ 160 and "
+    "Re ≥ 1e4. (The validity column of the §8 table is empty for this entry; the ranges are "
+    "those stated in §8.1.)"
 )
 
 CORRELATION_INFO: dict[str, CorrelationInfo] = {
     "plate_forced_avg": CorrelationInfo(
         title="Flat plate, parallel flow, average",
         formula="Re ≤ 5e5: Nu = 0.664 Re^½ Pr^⅓; else Nu = (0.037 Re^0.8 − 871) Pr^⅓",
-        validity="Pr ≥ 0.6, Re ≤ 1e8",
+        validity="Pr ≥ 0.6; when Re > 5e5 also Pr ≤ 60 and Re ≤ 1e8",
         length="plate length",
         inputs=("length", "velocity"),
-        source="docs/theory.md §8, line 208",
+        source="docs/theory.md §8, correlation table",
     ),
     "plate_forced_local": CorrelationInfo(
         title="Flat plate, local at distance x from leading edge",
         formula="Re_x ≤ 5e5: Nu_x = 0.332 Re_x^½ Pr^⅓; else Nu_x = 0.0296 Re_x^0.8 Pr^⅓",
-        validity="Pr ≥ 0.6",
+        validity="Pr ≥ 0.6; when Re_x > 5e5 also Pr ≤ 60 and Re_x ≤ 1e8",
         length="x",
         inputs=("x", "velocity"),
-        source="docs/theory.md §8, line 209 (x: lines 222-223)",
+        source="docs/theory.md §8, correlation table",
     ),
     "cylinder_crossflow": CorrelationInfo(
         title="Cylinder in cross flow (Churchill–Bernstein)",
@@ -100,7 +100,7 @@ CORRELATION_INFO: dict[str, CorrelationInfo] = {
         validity="Re·Pr ≥ 0.2",
         length="diameter",
         inputs=("length", "velocity"),
-        source="docs/theory.md §8, line 210",
+        source="docs/theory.md §8, correlation table",
     ),
     "duct_internal": CorrelationInfo(
         title="Internal flow, circular or by hydraulic diameter",
@@ -108,7 +108,7 @@ CORRELATION_INFO: dict[str, CorrelationInfo] = {
         validity=_DUCT_VALIDITY,
         length="D_h",
         inputs=("mass_flow", "area", "wetted_perimeter"),
-        source="docs/theory.md §8 line 211 and §8.1 lines 225-243",
+        source="docs/theory.md §8.1",
     ),
     "vplate_natural": CorrelationInfo(
         title="Vertical plate (Churchill–Chu)",
@@ -116,31 +116,31 @@ CORRELATION_INFO: dict[str, CorrelationInfo] = {
         validity="all Ra",
         length="height",
         inputs=("length",),
-        source="docs/theory.md §8, line 212",
+        source="docs/theory.md §8, correlation table",
     ),
     "inclined_natural": CorrelationInfo(
         title="Plate inclined θ from vertical",
         formula="as `vplate_natural` with g → g cos θ",
-        validity="θ ≤ 60°",
+        validity="0 ≤ θ ≤ 60°; for the other face [I] makes no recommendation (see below)",
         length="length",
         inputs=("length", "theta_deg"),
-        source="docs/theory.md §8, line 213",
+        source="docs/theory.md §8, correlation table",
     ),
     "hplate_up_natural": CorrelationInfo(
         title="Horizontal, hot face up or cold face down",
         formula="Ra ≤ 1e7: Nu = 0.54 Ra^¼; else Nu = 0.15 Ra^⅓",
-        validity="1e4 ≤ Ra ≤ 1e11",
+        validity="1e4 ≤ Ra ≤ 1e11; when Ra ≤ 1e7 also Pr ≥ 0.7",
         length="area/perimeter",
         inputs=("length",),
-        source="docs/theory.md §8, line 214 (up/down choice: lines 219-221)",
+        source="docs/theory.md §8, correlation table",
     ),
     "hplate_down_natural": CorrelationInfo(
         title="Horizontal, hot face down or cold face up",
-        formula="Nu = 0.27 Ra^¼",
-        validity="1e5 ≤ Ra ≤ 1e10",
+        formula="Nu = 0.52 Ra^(1/5)",
+        validity="1e4 ≤ Ra ≤ 1e9, Pr ≥ 0.7",
         length="area/perimeter",
         inputs=("length",),
-        source="docs/theory.md §8, line 215 (up/down choice: lines 219-221)",
+        source="docs/theory.md §8, correlation table",
     ),
     "hcyl_natural": CorrelationInfo(
         title="Horizontal cylinder (Churchill–Chu)",
@@ -148,7 +148,7 @@ CORRELATION_INFO: dict[str, CorrelationInfo] = {
         validity="Ra ≤ 1e12",
         length="diameter",
         inputs=("length",),
-        source="docs/theory.md §8, line 216",
+        source="docs/theory.md §8, correlation table",
     ),
     "power_law": CorrelationInfo(
         title="User form",
@@ -157,7 +157,7 @@ CORRELATION_INFO: dict[str, CorrelationInfo] = {
         length="—",
         inputs=("C", "n"),
         needs_fluid=False,
-        source="docs/theory.md §8, line 217 (validity column: —)",
+        source="docs/theory.md §8, correlation table",
     ),
 }
 """Display text by correlation ID, in the order of the theory table."""

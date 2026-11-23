@@ -6,12 +6,13 @@ iterate, which is the "lagged" wall temperature of Theory §8: the Newton driver
 tangent without ``dh/dT``. The computed ``h`` feeds the ordinary convection assembly of
 :class:`~thermalfea.physics.surface_loads.ConvectionTerm`.
 
-Characteristic length: ``char_length`` of the boundary condition when given. Otherwise, for
-the plate and horizontal-plate correlations, the total length of the selection (the sum of
-the in-plane lengths of its edges, without the geometry factor). Theory §8 lists
-"area/perimeter" for horizontal plates; the automatic value implemented here is the
-selection length, as the task text says, so pass ``char_length`` to use area/perimeter.
-Cylinder correlations need ``char_length`` (the diameter).
+Characteristic length: ``char_length`` of the boundary condition when given. Otherwise the
+total length of the selection (the sum of the in-plane lengths of its edges, without the
+geometry factor) for the plate correlations and the vertical channels, and half of it for the
+horizontal plates ``hplate_up_natural`` and ``hplate_down_natural``: [I] defines
+L = A_s/P, which is half the strip width in a planar model and half the ring width in an
+axisymmetric one (Theory §8, Q17.2). Cylinder correlations need ``char_length`` (the
+diameter).
 
 Units: SI, temperatures in kelvin, lengths in m, h in W/(m^2 K).
 """
@@ -102,8 +103,9 @@ def film_coefficient(
     h : float or ndarray
         Coefficient [W/(m^2 K)], with the broadcast shape of the inputs.
     numbers : dict
-        ``"T_film"``, and for fluid correlations ``"Nu"``, ``"Re"`` (forced) or ``"Ra"``
-        (natural), ``"Pr"``, ``"k"`` and ``"clamped"`` (properties held at a table end);
+        ``"T_film"``, ``"dT"`` (``T_s - T_inf``), and for fluid correlations ``"Nu"``,
+        ``"Re"`` (forced) or ``"Ra"`` (natural), ``"Pr"``, ``"k"`` and ``"clamped"``
+        (properties held at a table end);
         ``"use_up"`` (bool) when the horizontal-plate direction was chosen automatically.
 
     Raises
@@ -131,7 +133,13 @@ def film_coefficient(
 
     p = fluid_props(fluid, T_film)
     values: dict[str, Any] = {"Pr": p.Pr}
-    numbers: dict[str, Any] = {"T_film": T_film, "Pr": p.Pr, "k": p.k, "clamped": p.clamped}
+    numbers: dict[str, Any] = {
+        "T_film": T_film,
+        "Pr": p.Pr,
+        "k": p.k,
+        "clamped": p.clamped,
+        "dT": T_s_a - T_inf_a,
+    }
     if info.kind == "forced":
         if velocity is None:
             raise ModelError(f"correlation {info.id!r} needs a velocity")
@@ -226,11 +234,12 @@ class CorrelationConvectionTerm(ConvectionTerm):
     def setup(self, problem: Any) -> None:
         """Resolve the selection, the characteristic length and reset the warnings."""
         super().setup(problem)
-        self._length = (
-            float(self.char_length)
-            if self.char_length is not None
-            else float(sum(b.geom.dS.sum() for b in self._batches))
-        )
+        if self.char_length is not None:
+            self._length = float(self.char_length)
+        else:
+            self._length = float(sum(b.geom.dS.sum() for b in self._batches))
+            if self.info.id in _HPLATES:
+                self._length *= 0.5  # L = A_s/P of a horizontal face (Theory §8, Q17.2)
         self.reset_warnings()
         if self.fluid is not None:
             reset_clamp_warning(self.fluid)
@@ -285,6 +294,9 @@ class CorrelationConvectionTerm(ConvectionTerm):
             else:
                 continue
             for message in c.check_validity(info, **subset):
+                self._warn(message)
+        if self.info.id == _INCLINED:
+            for message in c.inclined_face_messages(self.face_direction, numbers["dT"]):
                 self._warn(message)
 
     def coefficient(self, s: State, batch: FacetBatch) -> ndarray:

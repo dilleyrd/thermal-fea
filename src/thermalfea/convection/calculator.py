@@ -145,8 +145,9 @@ def htc(
         Fluid temperature [K], above 0. For ``duct_internal`` the properties are taken at
         this bulk temperature.
     **inputs
-        ``length`` [m] (characteristic length; the diameter for cylinders), ``velocity``
-        [m/s] (forced), ``theta_deg`` [deg] (``inclined_natural``), ``face_direction``
+        ``length`` [m] (characteristic length; the diameter for cylinders; A_s/P for the
+        horizontal plates, which a boundary condition takes as half the selection length),
+        ``velocity`` [m/s] (forced), ``theta_deg`` [deg] (``inclined_natural``), ``face_direction``
         (``"up"``/``"down"``, horizontal plates), ``x`` [m] (``plate_forced_local``),
         ``C`` and ``n`` (``power_law``), ``multiplier`` (default 1.0, > 0), and for
         ``duct_internal``: ``mass_flow`` [kg/s], ``area`` [m^2], ``wetted_perimeter`` [m],
@@ -268,6 +269,8 @@ def _fluid_correlation(
     if info.id == _INCLINED:
         values["theta_deg"] = theta_deg
     warnings = c.check_validity(c.CORRELATIONS[used], **values)
+    if info.id == _INCLINED:
+        warnings += c.inclined_face_messages(face, numbers["dT"])
     if bool(numbers["clamped"]):
         warnings.append(_TEMPERATURE_CLAMP)
 
@@ -317,7 +320,8 @@ def _duct(
     Nu = float(c.nu_duct(Re, Pr, cross_section, wall, option, heating=T_s > T_i))
     h = float(c.nusselt_to_h(Nu, float(props.k), D_h)) * multiplier
 
-    warnings = c.check_validity(info, Re=Re, Pr=Pr)
+    extra = c.DITTUS_BOELTER_BOUNDS if option == "dittus_boelter" else ()
+    warnings = c.check_validity(info, extra_bounds=extra, Re=Re, Pr=Pr)
     if bool(props.clamped):
         warnings.append(_TEMPERATURE_CLAMP)
     if Re <= c.RE_LAMINAR:
