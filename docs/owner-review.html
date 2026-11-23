@@ -155,14 +155,14 @@ table.mini th { color: var(--muted); font-weight: 600; font-size: 12.5px; }
 
   <section id="overview">
     <h2>Overview</h2>
-    <p class="lead">Your answers of 2026-11-22 are recorded (<a data-file="docs/OPEN_QUESTIONS.md" href="#">OPEN_QUESTIONS.md</a> Q29)
-      and turned into tasks (N = 100 for D1). Three items remain. Pick an option, add notes, tick it done, then press
+    <p class="lead">Only the items you still need to address. Your earlier answers are recorded in
+      <a data-file="docs/OPEN_QUESTIONS.md" href="#">OPEN_QUESTIONS.md</a> Q29. Pick an option, add notes, tick it done, then press
       <b>Copy my answers</b> and paste the text into the chat. Your answers stay in this browser only.</p>
     <div class="grid">
       <div class="panel">
-        <h3>Where the work stands</h3>
+        <h3>What your items gate</h3>
         <div id="depmap"></div>
-        <p class="note">Click a red box to jump to its item. M11.6 is the release review.</p>
+        <p class="note">Click a box to jump to its item. Everything else you were asked has been answered and recorded.</p>
       </div>
       <div class="panel">
         <h3>Your time by work session</h3>
@@ -184,11 +184,6 @@ table.mini th { color: var(--muted); font-weight: 600; font-size: 12.5px; }
   </section>
 
   <div id="items"></div>
-  <section id="decided">
-    <h2>Decided on 2026-11-22 <small>for reference</small></h2>
-    <p class="lead">Full text in <a data-file="docs/OPEN_QUESTIONS.md" href="#">OPEN_QUESTIONS.md</a> Q29; the tasks are in <a data-file="docs/tasks.md" href="#">docs/tasks.md</a>.</p>
-    <div class="panel"><table class="mini" id="decidedTable"></table></div>
-  </section>
 </main>
 <div id="toast"></div>
 
@@ -201,9 +196,9 @@ const STORE_KEY = "thermalfea-owner-review-v2";
 
 /* ------------------------------------------------------------------ data */
 const SESSIONS = {
-  B: { name: "In the window (M8.G)", time: [60, 120], kind: "Hands-on, with the friction log", c: "--s-d" },
-  C: { name: "With the reference book", time: [120, 240], kind: "Checking values and sources", c: "--s-e" },
-  D: { name: "Optional", time: [30, 60], kind: "Visualisation and the pump example", c: "--s-f" },
+  A: { name: "In the window (M8.G)", time: [60, 120], kind: "Hands-on, with the friction log", c: "--s-d" },
+  B: { name: "With the reference book", time: [120, 240], kind: "Checking values and sources", c: "--s-e" },
+  C: { name: "Optional", time: [30, 60], kind: "Visualisation and the pump example", c: "--s-f" },
 };
 
 const DATA = {
@@ -212,7 +207,7 @@ const DATA = {
 };
 
 const ITEMS = [
-{ id: "M8.G", sec: 2, num: "1", title: "M8.G human gate: build V-10 and V-17 in the window", session: "B", effort: "60–120 min", type: "study", blocks: ["M11.6"],
+{ id: "M8.G", sec: 2, num: "1", title: "M8.G human gate: build V-10 and V-17 in the window", session: "A", effort: "60–120 min", type: "study", blocks: ["M11.6"],
   body: `<p>No person has used the program on a real screen; every GUI test runs offscreen.</p>
   <ul><li>Start it with <code>.venv\\Scripts\\python.exe -m thermalfea.gui.app</code>.</li>
   <li>Follow <a data-file="docs/gui-walkthrough.md" href="#">docs/gui-walkthrough.md</a> to build V-10 and V-17 from an empty model, and solve both.</li>
@@ -227,7 +222,7 @@ const ITEMS = [
   files: ["docs/gui-walkthrough.md", "docs/verification.md", "guide/getting-started.md", "guide/limitations.md"],
   site: [["Getting started", "getting-started/"], ["Limitations", "limitations/"]] },
 
-{ id: "M11.1", sec: 2, num: "2", title: "M11.1 human task: properties and correlations against a reference text", session: "C", effort: "2–4 h", type: "study", blocks: ["M11.6"],
+{ id: "M11.1", sec: 2, num: "2", title: "M11.1 human task: properties and correlations against a reference text", session: "B", effort: "2–4 h", type: "study", blocks: ["M11.6"],
   body: `<p>Spot-check the property tables, and check every correlation and validity range, against a heat-transfer text, such as
   Incropera's <i>Fundamentals of Heat and Mass Transfer</i>. Record the source and the edition of each. Until then the guide says
   "source not yet recorded", and Plan §6 item 7 is not met. The inclined-plate range is settled (one-sided, θ ≤ 60°).</p>
@@ -244,7 +239,7 @@ const ITEMS = [
   files: ["docs/data-model.md", "docs/theory.md", "src/thermalfea/materials/data/solids.json", "src/thermalfea/materials/data/fluids.json", "src/thermalfea/convection/correlations.py", "src/thermalfea/convection/fluid_props.py"],
   site: [["Correlations page", "correlations/"], ["Materials page", "materials/"]] },
 
-{ id: "VIS", sec: 2, num: "3", title: "Visualisation testing, and the pump example (optional)", session: "D", effort: "30–60 min", type: "study", blocks: [],
+{ id: "VIS", sec: 2, num: "3", title: "Visualisation testing, and the pump example (optional)", session: "C", effort: "30–60 min", type: "study", blocks: [],
   body: `<p>You planned to test the visualisation over more kinds of boundary condition once the build is complete; GIF only, as you chose.
   The pump example's inputs are all marked illustrative and stay so unless you supply real values. They are indexed in
   <a data-file="examples/pump_closure/README.md" href="#">its README</a>.</p>`,
@@ -259,26 +254,6 @@ const SECTIONS = {
   2: ["Testing and evaluation only you can do", "Hands-on work; book a long stretch for each."],
 };
 
-const DECIDED = [
-  ["D1 convergence", "(c) round-off floor N·ε, N = 100", "M11.17"],
-  ["D2 fluid rows", "θ = 1 for rows without capacitance; re-solve the fluid on a restart", "M11.31"],
-  ["D3 step estimate", "Free DOFs only; predictor restart after a physical breakpoint; first-step limit; fix _jumps", "M11.19"],
-  ["D4 network", "A clear error with diagnostics", "M11.32"],
-  ["D5 inclined plate", "Refuse |θ| > 90°; the range stays one-sided", "M11.23"],
-  ["D6 term results", "New groups, schema step, shown in the window, used by the pump example", "M11.28"],
-  ["D7, D8", "depends_on_position; model-only checks in api.solve", "M11.23"],
-  ["D9 documents", "Theory §7 \"positive into\"; Data §8 and §9; Δt₀ wording; Q20.1", "M11.33"],
-  ["D10 packaging", "MIT licence; pandas as the extra \"examples\"; README; keep both image copies", "M11.30"],
-  ["D12 design", "Transforms of points and curves; user fluids; a contact end fixed on both sides; the rest stays", "M11.34–36"],
-  ["D13 scope", "Excluded; drop thermalfea export from PLAN", "M11.33"],
-  ["Q27.3", "Checked once, for the first step; not logged for the suggested Δt₀", "M11.10"],
-  ["Release", "Version 1 excludes M9 and M10.2 and their cases", "M11.6"],
-  ["Holds", "Released: M10.5, M11.7–M11.10. On hold: M9, M10.2, scripting", "—"],
-  ["Order", "Default order, then the newly unblocked tasks", "—"],
-  ["3D", "Not yet", "—"],
-  ["Confirmations", "Q1, Q14, Q18.2, Q20–Q26 (except 22.5) and all earlier entries", "—"],
-  ["Access", "Publish the guide by hand; GIF only", "—"],
-];
 
 const YESNO = (rec) => [["yes", "Yes, as recommended", rec !== false], ["no", "No, or something else (say in the notes)"]];
 const CONFIRM = [["ok", "Confirm as documented", true], ["change", "Change it (say what in the notes)"]];
@@ -608,36 +583,27 @@ function drawCharts(card, it, force) {
 
 function drawDepmap() {
   const host = document.getElementById("depmap");
-  const cols = [
-    { title: "Built", color: "--good", items: ["M11.18", "M11.20", "M11.21", "M11.22", "M11.24", "M11.25"] },
-    { title: "Ready to build", color: "--accent", items: ["M11.12–16", "M11.19", "M11.23", "M11.26–27", "M11.28", "M11.29–30", "M11.31–36", "M10.5", "M11.7–10", "M11.17"] },
-    { title: "Waits on you", color: "--bad", items: [["M8.G", "M8.G"], ["M11.1", "M11.1"], ["Optional tests", "VIS"]] },
-  ];
-  const W = 420, rowH = 24, H = 10 * rowH + 50, cw = 128, gap = 10;
-  const s = svg(W, H, "Tasks built, ready to build, and waiting on the owner");
-  cols.forEach((c, ci) => {
-    const x = 6 + ci * (cw + gap);
-    add(s, "text", { x: x + cw / 2, y: 14, "text-anchor": "middle", style: `fill:${css(c.color)};font-weight:700` }, c.title);
-    c.items.forEach((it, i) => {
-      const [label, id] = Array.isArray(it) ? it : [it, null];
-      const g = add(s, "g", id ? { class: "dep-node", tabindex: 0 } : {});
-      add(g, "rect", { x, y: 24 + i * rowH, width: cw, height: 19, rx: 5, fill: css(c.color + "-soft") || css("--chip"), stroke: css(c.color) });
-      add(g, "text", { x: x + cw / 2, y: 37 + i * rowH, "text-anchor": "middle", style: `fill:${css(c.color)};font-weight:600` }, label);
-      if (id) g.addEventListener("click", () => openItem(id));
-    });
+  const items = [["M8.G window test", "M8.G", "--bad"], ["M11.1 sources", "M11.1", "--bad"], ["Optional tests", "VIS", "--muted"]];
+  const W = 420, H = 150, lw = 150, lx = 6, rx = 268, rw = 146;
+  const s = svg(W, H, "Your remaining items and what they gate");
+  const y = (i) => 20 + i * 42;
+  const ry = y(0.5);
+  items.forEach(([label, id, col], i) => {
+    if (id !== "VIS") add(s, "path", { d: `M${lx + lw},${y(i) + 12} C${(lx + lw + rx) / 2},${y(i) + 12} ${(lx + lw + rx) / 2},${ry + 12} ${rx},${ry + 12}`, fill: "none", stroke: css("--bad"), "stroke-width": 1.5, opacity: .8 });
+    const g = add(s, "g", { class: "dep-node", tabindex: 0 });
+    add(g, "rect", { x: lx, y: y(i), width: lw, height: 24, rx: 6, fill: css(col === "--bad" ? "--bad-soft" : "--chip"), stroke: css(col) });
+    add(g, "text", { x: lx + lw / 2, y: y(i) + 16, "text-anchor": "middle", style: `fill:${css(col)};font-weight:600` }, label);
+    g.addEventListener("click", () => openItem(id));
   });
+  add(s, "rect", { x: rx, y: ry, width: rw, height: 24, rx: 6, fill: css("--good-soft"), stroke: css("--good") });
+  add(s, "text", { x: rx + rw / 2, y: ry + 16, "text-anchor": "middle", style: `fill:${css("--good")};font-weight:600` }, "M11.6 release review");
   host.innerHTML = ""; host.appendChild(s);
-}
-
-function renderDecided() {
-  const t = document.getElementById("decidedTable");
-  t.innerHTML = "<tr><th>Item</th><th>Decision</th><th>Task</th></tr>" + DECIDED.map(([a, b, c]) => `<tr><td><b>${esc(a)}</b></td><td>${esc(b)}</td><td>${esc(c)}</td></tr>`).join("");
 }
 
 function drawEffort() {
   const host = document.getElementById("effort");
   const keys = Object.keys(SESSIONS), W = 400, rowH = 34, L = 128, R = 14, H = keys.length * rowH + 30, max = 240;
-  const SHORT = { B: "In the window", C: "Reference book", D: "Optional" };
+  const SHORT = { A: "In the window", B: "Reference book", C: "Optional" };
   const s = svg(W, H, "Estimated owner time per work session, in minutes");
   const x = (m) => L + (W - L - R) * m / max;
   [0, 60, 120, 180, 240].forEach(m => { add(s, "line", { x1: x(m), x2: x(m), y1: 4, y2: H - 22, stroke: css("--line") }); add(s, "text", { x: x(m), y: H - 8, "text-anchor": "middle" }, m === 0 ? "0" : (m / 60) + " h"); });
@@ -691,7 +657,6 @@ renderFilters();
 renderSessions();
 renderItems();
 drawOverview();
-renderDecided();
 refreshLinks();
 update();
 if (location.hash.startsWith("#item-")) openItem(location.hash.slice(6));
