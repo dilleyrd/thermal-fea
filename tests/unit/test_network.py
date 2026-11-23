@@ -197,3 +197,48 @@ def test_iteration_cap(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(netmod, "MAX_ITERATIONS", 1)
     with pytest.raises(ConvergenceError, match="relative change"):
         solve_network(single(3.0e4, length=3.0), {"s": stream(roughness=1e-4)}, T)
+
+
+# ------------------------------------------------------------------- guards (M11.23)
+
+
+def test_self_loop_is_refused() -> None:
+    net = bad(branches=[NetBranch("x", "a", "a", length=1.0, stream="s")])
+    with pytest.raises(ModelError, match="to itself"):
+        solve_network(net, {"s": stream()}, T)
+
+
+def test_duct_with_negative_minor_loss_is_refused() -> None:
+    net = bad(branches=[NetBranch("x", "a", "b", length=1.0, K_minor=-0.5, stream="s")])
+    with pytest.raises(ModelError, match="K_minor must not be negative"):
+        solve_network(net, {"s": stream()}, T)
+
+
+def test_negative_roughness_is_refused() -> None:
+    with pytest.raises(ModelError, match="roughness"):
+        solve_network(single(1.0e3), {"s": stream(roughness=-1e-5)}, T)
+
+
+def test_network_problems_lists_every_problem_with_its_id() -> None:
+    net = bad(
+        nodes=[NetNode("a", pressure=1.0, inflow=2.0), NetNode("b"), NetNode("b")],
+        branches=[
+            NetBranch("x", "a", "a", length=1.0, stream="s"),
+            NetBranch("y", "a", "zz", length=0.0, stream="nope"),
+            NetBranch("z", "a", "b", kind="loss", K_minor=0.0),
+        ],
+    )
+    found: dict[str, str] = {}
+    for ident, message in netmod.network_problems(net.nodes, net.branches, [stream()]):
+        found[ident] = found.get(ident, "") + message + "; "
+    assert set(found) == {"a", "b", "x", "y", "z"}
+    assert "both a pressure and an inflow" in found["a"]
+    assert "duplicate node ids" in found["b"]
+    assert "to itself" in found["x"]
+    assert "unknown node" in found["y"] and "unknown stream" in found["y"]
+    assert "no stream" in found["z"] and "positive K_minor" in found["z"]
+    assert netmod.network_problems(single(1.0).nodes, single(1.0).branches, [stream()]) == []
+    assert netmod.network_problems([], [], []) != []
+    no_pressure = bad(nodes=[NetNode("a", inflow=1.0), NetNode("b")])
+    assert any("prescribed pressure" in m for _, m in netmod.network_problems(
+        no_pressure.nodes, no_pressure.branches, [stream()]))

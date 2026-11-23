@@ -269,3 +269,17 @@ def test_as_function() -> None:
         as_function("x")  # type: ignore[arg-type]
     with pytest.raises(ModelError):
         as_function(True)
+
+
+# ------------------------------------------------------------- depends_on_position (M11.23)
+
+
+def test_depends_on_position_flag() -> None:
+    assert Constant(1.0).depends_on_position is False
+    assert Table([0.0, 1.0], [0.0, 1.0], "t").depends_on_position is False
+    assert Table([0.0, 1.0], [0.0, 1.0], "T").depends_on_position is False
+    assert Expression("300 + 2*x").depends_on_position is True
+    assert Expression("300 + y*t").depends_on_position is True
+    assert Expression("300 + t + T").depends_on_position is False
+    for fn in (Constant(1.0), Table([0.0, 1.0], [0.0, 1.0], "t"), Expression("x")):
+        assert isinstance(fn, Function)

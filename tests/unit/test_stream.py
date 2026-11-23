@@ -409,3 +409,19 @@ def test_sieder_tate_stream_uses_the_cell_wall_temperature() -> None:
     Nu = 0.027 * Re**0.8 * p.Pr ** (1 / 3) * (p.mu / ps.mu) ** 0.14
     np.testing.assert_allclose(numbers["Nu"], Nu, rtol=1e-13)
     np.testing.assert_allclose(h, Nu * p.k / term.D_h, rtol=1e-13)
+
+
+# ------------------------------------------------------------------- guards (M11.23)
+
+
+def test_mass_flow_may_not_depend_on_temperature() -> None:
+    with pytest.raises(ModelError, match="mass flow may depend on time only"):
+        StreamTerm(stream(mass_flow=Expression("0.1 + 0*T")))
+    StreamTerm(stream(mass_flow=Expression("0.1 + 0*t")))
+
+
+def test_a_wall_on_the_axis_has_no_area() -> None:
+    # the bottom wall of an axisymmetric strip whose left edge is on r = 0 is fine, but a
+    # wall that is the axis itself has zero area
+    with pytest.raises(ModelError, match="on the axis r = 0"):
+        problem_with(stream(walls=["left"], path=[(0.0, 0.0), (0.0, 0.1)]), axisymmetric=True)

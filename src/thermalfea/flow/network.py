@@ -19,7 +19,7 @@ from ..convection.correlations import friction_churchill, hydraulic_diameter
 from ..convection.fluid_props import fluid_props
 from ..core.errors import ConvergenceError, ModelError
 from ..materials import library
-from ..model.bcs import FlowNetwork, Stream
+from ..model.bcs import FlowNetwork, NetBranch, NetNode, Stream
 from ..solver.linear import default_solver
 
 log = logging.getLogger(__name__)
@@ -71,6 +71,55 @@ def _stream_map(streams: Mapping[str, Stream] | Sequence[Stream]) -> dict[str, S
     return {s.name: s for s in streams}
 
 
+def network_problems(
+    nodes: Sequence[NetNode],
+    branches: Sequence[NetBranch],
+    streams: Mapping[str, Stream] | Sequence[Stream],
+) -> list[tuple[str, str]]:
+    """Structural problems of a flow network: ``(node or branch id, message)`` pairs.
+
+    The checks of :func:`solve_network_full`, which raises on the first, and of the model
+    validation, which lists them all. An empty list means the structure is usable.
+    """
+    found: list[tuple[str, str]] = []
+    if not nodes or not branches:
+        return [("", "flow network needs at least one node and one branch")]
+    node_ids = [n.id for n in nodes]
+    branch_ids = [b.id for b in branches]
+    for nid in sorted({i for i in node_ids if node_ids.count(i) > 1}):
+        found.append((nid, f"flow network has duplicate node ids ({nid!r})"))
+    for bid in sorted({i for i in branch_ids if branch_ids.count(i) > 1}):
+        found.append((bid, f"flow network has duplicate branch ids ({bid!r})"))
+    for n in nodes:
+        if n.pressure is not None and n.inflow is not None:
+            found.append((n.id, f"node {n.id!r} has both a pressure and an inflow"))
+    if not any(n.pressure is not None for n in nodes):
+        found.append(("", "flow network needs at least one node with a prescribed pressure"))
+    known = set(node_ids)
+    smap = _stream_map(streams)
+    for b in branches:
+        unknown = [nid for nid in (b.node_from, b.node_to) if nid not in known]
+        for nid in unknown:
+            found.append((b.id, f"branch {b.id!r}: unknown node {nid!r}"))
+        if not unknown and b.node_from == b.node_to:
+            found.append((b.id, f"branch {b.id!r} runs from node {b.node_from!r} to itself"))
+        if b.stream is None:
+            found.append((b.id, f"branch {b.id!r} names no stream (it would have no flow area)"))
+        elif b.stream not in smap:
+            found.append((b.id, f"branch {b.id!r}: unknown stream {b.stream!r}"))
+        elif not smap[b.stream].roughness >= 0.0:
+            found.append((b.id, f"branch {b.id!r}: the roughness of stream {b.stream!r} "
+                          "must not be negative"))
+        if b.kind == "duct":
+            if not b.length > 0.0:
+                found.append((b.id, f"duct branch {b.id!r} needs a positive length"))
+            if not b.K_minor >= 0.0:
+                found.append((b.id, f"duct branch {b.id!r}: K_minor must not be negative"))
+        elif not b.K_minor > 0.0:
+            found.append((b.id, f"loss branch {b.id!r} needs a positive K_minor"))
+    return found
+
+
 def _friction(Re: ndarray, rel_rough: ndarray) -> ndarray:
     """Churchill ``f``; a zero Reynolds number (no flow yet) is replaced by ``RE_START``."""
     Re_safe = np.where(Re > 0.0, Re, RE_START)
@@ -108,29 +157,21 @@ def solve_network_full(
     ------
     ModelError
         Invalid network (empty, duplicates, unknown ids, no pressure reference, missing
-        stream, non-positive length or loss coefficient).
+        stream, a branch from a node to itself, non-positive length or loss
+        coefficient, negative roughness).
     SolverError
         If the nodal system is singular (for example a disconnected node).
     ConvergenceError
         If the iteration cap is reached.
     """
     nodes, branches = network.nodes, network.branches
-    if not nodes or not branches:
-        raise ModelError("flow network needs at least one node and one branch")
+    smap = _stream_map(streams)
+    problems = network_problems(nodes, branches, smap)
+    if problems:
+        raise ModelError(problems[0][1])
     node_ids = [n.id for n in nodes]
     branch_ids = [b.id for b in branches]
-    if len(set(node_ids)) != len(node_ids):
-        raise ModelError("flow network has duplicate node ids")
-    if len(set(branch_ids)) != len(branch_ids):
-        raise ModelError("flow network has duplicate branch ids")
     index = {nid: i for i, nid in enumerate(node_ids)}
-    for n in nodes:
-        if n.pressure is not None and n.inflow is not None:
-            raise ModelError(f"node {n.id!r} has both a pressure and an inflow")
-    if not any(n.pressure is not None for n in nodes):
-        raise ModelError("flow network needs at least one node with a prescribed pressure")
-
-    smap = _stream_map(streams)
     nb = len(branches)
     ifrom = np.empty(nb, dtype=int)
     ito = np.empty(nb, dtype=int)
@@ -143,14 +184,7 @@ def solve_network_full(
     K = np.zeros(nb)
     is_duct = np.zeros(nb, dtype=bool)
     for k, b in enumerate(branches):
-        for nid in (b.node_from, b.node_to):
-            if nid not in index:
-                raise ModelError(f"branch {b.id!r}: unknown node {nid!r}")
         ifrom[k], ito[k] = index[b.node_from], index[b.node_to]
-        if b.stream is None:
-            raise ModelError(f"branch {b.id!r} names no stream (it would have no flow area)")
-        if b.stream not in smap:
-            raise ModelError(f"branch {b.id!r}: unknown stream {b.stream!r}")
         s = smap[b.stream]
         if isinstance(fluid_T, Mapping):
             if b.id not in fluid_T:
@@ -167,10 +201,6 @@ def solve_network_full(
         if b.kind == "duct":
             is_duct[k] = True
             length[k] = b.length
-            if not b.length > 0.0:
-                raise ModelError(f"duct branch {b.id!r} needs a positive length")
-        elif not b.K_minor > 0.0:
-            raise ModelError(f"loss branch {b.id!r} needs a positive K_minor")
         if not (A[k] > 0.0 and Dh[k] > 0.0 and rho[k] > 0.0 and mu[k] > 0.0):
             raise ModelError(f"branch {b.id!r}: stream area, perimeter and fluid must be positive")
     rel_rough = rough / Dh

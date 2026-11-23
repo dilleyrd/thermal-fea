@@ -226,6 +226,7 @@ STREAM_CROSS_SECTIONS = (
 """Values of ``Stream.cross_section`` (Theory §8.1)."""
 STREAM_NU_OPTIONS = ("auto", "dittus_boelter", "sieder_tate")
 """Values of ``Stream.nu_option`` (Theory §8.1)."""
+MAX_INCLINATION_DEG = 90.0
 _ANNULUS_RANGE = {"annulus_inner": (0.05, 1.0), "annulus_outer": (0.0, 1.0)}
 
 
@@ -251,6 +252,40 @@ def diameter_ratio_problem(stream: Stream) -> str:
             f"diameter_ratio {ratio} is outside {lo} to {hi}, the range of "
             f"cross_section {stream.cross_section!r}"
         )
+    return ""
+
+
+def inclination_problem(theta_deg: object) -> str:
+    """The complaint about an inclined-plate angle, or ``""`` when it is usable (Q29 D5).
+
+    The angle from vertical must be finite and within -90 to 90 degrees; a horizontal plate
+    has its own correlations.
+    """
+    try:
+        theta = float(theta_deg)  # type: ignore[arg-type]
+    except (TypeError, ValueError):
+        theta = float("nan")
+    if not abs(theta) <= MAX_INCLINATION_DEG:  # also false for NaN
+        return (
+            f"theta_deg must be finite and between -90 and 90 degrees from vertical; got "
+            f"{theta_deg}. For a horizontal plate use hplate_up_natural or hplate_down_natural"
+        )
+    return ""
+
+
+def power_law_problem(C: object, n: object) -> str:
+    """The complaint about the constants of ``h = C |dT|^n``, or ``""`` when usable.
+
+    ``C`` and ``n`` must be finite and not negative (a negative ``n`` gives an infinite
+    ``h`` where the wall is at the fluid temperature).
+    """
+    for label, value in (("C", C), ("n", n)):
+        try:
+            number = float(value)  # type: ignore[arg-type]
+        except (TypeError, ValueError):
+            number = float("nan")
+        if not (number >= 0.0 and number != float("inf")):
+            return f"the power-law constant {label} must be finite and not negative; got {value}"
     return ""
 
 

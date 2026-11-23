@@ -16,6 +16,7 @@ from typing import Any
 from ..core.errors import ModelError
 from ..materials import library
 from ..materials.material import Fluid
+from ..model.bcs import inclination_problem, power_law_problem
 from . import correlations as c
 from .evaluator import MIN_DISTANCE, _jet_length, film_coefficient
 from .fluid_props import fluid_props
@@ -201,6 +202,9 @@ def _user_law(
     correlation: str, inputs: dict[str, Any], T_s: float, T_i: float, multiplier: float
 ) -> HtcResult:
     _need(correlation, inputs, "C", "n")
+    message = power_law_problem(inputs["C"], inputs["n"])
+    if message:
+        raise ModelError(message)
     h, numbers = film_coefficient(
         c.CORRELATIONS[correlation],
         None,
@@ -256,6 +260,9 @@ def _fluid_correlation(
     theta_deg = 0.0
     if info.id == _INCLINED:
         _need(info.id, inputs, "theta_deg")
+        message = inclination_problem(inputs["theta_deg"])
+        if message:
+            raise ModelError(message)
         theta_deg = float(inputs["theta_deg"])
     params: dict[str, float] | None = None
     if info.id in _CHANNELS:

@@ -288,3 +288,32 @@ def test_radiation_only_reference_from_a_poor_start_converges() -> None:
     hot = result.T[np.isclose(problem.mesh.nodes[:, 0], 0.0)]
     np.testing.assert_allclose(hot, surface + q * L / 50.0, rtol=1e-8)
     assert result.T.min() > 0.0
+
+
+def test_a_convergence_error_of_a_trial_assembly_shortens_the_step() -> None:
+    # the full Newton step from 1000 K (tangent half the true one) lands at 1800 K, where
+    # the assembly refuses (as a film temperature below 0 K would); the half step is fine
+    inner = scalar(k=1.0, f=400.0, tangent_extra=lambda x: -0.5)
+
+    def assemble(u: np.ndarray) -> Assembled:
+        if u[0] > 1500.0:
+            raise ConvergenceError("trial far from the start")
+        return inner(u)
+
+    result = newton(assemble, np.array([1000.0]), NO_FIXED, SolutionSettings())
+    assert result.history[0].step < 1.0
+    assert result.T[0] == pytest.approx(400.0)
+
+
+def test_a_convergence_error_at_every_trial_is_still_raised() -> None:
+    inner = scalar(k=1.0, f=400.0)
+    calls = []
+
+    def assemble(u: np.ndarray) -> Assembled:
+        calls.append(float(u[0]))
+        if len(calls) > 1:
+            raise ConvergenceError("always")
+        return inner(u)
+
+    with pytest.raises(ConvergenceError, match="shortening the step did not help"):
+        newton(assemble, np.array([1000.0]), NO_FIXED, SolutionSettings())

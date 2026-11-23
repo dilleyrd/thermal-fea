@@ -27,10 +27,10 @@ import numpy as np
 from numpy import ndarray
 
 from ..core import registry
-from ..core.errors import ModelError
+from ..core.errors import ConvergenceError, ModelError
 from ..materials import library
 from ..materials.material import Fluid
-from ..model.bcs import CorrelationConvection
+from ..model.bcs import CorrelationConvection, inclination_problem, power_law_problem
 from ..physics.batches import FacetBatch
 from ..physics.evaluate import at_points
 from ..physics.surface_loads import ConvectionTerm, FacetTerm
@@ -270,6 +270,14 @@ class CorrelationConvectionTerm(ConvectionTerm):
         for key in _POSITIVE_PARAMS:
             if key in bc.params and not float(bc.params[key]) > 0.0:
                 raise ModelError(f"{bc.name}: {key} must be positive; got {bc.params[key]}")
+        if self.info.id == _INCLINED:
+            message = inclination_problem(bc.params["theta_deg"])
+            if message:
+                raise ModelError(f"{bc.name}: {message}")
+        if self.info.id == _USER:
+            message = power_law_problem(bc.params["C"], bc.params["n"])
+            if message:
+                raise ModelError(f"{bc.name}: {message}")
         if self.info.id in _JETS and bc.char_length is not None:
             raise ModelError(
                 f"{bc.name}: {bc.correlation!r} takes its length from its inputs "
@@ -309,10 +317,20 @@ class CorrelationConvectionTerm(ConvectionTerm):
     def setup(self, problem: Any) -> None:
         """Resolve the selection, the characteristic length and reset the warnings."""
         super().setup(problem)
+        if not self.area() > 0.0:  # dS is a length; g = 0 on the axis of an axisymmetric model
+            raise ModelError(
+                f"{self.name}: the selection lies on the axis r = 0, where a surface has "
+                "zero area; move the load off the axis"
+            )
         if self.char_length is not None:
             self._length = float(self.char_length)
         else:
             self._length = float(sum(b.geom.dS.sum() for b in self._batches))
+            if not self._length > 0.0:
+                raise ModelError(
+                    f"{self.name}: the selection has zero length (it lies on the axis "
+                    "r = 0, where a surface has zero area)"
+                )
             if self.info.id in _HPLATES:
                 self._length *= 0.5  # L = A_s/P of a horizontal face (Theory §8, Q17.2)
         if self.info.id == "slot_jet" and "x_r" not in self.params:
@@ -397,6 +415,18 @@ class CorrelationConvectionTerm(ConvectionTerm):
         velocity = None
         if self.velocity is not None:
             velocity = at_points(self.velocity, s.t, xgp, local)
+            if not bool(np.all(velocity >= 0.0)):  # also catches NaN
+                lowest = float(np.nanmin(velocity)) if np.any(np.isfinite(velocity)) else np.nan
+                raise ModelError(
+                    f"{self.name}: the velocity must not be negative; got {lowest:g} m/s"
+                )
+        if self.info.kind != "user" and not bool(
+            np.all(np.isfinite(T_s) & (T_s > 0.0) & np.isfinite(T_inf) & (T_inf > 0.0))
+        ):
+            raise ConvergenceError(
+                f"{self.name}: a wall or fluid temperature at an integration point is not "
+                "positive (or not finite), so no fluid property can be taken"
+            )
         length: Any = self._length
         if self.info.id == _LOCAL:
             start = np.array([self.params["x0"], self.params["y0"]])

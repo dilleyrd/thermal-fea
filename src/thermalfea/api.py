@@ -24,7 +24,7 @@ from .model import geometry_ops as ops
 from .model.model import Model, RegionAssignment
 from .model.selections import Fingerprint, Selection, refresh
 from .model.serialize import from_json, to_json
-from .model.validate import raise_if_errors, validate
+from .model.validate import raise_if_errors, validate, validate_model
 from .post import export, plots
 from .post.results import Results
 from .post.summary import text_summary
@@ -449,7 +449,8 @@ def solve(
     built : BuiltGeometry, keyword-only, optional
         The build the mesh was made from. When given, the model is validated first and
         its selections are resolved against it. Without it the selections' stored tags
-        are used, which are current after :func:`build`.
+        are used, which are current after :func:`build`, and only the checks that need no
+        built geometry run (``validate_model``).
     path : str or Path, keyword-only, optional
         Results file to write. By default a file named after the model in the system's
         temporary folder; use :func:`results_path` to store it beside a model file.
@@ -471,6 +472,8 @@ def solve(
     """
     if built is not None:
         raise_if_errors(validate(model, built, mesh))
+    else:
+        raise_if_errors(validate_model(model, mesh))
     problem = compile_problem(model, built, mesh)
     if restart:
         if path is None:

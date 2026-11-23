@@ -65,7 +65,13 @@ message that says so; it is never solved with that part left out.
   with two rectangles) and read the value from the CSV export.
 - **The mesh quality report only measures.** It applies no pass or fail threshold.
 - **A total heat flow or power, and a fixed temperature, cannot depend on temperature.**
-  Use a flux, a convection condition or a time function instead.
+  Use a flux, a convection condition or a time function instead. A total heat flow or
+  power cannot depend on position either (it is spread uniformly); use a heat flux or a
+  heat generation.
+- **Material properties may depend on temperature only.** A property that uses t, x or y
+  is refused, and so is one that is not finite (for example `sqrt(T - 400)` below 400 K).
+- **An inclined plate is limited to ±90° from vertical.** A larger or non-finite angle is
+  refused; use the horizontal-plate correlations for a horizontal face.
 - **A steady analysis evaluates time-dependent loads at t = 0.**
 - **The nonlinear iteration is a modified Newton method.** Derivatives of properties and of
   coefficients with respect to temperature are deliberately left out of the tangent, so

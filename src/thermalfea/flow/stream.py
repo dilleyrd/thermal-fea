@@ -208,6 +208,8 @@ class _StreamCommon:
             raise ModelError(f"stream {stream.name!r}: {message}")
         if stream.T_inlet.depends_on_T:
             raise ModelError(f"stream {stream.name!r}: the inlet temperature cannot depend on T")
+        if stream.mass_flow is not None and stream.mass_flow.depends_on_T:
+            raise ModelError(f"stream {stream.name!r}: the mass flow may depend on time only")
         self.stream = stream
         self.fluid = library.fluid(stream.fluid)
         self.D_h = float(c.hydraulic_diameter(stream.flow_area, stream.wetted_perimeter))
@@ -288,6 +290,11 @@ class StreamTerm(_StreamCommon, BaseTerm):
         for b in batches:
             weighted = np.einsum("fp,pn->fn", b.g * b.geom.dS, b.geom.N)  # int N_j g ds
             a = weighted.sum(axis=1)  # int g ds
+            if not bool(np.all(a > 0.0)):
+                raise ModelError(
+                    f"stream {self.name!r}: a wall lies on the axis r = 0, where a surface "
+                    "has zero area; move the stream's walls off the axis"
+                )
             n_f, n_n = b.dofs.shape
             rows.append(np.repeat(offset + np.arange(n_f), n_n))
             cols.append(b.dofs.ravel())

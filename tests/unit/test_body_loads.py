@@ -119,3 +119,9 @@ def test_errors() -> None:
     n_terms = len(problem.terms)
     attach(problem, HeatGeneration("off", "all", Q=1.0, active=False))
     assert len(problem.terms) == n_terms
+
+
+def test_total_power_refuses_a_position_dependent_function() -> None:
+    with pytest.raises(ModelError, match="spread uniformly.*time only.*Heat Generation"):
+        make_problem("Q4", bcs=(HeatPower("p", "all", P=Expression("100 + x")),))
+    make_problem("Q4", bcs=(HeatPower("p", "all", P=Expression("100 + t")),))  # time is fine

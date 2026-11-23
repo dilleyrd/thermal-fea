@@ -698,3 +698,52 @@ def test_model_with_a_jet_solves(name: str) -> None:
     term = problem.terms[-1]
     h = term.mean_coefficient(make_state(problem, result.T))
     assert k * (400.0 - T_s) / length == pytest.approx(h * (T_s - 300.0), rel=1e-5)
+
+
+# ------------------------------------------------------------------- guards (M11.23)
+
+
+@pytest.mark.parametrize("theta", [91.0, -90.5, 180.0, float("nan"), float("inf")])
+def test_inclined_angle_outside_vertical_to_horizontal_is_refused(theta: float) -> None:
+    bc = nat(correlation="inclined_natural", char_length=0.5, params={"theta_deg": theta})
+    with pytest.raises(ModelError, match="theta_deg must be finite.*hplate_up_natural"):
+        build(bc)
+    for ok in (-90.0, 60.0, 90.0):  # the validity range stays one-sided: only a warning
+        build(nat(correlation="inclined_natural", char_length=0.5, params={"theta_deg": ok}))
+
+
+@pytest.mark.parametrize("params", [{"C": -1.0, "n": 0.25}, {"C": 2.0, "n": -0.25}])
+def test_power_law_refuses_negative_constants(params: dict) -> None:
+    with pytest.raises(ModelError, match="power-law constant"):
+        build(nat(correlation="power_law", params=params))
+    build(nat(correlation="power_law", params={"C": 0.0, "n": 0.0}))
+
+
+def test_negative_velocity_is_refused_when_evaluated() -> None:
+    bc = nat(correlation="plate_forced_avg", char_length=0.5,
+             velocity=Table([0.0, 1.0], [2.0, -1.0], "T"))
+    problem, term = build(bc)
+    s = make_state(problem, 400.0)
+    with pytest.raises(ModelError, match="velocity must not be negative; got -1"):
+        points(term, problem, s)
+    ok = nat(correlation="plate_forced_avg", char_length=0.5, velocity=2.0)
+    problem, term = build(ok)
+    points(term, problem, make_state(problem, 400.0))
+
+
+def test_a_selection_on_the_axis_is_refused() -> None:
+    # the left edge of an axisymmetric strip lies on r = 0: its area g ds is zero
+    with pytest.raises(ModelError, match="lies on the axis r = 0"):
+        build(nat(side="left", char_length=0.5), axisymmetric=True)
+    build(nat(side="right", char_length=0.5), axisymmetric=True)
+
+
+def test_non_positive_film_temperature_is_a_convergence_error() -> None:
+    from thermalfea.core.errors import ConvergenceError
+
+    problem, term = build(nat(char_length=0.5))
+    s = make_state(problem, 400.0)
+    s.u[:] = 400.0
+    s.u[term._batches[0].dofs[0, 0]] = -5000.0  # a wall node far below 0 K
+    with pytest.raises(ConvergenceError, match="nat: .*not positive"):
+        term.coefficient(s, term._batches[0])

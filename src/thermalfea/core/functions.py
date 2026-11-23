@@ -33,6 +33,7 @@ class Function(Protocol):
 
     depends_on_T: bool
     depends_on_time: bool
+    depends_on_position: bool  # true when the value depends on x or y
 
     def __call__(
         self, t: float = 0.0, x: Value = 0.0, y: Value = 0.0, T: Value = 0.0
@@ -69,6 +70,7 @@ class Constant:
 
     depends_on_T = False
     depends_on_time = False
+    depends_on_position = False
 
     def __post_init__(self) -> None:
         if isinstance(self.value, bool) or not isinstance(self.value, (int, float)):
@@ -142,6 +144,10 @@ class Table:
     @property
     def depends_on_time(self) -> bool:
         return self.variable == "t"
+
+    @property
+    def depends_on_position(self) -> bool:
+        return False  # tables are of t or T only
 
     def __call__(
         self, t: float = 0.0, x: Value = 0.0, y: Value = 0.0, T: Value = 0.0
@@ -313,6 +319,10 @@ class Expression:
     @property
     def depends_on_time(self) -> bool:
         return "t" in self._names
+
+    @property
+    def depends_on_position(self) -> bool:
+        return bool(self._names & {"x", "y"})
 
     def __call__(
         self, t: float = 0.0, x: Value = 0.0, y: Value = 0.0, T: Value = 0.0

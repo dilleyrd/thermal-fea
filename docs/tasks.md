@@ -498,7 +498,7 @@ Boundary Conditions, Flow (Streams, Network), Enclosures, Analysis Settings, Sol
 - [x] **M11.22 [A] DXF arcs and loops.** `REVIEW-2.md` 2.1-11, 2.2 (duplicate segments,
   fit-point spline nesting). Tests: a bulge of 2 gives the correct centre and area;
   duplicate segments are merged; a closed fit-point spline nests like any other loop.
-- [ ] **M11.23 [B] Validation coverage.** `REVIEW-2.md` 2.1-13b, c, e, g and the guards of
+- [x] **M11.23 [B] Validation coverage.** `REVIEW-2.md` 2.1-13b, c, e, g and the guards of
   2.2 (evaluation §3). Also the owner's decisions of 2026-11-22 (Q29):
   - D5: an inclined-plate angle that is not finite or has |θ| > 90° is refused before
     evaluation, pointing to the horizontal-plate correlations; the validity range stays

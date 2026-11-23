@@ -255,6 +255,17 @@ def test_issue_kinds_map_to_tree_addresses() -> None:
         assert address_for_issue(model, issue) == expected, issue
 
 
+def test_network_issues_select_the_network_node() -> None:
+    from thermalfea.model.bcs import FlowNetwork
+
+    model, _built = make_model()
+    issue = Issue("error", "bad-network", "m", "network", "b1")
+    model.network = None
+    assert address_for_issue(model, issue) is None
+    model.network = FlowNetwork(nodes=[], branches=[])
+    assert address_for_issue(model, issue) == ("network",)
+
+
 def test_region_without_assignment_selects_the_regions_section(window) -> None:
     document = make_document()
     document.edit("drop", lambda m: m.regions.clear())

@@ -12,6 +12,7 @@ class Function(Protocol):
                  y: ndarray | float = 0.0, T: ndarray | float = 0.0) -> ndarray | float: ...
     depends_on_T: bool
     depends_on_time: bool
+    depends_on_position: bool                     # true when the value depends on x or y
     def breakpoints(self) -> list[float]: ...     # times the stepper must land on
 
 Constant(value: float)
@@ -23,7 +24,7 @@ Expression(text: str)      # e.g. "500 + 20*sin(2*pi*t/60)"; variables t, x, y, 
 `Expression` is evaluated with a restricted AST walker (no `eval` on raw text): allowed
 nodes are numbers, the names `t x y T pi e`, arithmetic operators, comparisons, and calls to
 `sin cos tan exp log log10 sqrt abs minimum maximum where tanh`. Anything else raises
-`ModelError`. `depends_on_T` / `depends_on_time` are found by scanning the names used.
+`ModelError`. `depends_on_T` / `depends_on_time` / `depends_on_position` (x or y) are found by scanning the names used.
 
 JSON form: `{"type": "constant", "value": 5}`, `{"type": "table", "variable": "t",
 "xs": [...], "ys": [...]}`, `{"type": "expression", "text": "..."}`. A bare number in JSON
@@ -361,6 +362,30 @@ Errors block the solve; warnings do not. Minimum checks:
 - axisymmetric: no node with x < −1e-9·L
 - material property tables cover the expected temperature range — warning
 - contact curve is an interface between exactly two regions
+- each load's selection has a dimension its form allows (a heat flux on a surface is an
+  error); no selection used by a region, an active BC, a contact or a stream wall is empty
+- fluid names are matched regardless of case
+- material `k`, `k2`, `rho`, `cp` are finite over the model's temperature range (a NaN
+  is an error) and depend on temperature only (not on `t`, `x`, `y`)
+- streams: walls are curve selections; flow area, perimeter, `h_multiplier` > 0, roughness
+  >= 0, `n_cells` >= 1; an in-plane stream has a path of 2 or more points; inlet temperature
+  and mass flow do not depend on `T`; a mass flow exists (own or from a network branch) and
+  is > 0; names are unique
+- flow network: the structural checks of the hydraulic solve (`flow/network.py:
+  network_problems`), also no branch from a node to itself, `K_minor` >= 0 on a duct,
+  roughness >= 0
+- transient initial condition is complete (value, per-region temperatures of region
+  selections, results file) and does not depend on `T`
+- contact conductance is > 0 and finite; contact, boundary-condition and stream names are
+  unique
+- a total `HeatPower` / `HeatFlow` depends on time only (`position-dependent-total`)
+- `inclined_natural`: `theta_deg` finite and within -90..90 degrees (`bad-inclination`);
+  `power_law`: `C`, `n` >= 0; correlation velocity >= 0
+
+`validate_model(model, mesh=None) -> list[Issue]` runs the checks that need no built
+geometry (all above except stale and empty selections, region coverage of the surfaces,
+the contact interface check and the sampling of position-dependent values at selection
+points); `api.solve` runs it when `built` is not given.
 
 ## §9 Results file (HDF5, `<model>.tfea.h5`)
 

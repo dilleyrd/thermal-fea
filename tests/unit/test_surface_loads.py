@@ -194,3 +194,9 @@ def test_errors() -> None:
 
     with pytest.raises(ModelError, match="contains no element edges"):
         attach(problem, HeatFlux("flux", "nowhere", q=1.0))
+
+
+def test_total_heat_flow_refuses_a_position_dependent_function() -> None:
+    with pytest.raises(ModelError, match="spread uniformly.*time only.*Heat Flux"):
+        problem_with(HeatFlow("flow", "top", P=Expression("100 + x")), "Q4")
+    problem_with(HeatFlow("flow", "top", P=Expression("100 + t")), "Q4")  # time is fine

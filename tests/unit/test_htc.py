@@ -559,3 +559,19 @@ def test_duct_sieder_tate_against_the_formula() -> None:
     # Pr up to 16700 is valid for Sieder-Tate although Gnielinski stops at 2000
     oil = htc("duct_internal", "Water", 340.0, 300.0, option="sieder_tate", **_DUCT)
     assert not any("Pr" in w for w in oil.warnings)
+
+
+# ------------------------------------------------------------------- guards (M11.23)
+
+
+@pytest.mark.parametrize("theta", [91.0, -120.0, float("nan")])
+def test_inclined_angle_outside_vertical_to_horizontal_is_refused(theta: float) -> None:
+    with pytest.raises(ModelError, match="theta_deg must be finite.*hplate_up_natural"):
+        htc("inclined_natural", "Air", 400.0, 300.0, length=0.5, theta_deg=theta)
+    htc("inclined_natural", "Air", 400.0, 300.0, length=0.5, theta_deg=90.0)
+
+
+@pytest.mark.parametrize("C, n", [(-1.0, 0.25), (2.0, -0.25)])
+def test_power_law_refuses_negative_constants(C: float, n: float) -> None:
+    with pytest.raises(ModelError, match="power-law constant"):
+        htc("power_law", None, 400.0, 300.0, C=C, n=n)

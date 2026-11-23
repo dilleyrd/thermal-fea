@@ -15,6 +15,7 @@ from typing import TYPE_CHECKING, Literal
 import numpy as np
 
 from ..core.errors import ModelError
+from ..core.forms import form_for
 from ..core.functions import Function, Table
 from ..core.mesh import Mesh
 from ..materials import library
@@ -23,8 +24,13 @@ from .bcs import (
     Convection,
     CorrelationConvection,
     FixedTemperature,
+    HeatFlow,
+    HeatPower,
     RadiationAmbient,
+    Stream,
     diameter_ratio_problem,
+    inclination_problem,
+    power_law_problem,
 )
 from .model import Model
 from .selections import StaleSelectionError, resolve
@@ -36,6 +42,7 @@ log = logging.getLogger(__name__)
 
 #: The user power law h = C |dT|^n needs no fluid properties.
 NO_FLUID = "power_law"
+INCLINED = "inclined_natural"
 AXIS_TOL = 1e-9  # axisymmetric: nodes may lie this fraction of L left of the axis
 SURFACE_DIM, CURVE_DIM, POINT_DIM = 2, 1, 0
 _INTERFACE_SIDES = 2
@@ -117,14 +124,13 @@ def _sample(
 
     Returns ``None`` (unknown) if the function depends on temperature, or if it depends on
     position and no points are available. Otherwise one value if the extremes coincide,
-    else ``[min, max]``. Position dependence is read from an expression's variable names
-    (the Function protocol has no such flag yet, M11.23).
+    else ``[min, max]``.
     """
     if fn is None or fn.depends_on_T:
         return None
     x: np.ndarray | float = 0.0
     y: np.ndarray | float = 0.0
-    if frozenset(getattr(fn, "_names", ())) & {"x", "y"}:
+    if fn.depends_on_position:
         if points is None or len(points) == 0:
             return None
         x, y = points[:, 0], points[:, 1]
@@ -133,14 +139,45 @@ def _sample(
     return [lo] if lo == hi else [lo, hi]
 
 
-def _extremes(fn: Function, lo: float, hi: float) -> tuple[float, float]:
-    """Smallest and largest value of a property over the temperature range [lo, hi]."""
+def _values(fn: Function, lo: float, hi: float) -> list[float]:
+    """Values of a property sampled over the temperature range [lo, hi]."""
     if isinstance(fn, Table) and fn.variable == "T":
         inside = [y for x, y in zip(fn.xs, fn.ys, strict=True) if lo <= x <= hi]
-        values = [*inside, float(fn(T=lo)), float(fn(T=hi))]
-    else:
-        values = [float(v) for v in np.asarray(fn(T=np.linspace(lo, hi, 11))).ravel()]
+        return [*inside, float(fn(T=lo)), float(fn(T=hi))]
+    return [float(v) for v in np.asarray(fn(T=np.linspace(lo, hi, 11))).ravel()]
+
+
+def _extremes(fn: Function, lo: float, hi: float) -> tuple[float, float]:
+    """Smallest and largest value of a property over the temperature range [lo, hi].
+
+    ``(nan, nan)`` when some sampled value is not finite (``min`` alone would ignore a NaN
+    depending on its position).
+    """
+    values = _values(fn, lo, hi)
+    if not all(np.isfinite(values)):
+        return float("nan"), float("nan")
     return min(values), max(values)
+
+
+def _fluid_known(name: object) -> bool:
+    """True when the library knows the fluid, whatever the case of its name."""
+    try:
+        library.fluid(name)  # type: ignore[arg-type]
+    except (ModelError, AttributeError):
+        return False
+    return True
+
+
+def _selection_dims(bc: object) -> tuple[int, ...]:
+    """Geometry dimensions the selection of a load may have, from its registered form."""
+    try:
+        spec = form_for(type(bc))
+    except ModelError:
+        return (POINT_DIM, CURVE_DIM, SURFACE_DIM)
+    for field in spec.fields:
+        if field.name == "selection" and field.selection_dims:
+            return tuple(field.selection_dims)
+    return (POINT_DIM, CURVE_DIM, SURFACE_DIM)
 
 
 def _known_temperatures(
@@ -182,7 +219,7 @@ def _known_temperatures(
 
 
 class _Checker:
-    def __init__(self, model: Model, built: BuiltGeometry, mesh: Mesh | None) -> None:
+    def __init__(self, model: Model, built: BuiltGeometry | None, mesh: Mesh | None) -> None:
         self.model, self.built, self.mesh = model, built, mesh
         self.issues: list[Issue] = []
         self.tags: dict[str, list[int]] = {}
@@ -197,6 +234,8 @@ class _Checker:
 
     def selections(self) -> None:
         """No stale selection; remember the current tags of the good ones."""
+        if self.built is None:
+            return
         for name, selection in self.model.selections.items():
             try:
                 self.tags[name] = resolve(selection, self.built)
@@ -215,14 +254,20 @@ class _Checker:
             self.error("wrong-selection", f"{kind} {owner!r} needs a selection of {wanted}, "
                        f"but {name!r} is not", kind, owner)
             return None
-        return self.tags.get(name)  # None when stale (already reported)
+        tags = self.tags.get(name)  # None when stale (already reported) or not built
+        if tags is not None and not tags:
+            self.error("empty-selection", f"{kind} {owner!r} uses selection {name!r}, which "
+                       "contains no geometry", kind, owner)
+        return tags
 
     # ------------------------------------------------------------------------ regions
 
     def regions(self) -> None:
         """Every surface has exactly one region assignment; materials and fluids exist."""
         model = self.model
-        owners: dict[int, list[str]] = {tag: [] for tag in self.built.surfaces}
+        owners: dict[int, list[str]] = (
+            {tag: [] for tag in self.built.surfaces} if self.built is not None else {}
+        )
         for region in model.regions:
             tags = self._use(region.selection, (SURFACE_DIM,), "region", region.selection)
             for tag in tags or []:
@@ -235,6 +280,7 @@ class _Checker:
                 self.error("bad-thickness", f"region {region.selection!r} has a non-positive "
                            "thickness", "region", region.selection)
         for tag, names in owners.items():
+            assert self.built is not None
             centre = self.built.surfaces[tag].center
             where = f"surface {tag} (centre {centre[0]:.4g}, {centre[1]:.4g})"
             if not names:
@@ -244,14 +290,13 @@ class _Checker:
                 self.error("multiple-regions", f"{where} is assigned by more than one region: "
                            f"{', '.join(map(repr, names))}", "region", names[-1])
 
-        fluids = library.fluids()
         for bc in model.bcs:
             needs_fluid = isinstance(bc, CorrelationConvection) and bc.correlation != NO_FLUID
-            if needs_fluid and bc.active and bc.fluid not in fluids:
+            if needs_fluid and bc.active and not _fluid_known(bc.fluid):
                 self.error("missing-fluid", f"boundary condition {bc.name!r} uses unknown "
                            f"fluid {bc.fluid!r}", "bc", bc.name)
         for stream in model.streams:
-            if stream.fluid not in fluids:
+            if not _fluid_known(stream.fluid):
                 self.error("missing-fluid", f"stream {stream.name!r} uses unknown fluid "
                            f"{stream.fluid!r}", "stream", stream.name)
             message = diameter_ratio_problem(stream)
@@ -262,14 +307,17 @@ class _Checker:
     # ------------------------------------------------------------ boundary conditions
 
     def boundary_conditions(self) -> None:
-        """Selections of the BCs; no curve carries two fixed temperatures."""
+        """Selections of the BCs; no curve carries two fixed temperatures; unique names."""
         fixed_on: dict[int, list[str]] = {}
+        names = [bc.name for bc in self.model.bcs]
+        for name in sorted({n for n in names if names.count(n) > 1}):
+            self.error("duplicate-name", f"more than one boundary condition is called "
+                       f"{name!r}", "bc", name)
         for bc in self.model.bcs:
             if not bc.active:
                 continue
             is_fixed = isinstance(bc, FixedTemperature)
-            tags = self._use(bc.selection, (0, 1, 2) if not is_fixed else (0, 1),
-                             "boundary condition", bc.name)
+            tags = self._use(bc.selection, _selection_dims(bc), "boundary condition", bc.name)
             selection = self.model.selections.get(bc.selection)
             if is_fixed and tags and selection is not None and selection.dim == CURVE_DIM:
                 for tag in tags:
@@ -278,6 +326,40 @@ class _Checker:
             if len(names) > 1:
                 self.error("double-fixed-temperature", f"curve {tag} carries more than one "
                            f"fixed temperature: {', '.join(map(repr, names))}", "bc", names[-1])
+
+    def bc_values(self) -> None:
+        """Values of the loads: total loads, correlation inputs, velocity."""
+        model = self.model
+        for bc in model.bcs:
+            if not bc.active:
+                continue
+            if isinstance(bc, (HeatPower, HeatFlow)) and bc.P.depends_on_position:
+                what, instead = (
+                    ("power", "Heat Generation") if isinstance(bc, HeatPower)
+                    else ("heat flow", "Heat Flux")
+                )
+                self.error("position-dependent-total", f"boundary condition {bc.name!r}: a "
+                           f"total {what} is spread uniformly, so it may depend on time only; "
+                           f"use {instead} for a value that varies with position", "bc", bc.name)
+            if not isinstance(bc, CorrelationConvection):
+                continue
+            if bc.correlation == INCLINED and "theta_deg" in bc.params:
+                message = inclination_problem(bc.params["theta_deg"])
+                if message:
+                    self.error("bad-inclination", f"boundary condition {bc.name!r}: {message}",
+                               "bc", bc.name)
+            if bc.correlation == NO_FLUID and "C" in bc.params and "n" in bc.params:
+                message = power_law_problem(bc.params["C"], bc.params["n"])
+                if message:
+                    self.error("bad-power-law", f"boundary condition {bc.name!r}: {message}",
+                               "bc", bc.name)
+            if bc.velocity is not None:
+                values = _sample(bc.velocity, self.points_of([bc.selection]),
+                                 _sample_times(model, bc.velocity, True))
+                if values is not None and not values[0] >= 0.0:
+                    self.error("negative-velocity", f"boundary condition {bc.name!r}: the "
+                               f"velocity must not be negative; got {values[0]:g} m/s",
+                               "bc", bc.name)
 
     def temperature_reference(self) -> None:
         """A steady analysis needs something that fixes the temperature level."""
@@ -316,6 +398,7 @@ class _Checker:
                 for block in mesh.facets_on(tags):
                     chunks.append(np.asarray(mesh.nodes)[np.unique(block.conn), :2])
                 continue
+            assert built is not None  # tags exist only for a built model
             for tag in tags:
                 if selection.dim == CURVE_DIM and tag in built.curve_polylines:
                     chunks.append(np.asarray(built.curve_polylines[tag])[:, :2])
@@ -356,6 +439,23 @@ class _Checker:
         for name in sorted(used):
             material = model.materials[name]
             a, b = (lo, hi) if lo is not None else (300.0, 300.0)
+            props = (("conductivity", material.k), ("second conductivity", material.k2),
+                     ("density", material.rho), ("specific heat", material.cp))
+            finite = True
+            for label, fn in props:
+                if fn is None:
+                    continue
+                if fn.depends_on_time or fn.depends_on_position:
+                    self.error("material-not-temperature-only", f"material {name!r}: the "
+                               f"{label} may depend on temperature only (it uses t, x or y)",
+                               "material", name)
+                if not all(np.isfinite(_values(fn, a, b))):
+                    finite = False
+                    self.error("non-finite-property", f"material {name!r} has a {label} that "
+                               "is not finite (NaN or infinite) at some temperature",
+                               "material", name)
+            if not finite:
+                continue
             if _extremes(material.k, a, b)[0] <= 0.0 or (
                 material.k2 is not None and _extremes(material.k2, a, b)[0] <= 0.0
             ):
@@ -425,23 +525,135 @@ class _Checker:
         """Axisymmetric: no node left of the axis."""
         if self.mesh is None or not self.model.axisymmetric:
             return
-        limit = -AXIS_TOL * self.built.diagonal
+        if self.built is not None:
+            diagonal = self.built.diagonal
+        else:
+            nodes = np.asarray(self.mesh.nodes)[:, :2]
+            diagonal = float(np.linalg.norm(nodes.max(axis=0) - nodes.min(axis=0)))
+        limit = -AXIS_TOL * diagonal
         n = int(np.count_nonzero(self.mesh.nodes[:, 0] < limit))
         if n:
             self.error("negative-radius", f"{n} node(s) have a negative radius (x < 0). In an "
                        "axisymmetric model x is the radius; move the geometry to x >= 0",
                        "mesh", "")
 
-    def contacts(self) -> None:
-        """A contact curve is an interface between exactly two regions."""
+    def contacts(self, known: list[tuple[float, str, str]]) -> None:
+        """A contact curve is an interface between two regions; its conductance is positive."""
+        names = [c.name for c in self.model.contacts]
+        for name in sorted({n for n in names if names.count(n) > 1}):
+            self.error("duplicate-name", f"more than one contact is called {name!r}",
+                       "contact", name)
+        temps = [v for v, _, _ in known if v > 0.0]
+        lo, hi = (min(temps), max(temps)) if temps else (300.0, 300.0)
         for contact in self.model.contacts:
             tags = self._use(contact.selection, (CURVE_DIM,), "contact", contact.name)
+            fn = contact.conductance
+            if fn.depends_on_T:
+                values: list[float] | None = _values(fn, lo, hi)
+            else:
+                values = _sample(fn, self.points_of([contact.selection]),
+                                 _sample_times(self.model, fn, True))
+            if values is not None and not (all(np.isfinite(values)) and min(values) > 0.0):
+                self.error("bad-conductance", f"contact {contact.name!r} has a conductance "
+                           "that is not positive and finite", "contact", contact.name)
+            if self.built is None:
+                continue
             for tag in tags or []:
                 n = len(self.built.curve_surfaces.get(tag, []))
                 if n != _INTERFACE_SIDES:
                     self.error("contact-not-interface", f"contact {contact.name!r}: curve "
                                f"{tag} borders {n} region(s); a contact must lie between "
                                "exactly two", "contact", contact.name)
+
+    # ------------------------------------------------------------- streams and network
+
+    def streams(self) -> None:
+        """Streams: walls, geometry, multipliers, path, temperature-only inputs, mass flow."""
+        model = self.model
+        names = [s.name for s in model.streams]
+        for name in sorted({n for n in names if names.count(n) > 1}):
+            self.error("duplicate-name", f"more than one stream is called {name!r}",
+                       "stream", name)
+        on_network = {b.stream for b in model.network.branches if b.stream} if (
+            model.network is not None
+        ) else set()
+        for stream in model.streams:
+            who = f"stream {stream.name!r}"
+
+            def bad(code: str, message: str, stream: Stream = stream, who: str = who) -> None:
+                self.error(code, f"{who}: {message}", "stream", stream.name)
+
+            for wall in stream.walls:
+                self._use(wall, (CURVE_DIM,), "stream", stream.name)
+            if not (np.isfinite(stream.flow_area) and stream.flow_area > 0.0
+                    and np.isfinite(stream.wetted_perimeter) and stream.wetted_perimeter > 0.0):
+                bad("bad-stream-geometry", "the flow area and the wetted perimeter must be "
+                    "positive and finite")
+            if not (np.isfinite(stream.h_multiplier) and stream.h_multiplier > 0.0):
+                bad("bad-stream-multiplier", "h_multiplier must be positive")
+            if not (np.isfinite(stream.roughness) and stream.roughness >= 0.0):
+                bad("bad-stream-roughness", "the roughness must not be negative")
+            if stream.n_cells is not None and not stream.n_cells >= 1:
+                bad("bad-stream-cells", "n_cells must be at least 1 (or empty for one cell "
+                    "per wall edge)")
+            if stream.mode == "in_plane" and (not stream.path or len(stream.path) < 2):
+                bad("bad-stream-path", "an in-plane stream needs a path of at least two points")
+            if stream.T_inlet.depends_on_T:
+                bad("stream-temperature-dependence", "the inlet temperature cannot depend on T")
+            if stream.h_override is not None and stream.h_override.depends_on_T:
+                bad("stream-temperature-dependence", "h_override may depend on time only")
+            flow = stream.mass_flow
+            if flow is not None and flow.depends_on_T:
+                bad("stream-temperature-dependence", "the mass flow may depend on time only")
+            elif flow is not None:
+                values = _sample(flow, None, _sample_times(model, flow, True))
+                if values is not None and not values[0] > 0.0:
+                    bad("bad-mass-flow", f"the mass flow must be positive; got {values[0]:g} "
+                        "kg/s (reverse the path for flow in the other direction)")
+            elif stream.name not in on_network and not (
+                stream.mode == "through_plane" and stream.h_override is not None
+            ):
+                bad("stream-no-mass-flow", "it has no mass flow: give one, or attach the "
+                    "stream to a network branch")
+
+    def network(self) -> None:
+        """The flow network: the structural checks of the hydraulic solve."""
+        net = self.model.network
+        if net is None or not net.branches:
+            return
+        from ..flow.network import network_problems  # lazy: keeps the model layer light
+
+        for ident, message in network_problems(net.nodes, net.branches, self.model.streams):
+            self.error("bad-network", message, "network", ident)
+
+    def initial_condition(self) -> None:
+        """A transient analysis has a complete initial condition."""
+        model = self.model
+        if model.solution.kind != "transient":
+            return
+        ic = model.initial_condition
+        who = "initial condition"
+
+        def bad(message: str) -> None:
+            self.error("bad-initial-condition", f"the {who}: {message}", "model", who)
+
+        if ic.kind in ("uniform", "expression"):
+            if ic.value is None:
+                bad(f"'{ic.kind}' needs a value")
+            elif ic.value.depends_on_T:
+                bad("an initial temperature cannot depend on T")
+        elif ic.kind == "per_region":
+            if not ic.per_region:
+                bad("'per_region' needs a temperature per region")
+            else:
+                regions = {r.selection for r in model.regions}
+                for key, value in ic.per_region.items():
+                    if key not in regions:
+                        bad(f"'{key}' is not a region of the model")
+                    if not np.isfinite(float(value)):
+                        bad(f"the temperature of region '{key}' is not finite")
+        elif not ic.results_path:
+            bad("'from_results' needs a results file")
 
 
 def not_implemented(model: Model) -> list[tuple[str, str, str]]:
@@ -471,6 +683,28 @@ def not_implemented(model: Model) -> list[tuple[str, str, str]]:
     return found
 
 
+def _run(check: _Checker) -> list[Issue]:
+    """Run the checks in order; the ones that need a built geometry skip themselves."""
+    for kind, name, message in not_implemented(check.model):
+        check.error("not-implemented", message, kind, name)
+    check.selections()
+    check.regions()
+    check.boundary_conditions()
+    check.bc_values()
+    check.temperature_reference()
+    known = check.absolute_temperatures()
+    check.materials(known)
+    check.time_stepping()
+    check.streams()
+    check.network()
+    check.initial_condition()
+    check.axis()
+    check.contacts(known)
+    for issue in check.issues:
+        log.debug("validation %s [%s]: %s", issue.severity, issue.code, issue.message)
+    return check.issues
+
+
 def validate(model: Model, built: BuiltGeometry, mesh: Mesh | None = None) -> list[Issue]:
     """Check a model before solving.
 
@@ -487,18 +721,14 @@ def validate(model: Model, built: BuiltGeometry, mesh: Mesh | None = None) -> li
     list of Issue
         Errors (which block the solve) and warnings, in the order of the checks.
     """
-    check = _Checker(model, built, mesh)
-    for kind, name, message in not_implemented(model):
-        check.error("not-implemented", message, kind, name)
-    check.selections()
-    check.regions()
-    check.boundary_conditions()
-    check.temperature_reference()
-    known = check.absolute_temperatures()
-    check.materials(known)
-    check.time_stepping()
-    check.axis()
-    check.contacts()
-    for issue in check.issues:
-        log.debug("validation %s [%s]: %s", issue.severity, issue.code, issue.message)
-    return check.issues
+    return _run(_Checker(model, built, mesh))
+
+
+def validate_model(model: Model, mesh: Mesh | None = None) -> list[Issue]:
+    """Checks that need only the model (and the mesh, if given): Data §8.
+
+    Skipped: stale and empty selections, the surface coverage by regions, the contact
+    interface check and the points of selections (so a value that varies with position is
+    not sampled). The axis check uses the bounding box of the mesh.
+    """
+    return _run(_Checker(model, None, mesh))

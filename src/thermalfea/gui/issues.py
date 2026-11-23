@@ -93,6 +93,8 @@ def address_for_issue(model: Model, issue: Issue) -> Address | None:
         return ("mesh_settings",)
     if kind == "solution":
         return ("solution",)
+    if kind == "network":
+        return ("network",) if model.network is not None else None
     if kind == "model" and name.startswith("initial condition"):
         return ("initial_condition",)
     return None

@@ -181,17 +181,20 @@ def newton(
             A = system.tangent()
             dT[free] = solver.factorize(A[free][:, free].tocsr(), symmetric).solve(r[free])
 
-        # step 3: line search (a non-positive temperature or a non-finite residual
-        # counts as a failed trial)
+        # step 3: line search (a non-positive temperature, a non-finite residual or a
+        # ConvergenceError of the trial assembly counts as a failed trial)
         s = 1.0
         while True:
             trial = T + s * dT
             usable = bool(np.all(np.isfinite(trial)) and trial.min() > 0.0)
             if usable:
-                trial_system = assemble_fn(trial)
-                trial_r = trial_system.residual(trial)
-                trial_norm = float(np.linalg.norm(trial_r[free]))
-                usable = bool(np.isfinite(trial_norm))
+                try:
+                    trial_system = assemble_fn(trial)
+                    trial_r = trial_system.residual(trial)
+                    trial_norm = float(np.linalg.norm(trial_r[free]))
+                    usable = bool(np.isfinite(trial_norm))
+                except ConvergenceError:  # e.g. a film temperature below 0 K at some point
+                    usable = False
             decreased = usable and trial_norm <= (1.0 - ARMIJO * s) * norm_r
             if decreased or (usable and not settings.line_search) or s <= S_MIN:
                 break

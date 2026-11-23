@@ -84,6 +84,11 @@ class HeatPowerTerm(_BodyLoadTerm):
                 f"{bc.name}: a total power cannot depend on temperature; use a heat "
                 "generation [W/m^3] instead"
             )
+        if bc.P.depends_on_position:
+            raise ModelError(
+                f"{bc.name}: a total power is spread uniformly, so it may depend on time "
+                "only; use Heat Generation for a value that varies with position"
+            )
         self.P = bc.P
         self.is_time_dependent = bc.P.depends_on_time
         self._volume = 0.0

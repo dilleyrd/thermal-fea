@@ -101,6 +101,11 @@ class HeatFlowTerm(_FluxTerm):
                 f"{bc.name}: a total heat flow cannot depend on temperature; use a heat "
                 "flux [W/m^2] instead"
             )
+        if bc.P.depends_on_position:
+            raise ModelError(
+                f"{bc.name}: a total heat flow is spread uniformly, so it may depend on "
+                "time only; use Heat Flux for a value that varies with position"
+            )
         self.P = bc.P
         self.is_time_dependent = bc.P.depends_on_time
         self._area = 0.0

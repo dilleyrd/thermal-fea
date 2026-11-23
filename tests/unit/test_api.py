@@ -188,3 +188,39 @@ def test_cli_errors_and_usage(tmp_path: Path, capsys: pytest.CaptureFixture[str]
     assert "no surfaces to mesh" in capsys.readouterr().out
     with pytest.raises(SystemExit):
         cli.main(["frobnicate"])
+
+
+def _plate_model() -> tuple[Model, object]:
+    model = api.new_model(analysis="planar")
+    api.Geometry(model).rectangle(0, 0, 0.1, 0.1)
+    model.mesh_settings.global_size = 0.05
+    built = api.build(model)
+    api.select_curves(model, built, "west", where=lambda c: abs(c.center[0]) < 1e-9)
+    api.select_curves(model, built, "east", where=lambda c: abs(c.center[0] - 0.1) < 1e-9)
+    api.assign_region(model, "all", material="Carbon steel AISI 1010")
+    model.bcs += [
+        FixedTemperature("hot", "west", T=400.0),
+        FixedTemperature("cold", "east", T=300.0),
+    ]
+    return model, built
+
+
+def test_solve_without_built_runs_the_checks_that_need_only_the_model(tmp_path: Path) -> None:
+    from thermalfea.core.functions import Expression
+    from thermalfea.model.bcs import HeatFlux
+
+    model, built = _plate_model()
+    mesh = api.mesh(model, built)
+    assert api.solve(model, mesh, path=tmp_path / "ok.h5").n_steps >= 1  # a good model solves
+    model.bcs.append(HeatFlux("flux", "all", q=1.0))  # a surface selection
+    with pytest.raises(ModelError, match="needs a selection of curves"):
+        api.solve(model, mesh, path=tmp_path / "a.h5")
+    model.bcs.pop()
+    material = model.materials["Carbon steel AISI 1010"]
+    material.k = Expression("sqrt(T - 4000)")
+    with pytest.raises(ModelError, match="not finite"):
+        api.solve(model, mesh, path=tmp_path / "b.h5")
+    material.k = Expression("50 + T/100")
+    model.solution.kind, model.solution.end_time, model.solution.dt_min = "transient", 10.0, 0.0
+    with pytest.raises(ModelError, match="dt_min"):
+        api.solve(model, mesh, path=tmp_path / "c.h5")
