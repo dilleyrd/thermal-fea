@@ -240,8 +240,9 @@ every OK. Notes:</p>
 <ul>
 <li>For Union, Cut and Intersect select the shapes in the viewport first. The earliest
   selected shape (in history order) is the object; the others are the tools.</li>
-<li>The parameters of Translate, Rotate, Mirror and Scale are always in SI (lengths in
-  metres, angles in radians), whatever the display units.</li>
+<li>The parameters of Translate, Rotate, Mirror and Scale follow the display units: lengths
+  and angles are shown and typed in the display units, and the scale factor is a plain
+  number.</li>
 <li>An operation that later operations refer to cannot be deleted.</li>
 <li>If a rebuild fails, the old geometry stays, is marked out of date, and the error is
   reported. Edit &gt; Undo recovers.</li>
@@ -277,7 +278,8 @@ shows load symbols.</p>
   gives a value and logs one warning.</li>
 <li>A Contact (right-click Contacts, Add contact) starts with an empty selection and a
   conductance of 0, which you must set. A temperature-dependent conductance is refused.</li>
-<li>Streams and networks are under Flow (right-click, Add stream). Results &gt; Flow results...
+<li>Streams are under Flow: right-click the node Streams and choose Add stream. The Network
+  node is also under Flow. Results &gt; Flow results...
   shows the fluid temperature along the stream.</li>
 <li>Tools &gt; HTC calculator... evaluates a correlation at single values without a model.</li>
 </ul>

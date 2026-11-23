@@ -132,7 +132,8 @@ packaged Windows installer does not exist yet; it is planned (task M11.5).</p>
 <ul>
 <li>Python 3.11 or newer (the project is developed with Python 3.13).</li>
 <li>The packages the program depends on are installed automatically: NumPy, SciPy, gmsh,
-  PySide6, Matplotlib, h5py, meshio and pandas.</li>
+  PySide6, Matplotlib, h5py, meshio and Pillow. pandas is installed only with the
+  <code>examples</code> extra.</li>
 </ul>
 <h2 id="get-the-source">Get the source<a class="headerlink" href="#get-the-source" title="Permanent link">&para;</a></h2>
 <p>The source is on GitHub at <a href="https://github.com/dilleyrd/thermal-fea">https://github.com/dilleyrd/thermal-fea</a>. Clone it with Git:</p>
@@ -164,6 +165,11 @@ system Python.</p>
 <td>importing DXF files. Without it a DXF import stops with a message that says how to install it.</td>
 </tr>
 <tr>
+<td><code>examples</code></td>
+<td><code>pandas</code></td>
+<td>running the pump-closure showcase scripts in <code>examples/pump_closure/showcase/</code></td>
+</tr>
+<tr>
 <td><code>dev</code></td>
 <td><code>pytest</code>, <code>pytest-qt</code>, <code>ruff</code></td>
 <td>running the tests and the style check</td>
@@ -182,6 +188,9 @@ system Python.</p>
 <h2 id="start-the-program">Start the program<a class="headerlink" href="#start-the-program" title="Permanent link">&para;</a></h2>
 <pre><code>.venv\Scripts\python.exe -m thermalfea.gui.app
 </code></pre>
+<p>An installation made since 2026-11-23 also has the command <code>.venv\Scripts\thermalfea-gui.exe</code>,
+which opens the same window without a console. (An older installation gets it after
+<code>pip install -e .</code> is run again.)</p>
 <p>The main window has a model tree ("Model", top left), a property panel ("Properties",
 below it), the viewport in the middle and a "Messages" dock at the bottom. The next page,
 <a href="../getting-started/">Getting started</a>, walks through them.</p>
