@@ -305,8 +305,8 @@ rebuilt from the reference text on 2026-11-23 (tasks M11.37–M11.42).</p>
 <h2 id="the-window">The window<a class="headerlink" href="#the-window" title="Permanent link">&para;</a></h2>
 <ul>
 <li><strong>Animation export to GIF blocks the window</strong> while a long animation is written.</li>
-<li><strong>Animation export to MP4 is untested</strong> because ffmpeg is not installed on the
-  development machine.</li>
+<li><strong>Animation export to MP4 needs ffmpeg</strong> on the PATH (for example
+  <code>winget install Gyan.FFmpeg</code>); without it, write a GIF.</li>
 <li><strong>Probe, chart path pick and the stream "pick path points" toggle all listen to
   viewport clicks.</strong> The probe and the chart path pick exclude each other, but the stream
   toggle does not switch the others off, and it leaves the selection mode at "None" when
