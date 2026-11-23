@@ -193,7 +193,9 @@ In order:
   pandas in the `examples` extra, Pillow declared, `thermalfea-gui`, two layer guards;
   the suite passed with 2508 tests. An existing installation needs `pip install -e .`
   again to get `thermalfea-gui` (not run here: no network).
-  - **Next, in the agreed order:** M11.17, M11.19, M11.28, M11.31–M11.36, M10.5,
+- **M11.17 (convergence at equilibrium)** followed: Theory §5 and §6 carry the round-off
+  floor (Q29.1), `ttol` still required; the suite passed with 2518 tests.
+  - **Next, in the agreed order:** M11.19, M11.28, M11.31–M11.36, M10.5,
     M11.7–M11.10, M11.2, M11.3, M11.5, then M11.6.
 
 ## 5. Next work: tasks M11.12–M11.16

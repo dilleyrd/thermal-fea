@@ -306,3 +306,15 @@ def test_lumped_and_consistent_capacitance_agree_for_a_lumped_body() -> None:
     b = solve_transient(problem, T0=T_INIT).T.mean()
     assert a == pytest.approx(b, rel=1e-5)
     assert a == pytest.approx(exact_lumped(TAU), rel=1e-4)
+
+
+@pytest.mark.parametrize("etype", TYPES)
+def test_radiative_equilibrium_steps_converge_in_one_iteration(etype: str) -> None:
+    """M11.17 (D1): at equilibrium the round-off test accepts each step at once."""
+    problem = make_problem(etype, size=(0.1, 0.01), cells=(4, 1), bcs=(
+        RadiationAmbient("rad", "right", emissivity=0.8, T_inf=300.0),))
+    transient(problem, theta=0.5, initial_dt=1.0, end_time=5.0, auto_timestep=False)
+    result = solve_transient(problem, T0=300.0)
+    assert result.iterations == [1] * 5
+    assert result.newton_failures == 0
+    np.testing.assert_allclose(result.T, 300.0, atol=1e-6)  # round-off drift only

@@ -463,7 +463,7 @@ Boundary Conditions, Flow (Streams, Network), Enclosures, Analysis Settings, Sol
   `solver/timestep.py` filters and finds mandatory times with a tolerance relative to the
   local time. Tests: end 1e8 s, output at 1e-5 s, first step 1 s; the first step lands on
   1e-5 s and the time is stored.
-- [ ] **M11.17 [C] Convergence at equilibrium.** `REVIEW-2.md` 2.1-1; Q29.1. Owner's decision D1
+- [x] **M11.17 [C] Convergence at equilibrium.** `REVIEW-2.md` 2.1-1; Q29.1. Owner's decision D1
   (c): keep the relative test and `ttol`, and also accept when the free-row residual is at
   most N · ε · (‖|K|·|T|‖ + ‖F‖ + ‖r_extra‖), steady and transient, with **N = 100** (owner,
   2026-11-22). Write it into Theory §5, then the code. Test: a steady model with radiation

@@ -10,7 +10,9 @@ residual-only vector (see :mod:`thermalfea.solver.terms`), and iterates
    ``s > 1/32``: ``s <- s / 2``;
 4. ``T <- T + s dT``;
 5. converged when ``|r_f|_2 <= rtol F_ref`` and ``|s dT|_inf <= ttol``, with
-   ``F_ref = max(|F|_2, |K T|_2, 1e-12)``;
+   ``F_ref = max(|F|_2, |K T|_2, 1e-12)``; the residual test also passes (round-off
+   floor) when ``|r_f|_2 <= N eps (|(|K| |T|)_f|_2 + |F_f|_2 + |r_extra,f|_2)`` with
+   ``N = 100``, and ``ttol`` is still required;
 6. no convergence within the iteration limit raises ``ConvergenceError``.
 
 An optional ``refresh(T)`` hook (the flow providers' update) is called once per iterate,
@@ -40,6 +42,23 @@ log = logging.getLogger(__name__)
 ARMIJO = 1e-4  # sufficient-decrease factor of the line search
 S_MIN = 1.0 / 32.0  # smallest line-search factor
 F_REF_FLOOR = 1e-12
+#: N of the round-off convergence test (Theory §5; the owner's choice, Q29.1 D1).
+ROUNDOFF_FACTOR = 100.0
+_EPS = float(np.finfo(float).eps)
+
+
+def roundoff_level(K: csr_matrix, F: ndarray, r_extra: ndarray, u: ndarray, rows: ndarray) -> float:
+    """``N eps (|(|K| |u|)_f|_2 + |F_f|_2 + |r_extra,f|_2)`` over the given rows [W].
+
+    The residual of the round-off test of Theory §5: a free-row residual at most this large
+    is at the round-off level of the sums that form it.
+    """
+    Ku = abs(K) @ np.abs(u)
+    return ROUNDOFF_FACTOR * _EPS * (
+        float(np.linalg.norm(Ku[rows]))
+        + float(np.linalg.norm(F[rows]))
+        + float(np.linalg.norm(r_extra[rows]))
+    )
 
 
 @dataclass
@@ -74,6 +93,10 @@ class Assembled:
     def reference(self, u: ndarray) -> float:
         """``F_ref = max(|F|_2, |K u|_2, 1e-12)`` [W]."""
         return max(float(np.linalg.norm(self.F)), float(np.linalg.norm(self.K @ u)), F_REF_FLOOR)
+
+    def roundoff(self, u: ndarray, free: ndarray) -> float:
+        """Residual level of the round-off test (Theory §5) on the free rows [W]."""
+        return roundoff_level(self.K, self.F, self.r_extra, u, free)
 
 
 @dataclass
@@ -224,8 +247,16 @@ def newton(
             iteration, norm_r, norm_r / reference, max_dT, s,
         )
 
-        # step 5: convergence test
-        if norm_r <= settings.rtol * reference and max_dT <= settings.ttol:
+        # step 5: convergence test; the residual allowance never falls below the round-off
+        # level of the assembled terms (it matters when F_ref has collapsed to round-off)
+        roundoff = system.roundoff(T, free)
+        allowance = max(settings.rtol * reference, roundoff)
+        if norm_r <= allowance and max_dT <= settings.ttol:
+            if norm_r > settings.rtol * reference:
+                log.info(
+                    "converged: residual %.3e W is at the round-off level %.3e W",
+                    norm_r, roundoff,
+                )
             return NewtonResult(T, iteration, True, norm_r, reference, history, system)
 
     # step 6

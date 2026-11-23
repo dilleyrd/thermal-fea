@@ -11,7 +11,10 @@ tangent is ``A = C / dt + theta (K + K_tan)`` at the current iterate, the Newton
 solves ``A_ff dT_f = -R_f``, and the line search and convergence test are those of the
 steady iteration with
 
-    F_ref = max(|C (T_{n+1} - T_n) / dt|, |F|, |K T|, 1e-12).
+    F_ref = max(|C (T_{n+1} - T_n) / dt|, |F|, |K T|, 1e-12);
+
+the round-off floor of the steady iteration uses ``K``, ``F`` and ``r_extra`` assembled at
+the iterate.
 
 ``g(T_n, t_n)`` is kept from the end of the previous step, not recomputed. At a step where
 a prescribed temperature or a load jumps discontinuously, ``theta = 1`` is used for that
@@ -211,6 +214,10 @@ class StepSystem:
             float(np.linalg.norm(self.base.K @ u)),
             F_REF_FLOOR,
         )
+
+    def roundoff(self, u: ndarray, free: ndarray) -> float:
+        """Residual level of the round-off test (Theory §5, §6) on the free rows [W]."""
+        return self.base.roundoff(u, free)
 
 
 def initial_state(

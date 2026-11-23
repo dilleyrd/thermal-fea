@@ -686,6 +686,12 @@ commit 314093c) and in the evaluation, §4.
    at most N · ε · (‖|K|·|T|‖ + ‖F‖ + ‖r_extra‖), the same free-row norms, where ε is the
    machine precision. This applies to steady and transient solves. **N = 100** (owner,
    2026-11-22).
+   **Built in M11.17 (2026-11-23)** as a floor on the residual allowance,
+   ‖r_f‖ ≤ max(rtol · F_ref, floor), with `ttol` still required, as option (c) read in
+   `TODO.md` ("keep the physical relative test and ttol, and add a round-off floor").
+   Radiation to 300 K started at 300 K now converges in one iteration (steady and
+   transient). The M3.7 test that an exact but large first step needs a second, confirming
+   iteration is unchanged.
 2. **D2, fluid rows with θ < 1 (M11.31): option (a).**
    - Rows without capacitance (the stream fluid rows) are always stepped with θ = 1,
      whatever θ the solid uses, in both the linear and the Newton paths.

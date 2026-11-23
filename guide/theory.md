@@ -133,6 +133,13 @@ from the tangent):
 4. Tⁱ⁺¹ = Tⁱ + sΔT.
 5. Converged when ‖r\_f‖₂ ≤ rtol · F\_ref **and** ‖sΔT‖∞ ≤ ttol.
    F\_ref = max(‖F‖₂, ‖K T‖₂, 1e-12). Defaults rtol = 1e-6, ttol = 1e-4 K, max 30 iterations.
+   Round-off floor: the residual test also passes when
+   ‖r\_f‖₂ ≤ N ε (‖(|K| |T|)\_f‖₂ + ‖F\_f‖₂ + ‖r\_extra,f‖₂), with N = 100 and ε the machine
+   precision (2.2e-16); ‖sΔT‖∞ ≤ ttol is still required. |K| and |T| are the element-wise
+   absolute values, the subscript f keeps the free rows, and r\_extra is the part of r that
+   is not F − K T (for example r\_rad). At equilibrium F and K T cancel and F\_ref falls to
+   round-off; the floor then accepts a residual at the round-off level of the sums that
+   form it (owner, Q29.1 D1).
 6. Not converged after the limit → raise `ConvergenceError` (steady) or cut the step (transient).
 
 A problem is **linear** when no property, coefficient or load depends on T and there is no
@@ -151,7 +158,8 @@ t\_n to t\_{n+1} = t\_n + Δt solves for T\_{n+1}:
 with T\_θ = θ T\_{n+1} + (1−θ) T\_n used only to evaluate ρc.
 Tangent: **A = C/Δt + θ (K + K\_rad)** evaluated at the current iterate.
 Newton update: A\_ff ΔT\_f = −R\_f. Line search and convergence test as in §5, with
-F\_ref = max(‖C(T\_{n+1}−T\_n)/Δt‖₂, ‖F‖₂, ‖K T‖₂, 1e-12).
+F\_ref = max(‖C(T\_{n+1}−T\_n)/Δt‖₂, ‖F‖₂, ‖K T‖₂, 1e-12). The round-off floor of §5 applies
+unchanged, with K, F and r\_extra assembled at the iterate T\_{n+1}.
 
 - θ = 1 backward Euler (**default**; unconditionally stable, no oscillation)
 - θ = 2/3 Galerkin

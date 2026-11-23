@@ -22,7 +22,15 @@ from thermalfea.model.bcs import (
 )
 from thermalfea.model.settings import SolutionSettings
 from thermalfea.solver import steady
-from thermalfea.solver.nonlinear import ARMIJO, S_MIN, Assembled, NewtonResult, newton
+from thermalfea.solver.nonlinear import (
+    ARMIJO,
+    ROUNDOFF_FACTOR,
+    S_MIN,
+    Assembled,
+    NewtonResult,
+    newton,
+    roundoff_level,
+)
 from thermalfea.solver.steady import solve_steady, steady_solution
 
 L = 0.1
@@ -317,3 +325,37 @@ def test_a_convergence_error_at_every_trial_is_still_raised() -> None:
 
     with pytest.raises(ConvergenceError, match="shortening the step did not help"):
         newton(assemble, np.array([1000.0]), NO_FIXED, SolutionSettings())
+
+
+# ------------------------------------------------- M11.17: convergence at equilibrium
+
+
+def test_roundoff_level_is_n_eps_times_the_free_row_norms() -> None:
+    K = csr_matrix(np.array([[2.0, -2.0, 0.0], [-2.0, 3.0, -1.0], [0.0, -1.0, 1.0]]))
+    F = np.array([1.0, -4.0, 9.0])
+    r_extra = np.array([0.5, 0.0, -2.0])
+    u = np.array([300.0, -10.0, 5.0])
+    free = np.array([0, 1])
+    Ku = np.abs(K.toarray()) @ np.abs(u)  # element-wise absolute values
+    expected = ROUNDOFF_FACTOR * np.finfo(float).eps * (
+        np.linalg.norm(Ku[free]) + np.linalg.norm(F[free]) + np.linalg.norm(r_extra[free])
+    )
+    assert ROUNDOFF_FACTOR == 100.0
+    assert roundoff_level(K, F, r_extra, u, free) == pytest.approx(expected, rel=1e-14)
+
+
+@pytest.mark.parametrize("etype", TYPES)
+def test_radiative_equilibrium_converges_in_one_iteration(etype: str) -> None:
+    """Radiation to 300 K started at 300 K: F and K T cancel, F_ref is round-off (D1)."""
+    problem = strip(etype, 4, (RadiationAmbient("rad", "right", emissivity=0.8, T_inf=300.0),))
+    result = steady_solution(problem, T0=np.full(problem.mesh.n_nodes, 300.0))
+    assert result.converged and result.iterations == 1
+    np.testing.assert_allclose(result.T, 300.0, atol=1e-6)  # round-off drift only
+
+
+def test_a_residual_above_the_roundoff_level_still_needs_the_relative_test() -> None:
+    # a residual that the tangent cannot remove (tangent four times too stiff): it falls
+    # by 3/4 per iteration and never reaches either test in 5 iterations
+    assemble = scalar(k=1.0, f=400.0, tangent_extra=lambda x: 3.0)
+    with pytest.raises(ConvergenceError, match="no convergence in 5 iterations"):
+        newton(assemble, np.array([1000.0]), NO_FIXED, SolutionSettings(max_iterations=5))
