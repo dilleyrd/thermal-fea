@@ -786,7 +786,7 @@ These are written into Data §6 and Theory §8. The remaining points:
 
 1. **Oxygen at 1300 K** ([I] Table A.4, p. 999). μ·10⁷ is printed as 588.4. The same row's
    ν·10⁶ = 188.6 gives 558.4. The steps from the rows below are +27.0, then +55.9 (they would
-   be +25.9 with 558.4). Very likely a misprint. **Kept as printed**; the owner may correct it.
+   be +25.9 with 558.4). Very likely a misprint. **Kept as printed** (owner, 2026-11-23).
 2. **Helium and water vapour are at 1 atm, the other gases at 1 bar.** A CoolProp check of
    every A.4 density gives a match to 0.05 % for one pressure or the other. Each entry's note
    says which.
@@ -801,7 +801,8 @@ These are written into Data §6 and Theory §8. The remaining points:
    - **(c)** The laminar f·Re of non-circular ducts (Table 8.1) would need a rule for joining
      it to Churchill's turbulent branch.
 
-   None is planned. Each needs the owner's choice.
+   **Declined** (owner, 2026-11-23): the current correlations are adequate for now; none of
+   the three is to be built.
 5. **Names.** The seven materials that stay keep their library names. The others use the
    book's wording ("group, row").
 6. **Linear interpolation in the annulus table** (Theory §8.1) is the program's rule. Nu_i

@@ -273,8 +273,8 @@ because it gives no β. Spot rows that tests check:
 | Ethylene Glycol | 300 | 1114.4 | 2415 | 1.57e-2 | 0.252 | 0.65e-3 |
 
 **Known doubtful value:** the book's oxygen row at 1300 K prints μ·10⁷ = 588.4, but its own ν
-(188.6e-6) gives 558.4, and the steps between rows suggest a misprint. It is kept as printed
-(OPEN_QUESTIONS Q30). The book's water β at 360 K (697.9e-6) is not used, since water comes
+(188.6e-6) gives 558.4, and the steps between rows suggest a misprint. It is kept as printed,
+by the owner's decision (OPEN_QUESTIONS Q30). The book's water β at 360 K (697.9e-6) is not used, since water comes
 from [N].
 
 Users can add their own solids and fluids; user libraries are stored in

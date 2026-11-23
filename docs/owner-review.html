@@ -179,7 +179,7 @@ table.mini th { color: var(--muted); font-weight: 600; font-size: 12.5px; }
 
   <section id="sessions-sec">
     <h2>What remains</h2>
-    <p class="lead">All three are hands-on. M8.G and M11.1 are needed before the release review, M11.6.</p>
+    <p class="lead">Both are hands-on. M8.G is needed before the release review, M11.6; M11.1 was closed on 2026-11-23.</p>
     <div class="sessions" id="sessions"></div>
   </section>
 
@@ -197,13 +197,12 @@ const STORE_KEY = "thermalfea-owner-review-v2";
 /* ------------------------------------------------------------------ data */
 const SESSIONS = {
   A: { name: "In the window (M8.G)", time: [60, 120], kind: "Hands-on, with the friction log", c: "--s-d" },
-  B: { name: "With the reference book", time: [120, 240], kind: "Checking values and sources", c: "--s-e" },
-  C: { name: "Optional", time: [30, 60], kind: "Visualisation and the pump example", c: "--s-f" },
+  B: { name: "Optional", time: [30, 60], kind: "Visualisation and the pump example", c: "--s-f" },
 };
 
 const DATA = {
   d1: [0.559,0.642,0.588,0.359,0.37,0.408,0.385,0.38,0.384,0.295,0.402,0.38,0.426,0.419,0.457,0.511,0.622,0.494,0.427,0.498,0.594,0.479,0.554,0.567,0.485,0.563,0.51,0.499,0.435,0.383],
-  tasks: {"0":[3,0],"1":[9,0],"2":[12,0],"3":[12,0],"4":[7,0],"5":[7,0],"6":[5,0],"7":[6,0],"8":[14,1],"9":[0,5],"10":[4,2],"11":[8,28]},
+  tasks: {"0":[3,0],"1":[9,0],"2":[12,0],"3":[12,0],"4":[7,0],"5":[7,0],"6":[5,0],"7":[6,0],"8":[14,1],"9":[0,5],"10":[4,2],"11":[20,22]},
 };
 
 const ITEMS = [
@@ -222,22 +221,7 @@ const ITEMS = [
   files: ["docs/gui-walkthrough.md", "docs/verification.md", "guide/getting-started.md", "guide/limitations.md"],
   site: [["Getting started", "getting-started/"], ["Limitations", "limitations/"]] },
 
-{ id: "M11.1", sec: 2, num: "2", title: "M11.1 human task: confirm the oxygen row, and close the task", session: "B", effort: "10–20 min", type: "study", blocks: ["M11.6"],
-  body: `<p><b>Built on 2026-11-23 from your decisions</b> (OPEN_QUESTIONS Q30, tasks M11.37–M11.42).
-  Every built-in property now comes from Incropera 7th ed. (the PDF is in <code>docs/</code>, git-ignored), or from NIST for water,
-  and each entry carries its source. The correlations are the book's, with equation numbers, and Q17.2 is settled by the book: L = A<sub>s</sub>/P.
-  See <a data-file="docs/property-verification.md" href="#">property-verification.md</a> and <a data-file="guide/materials.md" href="#">the materials page</a>.</p>
-  <ul><li><b>Oxygen at 1300 K:</b> the book prints μ·10⁷ = 588.4. Its own ν and the row steps suggest 558.4. It is kept as printed.</li>
-  <li><b>Ideas for later (Q30.4):</b> enclosure correlations (a two-surface load), mixed convection, and laminar friction for non-circular ducts. None is planned.</li>
-  <li><b>M11.1:</b> its spot-check and source recording are done. Can it be ticked?</li></ul>`,
-  qs: [
-    { q: "Oxygen μ at 1300 K", opts: [["keep", "Keep 588.4 as printed"], ["fix", "Correct it to 558.4"]] },
-    { q: "Ideas for later (Q30.4)", opts: [["none", "Not now"], ["some", "Plan some (name them in the notes)"]] },
-    { q: "Close M11.1", opts: [["tick", "Tick M11.1"], ["more", "Not yet (say what is missing in the notes)"]] }],
-  files: ["docs/property-verification.md", "docs/OPEN_QUESTIONS.md", "docs/data-model.md", "docs/theory.md", "src/thermalfea/materials/data/solids.json", "src/thermalfea/materials/data/fluids.json", "src/thermalfea/convection/correlations.py"],
-  site: [["Correlations page", "correlations/"], ["Materials page", "materials/"]] },
-
-{ id: "VIS", sec: 2, num: "3", title: "Visualisation testing, and the pump example (optional)", session: "C", effort: "30–60 min", type: "study", blocks: [],
+{ id: "VIS", sec: 2, num: "2", title: "Visualisation testing, and the pump example (optional)", session: "B", effort: "30–60 min", type: "study", blocks: [],
   body: `<p>You planned to test the visualisation over more kinds of boundary condition once the build is complete; GIF only, as you chose.
   The pump example's inputs are all marked illustrative and stay so unless you supply real values. They are indexed in
   <a data-file="examples/pump_closure/README.md" href="#">its README</a>.</p>`,
@@ -262,13 +246,6 @@ let state = {};
 try { state = JSON.parse(localStorage.getItem(STORE_KEY) || "{}") || {}; } catch (e) { state = {}; }
 function save() { try { localStorage.setItem(STORE_KEY, JSON.stringify(state)); } catch (e) { /* private window */ } }
 function st(id) { return state[id] || (state[id] = {}); }
-/* The M11.1 questions were replaced on 2026-11-23 (twice); answers saved for the old ones no longer
-   line up with them, so they are dropped (the notes are kept). */
-if (state["M11.1"] && state["M11.1"].form !== 3) {
-  const notes = state["M11.1"].notes;
-  state["M11.1"] = notes ? { notes: notes } : {};
-}
-st("M11.1").form = 3;
 
 let linkMode = "gh";
 try { linkMode = localStorage.getItem(STORE_KEY + "-links") || "gh"; } catch (e) { /* ignore */ }
@@ -588,11 +565,11 @@ function drawCharts(card, it, force) {
 
 function drawDepmap() {
   const host = document.getElementById("depmap");
-  const items = [["M8.G window test", "M8.G", "--bad"], ["M11.1 sources", "M11.1", "--bad"], ["Optional tests", "VIS", "--muted"]];
-  const W = 420, H = 150, lw = 150, lx = 6, rx = 268, rw = 146;
+  const items = [["M8.G window test", "M8.G", "--bad"], ["Optional tests", "VIS", "--muted"]];
+  const W = 420, H = 108, lw = 150, lx = 6, rx = 268, rw = 146;
   const s = svg(W, H, "Your remaining items and what they gate");
   const y = (i) => 20 + i * 42;
-  const ry = y(0.5);
+  const ry = y(0);
   items.forEach(([label, id, col], i) => {
     if (id !== "VIS") add(s, "path", { d: `M${lx + lw},${y(i) + 12} C${(lx + lw + rx) / 2},${y(i) + 12} ${(lx + lw + rx) / 2},${ry + 12} ${rx},${ry + 12}`, fill: "none", stroke: css("--bad"), "stroke-width": 1.5, opacity: .8 });
     const g = add(s, "g", { class: "dep-node", tabindex: 0 });
@@ -608,7 +585,7 @@ function drawDepmap() {
 function drawEffort() {
   const host = document.getElementById("effort");
   const keys = Object.keys(SESSIONS), W = 400, rowH = 34, L = 128, R = 14, H = keys.length * rowH + 30, max = 240;
-  const SHORT = { A: "In the window", B: "Reference book", C: "Optional" };
+  const SHORT = { A: "In the window", B: "Optional" };
   const s = svg(W, H, "Estimated owner time per work session, in minutes");
   const x = (m) => L + (W - L - R) * m / max;
   [0, 60, 120, 180, 240].forEach(m => { add(s, "line", { x1: x(m), x2: x(m), y1: 4, y2: H - 22, stroke: css("--line") }); add(s, "text", { x: x(m), y: H - 8, "text-anchor": "middle" }, m === 0 ? "0" : (m / 60) + " h"); });

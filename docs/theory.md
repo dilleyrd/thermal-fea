@@ -323,7 +323,9 @@ Pressure drop of a duct of length L with minor-loss coefficient K_minor:
 Δp = (f L/D_h + K_minor) · ρ V²/2, V = ṁ/(ρ A).
 
 ### §8.2 Correlations of [I] that are not used
-Recorded so that no task adds them without a decision:
+Recorded so that no task adds them without a decision. On 2026-11-23 the owner judged the
+correlations in use adequate and declined the enclosure, mixed-convection and Table 8.1 f·Re
+additions (Q30.4):
 - **Circular cylinder, Hilpert ([I] 7.52, Table 7.2) and Zukauskas (7.53).** These cover the
   same case as Churchill–Bernstein (7.54), which is kept. **Horizontal cylinder, Morgan
   (9.33, Table 9.1)** is not used either; Churchill–Chu (9.34) is kept.

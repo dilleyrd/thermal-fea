@@ -386,8 +386,10 @@ Boundary Conditions, Flow (Streams, Network), Enclosures, Analysis Settings, Sol
 
 ## M11 — Release hardening
 
-- [ ] **M11.1 Human task.** Spot-check the property tables (Data §6) and every correlation
+- [x] **M11.1 Human task.** Spot-check the property tables (Data §6) and every correlation
   (Theory §8) against a heat-transfer reference text; record the source and edition.
+  Closed by the owner on 2026-11-23 after M11.37–M11.42 (`docs/property-verification.md`,
+  OPEN_QUESTIONS Q30).
 - [ ] **M11.2 [B] V&V report.** Script that runs the verification suite and writes a table
   of case, quantity, analytic value, computed value, error and tolerance to
   `docs/vv-report.md`.

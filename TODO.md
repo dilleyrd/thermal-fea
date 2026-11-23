@@ -1,14 +1,14 @@
 # What the agents need from the owner
 
 State on 2026-11-23, after your answers of 2026-11-22 and 2026-11-23. Every answer is recorded in
-`docs/OPEN_QUESTIONS.md` Q29 (items 1–15) and turned into tasks in `docs/tasks.md`; N = 100
-for D1. Three items remain. The interactive version is [`docs/owner-review.html`](docs/owner-review.html).
+`docs/OPEN_QUESTIONS.md` Q29 (items 1–15) and Q30, and turned into tasks in `docs/tasks.md`;
+N = 100 for D1. Two items remain. The interactive version is
+[`docs/owner-review.html`](docs/owner-review.html).
 
 | # | Item | Your time | Blocks |
 |---|---|---|---|
 | 1 | M8.G: build V-10 and V-17 in the window | 60–120 min | Release review M11.6 |
-| 2 | M11.1: confirm the oxygen row, and close the task | 10–20 min | Release review M11.6 |
-| 3 | Visualisation testing, and the pump example (optional) | 30–60 min | Nothing |
+| 2 | Visualisation testing, and the pump example (optional) | 30–60 min | Nothing |
 
 ---
 
@@ -39,36 +39,7 @@ choice, the display fixes and the dialog for new loads.
 - `guide/getting-started.md`;
 - `guide/limitations.md`.
 
-## 2. M11.1 human task: confirm and close — 10–20 min
-
-**Built on 2026-11-23 from your decisions** (tasks M11.37–M11.42, OPEN_QUESTIONS Q30):
-- **Properties.** Every built-in property now comes from Incropera 7th ed. (the PDF is in
-  `docs/`, git-ignored) or from NIST for water. Each entry carries its source.
-- **Correlations.** These are now the book's, with equation numbers (Theory §8). The
-  correlations added are being built: M11.39–M11.42.
-- **Q17.2 is settled by the book:** horizontal plates use L = A_s/P, which is half the
-  selection length.
-
-What is left for you:
-1. **Oxygen at 1300 K.** The book prints μ·10⁷ = 588.4. Its own ν and the row steps suggest
-   558.4. It is kept as printed. Correct it, or leave it?
-2. **Q30.4, three ideas for later.** None is planned:
-   - enclosure correlations, which need a two-surface load;
-   - mixed convection;
-   - laminar friction for non-circular ducts.
-3. **Close M11.1.** The task asked for a spot-check against a reference text, with sources
-   recorded. That is now done in `docs/property-verification.md` and the source fields. Say
-   whether M11.1 can be ticked.
-
-**Files.**
-- `docs/property-verification.md`;
-- `docs/OPEN_QUESTIONS.md` Q30;
-- `docs/data-model.md` §6;
-- `docs/theory.md` §8, §8.1, §8.2;
-- `guide/materials.md`.
-
-
-## 3. Visualisation testing, and the pump example — 30–60 min, optional
+## 2. Visualisation testing, and the pump example — 30–60 min, optional
 
 1. **Visualisation.** You planned to test it over more kinds of boundary condition, once
    the build is complete. You chose GIF only, so there is no MP4 to test.
@@ -80,7 +51,7 @@ What is left for you:
 
 ## Decided on 2026-11-22 and 2026-11-23 (for reference)
 
-Full text: `docs/OPEN_QUESTIONS.md` Q29.
+Full text: `docs/OPEN_QUESTIONS.md` Q29 and Q30.
 
 | Item | Decision | Task |
 |---|---|---|
@@ -107,3 +78,6 @@ Full text: `docs/OPEN_QUESTIONS.md` Q29.
 | Solids (2026-11-23) | Only the book's materials; all complete entries added; 6061-T6, Ti-6Al-4V, FR-4 removed | M11.37 |
 | Correlations (2026-11-23) | The book's, plus useful ones not yet applied | M11.38–M11.42 |
 | Tutorial bound (2026-11-23) | Cold-plate Re within 3 % of the inlet values | M11.37 |
+| Oxygen at 1300 K (2026-11-23) | μ·10⁷ = 588.4 kept as printed | — |
+| Q30.4 (2026-11-23) | The correlations are adequate; no enclosures, mixed convection or Table 8.1 f·Re | — |
+| M11.1 (2026-11-23) | Closed | M11.1 |

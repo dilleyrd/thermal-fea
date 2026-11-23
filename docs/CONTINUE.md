@@ -194,8 +194,8 @@ After all of them: M11.6, the release review, which depends on M11.7–M11.16.
 
 - **M8.G**, human gate: build V-10 and V-17 in the window following
   `docs/gui-walkthrough.md`.
-- **M11.1**, human task: check the property tables and the correlations against a
-  reference text. Until it is done, the guide says "source not yet recorded".
+- ~~**M11.1**~~, human task: closed on 2026-11-23 after M11.37–M11.42 (Q30); the owner
+  kept the printed oxygen row and declined the Q30.4 additions.
 - **Confirm the Theory §6.1 sentence in Q27.3** before M11.10 is built.
 - **Confirmations that block nothing:** Q11, Q14, Q17.2, Q18.2 and Q20–Q26.
 - **Known gap with no task yet:** the solver computes the heat across a contact
