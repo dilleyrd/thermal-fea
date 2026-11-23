@@ -77,6 +77,8 @@ class _Index(NamedTuple):
     ids: ndarray  # global element id of each tree entry
     id_block: ndarray
     id_row: ndarray
+    box_lo: list  # per block, (rows, dim): lower corner of each element's bounding box
+    box_hi: list  # per block, (rows, dim): upper corner
 
 
 _CACHE: dict[int, tuple[Mesh, _Index]] = {}
@@ -95,7 +97,9 @@ def _index(mesh: Mesh) -> _Index:
     for ib, block in enumerate(mesh.blocks):
         id_block[block.elem_ids] = ib
         id_row[block.elem_ids] = np.arange(block.conn.shape[0])
-    index = _Index(cKDTree(centroids[ids]), ids, id_block, id_row)
+    box_lo = [mesh.nodes[b.conn].min(axis=1) for b in mesh.blocks]
+    box_hi = [mesh.nodes[b.conn].max(axis=1) for b in mesh.blocks]
+    index = _Index(cKDTree(centroids[ids]), ids, id_block, id_row, box_lo, box_hi)
     if len(_CACHE) >= _CACHE_SIZE:
         _CACHE.pop(next(iter(_CACHE)))
     _CACHE[id(mesh)] = (mesh, index)
@@ -237,7 +241,56 @@ def locate(mesh: Mesh, points: ndarray, tol: float = NEWTON_TOL) -> Located:
             out.row[hit] = rows[ok]
             out.local[hit] = xi[ok]
             pending[hit] = False
+    _locate_by_boxes(mesh, index, pts, pending, out, tol)
     return out
+
+
+#: Upper bound on (points x elements) pairs held at once by the bounding-box fallback.
+_BOX_CHUNK = 2_000_000
+
+
+def _locate_by_boxes(
+    mesh: Mesh, index: _Index, pts: ndarray, pending: ndarray, out: Located, tol: float
+) -> None:
+    """Fallback for points the nearest-centroid pass missed.
+
+    Every element whose bounding box holds the point (grown by ``INSIDE_TOL`` times the
+    box size, the tolerance of the inside test) is tried with the inverse map and the
+    inside test; the first element that holds the point wins. Only pending points are
+    touched.
+    """
+    todo = np.flatnonzero(pending)
+    if todo.size == 0:
+        return
+    for ib, block in enumerate(mesh.blocks):
+        todo = np.flatnonzero(pending)
+        if todo.size == 0:
+            return
+        et = element(block.etype)
+        lo, hi = index.box_lo[ib], index.box_hi[ib]
+        pad = INSIDE_TOL * np.maximum(hi - lo, np.finfo(float).tiny)
+        lo, hi = lo - pad, hi + pad
+        step = max(1, _BOX_CHUNK // max(1, lo.shape[0]))
+        for start in range(0, todo.size, step):
+            chunk = todo[start : start + step]
+            inside = np.all(
+                (pts[chunk, None, :] >= lo[None]) & (pts[chunk, None, :] <= hi[None]), axis=2
+            )
+            pi, rows = np.nonzero(inside)
+            if pi.size == 0:
+                continue
+            sel = chunk[pi]
+            X = mesh.nodes[block.conn[rows]]
+            xi, ok = _newton(et, X, pts[sel], tol)
+            ok &= _inside_polygon(et, np.where(ok[:, None], xi, 0.0))
+            for j in np.flatnonzero(ok):  # first hit per point wins
+                i = sel[j]
+                if pending[i]:
+                    out.elem_ids[i] = block.elem_ids[rows[j]]
+                    out.block[i] = ib
+                    out.row[i] = rows[j]
+                    out.local[i] = xi[j]
+                    pending[i] = False
 
 
 def _by_block(mesh: Mesh, located: Located):

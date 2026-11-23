@@ -251,3 +251,43 @@ def test_locating_many_points_is_fast() -> None:
     loc = locate(problem.mesh, pts)
     assert time.perf_counter() - t0 < 10.0
     assert np.all(loc.elem_ids >= 0)
+
+
+# -------------------------------------------------------------------- fallback (M11.14)
+
+
+def _large_beside_small():
+    """One 10 x 1 quadrilateral with 20 small 0.5 x 0.5 cells on top of it (REVIEW.md 6)."""
+    from thermalfea.core.mesh import ElementBlock, Mesh
+
+    nodes = [(0.0, 0.0), (10.0, 0.0), (10.0, 1.0), (0.0, 1.0)]
+    conn = [[0, 1, 2, 3]]
+    for i in range(20):
+        x0 = 0.5 * i
+        base = len(nodes)
+        nodes += [(x0, 1.0), (x0 + 0.5, 1.0), (x0 + 0.5, 1.5), (x0, 1.5)]
+        conn.append([base, base + 1, base + 2, base + 3])
+    block = ElementBlock(
+        "Q4",
+        np.array(conn, dtype=np.int64),
+        np.ones(len(conn), dtype=np.int32),
+        np.arange(len(conn), dtype=np.int64),
+    )
+    return Mesh(dim=2, nodes=np.array(nodes), blocks=[block])
+
+
+def test_point_inside_large_element_beside_small_ones_is_found() -> None:
+    mesh = _large_beside_small()
+    pts = np.array([[5.0, 0.99], [9.9, 0.98], [0.1, 0.97]])
+    loc = locate(mesh, pts)
+    np.testing.assert_array_equal(loc.elem_ids, [0, 0, 0])
+    got = interpolate(mesh, loc, linear(mesh.nodes))
+    np.testing.assert_allclose(got, linear(pts), atol=1e-9)
+
+
+def test_fallback_keeps_outside_points_at_minus_one() -> None:
+    mesh = _large_beside_small()
+    pts = np.array([[5.0, -0.01], [10.5, 0.5], [5.0, 2.0], [5.0, 0.99]])
+    loc = locate(mesh, pts)
+    np.testing.assert_array_equal(loc.elem_ids, [-1, -1, -1, 0])
+    assert np.all(np.isnan(loc.local[:3]))

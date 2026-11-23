@@ -449,7 +449,7 @@ Boundary Conditions, Flow (Streams, Network), Enclosures, Analysis Settings, Sol
   `gui/document.py: classify_change` also counts the selection names listed in
   `structured_surfaces` and in each refinement's `selection`. Tests: editing either kind
   of selection returns `"mesh"`; editing an unused selection still returns `"results"`.
-- [ ] **M11.14 [B] Path locator fallback.** `REVIEW.md` finding 6; Q28.4. In
+- [x] **M11.14 [B] Path locator fallback.** `REVIEW.md` finding 6; Q28.4. In
   `post/path.py`, a point not found among the nearest candidates is tested against every
   element whose bounding box holds it. Tests: the reviewer's case (a point just inside a
   large quadrilateral next to small ones) is found, and a point outside still gives -1.
