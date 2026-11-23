@@ -146,3 +146,10 @@ def test_unit_labels() -> None:
     assert forms.unit_label("htc", UnitSettings()) == "W/(m^2 K)"
     with pytest.raises(ModelError):
         forms.unit_label("bogus", UnitSettings())
+
+
+@pytest.mark.parametrize("text", ["nan, 1", "1, inf", "1, -inf", "0,0; 2, nan"])
+def test_xy_list_refuses_non_finite_numbers(text: str) -> None:
+    with pytest.raises(ValueError, match="must be finite"):
+        forms.parse_xy_list(text)
+    assert forms.parse_xy_list("0,0; 1, 0.5") == [(0.0, 0.0), (1.0, 0.5)]

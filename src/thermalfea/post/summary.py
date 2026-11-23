@@ -11,6 +11,7 @@ from dataclasses import dataclass
 
 import numpy as np
 
+from .flow import format_stream_summary, stream_summary
 from .plots import _display_temperature
 from .results import Results
 
@@ -219,7 +220,10 @@ def format_summary(summary: Summary) -> str:
 
 
 def text_summary(results: Results, step: int = -1) -> str:
-    """The text summary of one stored step: ``format_summary(summarize(results, step))``.
+    """The text summary of one stored step.
+
+    This is ``format_summary(summarize(results, step))``, followed, when the results contain
+    streams, by the stream table of :func:`~thermalfea.post.flow.format_stream_summary`.
 
     Parameters
     ----------
@@ -232,4 +236,8 @@ def text_summary(results: Results, step: int = -1) -> str:
     ModelError
         If the step is out of range.
     """
-    return format_summary(summarize(results, step))
+    text = format_summary(summarize(results, step))
+    if results.streams:
+        table = format_stream_summary(stream_summary(results, step), results.display_units)
+        text += "\nStreams:\n" + table
+    return text

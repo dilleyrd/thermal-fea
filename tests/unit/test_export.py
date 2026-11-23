@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import csv
 import shutil
 import xml.etree.ElementTree as ET
 from pathlib import Path
@@ -126,6 +127,29 @@ def test_history_csv_columns_and_values(results: Results, tmp_path: Path) -> Non
     assert np.isnan(data[0, 3:]).all()  # the initial state has no heat flow
 
 
+def test_history_csv_quotes_names_with_commas_and_quotes(tmp_path: Path) -> None:
+    names = ["inlet, left", 'say "hi"']
+    problem = make_problem("Q4", size=(SIDE, SIDE), cells=(2, 2), k=400.0, bcs=(
+        Convection(names[0], "left", h=H, T_inf=T_INF),
+        Convection(names[1], "right", h=H, T_inf=T_INF),
+    ))
+    term = CapacitanceTerm()
+    term.setup(problem)
+    problem.terms.append(term)
+    problem.settings = SolutionSettings(
+        kind="transient", theta=1.0, initial_dt=TAU / 20, end_time=TAU, auto_timestep=False
+    )
+    run_transient(problem, tmp_path / "c.h5", T0=T_INIT)
+    res = Results(tmp_path / "c.h5")
+    out = export.history_csv(res, tmp_path / "c.csv", nodes=[0])
+    with out.open(encoding="utf-8", newline="") as fh:
+        rows = list(csv.reader(fh))
+    assert set(len(row) for row in rows) == {4}
+    assert rows[0][0] == "time" and rows[0][1] == "T:node 0"
+    assert sorted(rows[0][2:]) == sorted(f"heat:{n}" for n in names)
+    assert len(rows) == 1 + res.n_steps
+
+
 def test_history_csv_points_match_nodes(results: Results, tmp_path: Path) -> None:
     xy = results.mesh.nodes[:, :2]
     by_point = export.history_csv(
@@ -189,6 +213,29 @@ def test_vtu_file_round_trip(tmp_path: Path, etype: str) -> None:
         assert back.cell_data["q_element"][k].shape == (block.conn.shape[0], 3)
 
 
+def test_pvd_escapes_the_base_name(results: Results, tmp_path: Path) -> None:
+    pvd = export.vtu(results, tmp_path / "vtk", name="a&b", steps=[0])
+    (dataset,) = ET.parse(pvd).getroot().find("Collection").findall("DataSet")
+    assert dataset.get("file") == "a&b_0000.vtu"
+    assert (pvd.parent / dataset.get("file")).is_file()
+
+
+def test_file_without_steps_is_a_model_error(tmp_path: Path) -> None:
+    path = tmp_path / "empty.h5"
+    with ResultsWriter(path, lumped()):
+        pass  # a run cancelled before its first step leaves a file like this
+    res = Results(path)
+    assert res.n_steps == 0
+    with pytest.raises(ModelError, match="no steps"):
+        export.nodal_csv(res, tmp_path / "n.csv")
+    with pytest.raises(ModelError, match="no steps"):
+        export.history_csv(res, tmp_path / "h.csv", nodes=[0])
+    with pytest.raises(ModelError, match="no steps"):
+        export.vtu(res, tmp_path / "vtk")
+    with pytest.raises(ModelError, match="no steps"):
+        export.animation(res, tmp_path / "a.gif")
+
+
 def test_vtu_writes_into_a_new_folder_with_all_steps(results: Results, tmp_path: Path) -> None:
     folder = tmp_path / "deep" / "vtk"
     pvd = export.vtu(results, folder)
@@ -247,6 +294,9 @@ def test_mp4_needs_ffmpeg(results: Results, tmp_path: Path) -> None:
     [
         ("anim.avi", {}),
         ("anim.gif", {"fps": 0}),
+        ("anim.gif", {"fps": -2.0}),
+        ("anim.gif", {"fps": float("nan")}),
+        ("anim.gif", {"fps": float("inf")}),
         ("anim.gif", {"steps": []}),
     ],
 )

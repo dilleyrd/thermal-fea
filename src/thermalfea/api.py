@@ -101,7 +101,7 @@ def _select(
     if (where is None) == (tags is None):
         raise ModelError(f"selection {name!r}: give exactly one of where= and tags=")
     if tags is not None:
-        chosen = [int(t) for t in tags]
+        chosen = list(dict.fromkeys(int(t) for t in tags))  # repeats keep their first place
         missing = [t for t in chosen if t not in entities]
         if missing:
             raise ModelError(f"selection {name!r}: no entity with tag(s) {missing}")
@@ -421,6 +421,28 @@ def assign_region(
 # ------------------------------------------------------------------------------- solve
 
 
+#: Device names Windows refuses as file names, with or without an extension.
+_WINDOWS_RESERVED = frozenset(
+    ["CON", "PRN", "AUX", "NUL"]
+    + [f"COM{n}" for n in range(1, 10)]
+    + [f"LPT{n}" for n in range(1, 10)]
+)
+
+
+def _safe_file_stem(name: str) -> str:
+    """A file-name stem made from a model name that Windows accepts.
+
+    Characters other than letters, digits, ``-``, ``_`` and space (dots included) become
+    ``_``; trailing dots and spaces are dropped; an empty result becomes ``model``; and a
+    reserved device name (``CON``, ``nul``, ``COM1``, ...) gets ``_`` appended, in any case.
+    """
+    stem = "".join(c if c.isalnum() or c in "-_ " else "_" for c in name).rstrip(". ")
+    stem = stem or "model"
+    if stem.strip().upper() in _WINDOWS_RESERVED:
+        stem += "_"
+    return stem
+
+
 def results_path(model_path: str | Path) -> Path:
     """Path of the results file stored beside a model file: ``<model>.tfea.h5``."""
     model_path = Path(model_path)
@@ -470,10 +492,11 @@ def solve(
     ConvergenceError, SolverError
         If the solution fails.
     """
-    if built is not None:
-        raise_if_errors(validate(model, built, mesh))
-    else:
-        raise_if_errors(validate_model(model, mesh))
+    issues = validate(model, built, mesh) if built is not None else validate_model(model, mesh)
+    for issue in issues:
+        if issue.severity == "warning":
+            log.warning("%s %s: %s", issue.kind, issue.name, issue.message)
+    raise_if_errors(issues)
     problem = compile_problem(model, built, mesh)
     if restart:
         if path is None:
@@ -484,8 +507,7 @@ def solve(
         return Results(path)
     if path is None:
         folder = Path(tempfile.mkdtemp(prefix="thermalfea-"))
-        safe = "".join(c if c.isalnum() or c in "-_ " else "_" for c in model.name) or "model"
-        path = folder / f"{safe}.tfea.h5"
+        path = folder / f"{_safe_file_stem(model.name)}.tfea.h5"
     if model.solution.kind == "steady":
         run_steady(problem, path, progress)
     else:

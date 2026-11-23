@@ -71,16 +71,18 @@ thermalfea solve model.tfea --restart
 ```
 
 - `thermalfea info model.tfea` builds and meshes the model and prints the number of
-  surfaces, curves and points, the materials, regions and loads, the mesh size and a short
-  quality line.
+  surfaces, curves and points, the materials, regions and loads, the streams, contacts
+  and enclosures, the mesh size and a short quality line.
 - `thermalfea solve model.tfea` builds, meshes and solves the model. It prints one
-  progress line per step and then a text summary. The results go to `model.tfea.h5` beside
-  the model.
+  progress line per step and then a text summary, with a table of the streams when the
+  model has any. The results go to `model.tfea.h5` beside the model.
 - `-o RESULTS`, `--output RESULTS` writes the results to the file you name instead.
 - `--restart` continues the transient run stored in the results file, from its last
   stored step to the end time of the model, and adds the new steps to the same file. See
   [Getting started](getting-started.md#continuing-a-transient-run).
-- `-v`, `--verbose` (given before the command name) shows the log messages.
+- `-v`, `--verbose` (given before the command name) also shows the informational log
+  messages. Warnings (for example a correlation used outside its validity range) are
+  always shown.
 
 Exit codes:
 

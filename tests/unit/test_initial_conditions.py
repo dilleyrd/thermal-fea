@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from pathlib import Path
+from types import SimpleNamespace
 
 import numpy as np
 import pytest
@@ -11,12 +12,14 @@ from handmade import make_problem
 from thermalfea import api
 from thermalfea.core.errors import ModelError
 from thermalfea.core.functions import Expression
+from thermalfea.core.mesh import ElementBlock, Mesh
 from thermalfea.model.bcs import Convection, FixedTemperature
 from thermalfea.model.model import InitialCondition, Model
 from thermalfea.model.settings import SolutionSettings
 from thermalfea.solver.compile import compile as compile_problem
 from thermalfea.solver.initial import (
     DEFAULT_INITIAL_TEMPERATURE,
+    _per_region,
     initial_temperature,
     nodal_initial_temperature,
 )
@@ -47,6 +50,29 @@ def problem_with(ic: InitialCondition, bcs=()):
     model.initial_condition = ic
     model.bcs += list(bcs)
     return compile_problem(model, built, mesh), mesh
+
+
+def test_per_region_counts_a_region_once_per_node_across_its_blocks() -> None:
+    """Region A has a Q4 and a T3 block that share nodes 1 and 2; B is a T3 next to them.
+
+    Node 2 lies in all three blocks, so a per-block count would give (400+400+300)/3.
+    """
+    nodes = np.array([[0.0, 0.0], [1.0, 0.0], [1.0, 1.0], [0.0, 1.0], [2.0, 0.0], [2.0, 1.0]])
+    blocks = [
+        ElementBlock("Q4", np.array([[0, 1, 2, 3]]), np.array([1], np.int32), np.array([0])),
+        ElementBlock("T3", np.array([[1, 4, 2]]), np.array([1], np.int32), np.array([1])),
+        ElementBlock("T3", np.array([[4, 5, 2]]), np.array([2], np.int32), np.array([2])),
+    ]
+    mesh = Mesh(dim=2, nodes=nodes, blocks=blocks)
+    tags = {"A": [1], "B": [2]}
+    problem = SimpleNamespace(
+        mesh=mesh, selection_tags=lambda name, dims: (name, tags[name])
+    )
+    T = _per_region(problem, {"A": 400.0, "B": 300.0})
+    np.testing.assert_array_equal(T[2], 350.0)  # the interface node: (T_A + T_B) / 2
+    np.testing.assert_array_equal(T[4], 350.0)
+    np.testing.assert_array_equal(T[[0, 1, 3]], 400.0)
+    np.testing.assert_array_equal(T[5], 300.0)
 
 
 def test_uniform() -> None:

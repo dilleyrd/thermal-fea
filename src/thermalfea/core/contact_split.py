@@ -109,7 +109,7 @@ def split_interfaces(mesh: Mesh, entity_tags: Sequence[int]) -> SplitMesh:
         on_contact[fb.conn] = True
 
     # ---- (element, node) incidences at contact nodes, and the sides of those elements
-    n_ids = 1 + max(int(b.elem_ids.max()) for b in mesh.blocks if b.elem_ids.size)
+    n_ids = 1 + max((int(b.elem_ids.max()) for b in mesh.blocks if b.elem_ids.size), default=0)
     elem_region = np.zeros(n_ids, dtype=np.int64)
     pair_elem: list[ndarray] = []
     pair_node: list[ndarray] = []
@@ -130,6 +130,8 @@ def split_interfaces(mesh: Mesh, entity_tags: Sequence[int]) -> SplitMesh:
         sides.setdefault(k, []).append(
             (side_nodes.reshape(-1, k), np.repeat(ids, side_nodes.shape[1]))
         )
+    if not pair_elem:  # no element touches the contact facets (inconsistent mesh)
+        raise MeshError("a facet on a contact curve belongs to no element")
     p_elem = np.concatenate(pair_elem)
     p_node = np.concatenate(pair_node)
     keys = p_elem * n_nodes + p_node

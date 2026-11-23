@@ -58,6 +58,12 @@ def read_mesh(group: h5py.Group) -> Mesh:
 class Results:
     """The results of one solve.
 
+    Step data (temperatures, fluxes, histories) is read from the file on each access. The
+    handle caches the mesh, the model, the header and the names of the heat-flow and stream
+    columns when they are first read. After the file is rewritten (a re-solve, or a restart
+    that extends the run) open a new ``Results`` on the path;
+    :func:`thermalfea.api.solve` always returns a new ``Results``, also when it restarts.
+
     Parameters
     ----------
     path : str or Path

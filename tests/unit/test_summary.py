@@ -224,6 +224,31 @@ def test_api_summary_matches_text_summary(transient: Results) -> None:
     assert api.summary(transient, 0) == text_summary(transient, 0)
 
 
+def test_text_summary_lists_the_streams(tmp_path: Path) -> None:
+    from thermalfea.model.bcs import HeatFlux, Stream
+    from thermalfea.post.flow import stream_summary
+
+    model = api.new_model(name="cooled plate")
+    api.Geometry(model).rectangle(0.0, 0.0, 1.0, 0.05)
+    model.mesh_settings.global_size = 0.05
+    built = api.build(model)
+    api.select_curves(model, built, "channel", where=lambda c: abs(c.center[1]) < 1e-9)
+    api.select_curves(model, built, "hot", where=lambda c: abs(c.center[1] - 0.05) < 1e-9)
+    api.assign_region(model, "all", material="Copper (pure)")
+    model.bcs.append(HeatFlux("load", "hot", q=2000.0))
+    model.streams.append(Stream(
+        name="coolant", fluid="Water", mode="in_plane", walls=["channel"], flow_area=1e-4,
+        wetted_perimeter=0.04, cross_section="circular", T_inlet=300.0, mass_flow=0.05,
+        path=[(0.0, 0.0), (1.0, 0.0)], h_override=800.0,
+    ))
+    results = api.solve(model, api.mesh(model, built), built=built, path=tmp_path / "s.h5")
+    text = text_summary(results)
+    (row,) = stream_summary(results)
+    assert "Streams:" in text and "coolant" in text and "T_out" in text
+    assert f"{row.T_out:.6g}" in text
+    assert api.summary(results) == text
+
+
 @pytest.mark.parametrize("step", [21, -22])
 def test_bad_step_is_a_model_error(transient: Results, step: int) -> None:
     with pytest.raises(ModelError):

@@ -8,10 +8,14 @@ registry (Plan §7 rule 6). Functions use the forms of Data §1.
 
 from __future__ import annotations
 
+import copy
 import dataclasses
+import math
 import types
 from functools import cache
 from typing import Any, Literal, Union, get_args, get_origin, get_type_hints
+
+import numpy as np
 
 from ..core import registry
 from ..core.errors import ModelError
@@ -41,6 +45,8 @@ def _family_of(cls: type) -> str | None:
 
 
 def _encode(value: Any) -> Any:
+    if isinstance(value, (np.bool_, np.integer, np.floating)):
+        value = value.item()  # NumPy scalars are written as the Python type of the same kind
     if value is None or isinstance(value, (bool, int, float, str)):
         return value
     if dataclasses.is_dataclass(value) and not isinstance(value, type):
@@ -121,8 +127,10 @@ def _decode(obj: Any, hint: Any, where: str) -> Any:
             raise ModelError(f"{where}: unsupported type hint {hint!r}")
         return _decode(obj, options[0], where)
     if origin is Literal:
-        if obj not in get_args(hint):
-            allowed = ", ".join(map(repr, get_args(hint)))
+        options = get_args(hint)
+        # bool is a subclass of int, so true must not pass for 1: the kinds must match too
+        if not any(isinstance(obj, bool) == isinstance(o, bool) and obj == o for o in options):
+            allowed = ", ".join(map(repr, options))
             raise ModelError(f"{where}: {obj!r} is not one of {allowed}")
         return obj
     if origin is list:
@@ -152,7 +160,13 @@ def _decode(obj: Any, hint: Any, where: str) -> Any:
     if hint is float:
         if isinstance(obj, bool) or not isinstance(obj, (int, float)):
             raise ModelError(f"{where}: expected a number, got {obj!r}")
-        return float(obj)
+        try:
+            value = float(obj)
+        except OverflowError:
+            raise ModelError(f"{where}: expected a finite number, got {obj!r}") from None
+        if not math.isfinite(value):
+            raise ModelError(f"{where}: expected a finite number, got {value}")
+        return value
     if hint is int:
         if isinstance(obj, bool) or not isinstance(obj, int):
             raise ModelError(f"{where}: expected an integer, got {obj!r}")
@@ -190,5 +204,5 @@ def from_json(data: dict[str, Any]) -> Model:
     """
     if not isinstance(data, dict):
         raise ModelError("model file must contain a JSON object")
-    data = migrate(dict(data), SCHEMA_VERSION)
+    data = migrate(copy.deepcopy(data), SCHEMA_VERSION)  # a migration may edit nested dicts
     return _decode_dataclass(data, Model, "model")

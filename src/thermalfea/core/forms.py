@@ -18,6 +18,7 @@ form: the model tree renames and suppresses objects.
 from __future__ import annotations
 
 import dataclasses
+import math
 import re
 import types
 from dataclasses import dataclass
@@ -193,7 +194,7 @@ def parse_xy_list(text: str) -> list[tuple[float, float]]:
     Raises
     ------
     ValueError
-        If an item is not two numbers.
+        If an item is not two finite numbers.
     """
     out: list[tuple[float, float]] = []
     for item in text.split(";"):
@@ -203,9 +204,12 @@ def parse_xy_list(text: str) -> list[tuple[float, float]]:
         if len(parts) != 2:  # noqa: PLR2004
             raise ValueError(f"{item.strip()!r} is not 'x, y'")
         try:
-            out.append((float(parts[0]), float(parts[1])))
+            x, y = float(parts[0]), float(parts[1])
         except ValueError:
             raise ValueError(f"{item.strip()!r} is not 'x, y' with numbers") from None
+        if not (math.isfinite(x) and math.isfinite(y)):
+            raise ValueError(f"{item.strip()!r}: the numbers must be finite")
+        out.append((x, y))
     return out
 
 

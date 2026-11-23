@@ -8,6 +8,7 @@ import json
 from dataclasses import dataclass
 from pathlib import Path
 
+import numpy as np
 import pytest
 
 from thermalfea import api
@@ -345,3 +346,56 @@ def test_stream_diameter_ratio_round_trip_and_old_files() -> None:
         del entry["diameter_ratio"]
     old = from_json(data)
     assert [s.diameter_ratio for s in old.streams] == [None, None]
+
+
+def test_literal_refuses_json_true() -> None:
+    """A bool is not the integer 1 or 2 (``True == 1`` in Python)."""
+    data = to_json(full_model())  # mesh_settings.order is Literal[1, 2]
+    for order in (1, 2):
+        data["mesh_settings"]["order"] = order
+        assert from_json(data).mesh_settings.order == order
+    data["mesh_settings"]["order"] = True
+    with pytest.raises(ModelError, match="is not one of"):
+        from_json(data)
+    data["mesh_settings"]["order"] = False
+    with pytest.raises(ModelError, match="is not one of"):
+        from_json(data)
+
+
+@pytest.mark.parametrize("value", [float("nan"), float("inf"), float("-inf")])
+def test_non_finite_numbers_are_refused(value: float) -> None:
+    data = to_json(full_model())
+    data["geometry"][0]["x"] = value  # Point.x is a float
+    with pytest.raises(ModelError, match="expected a finite number"):
+        from_json(data)
+
+
+def test_migration_cannot_change_the_callers_nested_data(monkeypatch: pytest.MonkeyPatch) -> None:
+    def v0_to_v1(d: dict) -> dict:
+        d = dict(d)
+        d["mesh_settings"]["smoothing_passes"] = 123  # an in-place edit of a nested dict
+        d["name"] = d.pop("title")
+        return d
+
+    monkeypatch.setitem(migrations.MIGRATIONS, 0, v0_to_v1)
+    old = to_json(Model())
+    del old["name"]
+    old.update(schema_version=0, title="From version 0")
+    snapshot = copy.deepcopy(old)
+    model = from_json(old)
+    assert model.mesh_settings.smoothing_passes == 123
+    assert old == snapshot
+
+
+def test_numpy_scalars_are_written_and_read_back() -> None:
+    model = full_model()
+    model.mesh_settings.global_size = np.float64(0.1)
+    model.mesh_settings.order = np.int64(2)
+    model.solution.line_search = np.bool_(False)
+    data = json.loads(json.dumps(to_json(model)))
+    assert type(data["mesh_settings"]["order"]) is int and data["mesh_settings"]["order"] == 2
+    assert data["solution"]["line_search"] is False
+    again = from_json(data)
+    assert again.mesh_settings.global_size == 0.1
+    assert again.mesh_settings.order == 2
+    assert again.solution.line_search is False

@@ -128,7 +128,7 @@ def report(mesh: Mesh) -> QualityReport:
         ids.append(b.elem_ids)
         types.append(np.full(n, b.etype))
         angles.append(np.nan_to_num(angle.min(axis=1), nan=0.0))
-        aspects.append(np.nan_to_num(aspect, nan=np.inf))
+        aspects.append(np.where(np.isnan(aspect), np.inf, aspect))  # keeps +inf as inf
         ratios.append(ratio)
 
     if not ids:

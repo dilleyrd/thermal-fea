@@ -283,3 +283,19 @@ def test_depends_on_position_flag() -> None:
     assert Expression("300 + t + T").depends_on_position is False
     for fn in (Constant(1.0), Table([0.0, 1.0], [0.0, 1.0], "t"), Expression("x")):
         assert isinstance(fn, Function)
+
+
+def test_constant_accepts_numpy_numbers_and_refuses_booleans() -> None:
+    for value in (np.int64(3), np.float32(2.5), np.float64(2.5)):
+        c = Constant(value)
+        assert type(c.value) is float and c.value == float(value)
+    assert Constant(np.int64(3)) == Constant(3.0)
+    for bad in (True, np.bool_(True)):
+        with pytest.raises(ModelError):
+            Constant(bad)
+
+
+@pytest.mark.parametrize("text", ["1e309", "1" + "0" * 400])
+def test_non_finite_literal_is_refused(text: str) -> None:
+    with pytest.raises(ModelError, match="not finite"):
+        Expression(text)

@@ -175,8 +175,13 @@ In order:
   - **Section 5 below is now history.**
 - **Built on 2026-11-23:** M11.23 (validation coverage) and M11.26 (meshing: facet
   orientation by the parent's registered side, order-independent structured counts,
-  holes refused, curve ends after a copy). The suite passed with 2443 tests.
-  - **Next:** M11.27, M11.29 and M11.30, then the newly unblocked tasks.
+  holes refused, curve ends after a copy) and M11.27 (inputs and outputs). The suite
+  passed with 2484 tests.
+  - M11.27 left one review claim as it is: an expression that overflows while it is
+    evaluated (`10**400`) gives inf, as `test_expression_huge_power_does_not_hang`
+    specifies; validation refuses a material property that is not finite. A literal that is
+    not finite (`1e309`) is now refused.
+  - **Next:** M11.29 and M11.30, then the newly unblocked tasks.
 
 ## 5. Next work: tasks M11.12–M11.16
 

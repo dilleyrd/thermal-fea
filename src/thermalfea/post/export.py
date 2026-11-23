@@ -7,11 +7,14 @@ end); ``None`` means every stored step.
 
 from __future__ import annotations
 
+import csv
 import logging
+import math
 import shutil
 from collections.abc import Sequence
 from pathlib import Path
 from typing import Any
+from xml.sax.saxutils import quoteattr
 
 import meshio
 import numpy as np
@@ -38,6 +41,8 @@ _NODAL_HEADER = "step,time,node,x,y,T,qx,qy"
 def _resolve_steps(results: Results, steps: Sequence[int] | None) -> list[int]:
     """Non-negative stored indices of the steps asked for; ``None`` means all of them."""
     n = results.n_steps
+    if n == 0:
+        raise ModelError("the results file has no steps")
     if steps is None:
         return list(range(n))
     picked = [int(s) for s in steps]
@@ -54,10 +59,13 @@ def _with_zero_z(vectors: ndarray) -> ndarray:
     return np.column_stack([vectors[:, :2], np.zeros(vectors.shape[0])])
 
 
-def _write_table(path: Path, header: str, data: ndarray, fmt: str | list[str]) -> None:
-    """Write a header line and then the rows of ``data``, one ``savetxt`` call."""
+def _write_table(path: Path, header: Sequence[str], data: ndarray, fmt: str | list[str]) -> None:
+    """Write a header line and then the rows of ``data``, one ``savetxt`` call.
+
+    The header fields are quoted by the :mod:`csv` module when they hold commas or quotes.
+    """
     with path.open("w", encoding="utf-8") as fh:
-        fh.write(header + "\n")
+        csv.writer(fh, lineterminator="\n").writerow(header)
         np.savetxt(fh, data, fmt=fmt, delimiter=",")
 
 
@@ -147,6 +155,8 @@ def history_csv(
         selection is empty.
     """
     path = Path(path)
+    if results.n_steps == 0:
+        raise ModelError("the results file has no steps")
     if nodes is not None and points is not None:
         raise ModelError("history_csv: give at most one of points= and nodes=")
     if points is not None:
@@ -168,7 +178,7 @@ def history_csv(
     for name in names:
         columns.append(np.asarray(results.heat_flow(name), dtype=float))
         header.append(f"heat:{name}")
-    _write_table(path, ",".join(header), np.column_stack(columns), "%.17g")
+    _write_table(path, header, np.column_stack(columns), "%.17g")
     log.info("wrote history table with %d column(s) to %s", len(columns), path)
     return path
 
@@ -218,7 +228,7 @@ def series_csv(
         if column.size != abscissa.size:
             raise ModelError(f"series {label!r} has {column.size} values, expected {abscissa.size}")
         columns.append(column)
-    header = ",".join(h.replace(",", ";") for h in [x_name, *series])
+    header = [h.replace(",", ";") for h in [x_name, *series]]
     _write_table(path, header, np.column_stack(columns), "%.17g")
     log.info("wrote series table with %d column(s) to %s", len(columns), path)
     return path
@@ -288,7 +298,7 @@ def vtu(
     pvd = folder / f"{name}.pvd"
     lines = ['<?xml version="1.0"?>', '<VTKFile type="Collection" version="0.1">', "  <Collection>"]
     for time, filename in entries:
-        lines.append(f'    <DataSet timestep="{time!r}" part="0" file="{filename}"/>')
+        lines.append(f'    <DataSet timestep="{time!r}" part="0" file={quoteattr(filename)}/>')
     lines += ["  </Collection>", "</VTKFile>"]
     pvd.write_text("\n".join(lines) + "\n", encoding="utf-8")
     log.info("wrote %d VTU file(s) and %s", len(entries), pvd)
@@ -344,8 +354,8 @@ def animation(
     suffix = path.suffix.lower()
     if suffix not in (".gif", ".mp4"):
         raise ModelError(f"unsupported animation file {path.name!r}; use a .gif or .mp4 name")
-    if fps <= 0:
-        raise ModelError(f"fps must be positive, not {fps}")
+    if not (math.isfinite(fps) and fps > 0):
+        raise ModelError(f"fps must be a positive finite number, not {fps}")
     if "ax" in contour_options:
         raise ModelError("animation draws its own figures; do not pass ax=")
     indices = _resolve_steps(results, steps)

@@ -85,6 +85,12 @@ def test_wall_temperature_errors(results, through_results) -> None:
         wall_temperature(through_results, "coolant")
 
 
+def test_wall_temperature_without_any_facets_is_a_model_error(results, monkeypatch) -> None:
+    monkeypatch.setattr(results.mesh, "facets", [])
+    with pytest.raises(ModelError, match="contain no mesh facets"):
+        wall_temperature(results, "coolant")
+
+
 # ------------------------------------------------------------------------ plot
 
 

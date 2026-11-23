@@ -9,6 +9,8 @@ tree; the text is never passed to ``eval``.
 from __future__ import annotations
 
 import ast
+import math
+import numbers
 import operator
 from collections.abc import Callable
 from dataclasses import dataclass, field
@@ -73,7 +75,10 @@ class Constant:
     depends_on_position = False
 
     def __post_init__(self) -> None:
-        if isinstance(self.value, bool) or not isinstance(self.value, (int, float)):
+        # booleans (also NumPy's) are refused; Python and NumPy numbers are accepted
+        if isinstance(self.value, (bool, np.bool_)) or not isinstance(
+            self.value, (numbers.Real, np.integer, np.floating)
+        ):
             raise ModelError(f"constant value must be a number, got {self.value!r}")
         self.value = float(self.value)
         if not np.isfinite(self.value):
@@ -211,6 +216,12 @@ def _validate(node: ast.AST, names: set[str]) -> None:
     if isinstance(node, ast.Constant):
         if isinstance(node.value, bool) or not isinstance(node.value, (int, float)):
             raise ModelError(f"expression: only numbers are allowed, got {node.value!r}")
+        try:
+            finite = math.isfinite(float(node.value))
+        except OverflowError:  # an integer literal too large for a float
+            finite = False
+        if not finite:
+            raise ModelError(f"expression: number {node.value!r} is not finite")
     elif isinstance(node, ast.Name):
         if node.id not in _NAMES:
             raise ModelError(

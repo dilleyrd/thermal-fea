@@ -112,8 +112,8 @@ def wall_temperature(results: Results, stream: str, step: int = -1) -> tuple[nda
         if wall not in model.selections:
             raise ModelError(f"stream {stream!r}: unknown wall selection {wall!r}")
         tags.update(model.selections[wall].tags)
-    node_sets = [fb.conn[np.isin(fb.entity, list(tags))] for fb in mesh.facets]
-    nodes = np.unique(np.concatenate([c.ravel() for c in node_sets]))
+    wall_nodes = [fb.conn[np.isin(fb.entity, list(tags))].ravel() for fb in mesh.facets]
+    nodes = np.unique(np.concatenate(wall_nodes)) if wall_nodes else np.zeros(0, dtype=int)
     if nodes.size == 0:
         raise ModelError(f"stream {stream!r}: its walls contain no mesh facets")
 

@@ -12,7 +12,7 @@ import pytest
 from thermalfea import api, cli
 from thermalfea.core.errors import ModelError
 from thermalfea.model import geometry_ops as g
-from thermalfea.model.bcs import FixedTemperature
+from thermalfea.model.bcs import Contact, FixedTemperature, Stream
 from thermalfea.model.model import Model
 
 
@@ -174,6 +174,77 @@ def test_cli_info(tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
     mesh = api.mesh(model, api.build(model))
     assert (nodes, elements, t3) == (mesh.n_nodes, mesh.n_elements, mesh.n_elements)
     assert "minimum angle" in out
+
+
+def test_cli_info_counts_streams_contacts_and_enclosures(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    model = api.new_model(name="wired plate")
+    api.Geometry(model).rectangle(0.0, 0.0, 1.0, 0.05)
+    model.mesh_settings.global_size = 0.05
+    built = api.build(model)
+    api.select_curves(model, built, "channel", where=lambda c: abs(c.center[1]) < 1e-9)
+    api.assign_region(model, "all", material="Copper (pure)")
+    model.streams.append(Stream(
+        name="coolant", fluid="Water", mode="in_plane", walls=["channel"], flow_area=1e-4,
+        wetted_perimeter=0.04, cross_section="circular", T_inlet=300.0, mass_flow=0.05,
+        path=[(0.0, 0.0), (1.0, 0.0)],
+    ))
+    model.contacts.append(Contact("gap", "channel", conductance=100.0))
+    path = tmp_path / "wired.tfea"
+    api.save(model, path)
+    assert cli.main(["info", str(path)]) == 0
+    out = capsys.readouterr().out
+    assert "Streams:   1    Contacts: 1    Enclosures: 0" in out
+
+
+def test_repeated_tags_are_stored_once() -> None:
+    model, built = _plate_model()
+    tag = next(iter(built.entities(1)))
+    selection = api.select_curves(model, built, "once", tags=[tag, tag])
+    assert selection.tags == [tag] and len(selection.fingerprints) == 1
+    assert model.selections["once"].tags == [tag]
+
+
+@pytest.mark.parametrize(
+    ("name", "stem"),
+    [
+        ("CON", "CON_"), ("con", "con_"), ("nul", "nul_"), ("AUX ", "AUX_"),
+        ("COM1", "COM1_"), ("lpt9", "lpt9_"), ("PRN.draft", "PRN_draft"),
+        ("CON2", "CON2"), ("plate.v2", "plate_v2"), ("", "model"),
+    ],
+)
+def test_default_file_stem_avoids_windows_device_names(name: str, stem: str) -> None:
+    assert api._safe_file_stem(name) == stem
+
+
+def test_model_named_con_gets_a_results_file(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    import tempfile
+
+    monkeypatch.setattr(tempfile, "mkdtemp", lambda prefix: str(tmp_path))
+    model, built = _plate_model()
+    model.name = "CON"
+    results = api.solve(model, api.mesh(model, built), built=built)
+    assert results.path == tmp_path / "CON_.tfea.h5" and results.path.is_file()
+
+
+def test_solve_logs_validation_warnings(tmp_path: Path, caplog: pytest.LogCaptureFixture) -> None:
+    from thermalfea.core.functions import Table
+    from thermalfea.materials.material import Material
+
+    model, built = _plate_model()
+    mesh = api.mesh(model, built)
+    # the conductivity is tabulated only at 320 to 380 K, but the model reaches 300 to 400 K
+    table = Table([320.0, 380.0], [40.0, 35.0], "T")
+    model.materials["Carbon steel AISI 1010"] = Material(
+        "Carbon steel AISI 1010", table, 7800.0, 500.0
+    )
+    with caplog.at_level(logging.WARNING, logger="thermalfea"):
+        api.solve(model, mesh, built=built, path=tmp_path / "warned.h5")
+    messages = [r.getMessage() for r in caplog.records if r.levelno == logging.WARNING]
+    assert any("material Carbon steel AISI 1010" in m and "held" in m for m in messages)
 
 
 def test_cli_errors_and_usage(tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:

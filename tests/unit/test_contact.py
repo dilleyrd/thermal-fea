@@ -200,6 +200,19 @@ def test_no_contact_and_bad_contact() -> None:
     assert split_interfaces(mesh, [999]).n_new == 0
 
 
+def test_orphaned_contact_facet_raises_mesh_error() -> None:
+    """A contact facet on nodes that no element uses is an inconsistent mesh."""
+    mesh = two_layers("T3")
+    mesh.nodes = np.vstack([mesh.nodes, [[5.0, 5.0], [6.0, 5.0]]])  # used by no element
+    a = mesh.nodes.shape[0] - 2
+    facet_type = element(mesh.blocks[0].etype).facet_type
+    mesh.facets.append(FacetBlock(
+        facet_type, np.array([[a, a + 1]]), np.array([777], dtype=np.int32), np.array([0]),
+    ))
+    with pytest.raises(MeshError, match="belongs to no element"):
+        split_interfaces(mesh, [777])
+
+
 def test_node_sets_and_points_are_kept() -> None:
     mesh = two_layers("Q4")
     mesh.node_sets["probe"] = np.array([0, 1, 2])

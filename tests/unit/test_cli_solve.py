@@ -145,6 +145,57 @@ def test_output_equal_to_the_model_file_is_refused(
     assert other.is_file() and path.read_bytes() == before
 
 
+def test_results_folder_that_does_not_exist_is_reported_in_one_line(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    path = steady_file(tmp_path)
+    before = path.read_bytes()
+    target = tmp_path / "no_such_dir" / "out.h5"
+    assert cli.main(["solve", str(path), "-o", str(target)]) == 1
+    err = capsys.readouterr().err
+    assert err.startswith("error:") and str(target) in err
+    assert "Traceback" not in err and err.count("\n") == 1
+    assert path.read_bytes() == before and not target.parent.exists()
+
+
+def test_raw_os_error_is_reported_without_a_traceback(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str], monkeypatch: pytest.MonkeyPatch
+) -> None:
+    path = steady_file(tmp_path)
+
+    def failing_solve(*args: object, **kwargs: object) -> None:
+        raise PermissionError(13, "Permission denied", "/locked/out.h5")
+
+    monkeypatch.setattr(api, "solve", failing_solve)
+    assert cli.main(["solve", str(path)]) == 1
+    err = capsys.readouterr().err
+    assert err == "error: cannot access /locked/out.h5: Permission denied\n"
+
+
+def test_warnings_are_shown_without_verbose(tmp_path: Path) -> None:
+    """A validation warning reaches stderr of a real run, with no -v option."""
+    from thermalfea.core.functions import Table
+    from thermalfea.materials.material import Material
+
+    model, _ = base_model("warned")
+    model.bcs += [
+        FixedTemperature("hot", "left", T=400.0),
+        Convection("cool", "right", h=100.0, T_inf=300.0),
+    ]
+    # the conductivity is tabulated only at 320 to 380 K, but the model reaches 300 to 400 K
+    model.materials["Copper (pure)"] = Material(
+        "Copper (pure)", Table([320.0, 380.0], [400.0, 390.0], "T"), 8900.0, 385.0
+    )
+    path = tmp_path / "warned.tfea"
+    api.save(model, path)
+    done = subprocess.run(
+        [sys.executable, "-m", "thermalfea.cli", "solve", str(path)],
+        capture_output=True, text=True, timeout=120, check=False,
+    )
+    assert done.returncode == 0, done.stderr
+    assert "WARNING" in done.stderr and "Copper (pure)" in done.stderr
+
+
 def test_console_script_in_a_subprocess(tmp_path: Path) -> None:
     """The installed entry point: real process, real exit codes."""
     path = transient_file(tmp_path)

@@ -40,6 +40,10 @@ def _solve(args: argparse.Namespace) -> int:
             f"the results file {args.output} is the model file itself; "
             "choose another -o file so the model is not overwritten"
         )
+    if args.output is not None and not Path(args.output).resolve().parent.is_dir():
+        raise ModelError(
+            f"cannot write the results file {args.output}: its folder does not exist"
+        )
     out = sys.stdout.write
     model = api.load(args.model)
     built = api.build(model)
@@ -81,6 +85,8 @@ def _info(args: argparse.Namespace) -> int:
         f"{len(built.points)} points",
         f"Materials: {len(model.materials)}    Regions: {len(model.regions)}    "
         f"Loads/BCs: {len(model.bcs)}",
+        f"Streams:   {len(model.streams)}    Contacts: {len(model.contacts)}    "
+        f"Enclosures: {len(model.enclosures)}",
     ]
     if built.surfaces:
         mesh = api.mesh(model, built)
@@ -101,7 +107,10 @@ def _parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="thermalfea", description="2D thermal finite-element analysis."
     )
-    parser.add_argument("-v", "--verbose", action="store_true", help="show log messages")
+    parser.add_argument(
+        "-v", "--verbose", action="store_true",
+        help="also show informational log messages (warnings are always shown)",
+    )
     sub = parser.add_subparsers(dest="command")
     info = sub.add_parser("info", help="print entity, node and element counts of a model")
     info.add_argument("model", help="path of a .tfea model file")
@@ -139,7 +148,7 @@ def main(argv: Sequence[str] | None = None) -> int:
     if args.command is None:
         parser.print_usage(sys.stdout)
         return EXIT_OK
-    configure_logging(logging.INFO if args.verbose else logging.ERROR)
+    configure_logging(logging.INFO if args.verbose else logging.WARNING)
     try:
         return args.func(args)
     except ConvergenceError as exc:
@@ -147,6 +156,10 @@ def main(argv: Sequence[str] | None = None) -> int:
         return EXIT_NOT_CONVERGED
     except ThermalFEAError as exc:
         sys.stderr.write(f"error: {exc}\n")
+        return EXIT_ERROR
+    except OSError as exc:
+        sys.stderr.write(f"error: cannot access {exc.filename or 'a file'}: "
+                         f"{exc.strerror or exc}\n")
         return EXIT_ERROR
 
 

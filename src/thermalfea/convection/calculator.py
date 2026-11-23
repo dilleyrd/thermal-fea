@@ -2,8 +2,10 @@
 
 :func:`htc` is the calculator used by the GUI tool: one correlation, one fluid, one pair of
 temperatures and the inputs that correlation needs. It calls the same functions as the
-boundary-condition term in :mod:`thermalfea.convection.evaluator`. It never logs; validity
-messages and the property-table warning are returned in :attr:`HtcResult.warnings`.
+boundary-condition term in :mod:`thermalfea.convection.evaluator`. Validity messages and
+the property-table warning are returned in :attr:`HtcResult.warnings` and not logged by
+:func:`htc` itself; the property-table warning is also logged once per fluid by
+:func:`~thermalfea.convection.fluid_props.fluid_props`.
 
 Units: SI; temperatures in kelvin, lengths in m, velocities in m/s, h in W/(m^2 K).
 """

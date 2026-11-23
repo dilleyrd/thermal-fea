@@ -130,3 +130,10 @@ def test_empty_block() -> None:
     q = report(mesh)
     assert q.n_elements == 0 and q.counts == {"T3": 0} and q.summary() == {}
     assert q.worst() == []
+
+
+def test_zero_length_side_gives_infinite_not_huge_aspect_ratio() -> None:
+    """A division by zero is +inf; it must not be replaced by a large finite number."""
+    q = report(single("T3", [[0.0, 0.0], [0.0, 0.0], [1.0, 0.0]]))
+    assert q.aspect_ratio.size == 1
+    assert np.isposinf(q.aspect_ratio[0])

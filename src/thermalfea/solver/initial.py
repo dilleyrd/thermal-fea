@@ -39,10 +39,13 @@ def _per_region(problem: CompiledProblem, values: dict[str, float]) -> ndarray:
     for name, value in values.items():
         _, tags = problem.selection_tags(name, (mesh.dim,))
         assigned.update(tags)
-        for block in (b for tag in tags for b in mesh.region_elements(tag)):
-            nodes = np.unique(block.conn)
-            total[nodes] += float(value)
-            count[nodes] += 1.0
+        blocks = [b for tag in tags for b in mesh.region_elements(tag)]
+        if not blocks:
+            continue
+        # the region's value counts once per node, even where several element blocks meet
+        nodes = np.unique(np.concatenate([b.conn.ravel() for b in blocks]))
+        total[nodes] += float(value)
+        count[nodes] += 1.0
     missing = sorted({int(r) for b in mesh.blocks for r in np.unique(b.region)} - assigned)
     if missing:
         raise ModelError(
