@@ -186,8 +186,23 @@ class SolveController(QObject):
                        document.results_changed):
             signal.connect(self.update_actions)
         self.state_changed.connect(self.update_actions)
+        self._generation = document.generation
+        document.results_changed.connect(self._on_document_replaced)
         window.installEventFilter(self)
         self.update_actions()
+
+    def _on_document_replaced(self) -> None:
+        """Close a finished solve's dialog when another model is loaded (New, Open, Example).
+
+        Its text and residual plot describe the previous model's run.
+        """
+        if self.document.generation == self._generation:
+            return
+        self._generation = self.document.generation
+        if self.dialog is not None and not self.running:
+            self.dialog.close()
+            self.dialog.deleteLater()
+            self.dialog = None
 
     # ----------------------------------------------------------------- state
     def can_solve(self) -> bool:

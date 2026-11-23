@@ -473,3 +473,24 @@ def test_preview_respects_display_units_and_survives_bad_input(qtbot, built_doc)
     ).h
     panel.set_preview_input("T_surface", 0.0)  # api.htc refuses a non-positive temperature
     assert panel.preview_h is None and "Cannot compute h" in panel.preview_text
+
+
+def test_selecting_another_object_clears_the_load_highlight(qtbot, window, built_doc) -> None:
+    """Seen on a real screen: a load's highlight stayed while the mesh panel was shown."""
+    view = FakeView()
+    tree, _ = attach_tree(window, built_doc)
+    two_loads(built_doc)
+    attach_loads(window, built_doc, view)
+    tree.setCurrentItem(tree.item_for(("bcs", 1)))
+    assert view.highlights[-1] == (1, tags_of(built_doc, "top"))
+    tree.setCurrentItem(tree.item_for(("mesh_settings",)))
+    assert view.highlights[-1] == (1, [])
+
+
+def test_overlay_colours_are_not_load_colours() -> None:
+    """An orange selection on a convection edge looked like an adiabatic edge."""
+    from thermalfea.gui import viewport_mpl
+    from thermalfea.gui.scene import KIND_COLORS
+
+    for colour in (viewport_mpl._SELECT_COLOR, viewport_mpl._HOVER_COLOR):
+        assert colour.lower() not in {c.lower() for c in KIND_COLORS}

@@ -142,6 +142,7 @@ class FlowResultsWindow(QWidget):
         self.step_spin.valueChanged.connect(lambda _v: self.fill())
         self.plot_button.clicked.connect(lambda _c=False: self.plot_selected())
         self._shown_units = document.model.display_units
+        self._generation = document.generation
         document.results_changed.connect(self.on_results_changed)
         document.model_changed.connect(self._on_model_changed)
         self.on_results_changed()
@@ -152,7 +153,16 @@ class FlowResultsWindow(QWidget):
         return self.results_controller.results
 
     def on_results_changed(self) -> None:
-        """Read the results again: last step selected, table refilled, plots out of date."""
+        """Read the results again: last step selected, table refilled, plots out of date.
+
+        When another model was loaded (New, Open, Example) the plots of the previous one
+        are closed instead.
+        """
+        if self.document.generation != self._generation:
+            self._generation = self.document.generation
+            for chart in list(self.plot_windows):
+                chart.close()
+                self._on_plot_closed(chart)
         for chart in self.plot_windows:
             chart.mark_out_of_date()
         results = self.results()
@@ -192,6 +202,7 @@ class FlowResultsWindow(QWidget):
         for row, summary in enumerate(self.rows):
             for column, text in enumerate(self.row_texts(summary, units)):
                 self.table.setItem(row, column, QTableWidgetItem(text))
+        self.table.resizeColumnsToContents()  # the headers with units are longer than 100 px
         self.plot_button.setEnabled(results is not None)
 
     @staticmethod

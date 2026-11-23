@@ -33,6 +33,11 @@ _MENU_TITLES: tuple[tuple[str, str], ...] = (
     ("help", "&Help"),
 )
 _LOGGER_NAME = "thermalfea"
+#: Dock sizes [px] of a first start (no stored layout); see MainWindow.apply_default_layout.
+DEFAULT_LEFT_WIDTH = 460  # the widest form (a stream, 417 px) plus scroll bar and margins
+DEFAULT_TREE_HEIGHT = 260
+DEFAULT_PROPERTIES_HEIGHT = 520
+DEFAULT_BOTTOM_HEIGHT = 150
 
 
 def _default_error_dialog(title: str, message: str) -> None:
@@ -366,7 +371,21 @@ class MainWindow(QMainWindow):
             ok = bool(self.restoreGeometry(geometry)) or ok
         if state is not None:
             ok = bool(self.restoreState(state)) or ok
+        else:
+            self.apply_default_layout()
         return ok
+
+    def apply_default_layout(self) -> None:
+        """Dock sizes of a first start: room for the property forms, a short bottom dock.
+
+        Without it Qt gives the model tree most of the left column and the property panel
+        only its title (seen on a real screen, 2026-11-23).
+        """
+        vertical, horizontal = Qt.Orientation.Vertical, Qt.Orientation.Horizontal
+        self.resizeDocks([self.model_dock, self.properties_dock], [DEFAULT_TREE_HEIGHT,
+                         DEFAULT_PROPERTIES_HEIGHT], vertical)
+        self.resizeDocks([self.messages_dock], [DEFAULT_BOTTOM_HEIGHT], vertical)
+        self.resizeDocks([self.model_dock], [DEFAULT_LEFT_WIDTH], horizontal)
 
     def closeEvent(self, event: QCloseEvent) -> None:  # noqa: N802 (Qt override)
         """Persist window state and detach the log handler."""

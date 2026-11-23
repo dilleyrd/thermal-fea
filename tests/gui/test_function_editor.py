@@ -197,3 +197,13 @@ def test_set_units_refreshes_the_preview(qtbot) -> None:
     w.set_units(UnitSettings(temperature="K"))
     assert list(w.preview.axes.get_lines()[0].get_ydata()) == pytest.approx([293.15, 353.15])
     assert w.preview.axes.get_ylabel() == "value [K]"
+
+
+def test_a_constant_does_not_reserve_the_height_of_the_table(editor) -> None:
+    """Seen on a real screen: a constant h had a large empty gap below its mode box."""
+    constant_height = editor.sizeHint().height()
+    editor._select_mode("table")
+    table_height = editor.sizeHint().height()
+    assert table_height > 2 * constant_height
+    editor._select_mode("constant")
+    assert editor.sizeHint().height() <= constant_height

@@ -614,3 +614,19 @@ def test_network_bound_message_is_in_the_display_unit() -> None:
     )
     with pytest.raises(ValueError, match="at least 1 mm"):
         parse_number("0.5", minimum=minimum, quantity="length", units=units)
+
+
+def test_loading_another_model_closes_the_flow_plots(flow_shell) -> None:
+    """Seen on a real screen: after File > New the stream plot of the old model stayed open."""
+    window = flow_shell.flow.show_flow()
+    window.table.setCurrentCell(0, 0)
+    chart = window.plot_selected()
+    assert chart is not None and window.plot_windows == [chart]
+    flow_shell.document.set_model(Model(), None)  # what New, Open and Examples do
+    assert window.plot_windows == []
+
+
+def test_htc_calculator_says_nothing_before_an_entry(calc) -> None:
+    assert calc.message != "" and calc.message_label.text() == ""  # nothing typed yet
+    calc.t_surface_edit.setText("350")
+    assert calc.message_label.text() == calc.message != ""  # now the next missing entry

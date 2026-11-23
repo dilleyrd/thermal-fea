@@ -32,6 +32,7 @@ from thermalfea.gui.solve_tools import CANCEL_ID, RUN_ID, VALIDATE_ID, attach_so
 from thermalfea.gui.worker import BackgroundTask, SerialWorker, TaskCancelled
 from thermalfea.materials.material import Material
 from thermalfea.model import bcs
+from thermalfea.model.model import Model
 from thermalfea.model.settings import SolutionSettings
 from thermalfea.model.validate import Issue
 from thermalfea.post.results import Results
@@ -797,3 +798,12 @@ def test_worker_mesh_is_discarded_when_the_mesh_settings_change(window, qtbot) -
         assert blocker.args == [False] and document.mesh is None and document.mesh_stale
     finally:
         assert worker.shutdown(10000)
+
+
+def test_loading_another_model_closes_the_finished_solve_dialog(steady, qtbot) -> None:
+    """Seen on a real screen: the dialog of the previous model's run stayed open."""
+    with qtbot.waitSignal(steady.solve.solve_finished, timeout=WAIT):
+        assert steady.solve.solve()
+    assert steady.solve.dialog is not None
+    steady.doc.set_model(Model(), None)  # what New, Open and Examples do
+    assert steady.solve.dialog is None

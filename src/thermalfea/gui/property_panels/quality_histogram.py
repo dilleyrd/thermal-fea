@@ -81,7 +81,12 @@ class QualityHistogram(QWidget):
                 0.5, 0.5, EMPTY_TEXT, ha="center", va="center", transform=self.axes.transAxes
             )
         else:
-            self.counts, self.edges = np.histogram(finite, bins=self.bins)
+            lo, hi = float(finite.min()), float(finite.max())
+            scale = max(abs(lo), abs(hi), 1.0)
+            span = None
+            if hi - lo <= 1e-9 * scale:  # equal values, also up to round-off: one bar
+                span = (lo - 0.5e-3 * scale, lo + 0.5e-3 * scale)
+            self.counts, self.edges = np.histogram(finite, bins=self.bins, range=span)
             self.axes.bar(
                 self.edges[:-1], self.counts, width=np.diff(self.edges), align="edge",
                 color="#4a7fb0", edgecolor="white",

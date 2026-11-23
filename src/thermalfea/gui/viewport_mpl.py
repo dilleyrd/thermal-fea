@@ -100,13 +100,18 @@ FIT_MARGIN = 0.05
 #: Axes rectangle in figure coordinates (left, bottom, width, height).
 AXES_RECT = (0.01, 0.01, 0.98, 0.93)
 
-_SELECT_COLOR = "#e8590c"
-_HOVER_COLOR = "#1c7ed6"
+#: Selection and hover overlays use colours that no load kind uses (scene.KIND_COLORS):
+#: an orange selection on a convection edge looked like an adiabatic one (2026-11-23).
+_SELECT_COLOR = "#fcc419"
+_HOVER_COLOR = "#000000"
 _BAND_COLOR = "#1c7ed6"
 _SURFACE_FILL = "#adb5bd"
 _CURVE_COLOR = "#343a40"
 _POINT_COLOR = "#212529"
 _MESH_COLOR = "#495057"
+#: A field whose range is below this fraction of its magnitude is drawn as uniform (a range
+#: at round-off level would give contour levels that are not increasing).
+_UNIFORM_RTOL = 1e-9
 _LEFT, _MIDDLE = 1, 2
 _FEW_ELEMENTS = 32  # up to this many selected elements are looked up one by one
 _PLANE = 2  # coordinates of the viewport plane (x, y)
@@ -566,9 +571,11 @@ class MplSceneView(QObject):
     def _draw_field(self, spec: FieldDisplay) -> None:
         ax = self._ax
         lo, hi = float(spec.vmin), float(spec.vmax)
-        if not hi > lo:
-            pad = max(abs(lo), 1.0) * 1e-6
-            lo, hi = lo - pad, lo + pad
+        scale = max(abs(lo), abs(hi), 1.0)
+        if not hi - lo > _UNIFORM_RTOL * scale:  # uniform, also up to round-off
+            pad = scale * 1e-6
+            mid = 0.5 * (lo + hi) if np.isfinite(hi) else lo
+            lo, hi = mid - pad, mid + pad
         mappable = None
         if spec.triangles.shape[0]:
             tri = Triangulation(spec.xy[:, 0], spec.xy[:, 1], spec.triangles)

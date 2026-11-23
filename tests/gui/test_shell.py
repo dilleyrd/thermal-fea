@@ -143,3 +143,16 @@ def test_hook_never_raises(window: MainWindow) -> None:
 def test_create_app_reuses_instance(qapp) -> None:
     assert create_app([]) is QApplication.instance()
     assert create_app([]) is qapp
+
+
+def test_first_start_layout_leaves_room_for_the_property_forms(window: MainWindow, qtbot) -> None:
+    """Seen on a real screen: without a stored layout the properties showed only a title."""
+    window.resize(1500, 950)
+    window.show()
+    qtbot.waitExposed(window)
+    window.apply_default_layout()
+    QApplication.processEvents()
+    assert window.properties_dock.height() > window.model_dock.height()
+    assert window.properties_dock.height() >= 400
+    assert window.messages_dock.height() <= 250
+    assert window.model_dock.width() >= 440  # room for the widest form

@@ -236,7 +236,10 @@ class HtcCalculator(QWidget):
         return api.htc(self.correlation, fluid, t_surface, t_inf, **values)
 
     def _show(self) -> None:
-        self.message_label.setText(self.message)
+        edits = (self.t_surface_edit, self.t_inf_edit, *self.input_edits.values())
+        untouched = not any(edit.text().strip() for edit in edits)
+        # a missing entry is not reported before anything has been typed
+        self.message_label.setText("" if untouched else self.message)
         result = self.result
         if result is None:
             self.result_label.setText("")

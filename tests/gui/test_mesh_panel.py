@@ -283,3 +283,14 @@ def test_generate_button_and_action_follow_the_geometry_state(window, qtbot) -> 
     doc.set_built(api.build(doc.model))
     assert button(panel, "Generate mesh").isEnabled()
     assert window.actions[ACTION_ID].isEnabled()
+
+
+def test_histogram_of_equal_qualities_up_to_round_off(qtbot) -> None:
+    """A structured strip has qualities equal up to round-off; the histogram must still draw."""
+    from thermalfea.gui.property_panels.quality_histogram import QualityHistogram
+
+    histogram = QualityHistogram()
+    qtbot.addWidget(histogram)
+    histogram.set_values(np.array([1.0, 1.0 + 2.2e-16, 1.0]), "Aspect ratio")
+    assert histogram.counts.sum() == 3
+    assert histogram.edges[0] < 1.0 < histogram.edges[-1]

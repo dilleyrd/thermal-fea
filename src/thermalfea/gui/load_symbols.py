@@ -170,9 +170,10 @@ class LoadSymbolController(QObject):
         self.view.set_symbols(list(self.symbols))
 
     def highlight_address(self, address: Address) -> None:
-        """Highlight the entities of the load at ``address`` (nothing for other objects)."""
+        """Highlight the entities of the load at ``address``; other objects clear it."""
         model = self.document.model
         if not address or address[0] not in ("bcs", "contacts") or not exists(model, address):
+            self.view.highlight(1, [])  # the previous load's highlight must not stay
             return
         try:
             obj = resolve(model, address)

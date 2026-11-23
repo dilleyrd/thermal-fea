@@ -32,6 +32,7 @@ from PySide6.QtWidgets import (
     QLabel,
     QLineEdit,
     QPushButton,
+    QSizePolicy,
     QStackedWidget,
     QTableWidget,
     QTableWidgetItem,
@@ -391,7 +392,15 @@ class FunctionEditor(QWidget):
 
     def _show_mode(self, mode: str) -> None:
         page = {"constant": 0, "table": 1, "expression": 2, "none": 3}[mode]
+        # a stacked widget is as tall as its tallest page: let the hidden pages ignore their
+        # size, or a constant leaves the room of the table and its preview empty
+        ignored, preferred = QSizePolicy.Policy.Ignored, QSizePolicy.Policy.Preferred
+        for index in range(self.stack.count()):
+            policy = preferred if index == page else ignored
+            self.stack.widget(index).setSizePolicy(policy, policy)
         self.stack.setCurrentIndex(page)
+        self.stack.adjustSize()
+        self.stack.updateGeometry()
 
     def _on_mode_changed(self, _index: int) -> None:
         if self._loading:

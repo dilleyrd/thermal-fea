@@ -37,9 +37,11 @@ message that says so; it is never solved with that part left out.
 
 ## Not yet reviewed or checked
 
-- **The window has not been reviewed on a real screen.** The human gate M8.G (build two
-  verification cases in the window and list every point of friction) is not done. Every
-  window test so far ran without a screen. Expect findings in layout and usability.
+- **The window has not been reviewed by a person.** The human gate M8.G (build two
+  verification cases in the window and list every point of friction) is not done. The
+  window tests run without a screen; on 2026-11-23 a scripted session on a real screen
+  (V-10, V-17, V-27 and the dialogs, with screenshots) found and fixed layout and display
+  defects. Expect further findings in usability.
 - **Property and correlation sources.** Since 2026-11-23 every built-in property comes from
   Incropera et al., *Fundamentals of Heat and Mass Transfer*, 7th ed. (2011), Appendix A,
   except water, which comes from the NIST Chemistry WebBook. Every correlation cites its

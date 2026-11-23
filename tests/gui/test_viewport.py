@@ -208,6 +208,15 @@ def test_manual_limits_are_the_norm_limits_on_a_uniform_field(loaded, small_mesh
     assert (mappable.norm.vmin, mappable.norm.vmax) == pytest.approx((300.0, 400.0))
 
 
+def test_a_range_at_round_off_level_is_drawn_as_uniform(loaded, small_mesh) -> None:
+    """A field uniform up to round-off (a fixed 350 K body) must not break the contour levels."""
+    values = np.full(small_mesh.n_nodes, 350.0)
+    values[0] = 350.0 + 5.7e-14
+    loaded.set_field(_contour_spec(small_mesh, 350.0, 350.0 + 5.7e-14, values=values))
+    mappable = loaded.layer_artists("results")[0]
+    assert mappable.norm.vmin < 350.0 < mappable.norm.vmax
+
+
 def test_equal_aspect_and_fit(loaded, built_model) -> None:
     ax = loaded.axes
     assert ax.get_aspect() == 1.0
