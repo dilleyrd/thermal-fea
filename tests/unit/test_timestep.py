@@ -308,6 +308,42 @@ def test_mandatory_times_from_outputs_and_table_breakpoints() -> None:
     assert sorted(mandatory_times(problem)) == [0.0, 7.0, 13.0]
 
 
+# --------------------------------------------- M11.16: tolerances local to the time compared
+
+
+def test_early_output_time_survives_a_long_run() -> None:
+    c = controller(dt0=1.0, mandatory=[1e-5, 1e3], end_time=1e8)
+    assert c.mandatory == [1e-5, 1e3, 1e8]
+    assert c.next_mandatory == 1e-5
+    assert c.propose() == 1e-5  # the first step is cut to land on it
+    assert c.accept(None, None)
+    assert c.t == 1e-5 and c.next_mandatory == 1e3
+
+
+def test_distinct_small_times_are_kept_and_roundoff_equal_times_merged() -> None:
+    c = controller(mandatory=[1e-5, 1e-5 * (1 + 1e-15), 2e-5, 50.0, 50.0 * (1 + 1e-14),
+                              50.0 * (1 + 2e-14)], end_time=1e8)
+    assert c.mandatory == [1e-5, 2e-5, 50.0, 1e8]
+    # a time equal to the end up to round-off is the end
+    c = controller(mandatory=[1e8 * (1 - 1e-14), 5.0], end_time=1e8)
+    assert c.mandatory == [5.0, 1e8]
+    # a time equal to the start up to round-off is dropped; a time at the start is dropped
+    c = controller(mandatory=[0.0, 1e-14, 3.0], t0=0.0, end_time=10.0)
+    assert c.mandatory == [3.0, 10.0]
+    c = controller(mandatory=[1e6 * (1 + 1e-14), 2e6], t0=1e6, end_time=1e8)
+    assert c.mandatory == [2e6, 1e8]
+
+
+def test_early_output_time_is_stored_in_a_long_run() -> None:
+    problem = make_problem("Q4", size=(0.1, 0.01), cells=(4, 1), bcs=(
+        FixedTemperature("hot", "left", T=400.0),))
+    transient(problem, end_time=1e8, initial_dt=1.0, output="times", output_times=[1e-5, 10.0])
+    result = solve_transient(problem, T0=300.0)
+    assert result.times[0] == 0.0
+    assert result.times[1] == pytest.approx(1e-5, rel=1e-12)
+    assert 10.0 in result.times and result.times[-1] == 1e8
+
+
 def test_adaptive_steps_grow_as_the_solution_settles() -> None:
     problem = make_problem("Q4", size=(0.1, 0.01), cells=(20, 1), bcs=(
         FixedTemperature("hot", "left", T=400.0), FixedTemperature("cold", "right", T=300.0)))

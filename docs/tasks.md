@@ -457,7 +457,7 @@ Boundary Conditions, Flow (Streams, Network), Enclosures, Analysis Settings, Sol
   Q28.5. Tests: `T = 300*x` on a boundary at x = 1 m, with radiation, does not block the
   solve; a constant 0 K still does. Extended by Q29 (`REVIEW-2.md` 2.1-13d): a time table
   is also sampled over the run, not only at t = 0.
-- [ ] **M11.16 [B] Early output times on long runs.** `REVIEW.md` finding 9; Q28.6.
+- [x] **M11.16 [B] Early output times on long runs.** `REVIEW.md` finding 9; Q28.6.
   `solver/timestep.py` filters and finds mandatory times with a tolerance relative to the
   local time. Tests: end 1e8 s, output at 1e-5 s, first step 1 s; the first step lands on
   1e-5 s and the time is stored.

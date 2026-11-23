@@ -38,6 +38,20 @@ _LAND_SLACK = 1e-9  # a remainder below this fraction of dt is merged into the s
 _MIN_RANGE = 1.0  # K, floor of the temperature range in the error measure
 
 
+def _later(a: float, b: float) -> bool:
+    """True if time ``a`` [s] is after time ``b`` by more than round-off.
+
+    The tolerance is ``_TIME_EPS`` times the larger of the two times, so an output time of
+    1e-5 s is distinct from the start even on a run of 1e8 s. The scale has a floor of
+    1 s, the same floor the end-time test of ``finished`` always used (``max(|end|, 1)``):
+    it keeps times that differ only by round-off of a value near zero (0 and 1e-14 s)
+    merged, while any time that can be represented in a sensible run (above 1e-12 s) stays
+    distinct. No new constant is needed: ``_TIME_EPS`` is the relative tolerance, 1 s the
+    existing floor.
+    """
+    return a - b > _TIME_EPS * max(abs(a), abs(b), 1.0)
+
+
 def error_estimate(
     T_new: ndarray, T_n: ndarray, T_prev: ndarray | None, dt: float, dt_prev: float | None
 ) -> float | None:
@@ -113,9 +127,17 @@ class StepController:
         self.adaptive = bool(settings.auto_timestep)
         self.dt_min = float(settings.dt_min)
         self.dt_max = float(settings.dt_max) if settings.dt_max is not None else np.inf
-        span = self.end - self.t
-        times = {float(m) for m in mandatory if self.t + _TIME_EPS * span < m < self.end}
-        self.mandatory = sorted(times | {self.end})
+        # Drop times at or before the start or at the end, and merge times that are equal up
+        # to round-off (the smallest of a cluster is kept). Every comparison is relative to
+        # the times compared, not to the length of the run (M11.16).
+        kept: list[float] = []
+        for m in sorted({float(m) for m in mandatory}):
+            if not _later(m, self.t) or not _later(self.end, m):
+                continue
+            if kept and not _later(m, kept[-1]):
+                continue
+            kept.append(m)
+        self.mandatory = [*kept, self.end]
         self.dt = self._clamp(float(dt0))  # the step the controller would like to take
         self._try = self.dt  # the step actually proposed (possibly shortened)
         self._shortened = False
@@ -137,7 +159,7 @@ class StepController:
     def next_mandatory(self) -> float:
         """The next time [s] a step must land on."""
         for time in self.mandatory:
-            if time - self.t > _TIME_EPS * max(abs(self.end), 1.0):
+            if _later(time, self.t):
                 return time
         return self.end
 
