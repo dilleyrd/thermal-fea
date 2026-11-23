@@ -45,14 +45,6 @@ for k, name in (
     Q[k] = np.trapezoid(
         h_c[name] * (a[:, 1] - a[:, 2]) * 2 * np.pi * a[:, 0] * 1e-3, a[:, 0] * 1e-3
     )
-    print(
-        k,
-        len(a),
-        "Q from nodal jumps [W]:",
-        round(Q[k], 1),
-        " solver-side contact heat:",
-        round(hs[f"Q_{name}_W"], 1),
-    )
 fig, axs = plt.subplots(
     2, 1, figsize=(11, 8.2), sharex=True, gridspec_kw={"height_ratios": [2, 1.1], "hspace": 0.08}
 )
@@ -90,19 +82,6 @@ for k, a in seg.items():
 ax.set_ylabel("Jump ΔT [K]")
 ax.set_xlabel("Radius r [mm]")
 ax.legend(fontsize=9, frameon=False, loc="upper right")
-jmax = max((a[:, 1] - a[:, 2]).max() for a in seg.values())
-jmin = min((a[:, 1] - a[:, 2]).min() for a in seg.values())
-print("jump range", jmin, jmax)
-for k, a in seg.items():
-    print(
-        k,
-        "ΔT min/max",
-        (a[:, 1] - a[:, 2]).min(),
-        (a[:, 1] - a[:, 2]).max(),
-        "r range",
-        a[0, 0],
-        a[-1, 0],
-    )
 for x, lab in ((520, "barrier foot"), (557, "seal\nland"), (625, "main seat")):
     axs[0].text(
         x,

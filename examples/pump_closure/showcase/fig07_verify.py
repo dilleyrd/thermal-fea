@@ -35,10 +35,8 @@ def metrics(name):
 
 
 coarse, fine = metrics("closure_steady_mesh1"), metrics("closure_steady_mesh0.5")
-print(coarse, fine)
 dK = {k: fine[k] - coarse[k] for k in ("bore", "rim", "stud")}
 dQ = (fine["QH"] - coarse["QH"]) / coarse["QH"]
-print(dK, dQ)
 fig, axs = plt.subplots(1, 3, figsize=(16, 4.8), gridspec_kw={"wspace": 0.3})
 ax = axs[0]
 ax.semilogy(h.time_s[1:] / 3600, np.abs(h.relative_imbalance[1:]), "o-", color="#2c7fb8", ms=3)
@@ -86,4 +84,3 @@ ax.set_title(
     fontweight="bold",
 )
 save(fig, "fig07_verification.png")
-print("dt range", dt[1:].min(), dt[1:].max(), "iters", its.max(), its.sum())

@@ -56,5 +56,4 @@ fig.suptitle(
     fontweight="bold",
     y=0.95,
 )
-print("max remaining rise [K]", diff.max(), "at", run.nodes[np.argmax(diff)] * 1e3)
 save(fig, "fig02_temperature_evolution.png")

@@ -7,7 +7,8 @@ packaged Windows installer does not exist yet; it is planned (task M11.5).
 
 - Python 3.11 or newer (the project is developed with Python 3.13).
 - The packages the program depends on are installed automatically: NumPy, SciPy, gmsh,
-  PySide6, Matplotlib, h5py, meshio and pandas.
+  PySide6, Matplotlib, h5py, meshio and Pillow. pandas is installed only with the
+  `examples` extra.
 
 ## Get the source
 
@@ -38,6 +39,7 @@ system Python.
 | Extra | Installs | Needed for |
 |---|---|---|
 | `dxf` | `ezdxf` | importing DXF files. Without it a DXF import stops with a message that says how to install it. |
+| `examples` | `pandas` | running the pump-closure showcase scripts in `examples/pump_closure/showcase/` |
 | `dev` | `pytest`, `pytest-qt`, `ruff` | running the tests and the style check |
 | `docs` | `mkdocs` | building this guide |
 
@@ -53,6 +55,10 @@ Install an extra by naming it in brackets:
 ```
 .venv\Scripts\python.exe -m thermalfea.gui.app
 ```
+
+An installation made since 2026-11-23 also has the command `.venv\Scripts\thermalfea-gui.exe`,
+which opens the same window without a console. (An older installation gets it after
+`pip install -e .` is run again.)
 
 The main window has a model tree ("Model", top left), a property panel ("Properties",
 below it), the viewport in the middle and a "Messages" dock at the bottom. The next page,

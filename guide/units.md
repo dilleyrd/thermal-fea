@@ -21,7 +21,6 @@ A function given as an expression is evaluated with t in s, x and y in m and T i
 
 ## Places that still show SI only
 
-- the parameters of a geometry transform (the label says so);
 - the HTC calculator window (Tools > HTC calculator...);
 - the solve-progress dialog and the solver messages;
 - the extra parameters of a correlation;

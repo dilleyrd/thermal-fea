@@ -525,7 +525,7 @@ Boundary Conditions, Flow (Streams, Network), Enclosures, Analysis Settings, Sol
   The window shows the values, and the pump example reads them instead of recomputing
   them. Tests: write and read back; an older file still opens.
 - [x] **M11.29 [A] GUI flow and selection fixes.** `REVIEW-2.md` 2.2 GUI items.
-- [ ] **M11.30 [A] Packaging and documentation corrections.** Evaluation §3. Also the
+- [x] **M11.30 [A] Packaging and documentation corrections.** Evaluation §3. Also the
   owner's decisions D10 (Q29.10):
   - an MIT `LICENSE`;
   - pandas moved to an optional extra `examples`;

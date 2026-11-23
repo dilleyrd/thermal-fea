@@ -71,13 +71,15 @@ class Run:
     """One results file: nodes [m], quadratic triangles, regions, temperature [degC] per step."""
 
     def __init__(self, name):
-        f = h5py.File(OUT / f"{name}.tfea.h5", "r")
-        self.nodes = f["mesh/nodes"][:]
-        self.conn = f["mesh/blocks/0/conn"][:]
-        self.region = f["mesh/blocks/0/region"][:]
-        self.T = f["steps/fields/T"][:] - K0
-        self.t = f["steps/time"][:]
-        self.react = {k: f[f"reactions/{i}"][:] for i, k in enumerate(["H", "M", "Cw", "J", "A"])}
+        with h5py.File(OUT / f"{name}.tfea.h5", "r") as f:
+            self.nodes = f["mesh/nodes"][:]
+            self.conn = f["mesh/blocks/0/conn"][:]
+            self.region = f["mesh/blocks/0/region"][:]
+            self.T = f["steps/fields/T"][:] - K0
+            self.t = f["steps/time"][:]
+            self.react = {
+                k: f[f"reactions/{i}"][:] for i, k in enumerate(["H", "M", "Cw", "J", "A"])
+            }
         c = self.conn
         sub = np.vstack([c[:, [0, 3, 5]], c[:, [3, 1, 4]], c[:, [5, 4, 2]], c[:, [3, 4, 5]]])
         self.tri = Triangulation(self.nodes[:, 0] * 1e3, self.nodes[:, 1] * 1e3, sub)  # mm
@@ -135,7 +137,6 @@ def save(fig, name):
     p = FIG / name
     fig.savefig(p, bbox_inches="tight", facecolor="white")
     plt.close(fig)
-    print("wrote", p)
 
 
 def style_rz(ax, xlim=None, ylim=None):

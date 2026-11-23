@@ -63,23 +63,3 @@ fig.suptitle(
     y=1.02,
 )
 save(fig, "fig06_seat_sensitivity.png")
-print(
-    s[
-        [
-            "seat_factor",
-            "Q_main_seat_W",
-            "Q_seal_land_W",
-            "Q_barrier_foot_W",
-            "Q_vertical_fit_W",
-            "Q_stud_anchor_W",
-            "flange_rim_C",
-            "flange_bore_C",
-            "stud_mean_C",
-            "bore_to_rim_dT_K",
-        ]
-    ]
-    .round(1)
-    .to_string()
-)
-print("3x->10x main seat change", d)
-print((s.Q_main_seat_W / s.Q_main_seat_W.iloc[2]).round(3).tolist())

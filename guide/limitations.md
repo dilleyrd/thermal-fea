@@ -117,8 +117,7 @@ message that says so; it is never solved with that part left out.
 
 - **Expressions are always evaluated in SI,** whatever the display units. See
   [Units](units.md).
-- **These places still show SI only:** the parameters of a geometry transform, the HTC
-  calculator window, the solve-progress dialog and the solver messages, the extra
+- **These places still show SI only:** the HTC calculator window, the solve-progress dialog and the solver messages, the extra
   parameters of a correlation, the CSV and VTU exports (the chart CSV follows the display
   units) and the `api.summary` text.
 - Results are shown in the units of the model stored in the results file until you change

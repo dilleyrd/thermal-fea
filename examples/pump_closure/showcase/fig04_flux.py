@@ -1,4 +1,4 @@
-from common import BODIES, Run, np, plt, save, style_rz
+from common import Run, np, plt, save, style_rz
 from fluxlib import element_flux
 from matplotlib.colors import LogNorm
 from scipy.interpolate import LinearNDInterpolator
@@ -92,12 +92,3 @@ fig.suptitle(
     y=0.96,
 )
 save(fig, "fig04_steady_heat_flux.png")
-# facts
-for _nm, _box in {"barrier": None}.items():
-    pass
-i = np.argmax(q)
-print("max flux", q[i], cen[i])
-for b in BODIES:
-    m = np.array([st.body[r] == b for r in st.region])
-    j = np.argmax(np.where(m, q, 0))
-    print(b, round(q[j]), cen[j].round(1))

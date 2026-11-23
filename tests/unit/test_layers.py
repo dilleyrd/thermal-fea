@@ -6,6 +6,8 @@
   (Plan §7 rule 8: the model view is reached only through ``SceneView``).
 * ``gui/scene.py`` (the interface) imports no Matplotlib and, of PySide6, only the
   ``QtCore`` / ``QtWidgets`` names its annotations need (``Signal``, ``QWidget``).
+* Only ``solver/linear.py`` may import ``scipy.sparse.linalg``.
+* No module under ``src/thermalfea`` calls the built-in ``print``.
 """
 
 from __future__ import annotations
@@ -142,3 +144,65 @@ def test_allow_list_names_existing_files() -> None:
 def test_allowed_imports_pass() -> None:
     assert not violations("import numpy as np\nfrom ..core import mesh\n", Path("solver/a.py"))
     assert not violations("import gmshx\nimport PySide6x\n", Path("solver/a.py"))
+
+
+#: The only module that may import ``scipy.sparse.linalg`` (the sparse LU factorisation).
+SPARSE_LINALG_ALLOWED = ("solver/linear.py",)
+
+
+def sparse_linalg_violations(source: str, rel: Path) -> list[str]:
+    """Return the violations of ``scipy.sparse.linalg`` imports in one file."""
+    if rel.as_posix() in SPARSE_LINALG_ALLOWED:
+        return []
+    package = ".".join(["thermalfea", *rel.parts[:-1]])
+    return [
+        f"{rel.as_posix()}: imports {mod}; only {SPARSE_LINALG_ALLOWED} may"
+        for mod in sorted(imported_modules(source, package))
+        if _matches(mod, "scipy.sparse.linalg")
+    ]
+
+
+def print_call_violations(source: str, rel: Path) -> list[str]:
+    """Return one entry per call of the built-in ``print`` in one file."""
+    return [
+        f"{rel.as_posix()}:{node.lineno}: calls print"
+        for node in ast.walk(ast.parse(source))
+        if isinstance(node, ast.Call)
+        and isinstance(node.func, ast.Name)
+        and node.func.id == "print"
+    ]
+
+
+def test_sparse_linalg_only_in_linear_solver() -> None:
+    problems: list[str] = []
+    for path in sorted(SRC.rglob("*.py")):
+        rel = path.relative_to(SRC)
+        problems += sparse_linalg_violations(path.read_text(encoding="utf-8"), rel)
+    assert not problems, "\n".join(problems)
+
+
+def test_detects_sparse_linalg_outside_linear_solver() -> None:
+    assert sparse_linalg_violations("import scipy.sparse.linalg\n", Path("solver/steady.py"))
+    assert sparse_linalg_violations(
+        "from scipy.sparse.linalg import splu\n", Path("solver/steady.py")
+    )
+    assert sparse_linalg_violations("from scipy.sparse import linalg\n", Path("core/x.py"))
+    assert not sparse_linalg_violations(
+        "from scipy.sparse.linalg import splu\n", Path("solver/linear.py")
+    )
+    assert not sparse_linalg_violations("from scipy.sparse import csr_matrix\n", Path("core/x.py"))
+
+
+def test_no_print_calls_in_package() -> None:
+    problems: list[str] = []
+    for path in sorted(SRC.rglob("*.py")):
+        rel = path.relative_to(SRC)
+        problems += print_call_violations(path.read_text(encoding="utf-8"), rel)
+    assert not problems, "\n".join(problems)
+
+
+def test_detects_print_call() -> None:
+    assert print_call_violations('print("x")\n', Path("solver/steady.py"))
+    assert print_call_violations("def f():\n    print()\n", Path("api.py"))
+    assert not print_call_violations("pprint_all(x)\nlogger.info('x')\n", Path("api.py"))
+    assert not print_call_violations("# print('x')\n", Path("api.py"))

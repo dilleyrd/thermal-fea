@@ -16,28 +16,6 @@ c_nut = cross(t[1:], h.Q_nut_bearing_W.values[1:])
 pk = h.bore_to_rim_dT_K.idxmax()
 stud_pk = h.Q_stud_anchor_W.idxmax()
 seat_pk = h.Q_main_seat_W.idxmax()
-print("dT crossover h", c_dT, "vf", c_vf, "nut", c_nut)
-print(
-    "max dT",
-    h.bore_to_rim_dT_K.max(),
-    h.time_s[pk],
-    "min dT",
-    h.bore_to_rim_dT_K.min(),
-    "stud pk",
-    h.Q_stud_anchor_W.max(),
-    h.time_s[stud_pk],
-    "seat pk",
-    h.Q_main_seat_W.max(),
-    h.time_s[seat_pk],
-)
-print(
-    "nut min",
-    h.Q_nut_bearing_W.min(),
-    h.time_s[h.Q_nut_bearing_W.idxmin()],
-    "H peak",
-    h.Q_film_H_W.max(),
-    h.time_s[h.Q_film_H_W.idxmax()],
-)
 fig, axs = plt.subplots(3, 1, figsize=(10.5, 12), sharex=True, gridspec_kw={"hspace": 0.12})
 ax = axs[0]
 ax.plot(
@@ -75,9 +53,6 @@ ax2.set_ylabel("bore − rim [K]  (shaded)")
 ax2.axhline(0, color="k", lw=0.6)
 ax2.set_ylim(-45, 45)
 ax.set_ylim(30, 125)
-pass  # {h.bore_to_rim_dT_K.max():.1f} K at {h.time_s[pk]/60:.0f} min",
-# (h.time_s[pk]/3600, 13.6), (2.3, 30), textcoords="data", xycoords=ax2.transData,
-# textcoords_=None) if False else None
 ax2.annotate(
     f"+{h.bore_to_rim_dT_K.max():.1f} K at {h.time_s[pk] / 60:.0f} min",
     (h.time_s[pk] / 3600, h.bore_to_rim_dT_K.max()),
@@ -122,7 +97,7 @@ ax.axhline(0, color="k", lw=0.8)
 ax.annotate(
     f"vertical fit reverses\nat {c_vf[0]:.2f} h ({c_vf[0] * 60:.0f} min)",
     (c_vf[0], 0),
-    (0.1 if False else 1.55, -700),
+    (1.55, -700),
     arrowprops=dict(arrowstyle="->"),
     fontsize=9,
 )

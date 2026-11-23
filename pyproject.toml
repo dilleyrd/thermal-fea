@@ -15,16 +15,20 @@ dependencies = [
     "matplotlib",
     "h5py",
     "meshio",
-    "pandas",
+    "pillow",
 ]
 
 [project.optional-dependencies]
 dev = ["pytest", "pytest-qt", "ruff"]
 dxf = ["ezdxf"]
 docs = ["mkdocs"]
+examples = ["pandas"]
 
 [project.scripts]
 thermalfea = "thermalfea.cli:main"
+
+[project.gui-scripts]
+thermalfea-gui = "thermalfea.gui.app:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]

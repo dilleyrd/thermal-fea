@@ -562,7 +562,6 @@ def units_page() -> str:
         "",
         "## Places that still show SI only",
         "",
-        "- the parameters of a geometry transform (the label says so);",
         "- the HTC calculator window (Tools > HTC calculator...);",
         "- the solve-progress dialog and the solver messages;",
         "- the extra parameters of a correlation;",
