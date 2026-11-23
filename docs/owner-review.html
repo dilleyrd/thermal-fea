@@ -155,35 +155,40 @@ table.mini th { color: var(--muted); font-weight: 600; font-size: 12.5px; }
 
   <section id="overview">
     <h2>Overview</h2>
-    <p class="lead">Every item that waits on you, checked against the documents and the code by the main agent and,
-      independently, by a Codex agent. Pick an option in each item, add notes, tick it done, then press
+    <p class="lead">Your answers of 2026-11-22 are recorded (<a data-file="docs/OPEN_QUESTIONS.md" href="#">OPEN_QUESTIONS.md</a> Q29)
+      and turned into tasks. Four items remain. Pick an option, add notes, tick it done, then press
       <b>Copy my answers</b> and paste the text into the chat. Your answers stay in this browser only.</p>
     <div class="grid">
       <div class="panel">
-        <h3>What blocks what</h3>
+        <h3>Where the work stands</h3>
         <div id="depmap"></div>
-        <p class="note">Click a box to jump to its item. Red: your decision or check. Blue: a task waiting for it. M11.6 is the release review.</p>
+        <p class="note">Click a red box to jump to its item. M11.6 is the release review.</p>
       </div>
       <div class="panel">
         <h3>Your time by work session</h3>
         <div id="effort"></div>
-        <p class="note">The bar spans the low and high estimate of your active time. Sessions D and E need a long uninterrupted stretch.</p>
+        <p class="note">The bar spans the low and high estimate of your active time.</p>
       </div>
       <div class="panel">
         <h3>Project tasks by milestone</h3>
         <div id="tasks"></div>
-        <p class="note">From <a data-file="docs/tasks.md" href="#">docs/tasks.md</a>. M9 is on hold; most of M11 is the review fixes.</p>
+        <p class="note">From <a data-file="docs/tasks.md" href="#">docs/tasks.md</a>. M9 is on hold and out of version 1; most of M11 is the review fixes and your decisions.</p>
       </div>
     </div>
   </section>
 
   <section id="sessions-sec">
-    <h2>Suggested work sessions</h2>
-    <p class="lead">Session A first: its three answers unblock M11.17, M11.18 (item 2.1-3) and M11.19.</p>
+    <h2>What remains</h2>
+    <p class="lead">Item 1 takes two minutes and unblocks M11.17. The other three are hands-on.</p>
     <div class="sessions" id="sessions"></div>
   </section>
 
   <div id="items"></div>
+  <section id="decided">
+    <h2>Decided on 2026-11-22 <small>for reference</small></h2>
+    <p class="lead">Full text in <a data-file="docs/OPEN_QUESTIONS.md" href="#">OPEN_QUESTIONS.md</a> Q29; the tasks are in <a data-file="docs/tasks.md" href="#">docs/tasks.md</a>.</p>
+    <div class="panel"><table class="mini" id="decidedTable"></table></div>
+  </section>
 </main>
 <div id="toast"></div>
 
@@ -192,282 +197,105 @@ table.mini th { color: var(--muted); font-weight: 600; font-size: 12.5px; }
 const GH_BLOB = "https://github.com/dilleyrd/thermal-fea/blob/main/";
 const GH_TREE = "https://github.com/dilleyrd/thermal-fea/tree/main/";
 const SITE = "https://dilleyrd.github.io/thermal-fea/";
-const STORE_KEY = "thermalfea-owner-review-v1";
+const STORE_KEY = "thermalfea-owner-review-v2";
 
 /* ------------------------------------------------------------------ data */
 const SESSIONS = {
-  A: { name: "Solver numerics", time: [50, 105], kind: "Study and approve; blocks three tasks", c: "--s-a" },
-  B: { name: "Quick approvals", time: [45, 90], kind: "Mostly yes or no", c: "--s-b" },
-  C: { name: "Release scope", time: [15, 30], kind: "Direction", c: "--s-c" },
-  D: { name: "In the window (M8.G)", time: [60, 120], kind: "Hands-on, with the friction log", c: "--s-d" },
-  E: { name: "With the reference book", time: [120, 240], kind: "Checking values and sources", c: "--s-e" },
-  F: { name: "When convenient", time: [90, 180], kind: "Design choices and confirmations", c: "--s-f" },
+  A: { name: "One quick answer", time: [2, 5], kind: "The factor N for D1", c: "--s-a" },
+  B: { name: "In the window (M8.G)", time: [60, 120], kind: "Hands-on, with the friction log", c: "--s-d" },
+  C: { name: "With the reference book", time: [120, 240], kind: "Checking values and sources", c: "--s-e" },
+  D: { name: "Optional", time: [30, 60], kind: "Visualisation and the pump example", c: "--s-f" },
 };
 
 const DATA = {
   d1: [0.559,0.642,0.588,0.359,0.37,0.408,0.385,0.38,0.384,0.295,0.402,0.38,0.426,0.419,0.457,0.511,0.622,0.494,0.427,0.498,0.594,0.479,0.554,0.567,0.485,0.563,0.51,0.499,0.435,0.383],
-  d3const: [10,5,2.566,1.766,3.31,5.37,6.269,6.995,8.392,10.37,12.67,15.38,18.59,22.25,26.98,33.04,39.2,42.62,42.69,42.93,43.61],
-  d3ramp: [10,2.5,1.641,1.266,2.265,3.349,3.955,4.7,5.888,7.366,9.049,11.06,13.52,16.53,6.912,1.953e-06,9.824e-07,1.965e-06,3.929e-06,7.859e-06,1.572e-05,3.144e-05,6.287e-05,0.0001257,0.0002515,0.0004961,6.201e-05,3.57e-05,7.14e-05,0.0001428,0.0002856,0.0005712,0.001142,0.002285,0.00457,0.009139,0.01828,0.03656,0.07311,0.1462,0.2925,0.5535,0.5806,0.5665,0.6425,0.7691,0.8956,1.036,1.22,1.456,1.749,2.112,2.567,3.142,3.871,4.802,5.985,7.065,8.347,10.09,12.31,15,18.15,21.66,26.16,32.03,38.34,42.21,36.1],
-  tasks: {"0":[3,0],"1":[9,0],"2":[12,0],"3":[12,0],"4":[7,0],"5":[7,0],"6":[5,0],"7":[6,0],"8":[14,1],"9":[0,5],"10":[4,2],"11":[8,22]},
+  tasks: {"0":[3,0],"1":[9,0],"2":[12,0],"3":[12,0],"4":[7,0],"5":[7,0],"6":[5,0],"7":[6,0],"8":[14,1],"9":[0,5],"10":[4,2],"11":[8,28]},
 };
 
-const YESNO = (rec) => [["yes", "Yes, as recommended", rec !== false], ["no", "No, or something else (say in the notes)"]];
-const CONFIRM = [["ok", "Confirm as documented", true], ["change", "Change it (say what in the notes)"]];
-
 const ITEMS = [
-/* ---------------- section 1 */
-{ id: "D1", sec: 1, num: "1.1", title: "D1: convergence at equilibrium (Theory §5)", session: "A", effort: "15–30 min", type: "study", blocks: ["M11.17"],
-  body: `<p>Newton accepts when ‖r‖ ≤ rtol · F_ref, with F_ref = max(‖F‖, ‖K T‖, 1e-12) and rtol = 1e-6. At a uniform temperature
-  <b>K T is zero up to round-off</b>, because conduction annihilates a constant field. In a radiation-only model <b>F is zero as well</b>,
-  since the radiation sits in the residual-only part. So the allowance collapses to round-off, and a correct answer is refused.</p>`,
+{ id: "N", sec: 1, num: "1", title: "The factor N for D1 (convergence at equilibrium)", session: "A", effort: "2 min", type: "quick", blocks: ["M11.17"],
+  body: `<p>You chose option (c): keep the relative test, and also accept an iterate when the free-row residual satisfies
+  <b>‖r‖ ≤ N · ε · (‖|K|·|T|‖ + ‖F‖ + ‖r_extra‖)</b>, where ε ≈ 2.2e-16 is the machine precision. The answer did not include N,
+  and an agent may not choose a constant (CLAUDE.md rule 3).</p>
+  <ul><li><b>Too small</b> (around 1): the assembly's own round-off can still beat the floor, and the failure stays.</li>
+  <li><b>Too large</b> (around 1e6): a real residual could pass when the temperature level is high and the flows are small.</li></ul>
+  <p>The chart shows the reproduced case: the residual stays at 40–60 % of a reference that is itself at round-off.</p>`,
   chart: "d1",
-  after: `<div class="callout">Codex's objection to (a), which the main agent shares: ‖|K||T|‖ grows with the absolute temperature, not the heat flow.
-  Raising a body from 300 K to 1000 K triples the allowance although the conducted heat is unchanged. Option (c) touches only the
-  round-off case.</div>`,
-  qs: [{ q: "Which convergence rule?", opts: [
-    ["a", "(a) Add ‖|K|·|T|‖ to F_ref. Simple, but loosens the test on every problem"],
-    ["b", "(b) Also accept when ΔT < ttol and the residual is below an absolute floor in watts (give the floor)"],
-    ["c", "(c) Keep the relative test, add a round-off floor: accept when ‖r‖ ≤ N·ε·(‖|K||T|‖ + ‖F‖ + ‖r_extra‖) on the free rows", true]],
-    value: "N (for c), such as 10, 100 or 1000; or the floor in W (for b)" }],
-  files: ["docs/theory.md", "src/thermalfea/solver/nonlinear.py", "src/thermalfea/solver/transient.py", "src/thermalfea/physics/radiation_ambient.py", "REVIEW-2.md"] },
+  qs: [{ q: "N", opts: [["10", "N = 10"], ["100", "N = 100"], ["1000", "N = 1000"], ["other", "Another value (type it below)"]], value: "Other value of N" }],
+  files: ["docs/theory.md", "src/thermalfea/solver/nonlinear.py", "docs/OPEN_QUESTIONS.md", "docs/tasks.md"] },
 
-{ id: "D2", sec: 1, num: "1.2", title: "D2: stream fluid rows when θ < 1 (Theory §6, §9.1)", session: "A", effort: "20–45 min", type: "study", blocks: ["M11.18 (2.1-3)"],
-  body: `<p>Fluid nodes have no heat capacity, so their equations are algebraic. With the θ-method an imbalance carries over as
-  g(n+1) = −(1−θ)/θ · g(n): it <b>alternates for ever at θ = 0.5</b> and halves each step at θ = 2/3. A fresh run starts in balance
-  or takes a θ = 1 first step. A restart skips that step (Q25.2), and after a change of flow or loads its fluid state can be out of balance.
-  Shown by the recurrence; not yet reproduced end to end.</p>`,
-  chart: "d2",
-  qs: [{ q: "How should the fluid rows be stepped?", opts: [
-    ["a", "(a) Always fully implicit (θ = 1) for rows without capacitance; on a restart, first re-solve the fluid for the stored wall temperatures, then rebuild g(n)", true],
-    ["b", "(b) Only on a restart: one θ = 1 step for the whole system when the stored state is out of balance"]] }],
-  files: ["docs/theory.md", "src/thermalfea/solver/transient.py", "src/thermalfea/flow/stream.py", "src/thermalfea/post/energy.py", "docs/OPEN_QUESTIONS.md", "REVIEW-2.md"] },
-
-{ id: "D3", sec: 1, num: "1.3", title: "D3: the step-size error estimate (Theory §6.1)", session: "A", effort: "15–30 min", type: "study", blocks: ["M11.19"],
-  body: `<p>After a fast change of a prescribed temperature the step size collapses. Two causes:</p>
-  <ul><li>the error estimate and <code>max_dT_per_step</code> include the prescribed nodes, whose jump the predictor cannot follow;</li>
-  <li>the predictor history is not restarted at a breakpoint.</li></ul>
-  <p>The jump detector <code>_jumps</code> also misses a jump that is continuous from the right, can misread a periodic load, and its
-  probe rounds back to t when Δt/t is small.</p>`,
-  chart: "d3",
-  qs: [{ q: "Change the estimate as recommended?", opts: [
-    ["yes", "Yes: leave out the prescribed DOFs; restart the predictor after a physical breakpoint (not an output time); keep a change limit on the free solid temperatures for that first step; fix _jumps", true],
-    ["part", "Only part of it (say which in the notes)"],
-    ["no", "No"]] }],
-  files: ["docs/theory.md", "src/thermalfea/solver/timestep.py", "src/thermalfea/solver/transient.py", "docs/OPEN_QUESTIONS.md", "REVIEW-2.md"] },
-
-{ id: "D6", sec: 1, num: "1.4", title: "D6: contact heat and h_mean in the results file (Data §9)", session: "B", effort: "10–20 min", type: "quick", blocks: ["M11.28"],
-  body: `<p>The heat across each contact and the mean h of each correlation load are computed, but never stored. The window can't show
-  them, and the pump example recomputes the contact heat by post-processing. Stream h_mean is already stored.</p>
-  <div class="callout warn">Compatibility (Codex): older files stay readable if the new groups are optional. But the reader refuses a
-  <i>newer</i> schema version, so files written after a version bump can't be read by older copies of the program.</div>`,
-  qs: [{ q: "Store Term results?", opts: [
-      ["bump", "Yes, in new groups, with a schema-version bump; show them in the window; the pump example uses them", true],
-      ["optional", "Yes, but keep the schema version and add the groups as optional"],
-      ["no", "No, not now"]] }],
-  files: ["docs/data-model.md", "src/thermalfea/solver/run.py", "src/thermalfea/solver/results_writer.py", "src/thermalfea/post/results.py", "src/thermalfea/physics/contact.py", "src/thermalfea/convection/evaluator.py", "examples/pump_closure/closure_model.py"] },
-
-{ id: "Q27.3", sec: 1, num: "1.5", title: "Q27.3: the oscillation-warning sentence (Theory §6.1)", session: "B", effort: "3–5 min", type: "quick", blocks: ["M11.10"],
-  body: `<p><b>Corrected after the review.</b> The warning is checked once, before the first step; later steps are never checked (Q15.7).
-  The sentence first proposed in Q27.3 says it "applies … to steps chosen by the step control", so approving it as written would
-  <i>add</i> warnings. M11.10 is also on hold; release it with this answer (item 3.2).</p>`,
-  qs: [{ q: "Which wording for Theory §6.1?", opts: [
-      ["i", "(i) \"The warning is checked once, for the first step, and is not logged when that step is the suggested Δt₀.\" Keeps today's behaviour", true],
-      ["ii", "(ii) Also check every step chosen by the step control (new warnings)"]] }],
-  files: ["docs/theory.md", "docs/OPEN_QUESTIONS.md", "src/thermalfea/physics/timescales.py", "src/thermalfea/solver/transient.py", "src/thermalfea/solver/compile.py"] },
-
-{ id: "D9", sec: 1, num: "1.6", title: "D9: contradictions in the documents (with Q11)", session: "B", effort: "10–20 min", type: "quick", blocks: ["M11.6"],
-  body: `<p>Five small corrections that an agent may not make without you.</p>`,
-  qs: [
-    { q: "1. Heat-flow sign: Theory §7 says positive out of the body; the code, Q11 and the guide say positive into it", opts: [
-      ["into", "Change Theory §7 to \"positive into the body\" (reverse the sign of its four boundary formulas)", true],
-      ["out", "Keep \"positive out\" and change the code and the guide instead"]] },
-    { q: "2. Q11, relative imbalance: the denominator also counts the heat through prescribed nodes, node by node", opts: CONFIRM },
-    { q: "3. Bring Data §8 and §9 up to date (numbered /fluid and /reactions, params, h_override)", opts: YESNO() },
-    { q: "4. Theory §6.1 says the suggested Δt₀ is \"shown in the GUI\". It is logged to the Messages panel only", opts: [
-      ["reword", "Reword to \"logged (shown in the Messages panel)\"", true],
-      ["show", "Add a task to show it before solving"]] },
-    { q: "5. Correct Q20.1 and handover.md: providers are now updated once per Newton iterate (M11.20)", opts: YESNO() }],
-  files: ["docs/theory.md", "docs/data-model.md", "docs/OPEN_QUESTIONS.md", "docs/handover.md", "src/thermalfea/post/reactions.py"] },
-
-{ id: "D10", sec: 1, num: "1.7", title: "D10: packaging and licence", session: "B", effort: "5–10 min (licence 20–60 min)", type: "quick", blocks: ["M11.30"],
-  body: `<p>The rest of M11.30 (the Pillow declaration, a <code>thermalfea-gui</code> entry point, the layer guards, the guide wording) needs no decision.</p>`,
-  qs: [
-    { q: "1. Licence: the repository has none, so there is no explicit permission to use, copy or change the code", opts: [
-      ["mit", "MIT"], ["bsd", "BSD-3-Clause"], ["apache", "Apache-2.0"], ["gpl", "GPL-3.0"], ["prop", "Keep it proprietary"], ["later", "Decide later"]] },
-    { q: "2. pandas is in the core dependencies only for the pump showcase", opts: [
-      ["extra", "Move it to an optional extra \"examples\"", true], ["keep", "Keep it in the core"]] },
-    { q: "3. Twelve showcase images (4.2 MB) are stored twice, because MkDocs publishes only files inside guide/", opts: [
-      ["keep", "Keep both copies", true], ["link", "Link the guide to the copies in examples/"]] },
-    { q: "4. Write a short README (what it is, how to install it, a link to the guide)?", opts: YESNO() }],
-  files: ["pyproject.toml", "guide/examples/img/", "guide/examples/pump-closure.md", "guide/installation.md"] },
-
-{ id: "D5", sec: 1, num: "1.8", title: "D5: inclined natural convection beyond 90°", session: "B", effort: "2–5 min now, the range in session E", type: "quick", blocks: ["M11.23"],
-  body: `<p>For |θ| > 90°, g cos θ &lt; 0, so Ra &lt; 0 and the correlation returns NaN. At +100° a validity warning comes with it;
-  at −100° there is no message, because the validity check is one-sided (θ ≤ 60°, as in Theory §8).</p>`,
-  qs: [
-    { q: "1. Refuse a non-finite angle or |θ| > 90° before evaluating, pointing to the horizontal-plate correlations?", opts: YESNO() },
-    { q: "2. The validity range, from the source text (session E)", opts: [
-      ["sym", "Symmetric, |θ| ≤ 60°"], ["one", "One-sided, as written now"], ["book", "I'll check it in session E"]],
-      value: "Which face is the heated one (if known)" }],
-  files: ["docs/theory.md", "src/thermalfea/convection/correlations.py", "src/thermalfea/convection/evaluator.py", "src/thermalfea/convection/correlation_info.py", "REVIEW-2.md"] },
-
-{ id: "D4", sec: 1, num: "1.9", title: "D4: pipe network near zero pressure drop (Theory §9.2)", session: "B", effort: "5 min (interim)", type: "quick", blocks: [],
-  body: `<p>A loss branch's conductance grows like 1/√|Δp| as Δp → 0, and the relative test weighs a tiny branch like a main one.
-  A bridge out of balance by 1e-7 stops at the 200-iteration cap. Mass is still conserved at the nodes.</p>`,
-  qs: [{ q: "What now?", opts: [
-      ["a", "(a) A clear error now: the worst branch, its Δp, both flow estimates and the largest continuity residual", true],
-      ["b", "(b) Also plan a remedy later: a mixed absolute/relative flow test (needs a scale) or a coupled pressure–flow formulation"],
-      ["none", "Neither"]] }],
-  files: ["docs/theory.md", "src/thermalfea/flow/network.py", "docs/OPEN_QUESTIONS.md", "REVIEW-2.md"] },
-
-{ id: "D7", sec: 1, num: "1.10", title: "D7: functions that depend on position (Data §1)", session: "B", effort: "5–10 min", type: "quick", blocks: ["M11.23"],
-  body: `<p>A total load in watts (HeatPower, HeatFlow) written as a function of x or y is evaluated at the origin, with no message.</p>`,
-  qs: [{ q: "Add a read-only depends_on_position to the Function protocol, next to depends_on_T, and refuse such a function for a total load?", opts: YESNO() }],
-  files: ["docs/data-model.md", "src/thermalfea/core/functions.py", "src/thermalfea/physics/body_loads.py", "src/thermalfea/physics/surface_loads.py", "src/thermalfea/model/validate.py"] },
-
-{ id: "D8", sec: 1, num: "1.11", title: "D8: api.solve without a built geometry", session: "B", effort: "5–10 min", type: "quick", blocks: ["M11.23"],
-  body: `<p><code>api.solve(model, mesh)</code> validates only when <code>built=</code> is passed (documented in Q12.1). The compiler still guards some cases.</p>`,
-  qs: [{ q: "Without built, run the checks that need only the model (materials, settings, loads, streams)?", opts: [
-      ["yes", "Yes", true], ["keep", "Keep the documented skip"]] }],
-  files: ["src/thermalfea/api.py", "src/thermalfea/model/validate.py", "src/thermalfea/solver/compile.py", "docs/OPEN_QUESTIONS.md"] },
-
-{ id: "D13", sec: 1, num: "1.12", title: "D13: scope of new commands and API exposure", session: "B", effort: "0–3 min", type: "quick", blocks: [],
-  body: `<p>The review suggests <code>thermalfea validate</code>, <code>summary</code> and <code>export</code> commands and exposing the
-  post-processing helpers in <code>api</code>. PLAN.md also names a <code>thermalfea export</code> that does not exist.
-  All of this is treated as covered by your "no scripting" hold.</p>`,
-  qs: [{ q: "Scope", opts: [
-      ["exclude", "Keep it excluded, and drop the export line from PLAN.md", true],
-      ["some", "I want some of these as tasks (name them in the notes)"]] }],
-  files: ["src/thermalfea/cli.py", "src/thermalfea/api.py", "PLAN.md", "REVIEW-2.md"] },
-
-{ id: "D12", sec: 1, num: "1.13", title: "D12: design choices that can wait", session: "F", effort: "30–60 min in all", type: "study", blocks: [],
-  body: `<p>Until you answer, the current behaviour stays. Answer any of them when convenient.</p>`,
-  qs: [
-    { q: "1. Dittus–Boelter heating flag", opts: [["stream", "One per stream (now)", true], ["cell", "One per cell"]] },
-    { q: "2. Duct validity warnings in the stream solver (the HTC calculator already shows them)", opts: [["add", "Add them"], ["no", "Not needed"]] },
-    { q: "3a. Selection matching after a rebuild: also use the bounding box?", opts: [["yes", "Yes"], ["no", "No (Data §5: centre and measure only)"]] },
-    { q: "3b. Two stored fingerprints resolve to one current entity", opts: [["error", "Report it as an error"], ["warn", "Warn and keep the first"], ["now", "Leave as now"]] },
-    { q: "4. Transforms: move the shape's points with copy=False; allow transforming points and curves for a Line", opts: [["yes", "Yes, add these"], ["no", "Not now"]] },
-    { q: "5. User fluids are loaded, but library.fluid() searches only the built-ins", opts: [["use", "Make them usable"], ["no", "Not needed"]] },
-    { q: "6. Point loads at a contact (Q22.5): a fixed temperature on an end point fixes the lower-region side only", opts: [["keep", "Keep"], ["both", "Fix both sides"]] },
-    { q: "7. run.py tolerances: when an output time matches, and whether a run can be continued", opts: CONFIRM },
-    { q: "8. Embedded points and curves (Q5): a free point or curve inside a surface is removed, not embedded in the mesh", opts: [["embed", "Embed them (for point loads or probe lines)"], ["no", "Not needed"]] },
-    { q: "9. \"Pick in viewport\" for a fixed temperature starts in Point mode", opts: [["m8g", "Check it in M8.G"], ["curve", "Start in Curve mode"]] }],
-  files: ["docs/review-2026-11-21-evaluation.md", "src/thermalfea/model/selections.py", "src/thermalfea/materials/library.py", "src/thermalfea/solver/run.py", "docs/OPEN_QUESTIONS.md"] },
-
-/* ---------------- section 2 */
-{ id: "M8.G", sec: 2, num: "2.1", title: "M8.G human gate: build V-10 and V-17 in the window", session: "D", effort: "60–120 min", type: "study", blocks: ["M11.6"],
+{ id: "M8.G", sec: 2, num: "2", title: "M8.G human gate: build V-10 and V-17 in the window", session: "B", effort: "60–120 min", type: "study", blocks: ["M11.6"],
   body: `<p>No person has used the program on a real screen; every GUI test runs offscreen.</p>
   <ul><li>Start it with <code>.venv\\Scripts\\python.exe -m thermalfea.gui.app</code>.</li>
   <li>Follow <a data-file="docs/gui-walkthrough.md" href="#">docs/gui-walkthrough.md</a> to build V-10 and V-17 from an empty model, and solve both.</li>
-  <li>Fill in its §5 friction log (step, what you did, what happened, severity, suggested change), and confirm or dismiss the
-  eight known frictions in §4.</li></ul>
-  <p>Changed since the walkthrough was written: M10 (contacts, DXF, units, restart), M11.24 (colour bar) and M11.25 (New, Open,
-  remesh, closing the solve dialog).</p>`,
+  <li>Fill in its §5 friction log (step, what you did, what happened, severity, suggested change).</li>
+  <li>Confirm or dismiss the eight known frictions in §4. Item 2 there is the "Pick in viewport" start mode, which you asked to check here.</li></ul>
+  <p>If you would rather test the finished window, wait for M11.7–M11.9: the axisymmetric choice, the display fixes and the dialog
+  for new loads.</p>`,
   table: { head: ["Case", "Minutes", "Answer", "Tolerance", "Inside?"], rows: [["V-10", "", "", "0.15 °C", ""], ["V-17", "", "", "2e-3", ""]] },
-  qs: [{ q: "Status", opts: [["todo", "Not started"], ["doing", "In progress"], ["done", "Done; the friction log is filled in"]] }],
-  files: ["docs/gui-walkthrough.md", "docs/verification.md", "guide/getting-started.md", "guide/tutorials/", "guide/limitations.md"],
+  qs: [
+    { q: "When", opts: [["now", "Now, on the current window"], ["after", "After M11.7–M11.9 are built"]] },
+    { q: "Status", opts: [["todo", "Not started"], ["doing", "In progress"], ["done", "Done; the friction log is filled in"]] }],
+  files: ["docs/gui-walkthrough.md", "docs/verification.md", "guide/getting-started.md", "guide/limitations.md"],
   site: [["Getting started", "getting-started/"], ["Limitations", "limitations/"]] },
 
-{ id: "M11.1", sec: 2, num: "2.2", title: "M11.1 human task: properties and correlations against a reference text", session: "E", effort: "2–4 h", type: "study", blocks: ["M11.6"],
-  body: `<p>Spot-check the property tables, and check every correlation and validity range against a heat-transfer text, such as
+{ id: "M11.1", sec: 2, num: "3", title: "M11.1 human task: properties and correlations against a reference text", session: "C", effort: "2–4 h", type: "study", blocks: ["M11.6"],
+  body: `<p>Spot-check the property tables, and check every correlation and validity range, against a heat-transfer text, such as
   Incropera's <i>Fundamentals of Heat and Mass Transfer</i>. Record the source and the edition of each. Until then the guide says
-  "source not yet recorded", and Plan §6 item 7 is not met. Take these to the same session:</p>
-  <ul><li><b>Air:</b> the documents say 1 atm, but the densities match 1 bar (D11).</li>
+  "source not yet recorded", and Plan §6 item 7 is not met. The inclined-plate range is settled (one-sided, θ ≤ 60°).</p>
+  <ul><li><b>Air:</b> the documents say 1 atm, but the densities match 1 bar.</li>
   <li><b>Water:</b> the table has only 5 points. Is linear interpolation good enough?</li>
-  <li><b>D5:</b> the signed validity range of the inclined plate, and which face is the heated one.</li>
-  <li><b>Q17.2:</b> the characteristic length of horizontal plates: the selection length, or area/perimeter.</li></ul>
-  <p>An agent can prepare a checklist of every value with its file and line; tick the option below to ask for it.</p>`,
+  <li><b>Q17.2:</b> the characteristic length of horizontal plates: the selection length, or area/perimeter.</li>
+  <li><b>Citations:</b> only those the theory names are recorded so far.</li></ul>`,
   qs: [
     { q: "Air reference pressure", opts: [["atm", "1 atm (change the data)"], ["bar", "1 bar (change the documents)"], ["tbd", "To check"]] },
+    { q: "Water table", opts: [["ok", "5 points are enough"], ["more", "Add points (give the source in the notes)"], ["tbd", "To check"]] },
     { q: "Q17.2 horizontal-plate length", opts: [["sel", "Selection length (now)"], ["ap", "Area/perimeter"], ["tbd", "To check"]] },
-    { q: "Checklist", opts: [["want", "Prepare the checklist for me"], ["no", "Not needed"]] },
+    { q: "Checklist", opts: [["want", "Prepare the checklist of every value for me"], ["no", "Not needed"]] },
     { q: "Status", opts: [["todo", "Not started"], ["doing", "In progress"], ["done", "Done; sources recorded (in the notes)"]], value: "Reference text and edition" }],
   files: ["docs/data-model.md", "docs/theory.md", "src/thermalfea/materials/data/solids.json", "src/thermalfea/materials/data/fluids.json", "src/thermalfea/convection/correlations.py", "src/thermalfea/convection/fluid_props.py"],
   site: [["Correlations page", "correlations/"], ["Materials page", "materials/"]] },
 
-{ id: "VIS", sec: 2, num: "2.3", title: "Visualisation testing, and the pump example", session: "F", effort: "30–60 min; optional", type: "study", blocks: [],
-  body: `<p>You planned to test the visualisation over more kinds of boundary condition (M5.G review). MP4 export has never succeeded,
-  because ffmpeg is not installed (see 5.2). The pump example's inputs are all marked illustrative. Supply real values only if it
-  should represent a real design; they are indexed in <a data-file="examples/pump_closure/README.md" href="#">its README</a>.</p>`,
+{ id: "VIS", sec: 2, num: "4", title: "Visualisation testing, and the pump example (optional)", session: "D", effort: "30–60 min", type: "study", blocks: [],
+  body: `<p>You planned to test the visualisation over more kinds of boundary condition once the build is complete; GIF only, as you chose.
+  The pump example's inputs are all marked illustrative and stay so unless you supply real values. They are indexed in
+  <a data-file="examples/pump_closure/README.md" href="#">its README</a>.</p>`,
   qs: [
-    { q: "Visualisation testing", opts: [["todo", "Not started"], ["done", "Done (findings in the notes)"]] },
+    { q: "Visualisation testing", opts: [["later", "Later, once the build is complete"], ["done", "Done (findings in the notes)"]] },
     { q: "Pump example", opts: [["illus", "Keep it illustrative", true], ["real", "I'll supply real inputs"]] }],
   files: ["src/thermalfea/post/plots.py", "src/thermalfea/post/export.py", "examples/pump_closure/", "guide/examples/pump-closure.md"],
   site: [["Pump example page", "examples/pump-closure/"]] },
-
-/* ---------------- section 3 */
-{ id: "REL", sec: 3, num: "3.1", title: "What the first release must contain", session: "C", effort: "5–10 min", type: "quick", blocks: ["M11.6"],
-  body: `<p>Plan §6 criterion 1 asks for every case in <code>docs/verification.md</code> to pass. But V-22a–d, V-23 and V-24 need M9
-  (enclosure radiation), and V-36 needs M10.2 (phase change); both are on hold. Plan §5 calls M0–M8 the first usable release, and
-  Plan §1 lets M9.5 ship after version 1.</p>`,
-  qs: [{ q: "Release scope", opts: [
-      ["exclude", "Exclude the held features from version 1, stated in the guide's limitations"],
-      ["build", "Build M9 and M10.2 before the release"],
-      ["m9", "Build M9 (planar) only; exclude phase change"]] }],
-  files: ["PLAN.md", "docs/verification.md", "guide/limitations.md"] },
-
-{ id: "HOLDS", sec: 3, num: "3.2", title: "Work on hold", session: "C", effort: "5 min", type: "quick", blocks: [],
-  body: `<p>Tick the holds to release. Everything unticked stays on hold.</p>`,
-  multi: [["M9", "M9.1–M9.5: enclosure radiation"], ["M10.2", "M10.2: phase change (V-36)"], ["M10.5", "M10.5: HTML report"],
-    ["M11.7", "M11.7: axisymmetric choice in Analysis Settings"], ["M11.8", "M11.8: display fixes (unset mass flow, HTC cross-section, \"steady state\")"],
-    ["M11.9", "M11.9: dialog for new correlation and radiation loads"], ["M11.10", "M11.10: no false oscillation warning (with 1.5)"],
-    ["script", "Scripting features"]],
-  files: ["docs/tasks.md", "docs/theory.md", "guide/limitations.md"] },
-
-{ id: "ORDER", sec: 3, num: "3.3", title: "Order of the remaining work", session: "C", effort: "2 min", type: "quick", blocks: [],
-  body: `<p>Default: M11.12–M11.16 (already directed), then M11.23 validation (its D5, D7 and D8 parts follow your answers), M11.26 meshing,
-  M11.27 inputs and outputs, M11.29 GUI fixes and M11.30 packaging. Not started: M11.2 verification report, M11.3 performance,
-  M11.5 Windows installer.</p>`,
-  qs: [{ q: "Order", opts: [["default", "Continue in the default order", true], ["other", "Another order (in the notes)"]] }],
-  files: ["docs/tasks.md", "docs/CONTINUE.md"] },
-
-{ id: "3D", sec: 3, num: "3.4", title: "3D", session: "C", effort: "5 min", type: "quick", blocks: [],
-  body: `<p>The estimate was 35–55 tasks, in three phases: headless 3D viewed in ParaView, then a 3D window, then streams and enclosure
-  radiation in 3D.</p>`,
-  qs: [{ q: "Plan it?", opts: [["m12", "Write milestone M12 into tasks.md"], ["not", "Not yet"]] }],
-  files: ["docs/CONTINUE.md", "PLAN.md"] },
-
-/* ---------------- section 4 */
-...[
-  ["Q1", "Q1: Material field order", "Material(name, k, rho, cp, *, k2=None, phase_change=None): k2 and phase_change are keyword-only", ["src/thermalfea/materials/"]],
-  ["Q14", "Q14: an unbalanced start is a discontinuity", "A start out of equilibrium with the loads counts as a discontinuity: θ = 1 on the first step", ["src/thermalfea/solver/transient.py"]],
-  ["Q18.2", "Q18.2: one c_p per stream", "One c_p per stream, at the inlet temperature (V-27 and V-29 rely on it)", ["src/thermalfea/flow/stream.py"]],
-  ["Q20", "Q20.2–8: stream and network coupling", "Initial fluid temperatures marched from the inlet; one stream per duct branch; reversed flow refused; the enthalpy heat flow; the /fluid layout; the V-29 tolerance; symmetry only a hint", ["src/thermalfea/flow/"]],
-  ["Q21", "Q21: GUI choices", "Q21.1–6 and 8–12: what an edit makes out of date; pseudo-dimensions for nodes and elements; picking rules; pasting tables; tree actions; booleans; threads; result objects as view state", ["src/thermalfea/gui/"]],
-  ["Q22", "Q22: thermal contact", "Q22.1–4, 6 and 7: contact split at compile time; the duplication rule; T-dependent conductance refused; the geometry factor from the lower region; the reported heat; the Contacts node", ["src/thermalfea/core/contact_split.py", "src/thermalfea/physics/contact.py"]],
-  ["Q23", "Q23.1–5: DXF import", "The join tolerance; ignored and refused entities; nesting; $INSUNITS not read; arcs split at 120°", ["src/thermalfea/geometry/dxf.py"]],
-  ["Q24", "Q24: unit systems", "Q24.1–6 and 8: one unit per quantity; the SI (mm) and US customary presets; velocity, area and angle; expressions in SI; what stays SI only; results in their file's units until Units is used; the chart CSV follows the display units", ["src/thermalfea/core/units.py"]],
-  ["Q25", "Q25: restart", "Q25.1–3, 5 and 6: how a restart is asked for; what matches an uninterrupted run; automatic stepping; the last_step attribute", ["src/thermalfea/solver/run.py"]],
-  ["Q26", "Q26.1, 3: the user guide", "The guide is MkDocs; the tutorial inputs are illustrative", ["mkdocs.yml", "guide/"]],
-  ["REST", "Earlier interim choices, all others", "Q2, Q4, Q6–Q10, Q12, Q13, Q15, Q16 and Q19: model defaults, the selection \"all\", the solver and step-controller details, the network convergence measure", ["docs/OPEN_QUESTIONS.md"]],
-].map(([id, title, text, files], i) => ({ id, sec: 4, num: "4." + (i + 1), title,
-  session: "F", effort: id === "REST" ? "20–40 min" : "2–5 min", type: "quick", blocks: [], compact: true,
-  body: `<p>${text}. Full text: <a data-file="docs/OPEN_QUESTIONS.md" href="#">OPEN_QUESTIONS.md</a>, under ${id === "REST" ? "each number" : id.replace(/\..*/, "")}.</p>`,
-  qs: [{ q: "Decision", opts: id === "REST" ? [["ok", "Accept them as documented, except any listed in the notes", true], ["change", "I'll go through them one by one"]] : CONFIRM }],
-  files: files.concat(["docs/OPEN_QUESTIONS.md"]) })),
-
-/* ---------------- section 5 */
-{ id: "GH", sec: 5, num: "5.1", title: "Automatic publishing of the user guide (optional)", session: "F", effort: "5 min", type: "quick", blocks: [],
-  body: `<p>The guide is published by hand with <code>mkdocs gh-deploy</code>. A GitHub Actions workflow would need a git credential with the
-  <code>workflow</code> scope; <code>gh auth login</code> alone does not grant it. Nothing is blocked.</p>`,
-  qs: [{ q: "Automatic publishing", opts: [["hand", "Keep publishing by hand", true], ["auto", "I'll provide a credential with the workflow scope"]] }],
-  files: ["mkdocs.yml", "docs/CONTINUE.md"], site: [["The published guide", ""]] },
-
-{ id: "FFMPEG", sec: 5, num: "5.2", title: "ffmpeg for MP4 export (optional)", session: "F", effort: "5 min", type: "quick", blocks: [],
-  body: `<p>MP4 export needs ffmpeg on the PATH. GIF works, and so does the error when ffmpeg is missing. Install ffmpeg, and an agent
-  will add a test that encodes a file.</p>`,
-  qs: [{ q: "MP4", opts: [["install", "I'll install ffmpeg"], ["gif", "GIF is enough", true]] }],
-  files: ["src/thermalfea/post/export.py", "tests/unit/test_export.py", "src/thermalfea/gui/chart_tools.py"] },
 ];
 
 const SECTIONS = {
-  1: ["Decisions that block tasks", "Options and evidence: docs/review-2026-11-21-evaluation.md §4 and OPEN_QUESTIONS Q29."],
+  1: ["Still to answer", "One value is missing from your answers."],
   2: ["Testing and evaluation only you can do", "Hands-on work; book a long stretch for each."],
-  3: ["Release scope, holds and priorities", "Direction for the remaining work."],
-  4: ["Confirmations of interim choices", "Each choice is in use and tested. These block nothing. Q3, Q25.4, Q29.14, Q21.7 and the test edits of Q23.6–7 and Q24.7 are settled already."],
-  5: ["Access and tools", "Optional."],
 };
+
+const DECIDED = [
+  ["D1 convergence", "(c) round-off floor N·ε (N above)", "M11.17"],
+  ["D2 fluid rows", "θ = 1 for rows without capacitance; re-solve the fluid on a restart", "M11.31"],
+  ["D3 step estimate", "Free DOFs only; predictor restart after a physical breakpoint; first-step limit; fix _jumps", "M11.19"],
+  ["D4 network", "A clear error with diagnostics", "M11.32"],
+  ["D5 inclined plate", "Refuse |θ| > 90°; the range stays one-sided", "M11.23"],
+  ["D6 term results", "New groups, schema step, shown in the window, used by the pump example", "M11.28"],
+  ["D7, D8", "depends_on_position; model-only checks in api.solve", "M11.23"],
+  ["D9 documents", "Theory §7 \"positive into\"; Data §8 and §9; Δt₀ wording; Q20.1", "M11.33"],
+  ["D10 packaging", "MIT licence; pandas as the extra \"examples\"; README; keep both image copies", "M11.30"],
+  ["D12 design", "Transforms of points and curves; user fluids; a contact end fixed on both sides; the rest stays", "M11.34–36"],
+  ["D13 scope", "Excluded; drop thermalfea export from PLAN", "M11.33"],
+  ["Q27.3", "Checked once, for the first step; not logged for the suggested Δt₀", "M11.10"],
+  ["Release", "Version 1 excludes M9 and M10.2 and their cases", "M11.6"],
+  ["Holds", "Released: M10.5, M11.7–M11.10. On hold: M9, M10.2, scripting", "—"],
+  ["Order", "Default order, then the newly unblocked tasks", "—"],
+  ["3D", "Not yet", "—"],
+  ["Confirmations", "Q1, Q14, Q18.2, Q20–Q26 (except 22.5) and all earlier entries", "—"],
+  ["Access", "Publish the guide by hand; GIF only", "—"],
+];
+
+const YESNO = (rec) => [["yes", "Yes, as recommended", rec !== false], ["no", "No, or something else (say in the notes)"]];
+const CONFIRM = [["ok", "Confirm as documented", true], ["change", "Change it (say what in the notes)"]];
+
 
 /* ------------------------------------------------------------------ state */
 let state = {};
@@ -503,7 +331,7 @@ function itemStatus(it) {
 function renderItems() {
   const host = document.getElementById("items");
   host.innerHTML = "";
-  for (const sec of [1, 2, 3, 4, 5]) {
+  for (const sec of Object.keys(SECTIONS).map(Number)) {
     const [title, lead] = SECTIONS[sec];
     const s = el("section", { id: "sec" + sec });
     s.appendChild(el("h2", {}, `${sec}. ${esc(title)} <small>${ITEMS.filter(i => i.sec === sec).length} items</small>`));
@@ -625,8 +453,7 @@ function update() {
   applyFilter();
 }
 
-const FILTERS = [["all", "All"], ["open", "Not done"], ["blocks", "Blocks a task"], ["quick", "Quick"], ["A", "Session A"], ["B", "Session B"],
-  ["C", "Session C"], ["D", "Session D"], ["E", "Session E"], ["F", "Session F"]];
+const FILTERS = [["all", "All"], ["open", "Not done"], ["blocks", "Blocks a task"]];
 let filter = "all";
 function renderFilters() {
   const host = document.getElementById("filters");
@@ -646,7 +473,7 @@ function applyFilter() {
     else if (filter.length === 1) show = it.session === filter;
     card.classList.toggle("hidden", !show);
   }
-  for (const sec of [1, 2, 3, 4, 5]) {
+  for (const sec of Object.keys(SECTIONS).map(Number)) {
     const any = ITEMS.some(i => i.sec === sec && !document.getElementById("item-" + i.id).classList.contains("hidden"));
     document.getElementById("sec" + sec).classList.toggle("hidden", !any);
   }
@@ -794,40 +621,39 @@ function drawCharts(card, it, force) {
 
 function drawDepmap() {
   const host = document.getElementById("depmap");
-  const left = [["D1", "D1 convergence"], ["D2", "D2 fluid rows"], ["D3", "D3 step estimate"], ["D6", "D6 term results"], ["Q27.3", "Q27.3 warning text"],
-    ["D5", "D5 inclined plate"], ["D7", "D7 position flag"], ["D8", "D8 solve checks"], ["D10", "D10 packaging"], ["D9", "D9 documents"],
-    ["M8.G", "M8.G window test"], ["M11.1", "M11.1 sources"], ["REL", "Release scope"]];
-  const mid = [["M11.17", ["D1"]], ["M11.18*", ["D2"]], ["M11.19", ["D3"]], ["M11.28", ["D6"]], ["M11.10", ["Q27.3"]], ["M11.23", ["D5", "D7", "D8"]], ["M11.30", ["D10"]]];
-  const W = 420, rowH = 25, H = left.length * rowH + 16;
-  const s = svg(W, H, "Which of your items blocks which task");
-  const ly = (i) => 10 + i * rowH, lx = 6, lw = 128, mx = 186, mw = 78, rx = 318, rw = 92;
-  const midY = {}; mid.forEach(([id], i) => midY[id] = 10 + i * (rowH * 1.36) + 4);
-  const relY = H / 2 - 12;
-  const edge = (x1, y1, x2, y2, col) => add(s, "path", { d: `M${x1},${y1} C${(x1 + x2) / 2},${y1} ${(x1 + x2) / 2},${y2} ${x2},${y2}`, fill: "none", stroke: css(col), "stroke-width": 1.3, opacity: .75 });
-  mid.forEach(([id, deps]) => deps.forEach(d => { const i = left.findIndex(l => l[0] === d); edge(lx + lw, ly(i) + 10, mx, midY[id] + 10, "--bad"); }));
-  mid.forEach(([id]) => edge(mx + mw, midY[id] + 10, rx, relY + 12, "--accent"));
-  ["D9", "M8.G", "M11.1", "REL"].forEach(d => { const i = left.findIndex(l => l[0] === d); edge(lx + lw, ly(i) + 10, rx, relY + 12, "--bad"); });
-  left.forEach(([id, label], i) => {
-    const g = add(s, "g", { class: "dep-node", tabindex: 0 });
-    add(g, "rect", { x: lx, y: ly(i), width: lw, height: 20, rx: 5, fill: css("--bad-soft"), stroke: css("--bad"), "stroke-width": 1 });
-    add(g, "text", { x: lx + 7, y: ly(i) + 14, style: `fill:${css("--bad")};font-weight:600` }, label);
-    g.addEventListener("click", () => openItem(id));
+  const cols = [
+    { title: "Built", color: "--good", items: ["M11.18", "M11.20", "M11.21", "M11.22", "M11.24", "M11.25"] },
+    { title: "Ready to build", color: "--accent", items: ["M11.12–16", "M11.19", "M11.23", "M11.26–27", "M11.28", "M11.29–30", "M11.31–36", "M10.5", "M11.7–10"] },
+    { title: "Waits on you", color: "--bad", items: [["N for D1", "N"], ["M8.G", "M8.G"], ["M11.1", "M11.1"]] },
+  ];
+  const W = 420, rowH = 24, H = 10 * rowH + 50, cw = 128, gap = 10;
+  const s = svg(W, H, "Tasks built, ready to build, and waiting on the owner");
+  cols.forEach((c, ci) => {
+    const x = 6 + ci * (cw + gap);
+    add(s, "text", { x: x + cw / 2, y: 14, "text-anchor": "middle", style: `fill:${css(c.color)};font-weight:700` }, c.title);
+    c.items.forEach((it, i) => {
+      const [label, id] = Array.isArray(it) ? it : [it, null];
+      const g = add(s, "g", id ? { class: "dep-node", tabindex: 0 } : {});
+      add(g, "rect", { x, y: 24 + i * rowH, width: cw, height: 19, rx: 5, fill: css(c.color + "-soft") || css("--chip"), stroke: css(c.color) });
+      add(g, "text", { x: x + cw / 2, y: 37 + i * rowH, "text-anchor": "middle", style: `fill:${css(c.color)};font-weight:600` }, label);
+      if (id) g.addEventListener("click", () => openItem(id));
+    });
   });
-  mid.forEach(([id]) => {
-    const g = add(s, "g", {});
-    add(g, "rect", { x: mx, y: midY[id], width: mw, height: 20, rx: 5, fill: css("--accent-soft"), stroke: css("--accent") });
-    add(g, "text", { x: mx + mw / 2, y: midY[id] + 14, "text-anchor": "middle", style: `fill:${css("--accent")};font-weight:600` }, id);
-  });
-  add(s, "rect", { x: rx, y: relY, width: rw, height: 24, rx: 6, fill: css("--good-soft"), stroke: css("--good") });
-  add(s, "text", { x: rx + rw / 2, y: relY + 16, "text-anchor": "middle", style: `fill:${css("--good")};font-weight:600` }, "M11.6 release");
+  const ry = H - 22, rx = 6 + 2 * (cw + gap);
+  add(s, "rect", { x: rx, y: ry, width: cw, height: 20, rx: 6, fill: css("--warn-soft"), stroke: css("--warn") });
+  add(s, "text", { x: rx + cw / 2, y: ry + 14, "text-anchor": "middle", style: `fill:${css("--warn")};font-weight:600` }, "M11.17 waits for N");
   host.innerHTML = ""; host.appendChild(s);
-  host.appendChild(el("p", { class: "note" }, "M11.18* is item 2.1-3 only; the rest of M11.18 is done."));
+}
+
+function renderDecided() {
+  const t = document.getElementById("decidedTable");
+  t.innerHTML = "<tr><th>Item</th><th>Decision</th><th>Task</th></tr>" + DECIDED.map(([a, b, c]) => `<tr><td><b>${esc(a)}</b></td><td>${esc(b)}</td><td>${esc(c)}</td></tr>`).join("");
 }
 
 function drawEffort() {
   const host = document.getElementById("effort");
   const keys = Object.keys(SESSIONS), W = 400, rowH = 34, L = 128, R = 14, H = keys.length * rowH + 30, max = 240;
-  const SHORT = { A: "Solver numerics", B: "Quick approvals", C: "Release scope", D: "In the window", E: "Reference book", F: "When convenient" };
+  const SHORT = { A: "The factor N", B: "In the window", C: "Reference book", D: "Optional" };
   const s = svg(W, H, "Estimated owner time per work session, in minutes");
   const x = (m) => L + (W - L - R) * m / max;
   [0, 60, 120, 180, 240].forEach(m => { add(s, "line", { x1: x(m), x2: x(m), y1: 4, y2: H - 22, stroke: css("--line") }); add(s, "text", { x: x(m), y: H - 8, "text-anchor": "middle" }, m === 0 ? "0" : (m / 60) + " h"); });
@@ -881,6 +707,8 @@ renderFilters();
 renderSessions();
 renderItems();
 drawOverview();
+renderDecided();
+refreshLinks();
 update();
 if (location.hash.startsWith("#item-")) openItem(location.hash.slice(6));
 </script>

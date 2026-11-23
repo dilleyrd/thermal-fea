@@ -380,7 +380,7 @@ Boundary Conditions, Flow (Streams, Network), Enclosures, Analysis Settings, Sol
   and all plot labels; SI m, SI mm, US customary presets.
 - [ ] **M10.5 [A] Report.** Self-contained HTML report: model summary, materials, mesh
   statistics, load tables, solver log summary, energy balance, chosen plots.
-  *(On hold by the owner since 2026-11-16: future to-do, skip for now.)*
+  *(On hold from 2026-11-16; released by the owner on 2026-11-22, Q29.15.)*
 - [x] **M10.6 [A] Restart.** Continue a transient run from the last stored step to a later
   end time, appending to the same results file.
 
@@ -424,8 +424,10 @@ Boundary Conditions, Flow (Streams, Network), Enclosures, Analysis Settings, Sol
 - [ ] **M11.10 [B] First time step without a false warning.** Defect Q26.4(e); owner's
   choice (ii) in Q27. The oscillation warning of Theory §6.1 is not logged for a step the
   program suggested itself; it still applies to a first step set by the user. Add the
-  rule to Theory §6.1 in the wording of Q27.3 once the owner confirms it, regenerate the
-  guide, and test both cases.
+  rule to Theory §6.1 in the wording the owner chose on 2026-11-22 (Q27.3, Q29.15): "The
+  warning is checked once, for the first step, and is not logged when that step is the
+  suggested Δt₀." Regenerate the guide, and test both cases. (M11.7–M11.10 were released
+  from hold on 2026-11-22.)
 - [x] **M11.11 [B] Restart compatibility.** `REVIEW.md` findings 2, 3, 4; owner's choice
   in Q28.1. Before anything is written to the file, a restart is refused when:
   - the mesh differs: element types, connectivity, element regions, boundary facets, or
@@ -459,9 +461,12 @@ Boundary Conditions, Flow (Streams, Network), Enclosures, Analysis Settings, Sol
   `solver/timestep.py` filters and finds mandatory times with a tolerance relative to the
   local time. Tests: end 1e8 s, output at 1e-5 s, first step 1 s; the first step lands on
   1e-5 s and the time is stored.
-- [ ] **M11.17 [C] Convergence at equilibrium.** `REVIEW-2.md` 2.1-1; Q29.1. Waits for the
-  owner's decision D1, then Theory §5 and the code. Test: a steady model with radiation to
-  300 K started at 300 K converges in one iteration.
+- [ ] **M11.17 [C] Convergence at equilibrium.** `REVIEW-2.md` 2.1-1; Q29.1. Owner's decision D1
+  (c): keep the relative test and `ttol`, and also accept when the free-row residual is at
+  most N · ε · (‖|K|·|T|‖ + ‖F‖ + ‖r_extra‖), steady and transient. **Waits for the owner's
+  value of N.** Write it into Theory §5, then the code. Test: a steady model with radiation
+  to 300 K started at 300 K converges in one iteration; the relative test is unchanged
+  elsewhere.
 - [x] **M11.18 [B] Restart, second part.** `REVIEW-2.md` 2.1-2, 2.2 (`/meta`), 2.3
   (`from_results`); Q29. A restart of a model whose stream is fed by a pipe network runs
   (the flow providers are updated before the first heat balance); `/meta` is rewritten
@@ -469,7 +474,17 @@ Boundary Conditions, Flow (Streams, Network), Enclosures, Analysis Settings, Sol
   M11.11 mesh check and refuses a file with no steps. Item 2.1-3 (Q29.2) is added once D2
   is decided. Tests: each case.
 - [ ] **M11.19 [B] Steps at fast changes.** `REVIEW-2.md` 2.1-5 and the `_jumps` defects;
-  Q29.3. Waits for D3.
+  Q29.3 (owner's decision D3, 2026-11-22). Write into Theory §6.1, then the code:
+  - the prescribed DOFs are left out of the error estimate and of `max_dT_per_step`, and a
+    model with no free DOF works;
+  - the predictor restarts on the outgoing side of a physical breakpoint, not of an output
+    time;
+  - a change limit on the free solid temperatures holds for that first step;
+  - `_jumps` sees a right-continuous jump, does not misread a periodic load, and its probe
+    does not round back to t.
+
+  Tests: each item; the 100 K-over-1 ms ramp of the evaluation takes fewer steps and
+  rejects fewer than the 69 steps and 15 rejections recorded there.
 - [x] **M11.20 [B] Hydraulics once per nonlinear iteration.** `REVIEW-2.md` 2.1-8. Theory
   §9.2 says the hydraulics are updated at most once per nonlinear iteration; line-search
   trials and the `_jumps` probes must not update the flow providers. Tests: the hydraulic
@@ -482,7 +497,15 @@ Boundary Conditions, Flow (Streams, Network), Enclosures, Analysis Settings, Sol
   fit-point spline nesting). Tests: a bulge of 2 gives the correct centre and area;
   duplicate segments are merged; a closed fit-point spline nests like any other loop.
 - [ ] **M11.23 [B] Validation coverage.** `REVIEW-2.md` 2.1-13b, c, e, g and the guards of
-  2.2 (evaluation §3). Tests: each check.
+  2.2 (evaluation §3). Also the owner's decisions of 2026-11-22 (Q29):
+  - D5: an inclined-plate angle that is not finite or has |θ| > 90° is refused before
+    evaluation, pointing to the horizontal-plate correlations; the validity range stays
+    one-sided;
+  - D7: `Function.depends_on_position` (add it to Data §1), and a total load refuses a
+    position-dependent function;
+  - D8: `api.solve` without `built` runs the checks that need only the model.
+
+  Tests: each check.
 - [x] **M11.24 [A] Viewport colour bar.** `REVIEW-2.md` 2.1-14, 2.1-17. The axes keep their
   position when the colour bar is removed and redrawn; a Manual scale is allowed on a
   uniform field. Test: the axes position is unchanged over 10 step changes.
@@ -494,8 +517,57 @@ Boundary Conditions, Flow (Streams, Network), Enclosures, Analysis Settings, Sol
   reproduction, offscreen.
 - [ ] **M11.26 [B] Meshing.** `REVIEW-2.md` 2.1-12, 2.1-6, `curve_ends` after a Transform.
 - [ ] **M11.27 [A] Inputs and outputs.** `REVIEW-2.md` items listed in the evaluation §3.
-- [ ] **M11.28 [B] Term results in the results file.** Q29.6; waits for D6.
+- [ ] **M11.28 [B] Term results in the results file.** Q29.6 (owner's decision D6,
+  2026-11-22). `Term.results()` (contact heat per contact, h_mean per correlation load) is
+  stored in new groups, with a schema-version step (Data §9). Older files stay readable.
+  The window shows the values, and the pump example reads them instead of recomputing
+  them. Tests: write and read back; an older file still opens.
 - [ ] **M11.29 [A] GUI flow and selection fixes.** `REVIEW-2.md` 2.2 GUI items.
-- [ ] **M11.30 [A] Packaging and documentation corrections.** Evaluation §3.
+- [ ] **M11.30 [A] Packaging and documentation corrections.** Evaluation §3. Also the
+  owner's decisions D10 (Q29.10):
+  - an MIT `LICENSE`;
+  - pandas moved to an optional extra `examples`;
+  - a short root `README.md` (what the program is, how to install it, a link to the
+    guide).
+
+  Both copies of the showcase images are kept.
+- [ ] **M11.31 [C] Fluid rows fully implicit.** `REVIEW-2.md` 2.1-3; Q29.2 (owner's decision
+  D2, 2026-11-22). Write into Theory §6 and §9.1, then the code:
+  - rows without capacitance (stream fluid rows) are stepped with θ = 1 whatever the
+    solid's θ, in both the linear and the Newton paths;
+  - on a restart the fluid nodes are first re-solved for the stored wall temperatures and
+    the current data, and g(n) is rebuilt;
+  - the step energy balance stays closed.
+
+  Tests: a restart with a changed mass flow and θ = 0.5 shows no alternating outlet
+  temperature; V-27 to V-29 still pass.
+- [ ] **M11.32 [B] Network error near zero pressure drop.** `REVIEW-2.md` 2.1-7; Q29.4
+  (owner's decision D4). When the network iteration does not converge, the error names the
+  worst branch, its Δp, both flow estimates and the largest continuity residual. Theory
+  §9.2 is unchanged. Test: the nearly balanced bridge of the evaluation gives that message.
+- [ ] **M11.33 [A] Document corrections.** Q29.9, Q29.13 (owner's decisions D9, D13).
+  - Theory §7: a reported heat flow is positive into the body; reverse the sign of its four
+    boundary formulas.
+  - Data §8 and §9 brought up to date (numbered `/fluid/<i>` and `/reactions/<i>` with
+    `name` attributes; `CorrelationConvection.params`; `Stream.h_override`).
+  - Theory §6.1: the suggested Δt₀ is "logged (shown in the Messages panel)".
+  - Q20.1 and `docs/handover.md`: providers are updated once per Newton iterate.
+  - Drop `thermalfea export` from PLAN.md.
+
+  Regenerate the guide.
+- [ ] **M11.34 [B] Transforms of points and curves.** Q29.12 (owner's decision D12.4).
+  `Transform(copy=False)` moves the points that belong to the shape. Points and curves can
+  be transformed, and a transformed point or curve can be used by a Line. Tests: each case,
+  and a rebuild keeps the selections.
+- [ ] **M11.35 [A] User fluids.** Q29.12 (D12.5). `library.fluid(name)` also finds the fluids
+  of the user library, as `library.solid` finds user solids. Tests: a user fluid is found
+  and used by a convection load; a built-in name still wins, or a clash is reported as for
+  solids.
+- [ ] **M11.36 [B] Fixed temperature at a contact end.** Q29.12 (D12.6), changing Q22.5. A
+  fixed temperature on a geometry point at the end of a contact curve fixes the nodes on
+  both sides of the contact. Tests: both copies of the node are prescribed; V-35 still
+  passes.
 - [ ] **M11.6 [C] Release review.** Check every item of Plan §6; resolve or document every
-  entry in `docs/OPEN_QUESTIONS.md`. Depends on M11.7–M11.30.
+  entry in `docs/OPEN_QUESTIONS.md`. Version 1 excludes the held features M9 and M10.2 and
+  their cases V-22a–d, V-23, V-24 and V-36 (owner, 2026-11-22, Q29.15); the guide's
+  limitations say so. Depends on M11.7–M11.36, M8.G and M11.1.

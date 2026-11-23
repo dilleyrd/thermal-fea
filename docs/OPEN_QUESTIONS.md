@@ -628,6 +628,10 @@ The owner decided on 2026-11-17 (not built yet):
    applies to a step set by the user and to steps chosen by the step control."
    Still open for the owner: whether a later step chosen by the automatic step control
    should be warned about (the proposed sentence says yes, as now).
+   **Settled 2026-11-22 (Q29.15).** The warning is in fact checked only once, before the
+   first step (Q15.7), so the sentence above would have added warnings. The owner chose
+   instead: "The warning is checked once, for the first step, and is not logged when that
+   step is the suggested Δt₀."
 
 ## Q28 — code-review findings of 2026-11-20 (tasks M11.11–M11.16) — raised 2026-11-20
 
@@ -666,28 +670,94 @@ or benchmark target.
 `REVIEW-2.md` is an external review of commit 353a3ca. Every claim was checked against
 the code; the verdicts and the plan are in `docs/review-2026-11-21-evaluation.md`. On
 2026-11-22 the owner asked for the clear-cut defects, which need no decision, to be fixed
-first: M11.20, M11.24, M11.22, M11.21, M11.25 and M11.18 (without item 2.1-3). The
-decisions below are open; the evaluation, §4, gives the options and a recommendation for
-each.
+first: M11.20, M11.24, M11.22, M11.21, M11.25 and M11.18 (without item 2.1-3).
 
-1. **D1, Theory §5 F_ref at equilibrium** (M11.17). Open.
-2. **D2, fluid rows with θ < 1, Theory §6** (2.1-3, in M11.18). Open.
-3. **D3, Theory §6.1 error estimate and the predictor after a breakpoint** (M11.19). Open.
-4. **D4, Theory §9.2 network iteration near Δp = 0.** Open.
-5. **D5, inclined natural convection beyond |θ| > 90°, and the validity range.** Open.
-6. **D6, `Term.results()` in the results file, Data §9** (M11.28). Open.
-7. **D7, a `depends_on_position` attribute on `Function`.** Open.
-8. **D8, `api.solve` without `built`: model-only checks or the documented skip.** Open.
-9. **D9, corrections to Theory §7 (heat-flow sign), Data §9, PLAN and Theory §6.1.** Open.
-10. **D10, packaging: pandas as an optional extra, a licence, the duplicate images.** Open.
-11. **D11, air at 1 atm or 1 bar, the water table:** part of M11.1.
-12. **D12, design choices that can wait** (evaluation §4, item 12). Open.
-13. **D13, scope:** the suggested `validate`, `summary` and `export` commands and the API
-    exposure are excluded under the owner's "no scripting" hold unless the owner says
-    otherwise.
+**The owner decided D1–D13 on 2026-11-22**, through `docs/owner-review.html`, after an
+independent check of `TODO.md` by a Codex agent. The options are in `TODO.md` (as of
+commit 314093c) and in the evaluation, §4.
+
+1. **D1, Theory §5 convergence at equilibrium (M11.17): option (c).** Keep the relative
+   test ‖r‖ ≤ rtol · F_ref and `ttol`. Also accept an iterate when ‖r‖ on the free rows is
+   at most N · ε · (‖|K|·|T|‖ + ‖F‖ + ‖r_extra‖), the same free-row norms, where ε is the
+   machine precision. This applies to steady and transient solves. **The factor N is still
+   to be given by the owner**; M11.17 waits for it.
+2. **D2, fluid rows with θ < 1 (M11.31): option (a).**
+   - Rows without capacitance (the stream fluid rows) are always stepped with θ = 1,
+     whatever θ the solid uses, in both the linear and the Newton paths.
+   - On a restart the fluid nodes are first re-solved for the stored wall temperatures
+     and the current data, and g(n) is then rebuilt.
+3. **D3, Theory §6.1 error estimate (M11.19): yes, as recommended.**
+   - The prescribed DOFs are left out of the error estimate and out of
+     `max_dT_per_step`; a model with no free DOF is handled.
+   - The predictor history restarts on the outgoing side of a physical breakpoint, not of
+     an output time.
+   - A change limit on the free solid temperatures is kept for the first step after the
+     restart.
+   - The `_jumps` defects are fixed.
+4. **D4, network near Δp = 0 (M11.32): option (a).** Raise a clear error naming the worst
+   branch, its Δp, both flow estimates and the largest continuity residual. No change to
+   the iteration of Theory §9.2.
+5. **D5, inclined natural convection (M11.23).**
+   - A non-finite angle or |θ| > 90° is refused before evaluation, pointing to the
+     horizontal-plate correlations.
+   - The validity range stays one-sided, as written in Theory §8 (θ ≤ 60°).
+6. **D6, term results in the results file (M11.28): yes.**
+   - `Term.results()` (contact heat, h_mean of correlation loads) goes in new groups.
+   - The schema version is raised.
+   - The window shows the values.
+   - The pump example reads them.
+7. **D7 (M11.23): yes.** `Function` gets a read-only `depends_on_position` (Data §1), and
+   a total load (`HeatPower`, `HeatFlow`) refuses a position-dependent function.
+8. **D8 (M11.23): yes.** `api.solve` without `built` runs the checks that need only the
+   model.
+9. **D9, documents (M11.33): all as recommended.**
+   - Theory §7 becomes "positive into the body", with the sign of its four boundary
+     formulas reversed.
+   - The Q11 imbalance scale is confirmed.
+   - Data §8 and §9 are brought up to date.
+   - Theory §6.1 says the suggested Δt₀ is "logged (shown in the Messages panel)".
+   - Q20.1 and `docs/handover.md` are corrected for M11.20.
+10. **D10, packaging (M11.30).**
+    - Licence: **MIT**.
+    - pandas moves to an optional extra `examples`.
+    - Both copies of the showcase images are kept.
+    - A short root `README.md` is written.
+11. **D11, air at 1 atm or 1 bar, the water table:** still part of M11.1.
+12. **D12, design choices.**
+    - Kept as now:
+      - one Dittus–Boelter heating flag per stream;
+      - no duct validity warnings in the stream solver;
+      - no bounding box in selection matching;
+      - duplicate fingerprint matches left as now;
+      - the run-layer tolerances confirmed;
+      - no embedding of free points or curves (Q5).
+    - **To build:**
+      - transforms move the shape's points with `copy=False`, and points and curves can
+        be transformed and used by a Line (M11.34);
+      - user fluids become usable through `library.fluid()` (M11.35);
+      - a fixed temperature on a point at the end of a contact curve fixes both sides
+        (M11.36; changes Q22.5).
+    - The "Pick in viewport" start mode is checked in M8.G.
+13. **D13, scope:** excluded, and the `thermalfea export` line is dropped from PLAN.md
+    (M11.33).
 14. **Result objects on a new model (M11.25, settled 2026-11-22).** The owner confirmed
     that New, Open and Examples clear the result objects and probes; the M8.10 test
     `test_results_cleared_clears_the_display` now requires this.
+15. **Other answers of 2026-11-22.**
+    - **Q27.3:** wording (i) for Theory §6.1, built in M11.10: "The warning is checked
+      once, for the first step, and is not logged when that step is the suggested Δt₀."
+    - **Release scope (Plan §6 item 1):** version 1 excludes the held features (M9
+      enclosure radiation, M10.2 phase change) and their verification cases (V-22a–d,
+      V-23, V-24, V-36); the guide's limitations say so.
+    - **Holds released:** M10.5, M11.7, M11.8, M11.9, M11.10. Still on hold: M9, M10.2 and
+      scripting features.
+    - **Order:** the default order of `TODO.md` §3.3, then the newly unblocked tasks.
+    - **3D:** not yet.
+    - **Confirmed as documented:** Q1, Q14, Q18.2, Q20.2–8, Q21, Q22 (except 22.5, see
+      D12), Q23.1–5, Q24, Q25, Q26.1 and 26.3, and all earlier interim choices (Q2, Q4,
+      Q6–Q10, Q12, Q13, Q15, Q16, Q19).
+    - **Still open:** Q17.2 (with M11.1).
+    - **Guide publishing** stays manual; GIF is enough (no ffmpeg).
 
 ## Q13 — choices made in the verification examples — raised in M3.G
 

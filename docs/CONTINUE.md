@@ -43,10 +43,10 @@ These hold until the owner withdraws them.
   - always review a subagent's diff and run `check.ps1` yourself before you commit.
 - **On hold; do not start until the owner says so:**
   - M9 (enclosure radiation);
-  - M10.2 (phase change);
-  - M10.5 (HTML report);
-  - M11.7–M11.10, the user-guide defects. Their tasks are written but are "not to be
-    built yet".
+  - M10.2 (phase change).
+
+  M10.5 and M11.7–M11.10 were released on 2026-11-22 (Q29.15). Version 1 excludes M9 and
+  M10.2 and their verification cases.
 - **No scripting features.** Do not build anything associated with scripting: export of
   a model as a script, `api.add_*` wrappers, sweep helpers, public access to the matrices.
 - **Order of work.** The owner directs the order. On 2026-11-20 they asked for the review
@@ -158,6 +158,15 @@ In order:
 - Still open: M11.12–M11.16 (below), M11.23, M11.26, M11.27, M11.29, M11.30, and the tasks
   that wait for the owner's decisions: M11.17 (D1), M11.19 (D3), M11.28 (D6), and 2.1-3
   in M11.18 (D2).
+- **The owner answered `TODO.md` on 2026-11-22**; every answer is recorded in Q29 (items
+  1–15).
+  - **Order of work:** M11.12–M11.16, M11.23, M11.26, M11.27, M11.29, M11.30, then the
+    newly unblocked tasks:
+    - M11.19, M11.28 and M11.31–M11.36;
+    - the released M10.5 and M11.7–M11.10;
+    - M11.17 once the owner gives N.
+  - **3D:** not yet.
+  - **What still waits on the owner:** `TODO.md`.
 
 ## 5. Next work: tasks M11.12–M11.16
 
