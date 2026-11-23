@@ -12,7 +12,8 @@ from pathlib import Path
 import pytest
 
 from thermalfea import api
-from thermalfea.gui.dialogs.material_library import MaterialLibraryDialog
+from thermalfea.core.units import UnitSettings
+from thermalfea.gui.dialogs.material_library import MaterialLibraryDialog, describe
 from thermalfea.gui.document import Document
 from thermalfea.gui.materials_tools import ACTION_ID, attach_materials
 from thermalfea.gui.panels import attach_tree
@@ -210,6 +211,15 @@ def test_builtin_tab_lists_the_library(dialog) -> None:
     assert dialog.tabs.tabText(0) == "Built-in" and dialog.tabs.tabText(1) == "User"
     select_text(dialog.builtin_list, COPPER)
     assert "401" in dialog.summary.toPlainText()  # read-only property summary
+
+
+def test_summary_follows_a_display_unit_change_while_open(dialog, doc) -> None:
+    select_text(dialog.builtin_list, COPPER)
+    before = dialog.summary.toPlainText()
+    doc.edit("Units", lambda m: setattr(m, "display_units", UnitSettings.preset("US customary")))
+    after = dialog.summary.toPlainText()
+    assert after != before
+    assert after == describe(library.solid(COPPER), doc.model.display_units)
 
 
 def test_copy_into_model_adds_equal_copies_with_unique_names(dialog, doc) -> None:

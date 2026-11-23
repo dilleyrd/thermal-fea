@@ -195,9 +195,13 @@ class CorrelationPanel(FormPanel):
 
     # ------------------------------------------------------------------ form hooks
     def field_choices(self, field: FieldSpec) -> tuple[str, ...] | None:
-        """Offer the correlation IDs and the library fluids as lists."""
+        """Offer the correlation IDs and the library fluids as lists.
+
+        Internal-flow correlations (``duct_internal``) are left out: they are used by
+        streams and are not available as a boundary condition.
+        """
         if field.name == "correlation":
-            return tuple(CORRELATIONS)
+            return tuple(cid for cid, info in CORRELATIONS.items() if info.kind != "internal")
         if field.name == "fluid":
             return tuple(library.fluids())
         return None

@@ -556,11 +556,12 @@ class ModelTree(QTreeWidget):
         return address
 
     def add_stream(self) -> Address | None:
-        """Add an in-plane stream "Stream <n>" wetting no walls.
+        """Add a stream "Stream <n>" wetting no walls.
 
         With a model that has a stream, the new stream copies every value of the first one
-        (path, fluid, flow area, ...). Otherwise the values are asked for in a non-modal
-        :class:`NewStreamDialog` (``self.stream_dialog``) and the stream is added when it is
+        (mode, path, fluid, flow area, ...), so it is valid as the first one is. Otherwise
+        the values are asked for in a non-modal :class:`NewStreamDialog`
+        (``self.stream_dialog``) and the stream is added when it is
         accepted. One undo step.
 
         Returns
@@ -583,7 +584,6 @@ class ModelTree(QTreeWidget):
             name = unique_name("Stream", [s.name for s in model.streams])
             stream = copy.deepcopy(template)
             stream.name = name
-            stream.mode = "in_plane"
             stream.walls = []
             model.streams.append(stream)
             holder.append(len(model.streams) - 1)
@@ -636,6 +636,13 @@ class ModelTree(QTreeWidget):
                 for region in model.regions:
                     if region.material == old:
                         region.material = new_name
+            elif collection == "streams":
+                old = obj.name
+                obj.name = new_name
+                if model.network is not None:  # branches name the stream they carry
+                    for branch in model.network.branches:
+                        if branch.stream == old:
+                            branch.stream = new_name
             else:
                 obj.name = new_name
 

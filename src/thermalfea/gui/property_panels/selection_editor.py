@@ -97,6 +97,8 @@ class SelectionEditor(QWidget):
         ``handler(SelectionRequest)`` replaces the default Apply (one ``document.edit``
         that only creates the selection); a form uses it to also set its field in the
         same undo step.
+    mode_sync : callable or None
+        ``mode_sync(mode)`` shows the selection mode in the main window's toolbar.
 
     Signals
     -------
@@ -119,6 +121,9 @@ class SelectionEditor(QWidget):
         self.spec = spec
         self.name_hint = spec.name
         self.apply_handler: Callable[[SelectionRequest], None] | None = None
+        #: ``sync(mode)`` shows the selection mode in the toolbar (set by whoever creates the
+        #: editor in a window; ``None`` leaves the toolbar alone).
+        self.mode_sync: Callable[[str], None] | None = None
         self._is_list = spec.kind == "selection_list"
         self._value: str | list[str] = [] if self._is_list else ""
         self._picked: tuple[int, list[int]] = (-1, [])
@@ -238,7 +243,7 @@ class SelectionEditor(QWidget):
         if self.view is None:
             return
         if on and self.document.built is not None:
-            self.view.set_selection_mode(self._mode())  # type: ignore[arg-type]
+            self._set_mode(self._mode())
             if not self._connected:
                 self.view.selection_changed.connect(self.on_picked)
                 self._connected = True
@@ -246,7 +251,13 @@ class SelectionEditor(QWidget):
             if self._connected:
                 self.view.selection_changed.disconnect(self.on_picked)
                 self._connected = False
-            self.view.set_selection_mode("none")
+            self._set_mode("none")
+
+    def _set_mode(self, mode: str) -> None:
+        """Set the viewport's selection mode and, if given, the toolbar that shows it."""
+        self.view.set_selection_mode(mode)  # type: ignore[arg-type]
+        if self.mode_sync is not None:
+            self.mode_sync(mode)
 
     def on_picked(self, dim: int, tags: list[int]) -> None:
         """Slot of ``selection_changed``: remember the entities of an accepted dimension."""
@@ -292,6 +303,8 @@ class SelectionEditor(QWidget):
                 f"Create selection {request.name}",
                 lambda m: store_selection(m, self.document.built, request),
             )
+        if request.name not in self.document.model.selections:
+            return None  # the store was refused (a handler may report it without raising)
         if self._is_list:
             if request.name not in self._value:
                 self._value = [*self._value, request.name]  # type: ignore[misc]

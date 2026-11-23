@@ -610,6 +610,15 @@ def test_cancel_reports_no_error_dialog(window, qtbot, dialogs) -> None:
     assert dialogs.calls == []
 
 
+def test_steady_cancel_is_reported_as_cancelled(steady, qtbot) -> None:
+    assert run_to_end(qtbot, steady) == "finished"
+    info = steady.solve._last_info
+    assert info is not None and info.time == info.end_time  # a steady run has no end to reach
+    steady.solve._on_cancelled(None)  # the cancel of a steady run arrives after its last step
+    assert steady.solve.outcome == "cancelled"
+    assert "cancelled" in steady.solve.message and "finished" not in steady.solve.message
+
+
 # ------------------------------------------------------------------------------ failure
 def failing_document() -> Document:
     """Strong radiation with a single Newton iteration and a tight tolerance."""

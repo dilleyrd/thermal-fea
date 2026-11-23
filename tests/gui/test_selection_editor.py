@@ -9,6 +9,7 @@ from thermalfea import api
 from thermalfea.core.forms import FieldSpec, form_for
 from thermalfea.core.functions import Constant
 from thermalfea.gui.document import Document
+from thermalfea.gui.panels import attach_tree
 from thermalfea.gui.property_panels.form import FormPanel
 from thermalfea.gui.property_panels.selection_editor import SelectionEditor
 from thermalfea.gui.scene import SceneView
@@ -188,3 +189,46 @@ def test_selection_list_field_appends_and_clears(qtbot, built_doc) -> None:
     assert built_doc.model.streams[0].walls == ["S walls", "S walls 2"]
     walls.clear()
     assert built_doc.model.streams[0].walls == []
+
+
+def test_failed_apply_leaves_the_label_unchanged(qtbot, built_doc) -> None:
+    view = FakeView()
+    p = FormPanel(form_for(Convection), built_doc, ("bcs", 0), view)
+    qtbot.addWidget(p)
+    editor = p.editors["selection"]
+    assert editor.current_label.text() == "(none)"
+    editor.pick_button.setChecked(True)
+    view.pick(1, [987654])  # no such curve: the store fails
+    assert editor.apply_button.isEnabled()
+    editor.apply_button.click()
+    assert editor.current_label.text() == "(none)" and editor.value() == ""
+    assert built_doc.model.bcs[0].selection == "" and built_doc.undo_stack.count() == 0
+
+
+def test_toolbar_shows_the_picking_mode(qtbot, window, built_doc) -> None:
+    view = FakeView()
+    tree, controller = attach_tree(window, built_doc, view)
+    controller.show_object(("bcs", 0))
+    editor = controller.panel.editors["selection"]
+    assert isinstance(editor, SelectionEditor)
+    editor.pick_button.setChecked(True)
+    assert view.mode == "curve"
+    assert window.actions["select.curve"].isChecked()
+    editor.pick_button.setChecked(False)
+    assert view.mode == "none"
+    assert window.actions["select.none"].isChecked()
+
+
+def test_changing_the_panel_ends_picking(qtbot, window, built_doc) -> None:
+    view = FakeView()
+    tree, controller = attach_tree(window, built_doc, view)
+    controller.show_object(("bcs", 0))
+    editor = controller.panel.editors["selection"]
+    editor.pick_button.setChecked(True)
+    assert view.mode == "curve"
+    controller.show_object(("section", "none"))  # another tree item: the panel is replaced
+    assert view.mode == "none"
+    assert window.actions["select.none"].isChecked()
+    assert not editor.pick_button.isChecked()
+    view.pick(1, [top_curve(built_doc)])  # the dead editor gets no pick
+    assert editor.picked() == (-1, [])

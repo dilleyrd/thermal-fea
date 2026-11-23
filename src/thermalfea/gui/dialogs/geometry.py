@@ -176,6 +176,8 @@ class GeometryOpDialog(QDialog):
         self.document = controller.document
         self.editors: dict[str, QWidget] = {}
         self.specs: dict[str, FieldSpec] = {}
+        self._labels: dict[str, QLabel] = {}  # the row labels, relabelled on a unit change
+        self._snap_unit: QLabel | None = None
         self._connected = False
         self.placement = edit.Placement(tool.placement) if tool.placement else None
         self.setWindowTitle(tool.title)
@@ -201,6 +203,7 @@ class GeometryOpDialog(QDialog):
         outer.addLayout(self.form)
 
         self._units = self.document.model.display_units
+        self.document.model_changed.connect(self._on_model_changed)
         for spec in tool.specs():
             self._add_field(spec)
         self.id_edit = QLineEdit()
@@ -263,11 +266,44 @@ class GeometryOpDialog(QDialog):
         if spec.tooltip:
             editor.setToolTip(spec.tooltip)
         self.editors[name] = editor
+        label = QLabel(self._field_label(spec))
+        self._labels[name] = label
+        self.form.addRow(label, editor)
+
+    def _field_label(self, spec: FieldSpec) -> str:
+        """The row label of a field; its unit comes from the display settings, not the label."""
         label = spec.label
-        if spec.quantity:  # the unit comes from the display settings, never from the label
+        if spec.quantity:
             base = re.sub(r"\s*\[[^\]]*\]$", "", label)
             label = f"{base} [{unit_label(spec.quantity, self._units)}]"
-        self.form.addRow(QLabel(label), editor)
+        return label
+
+    def _on_model_changed(self) -> None:
+        """Show the fields in the new display units when the units changed while open."""
+        units = self.document.model.display_units
+        if units == self._units:
+            return
+        # Text fields of lists are shown in display units: read them in the old units first.
+        xy_values: dict[str, Any] = {}
+        for name, spec in self.specs.items():
+            if spec.kind == "xy_list":
+                try:
+                    xy_values[name] = self.value(name)
+                except ValueError:
+                    pass
+        self._units = units
+        for name, editor in self.editors.items():
+            spec = self.specs[name]
+            if isinstance(editor, NumberEdit):
+                editor.set_settings(units)  # re-shows the stored SI value in the new units
+                if spec.quantity:
+                    editor.setPlaceholderText(unit_label(spec.quantity, units))
+            self._labels[name].setText(self._field_label(spec))
+        if self._snap_unit is not None:
+            self.snap_spacing.set_settings(units)
+            self._snap_unit.setText(unit_label("length", units))
+        for name, value in xy_values.items():
+            self.set_value(name, value)
 
     def _ref_rule(self, name: str) -> tuple[type, ...] | None:
         return edit.REF_RULES.get((self.tool.cls, name))
@@ -285,7 +321,8 @@ class GeometryOpDialog(QDialog):
         )
         row.addWidget(self.snap_box)
         row.addWidget(self.snap_spacing)
-        row.addWidget(QLabel(unit_label("length", self._units)))
+        self._snap_unit = QLabel(unit_label("length", self._units))
+        row.addWidget(self._snap_unit)
         outer.addLayout(row)
         self.controller.snap_changed.connect(self._sync_snap)
 

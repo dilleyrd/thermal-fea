@@ -19,19 +19,21 @@ from thermalfea import api
 from thermalfea.convection.correlation_info import CORRELATION_INFO
 from thermalfea.convection.correlations import CORRELATIONS
 from thermalfea.core.forms import form_for
+from thermalfea.core.units import UnitSettings
 from thermalfea.gui.chart_tools import attach_charts
 from thermalfea.gui.dialogs.htc_calculator import HtcCalculator
 from thermalfea.gui.dialogs.new_stream import NewStreamDialog
 from thermalfea.gui.document import Document
 from thermalfea.gui.flow_results import FlowResultsWindow, attach_flow
 from thermalfea.gui.panels import attach_tree
-from thermalfea.gui.property_panels.network import NETWORK_ADDRESS, NetworkPanel
+from thermalfea.gui.property_panels.network import NETWORK_ADDRESS, NetworkPanel, parse_number
 from thermalfea.gui.property_panels.stream import StreamPanel
 from thermalfea.gui.results_tools import attach_results
 from thermalfea.materials import library
 from thermalfea.model import bcs
 from thermalfea.model.bcs import FlowNetwork, Stream
 from thermalfea.model.model import Model
+from thermalfea.model.validate import validate_model
 from thermalfea.post.flow import stream_summary, wall_temperature
 from thermalfea.post.results import Results
 
@@ -396,6 +398,53 @@ def test_flow_action_opens_its_window(flow_shell) -> None:
     assert flow_shell.flow.flow_window.isVisible()
 
 
+def test_stream_chart_has_no_csv_export(flow_shell) -> None:
+    window = flow_shell.flow.show_flow()
+    window.table.setCurrentCell(0, 0)
+    chart = window.plot_selected()
+    assert chart is not None
+    assert not chart.csv_button.isEnabled()
+    assert chart.csv_button.toolTip() != ""
+
+
+def test_flow_plot_save_error_is_shown(flow_shell, dialogs, monkeypatch, tmp_path) -> None:
+    window = flow_shell.flow.show_flow()
+    window.table.setCurrentCell(0, 0)
+    chart = window.plot_selected()
+
+    def failing_savefig(*_args, **_kwargs):
+        raise OSError("disk full")
+
+    monkeypatch.setattr(chart.figure, "savefig", failing_savefig)
+    assert chart.save_image(tmp_path / "plot.png") is None
+    assert dialogs.calls and dialogs.calls[-1][0] == "Save image failed"
+    assert "disk full" in dialogs.calls[-1][1]
+
+
+def test_closed_flow_plot_is_forgotten(flow_shell) -> None:
+    window = flow_shell.flow.show_flow()
+    window.table.setCurrentCell(0, 0)
+    first = window.plot_selected()
+    second = window.plot_selected()
+    assert first is not None and second is not None
+    assert window.plot_windows == [first, second]
+    first.close()
+    assert window.plot_windows == [second]
+    second.close()
+    assert window.plot_windows == []
+
+
+def test_flow_plot_is_marked_out_of_date(flow_shell) -> None:
+    window = flow_shell.flow.show_flow()
+    window.table.setCurrentCell(0, 0)
+    chart = window.plot_selected()
+    assert chart is not None and not chart.out_of_date
+    assert "(out of date)" not in chart.windowTitle()
+    flow_shell.document.results_changed.emit()
+    assert chart.out_of_date
+    assert "(out of date)" in chart.windowTitle()
+
+
 # ------------------------------------------------------------------ HTC calculator
 @pytest.fixture
 def calc(qtbot) -> HtcCalculator:
@@ -511,3 +560,57 @@ def test_new_stream_dialog_offers_the_sections_and_the_ratio(qtbot) -> None:
     offered = [dialog.cross_box.itemText(i) for i in range(dialog.cross_box.count())]
     assert "annulus_inner" in offered and "triangle" in offered
     assert dialog.diameter_ratio_edit is not None
+
+
+def test_add_stream_from_a_through_plane_template_is_not_a_bad_in_plane_stream(shell) -> None:
+    def make_through_plane(model: Model) -> None:
+        model.streams[0].mode = "through_plane"
+        model.streams[0].path = None
+
+    shell.document.edit("Make through-plane", make_through_plane)
+    shell.tree.add_stream()
+    model = shell.document.model
+    new = model.streams[1]
+    assert new.name == "Stream 1" and new.path is None
+    assert new.mode == "through_plane"  # the copy keeps the template's mode
+    bad = [i for i in validate_model(model) if i.code == "bad-stream-path"]
+    assert bad == []
+
+
+def test_new_stream_dialog_refuses_zero_flow_area_and_perimeter(shell) -> None:
+    shell.document.edit("Clear streams", lambda m: m.streams.clear())
+    assert shell.tree.add_stream() is None
+    dialog = shell.tree.stream_dialog
+    pick(dialog.fluid_box, "Water")
+    pick(dialog.cross_box, "circular")
+    dialog.inlet_edit.setText("300")
+    dialog.flow_area_edit.setText("0")
+    dialog.wetted_edit.setText("0.04")
+    assert dialog.submit() is False
+    assert "positive" in dialog.message_label.text()
+    dialog.flow_area_edit.setText("1e-4")
+    dialog.wetted_edit.setText("0")
+    assert dialog.submit() is False
+    assert shell.document.model.streams == []
+    dialog.wetted_edit.setText("0.04")
+    assert dialog.submit() is True
+    assert shell.document.model.streams[0].flow_area == pytest.approx(1e-4)
+
+
+def test_network_number_accepts_a_decimal_comma() -> None:
+    assert parse_number("0,5") == pytest.approx(0.5)
+    assert parse_number("0.5") == pytest.approx(0.5)
+    with pytest.raises(ValueError):
+        parse_number("1,5.0")  # a dot is present: the comma is not a decimal point
+    with pytest.raises(ValueError):
+        parse_number("1,5,2")
+
+
+def test_network_bound_message_is_in_the_display_unit() -> None:
+    units = UnitSettings(length="mm")
+    minimum = 0.001  # 1 mm, in SI
+    assert parse_number("2", minimum=minimum, quantity="length", units=units) == pytest.approx(
+        0.002
+    )
+    with pytest.raises(ValueError, match="at least 1 mm"):
+        parse_number("0.5", minimum=minimum, quantity="length", units=units)

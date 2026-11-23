@@ -32,6 +32,13 @@ from thermalfea.model.bcs import STREAM_CROSS_SECTIONS, Stream
 CROSS_SECTIONS = STREAM_CROSS_SECTIONS
 
 
+def _positive(value: float | None, what: str) -> float:
+    """``value`` if it is strictly positive (``parse_number`` allows zero as a minimum)."""
+    if value is None or not value > 0.0:
+        raise ValueError(f"the {what} must be positive")
+    return value
+
+
 class NewStreamDialog(QDialog):
     """Non-modal dialog that builds the first stream of a model.
 
@@ -122,14 +129,14 @@ class NewStreamDialog(QDialog):
             fluid=fluid,
             mode="in_plane",
             walls=[],
-            flow_area=parse_number(
+            flow_area=_positive(parse_number(
                 self._text(self.flow_area_edit, "flow area"), minimum=0.0,
                 quantity="area", units=self.units,
-            ),
-            wetted_perimeter=parse_number(
+            ), "flow area"),  # fmt: skip
+            wetted_perimeter=_positive(parse_number(
                 self._text(self.wetted_edit, "wetted perimeter"), minimum=0.0,
                 quantity="length", units=self.units,
-            ),
+            ), "wetted perimeter"),  # fmt: skip
             cross_section=cross,  # type: ignore[arg-type]
             diameter_ratio=None if ratio is None else float(ratio),
             T_inlet=parse_number(

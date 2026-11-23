@@ -106,6 +106,8 @@ def _apply_size_controls(gmsh: ModuleType, model: Model, built: BuiltGeometry) -
         field.setNumber(tag, "VOut", settings.global_size)
         fields.append(tag)
     for r in settings.refinements:
+        if not r.selection:
+            raise MeshError("a refinement has no selection; choose the points or curves it uses")
         if not (0.0 < r.size_min <= r.size_max and 0.0 <= r.dist_min < r.dist_max):
             raise MeshError(
                 f"refinement on {r.selection!r} needs 0 < size_min <= size_max and "

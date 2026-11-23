@@ -167,6 +167,7 @@ class SolveController(QObject):
         self._built: Any = None
         self._snapshot: dict[str, Any] = {}
         self._last_info: StepInfo | None = None
+        self._transient = False  # the analysis of the current run (set when it starts)
 
         self.actions: dict[str, QAction] = {}
         menu = window.menus["solve"]
@@ -307,7 +308,8 @@ class SolveController(QObject):
         def work(context: TaskContext) -> Results:
             return api.solve(model, mesh, context.report, built=built, path=path, restart=restart)
 
-        self._open_dialog(model.solution.kind == "transient")
+        self._transient = model.solution.kind == "transient"
+        self._open_dialog(self._transient)
         self._last_info = None
         self.outcome = ""
         self.message = ""
@@ -403,7 +405,13 @@ class SolveController(QObject):
 
     def _on_cancelled(self, results: object) -> None:
         info = self._last_info
-        reached_end = info is not None and info.time >= info.end_time * (1.0 - _END_TOL)
+        # A steady run has no end time to reach (its StepInfo.end_time equals its time), so a
+        # cancel of a steady run is always a cancel.
+        reached_end = (
+            self._transient
+            and info is not None
+            and info.time >= info.end_time * (1.0 - _END_TOL)
+        )
         self._complete(results, cancelled=not reached_end)
 
     def _complete(self, results: object, cancelled: bool) -> None:

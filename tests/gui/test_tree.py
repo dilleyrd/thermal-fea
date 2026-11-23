@@ -256,3 +256,22 @@ def test_settings_nodes_show_derived_forms(qtbot, doc, window) -> None:
     assert "kind" in controller.panel.editors and "end_time" in controller.panel.editors
     tree.setCurrentItem(tree.section_item("initial"))
     assert "kind" in controller.panel.editors
+
+
+def test_renaming_a_stream_updates_the_network_branches_in_one_step(tree, doc) -> None:
+    stream = bcs.Stream(
+        name="s1", fluid="Water", mode="in_plane", walls=[], flow_area=1e-4,
+        wetted_perimeter=0.04, cross_section="circular", T_inlet=Constant(300.0),
+    )  # fmt: skip
+    doc.edit("add", lambda m: m.streams.append(stream))
+    branch = bcs.NetBranch(id="b1", node_from="a", node_to="b", stream="s1")
+    doc.edit(
+        "net", lambda m: setattr(m, "network", bcs.FlowNetwork(branches=[branch]))
+    )
+    assert tree.rename(("streams", 0), "s2")
+    assert doc.model.streams[0].name == "s2"
+    assert doc.model.network.branches[0].stream == "s2"
+    assert doc.undo_stack.count() == 3
+    doc.undo_stack.undo()
+    assert doc.model.streams[0].name == "s1"
+    assert doc.model.network.branches[0].stream == "s1"

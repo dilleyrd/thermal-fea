@@ -272,6 +272,11 @@ class ChartWindow(QWidget):
         self.stream_curves = {"fluid": (s_fluid, t_fluid), "mean wall": (s_wall, t_wall)}
         self.kind = "stream"
         self.out_of_date = False
+        # The two curves have their own s grids, so they do not form one CSV table.
+        self.csv_button.setEnabled(False)
+        self.csv_button.setToolTip(
+            "Stream plots have no CSV export: the two curves have different s values."
+        )
         self._set_title(f"Stream {stream}")
         self.canvas.draw_idle()
 

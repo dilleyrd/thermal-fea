@@ -181,7 +181,15 @@ In order:
     evaluated (`10**400`) gives inf, as `test_expression_huge_power_does_not_hang`
     specifies; validation refuses a material property that is not finite. A literal that is
     not finite (`1e309`) is now refused.
-  - **Next:** M11.29 and M11.30, then the newly unblocked tasks.
+- **M11.29 (GUI flow and selection fixes)** followed; the suite passed with 2504 tests.
+  - One M8.8 test assertion changed: the correlation list of a convection load no longer
+    offers `duct_internal`, which was the defect the review reported (as in M11.25).
+  - The stream chart's CSV button is disabled (its two curves have different s values);
+    leaving the mesh panel ends the quality colouring; an empty refinement row stays
+    possible (add, then type the selection, as M8.7 tests) and meshing says it has no
+    selection; the unit mixing between file and document units stays a documented
+    limitation.
+  - **Next:** M11.30, then the newly unblocked tasks.
 
 ## 5. Next work: tasks M11.12–M11.16
 

@@ -150,7 +150,8 @@ class MaterialLibraryDialog(QDialog):
         self.copy_button.clicked.connect(lambda _c=False: self.copy_into_model())
         self.save_button.clicked.connect(lambda _c=False: self.save_to_user_library())
         self.remove_button.clicked.connect(lambda _c=False: self.remove_from_user_library())
-        document.model_changed.connect(self._refresh_model_combo)
+        self._units = document.model.display_units
+        document.model_changed.connect(self._on_model_changed)
         self.reload()
 
     # ------------------------------------------------------------------ loading
@@ -175,6 +176,14 @@ class MaterialLibraryDialog(QDialog):
         self.model_combo.clear()
         self.model_combo.addItems(names)
         self.model_combo.blockSignals(False)
+
+    def _on_model_changed(self) -> None:
+        """Refresh the model materials; re-describe the selection when the units changed."""
+        self._refresh_model_combo()
+        units = self.document.model.display_units
+        if units != self._units:
+            self._units = units
+            self._show()
 
     def _select(self, source: str, item: QListWidgetItem | None) -> None:
         if item is None:

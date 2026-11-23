@@ -167,7 +167,10 @@ def test_correlation_and_fluid_are_lists(qtbot, built_doc) -> None:
     qtbot.addWidget(panel)
     corr, fluid = panel.editors["correlation"], panel.editors["fluid"]
     assert isinstance(corr, QComboBox) and isinstance(fluid, QComboBox)
-    assert [corr.itemText(i) for i in range(corr.count())] == list(CORRELATIONS)
+    # every correlation except the internal-flow ones, which streams use (M11.29)
+    offered = [corr.itemText(i) for i in range(corr.count())]
+    assert offered == [c for c, info in CORRELATIONS.items() if info.kind != "internal"]
+    assert "duct_internal" not in offered
     assert [fluid.itemText(i) for i in range(fluid.count())] == list(library.fluids())
     assert corr.currentText() == "vplate_natural" and fluid.currentText() == "Air"
     fluid.setCurrentIndex(fluid.findText("Water"))

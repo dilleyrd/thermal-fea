@@ -168,3 +168,32 @@ def test_preview_does_not_crash_offscreen(editor) -> None:
     editor.grid.item(0, 0).setText("")
     editor.preview.draw()
     assert editor.preview.n_points == 0
+
+
+def test_table_limits_apply_to_every_value(editor) -> None:
+    seen = []
+    editor.function_changed.connect(seen.append)
+    editor.mode_combo.setCurrentIndex(editor.mode_combo.findData("table"))
+    n = len(seen)
+    assert editor.paste_text("0\t20\n10\t-5\n") is True  # the grid takes the text ...
+    assert len(seen) == n and "at least" in editor.error_text()  # ... but -5 K is refused
+    assert editor.paste_text("0\t20\n10\t80\n") is True
+    assert seen[-1] == Table([0.0, 10.0], [20.0, 80.0], "t") and editor.error_text() == ""
+
+
+def test_table_limit_on_the_independent_values_is_not_checked(editor) -> None:
+    seen = []
+    editor.function_changed.connect(seen.append)
+    editor.mode_combo.setCurrentIndex(editor.mode_combo.findData("table"))
+    assert editor.paste_text("-10\t20\n10\t80\n") is True  # no limit on the independent values
+    assert seen[-1] == Table([-10.0, 10.0], [20.0, 80.0], "t") and editor.error_text() == ""
+
+
+def test_set_units_refreshes_the_preview(qtbot) -> None:
+    w = FunctionEditor(quantity="temperature", settings=UnitSettings(temperature="degC"))
+    qtbot.addWidget(w)
+    w.set_function(Table([0.0, 10.0], [293.15, 353.15], "t"))
+    assert list(w.preview.axes.get_lines()[0].get_ydata()) == pytest.approx([20.0, 80.0])
+    w.set_units(UnitSettings(temperature="K"))
+    assert list(w.preview.axes.get_lines()[0].get_ydata()) == pytest.approx([293.15, 353.15])
+    assert w.preview.axes.get_ylabel() == "value [K]"

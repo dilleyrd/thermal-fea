@@ -85,8 +85,12 @@ def parse_number(
         if optional:
             return None
         raise ValueError("a number is required")
+    # a single comma is a decimal point when there is no dot ("0,5")
+    number = stripped
+    if "." not in stripped and stripped.count(",") == 1:
+        number = stripped.replace(",", ".")
     try:
-        value = float(stripped)
+        value = float(number)
     except ValueError:
         raise ValueError(f"{stripped!r} is not a number") from None
     if not math.isfinite(value):
@@ -94,7 +98,13 @@ def parse_number(
     if quantity is not None and units is not None:
         value = float(to_si(value, quantity, units))
     if minimum is not None and value < minimum:
-        raise ValueError(f"must be at least {minimum:g}")
+        # the bound in the unit the number was typed in
+        shown, suffix = minimum, ""
+        if quantity is not None and units is not None:
+            shown = float(from_si(minimum, quantity, units))
+            label = unit_label(quantity, units)
+            suffix = f" {label}" if label else ""
+        raise ValueError(f"must be at least {shown:g}{suffix}")
     return value
 
 

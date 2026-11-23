@@ -191,6 +191,7 @@ def test_controls_do_not_leak_into_the_next_generation() -> None:
         ({"refinements": [Refinement("all", 0.01, 0.1, 0.0, 1.0)]}, "'all' has dimension 2"),
         ({"refinements": [Refinement("left", 0.2, 0.1, 0.0, 1.0)]}, "size_min <= size_max"),
         ({"refinements": [Refinement("left", 0.1, 0.2, 1.0, 1.0)]}, "dist_min < dist_max"),
+        ({"refinements": [Refinement("", 0.1, 0.2, 0.0, 1.0)]}, "refinement has no selection"),
     ],
 )
 def test_bad_controls_raise_mesh_error(mesh: dict, message: str) -> None:

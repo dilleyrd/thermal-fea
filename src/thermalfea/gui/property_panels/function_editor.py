@@ -276,6 +276,7 @@ class FunctionEditor(QWidget):
         finally:
             self._loading = False
         self._update_headers()
+        self._update_preview()
 
     def _update_si_note(self) -> None:
         """Say, when the display units are not SI, that expressions are written in SI."""
@@ -461,9 +462,12 @@ class FunctionEditor(QWidget):
         if mode == "expression":
             return Expression(self.expr_edit.text())
         rows = self._grid_rows()
+        ys = [self._y_to_si(y) for _, y in rows]
+        for value in ys:  # the limits apply to every table value (the dependent ones)
+            self._check_limits(value)
         return Table(
             [self._x_to_si(x) for x, _ in rows],
-            [self._y_to_si(y) for _, y in rows],
+            ys,
             self.variable_combo.currentData(),
             self.extrapolate_combo.currentData(),
         )

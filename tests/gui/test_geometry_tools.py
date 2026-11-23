@@ -11,6 +11,7 @@ from PySide6.QtWidgets import QAbstractItemView, QCheckBox, QComboBox
 
 from thermalfea import api
 from thermalfea.core.errors import ModelError
+from thermalfea.core.units import UnitSettings
 from thermalfea.geometry.gmsh_session import fresh_model
 from thermalfea.gui.dialogs.geometry import GeometryOpDialog, RefEditor
 from thermalfea.gui.document import Document
@@ -369,6 +370,16 @@ def test_clicks_after_the_dialog_closed_are_ignored(env) -> None:
     env.view.point_picked.emit(1.0, 1.0, 0.0)
     assert n_ops(env) == count
     assert dialog.editors["x"].text() == ""
+
+
+def test_dialog_follows_a_display_unit_change(env) -> None:
+    dialog = env.ctrl.open_tool("rectangle")
+    dialog.set_value("width", 0.2)  # stored in SI (m)
+    assert dialog.editors["width"].text() == "0.2"
+    env.doc.edit("Units", lambda m: setattr(m, "display_units", UnitSettings(length="mm")))
+    assert dialog.editors["width"].text() == "200"
+    assert "[mm]" in dialog._labels["width"].text()
+    assert dialog.value("width") == pytest.approx(0.2)
 
 
 def test_click_places_transform_fields(env) -> None:

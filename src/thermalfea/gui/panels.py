@@ -27,6 +27,7 @@ from thermalfea.gui.property_panels.mesh import MeshPanel
 from thermalfea.gui.property_panels.network import NETWORK_ADDRESS, NetworkPanel
 from thermalfea.gui.property_panels.region import RegionPanel
 from thermalfea.gui.property_panels.results import RESULT_ADDRESS, ResultPanel
+from thermalfea.gui.property_panels.selection_editor import SelectionEditor
 from thermalfea.gui.property_panels.solution import SolutionPanel
 from thermalfea.gui.property_panels.stream import StreamPanel
 from thermalfea.gui.scene import SceneView
@@ -151,6 +152,8 @@ class PropertyController:
             return
         spec = form_for(type(obj))
         panel = panel_factory(type(obj))(self, spec, address)
+        for editor in panel.findChildren(SelectionEditor):
+            editor.mode_sync = self._sync_toolbar
         scroll = QScrollArea()
         scroll.setWidgetResizable(True)
         scroll.setWidget(panel)
@@ -177,10 +180,24 @@ class PropertyController:
         label.setWordWrap(True)
         return label
 
+    def _sync_toolbar(self, mode: str) -> None:
+        """Check the toolbar action of ``mode`` (without emitting it: the view is set already)."""
+        action = self.window.actions.get(f"select.{mode}")
+        if action is not None and not action.isChecked():
+            action.setChecked(True)
+
     def _install(
         self, widget: QWidget, panel: FormPanel | None, address: Address | None
     ) -> None:
         previous = self._installed
+        if previous is not None and previous is not widget:
+            # a panel that is being replaced must not keep picking into the viewport
+            for editor in previous.findChildren(SelectionEditor):
+                if editor.pick_button.isChecked():
+                    editor.set_picking(False)
+            # the quality colouring belongs to the mesh panel; a new panel starts unchecked
+            for mesh_panel in previous.findChildren(MeshPanel):
+                mesh_panel.colour_box.setChecked(False)
         self.window.set_property_panel(widget)
         self._installed = widget
         self.result_panel = None

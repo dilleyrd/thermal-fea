@@ -260,6 +260,19 @@ def test_colour_by_quality_calls_set_mesh_and_unchecking_clears(shell) -> None:
     assert shell.view.calls[-1] == (mesh, None)
 
 
+def test_leaving_the_panel_ends_the_quality_colouring(shell) -> None:
+    """The check box and the viewport stay in step when the panel is shown again."""
+    panel = open_panel(shell)
+    shell.mesh.generate()
+    mesh = shell.doc.mesh
+    panel.colour_box.setChecked(True)
+    assert isinstance(shell.view.calls[-1][1], np.ndarray)
+    shell.props.show_object(("solution",))  # another tree item replaces the panel
+    assert shell.view.calls[-1] == (mesh, None)
+    again = open_panel(shell)
+    assert not again.colour_box.isChecked()
+
+
 def test_generate_button_and_action_follow_the_geometry_state(window, qtbot) -> None:
     doc = make_document(built=False)
     shell = make_shell(window, doc)

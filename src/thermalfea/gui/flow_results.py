@@ -152,7 +152,9 @@ class FlowResultsWindow(QWidget):
         return self.results_controller.results
 
     def on_results_changed(self) -> None:
-        """Read the results again: last step selected, table refilled."""
+        """Read the results again: last step selected, table refilled, plots out of date."""
+        for chart in self.plot_windows:
+            chart.mark_out_of_date()
         results = self.results()
         self.step_spin.blockSignals(True)
         try:
@@ -228,10 +230,26 @@ class FlowResultsWindow(QWidget):
             chart.deleteLater()
             self.status_label.setText(f"Plot failed: {exc}")
             return None
+        chart.failed.connect(self._show_error)
+        chart.closed.connect(self._on_plot_closed)
         self.plot_windows.append(chart)
         chart.show()
         chart.raise_()
         return chart
+
+    def _show_error(self, title: str, message: str) -> None:
+        """Show a chart's error through the main window's error dialog (status line otherwise)."""
+        owner = self.parent()
+        if isinstance(owner, MainWindow):
+            owner.show_error(title, message)
+        else:
+            self.status_label.setText(f"{title}: {message}")
+
+    def _on_plot_closed(self, chart: ChartWindow) -> None:
+        """Forget a closed plot so the list holds only the plots still open."""
+        if chart in self.plot_windows:
+            self.plot_windows.remove(chart)
+            chart.deleteLater()
 
 
 class FlowController(QObject):

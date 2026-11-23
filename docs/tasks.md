@@ -524,7 +524,7 @@ Boundary Conditions, Flow (Streams, Network), Enclosures, Analysis Settings, Sol
   stored in new groups, with a schema-version step (Data §9). Older files stay readable.
   The window shows the values, and the pump example reads them instead of recomputing
   them. Tests: write and read back; an older file still opens.
-- [ ] **M11.29 [A] GUI flow and selection fixes.** `REVIEW-2.md` 2.2 GUI items.
+- [x] **M11.29 [A] GUI flow and selection fixes.** `REVIEW-2.md` 2.2 GUI items.
 - [ ] **M11.30 [A] Packaging and documentation corrections.** Evaluation §3. Also the
   owner's decisions D10 (Q29.10):
   - an MIT `LICENSE`;
