@@ -169,6 +169,7 @@ class LoadSymbolController(QObject):
         tree: Any = None,
     ) -> None:
         super().__init__(window)
+        self.window = window
         self.document = document
         self.view = view
         self.symbols: list[LoadSymbol] = []
@@ -189,9 +190,36 @@ class LoadSymbolController(QObject):
         self.symbols = symbols_of(self.document) if self.action.isChecked() else []
         self.view.set_symbols(list(self.symbols))
 
+    def _status(self, text: str) -> None:
+        """Show ``text`` in the main window's status bar (when it has one)."""
+        bar = getattr(self.window, "statusBar", None)
+        if bar is not None:
+            bar().showMessage(text, 5000)
+
+    def _highlight_operation(self, address: Address) -> None:
+        """Highlight what the geometry operation at ``address`` owns in the current build."""
+        op = resolve(self.document.model, address)
+        built = self.document.built
+        if built is None or self.document.geometry_stale:
+            self.view.highlight(1, [])
+            self._status(f"{op.id}: the geometry is not built")
+            return
+        owned = built.op_entities.get(op.id, [])
+        if not owned:
+            self.view.highlight(1, [])
+            self._status(
+                f"{op.id}: nothing left in the geometry (used by a later operation or deleted)"
+            )
+            return
+        dim = max(int(d) for d, _ in owned)
+        self.view.highlight(dim, sorted(int(t) for d, t in owned if int(d) == dim))
+
     def highlight_address(self, address: Address) -> None:
         """Highlight the entities of the load at ``address``; other objects clear it."""
         model = self.document.model
+        if address and address[0] == "geometry" and exists(model, address):
+            self._highlight_operation(address)
+            return
         if (
             len(address) == _ITEM_ADDRESS
             and address[0] in ("regions", "materials")
@@ -218,9 +246,7 @@ class LoadSymbolController(QObject):
             self.view.highlight(1, [])
 
 
-def attach_loads(
-    window: MainWindow, document: Document, view: SceneView
-) -> LoadSymbolController:
+def attach_loads(window: MainWindow, document: Document, view: SceneView) -> LoadSymbolController:
     """Install the load symbols and the View-menu toggle in a main window.
 
     Parameters

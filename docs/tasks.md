@@ -761,7 +761,7 @@ tasks come before the owner's M8.G session (D8).
   - Once one of them is used, the three show as before. Undo back to empty folds them
     again.
   - **Tests:** folded, unfolded, the menu actions, and undo. Depends on M11.50.
-- [ ] **M11.52 [B] Geometry steps highlight what they own.** Plan §7.4.
+- [x] **M11.52 [B] Geometry steps highlight what they own.** Plan §7.4.
   - Selecting a geometry step highlights `BuiltGeometry.op_entities[id]` of the current
     build, at its highest dimension.
   - A step that owns nothing, or a failed build, clears the highlight and says so in the
