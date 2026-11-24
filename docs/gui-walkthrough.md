@@ -187,8 +187,8 @@ along the slab and the automatic time step. Using the procedure below the script
 
 ### 2.1 Start a new model
 
-File > **New** (or start the program afresh). A new model is a planar analysis; the GUI has
-no control to change that, which V-17 does not need.
+File > **New** (or start the program afresh). A new model is a planar analysis, which V-17
+needs. (Analysis Settings > "Geometry type" changes it to axisymmetric.)
 
 ### 2.2 Geometry
 

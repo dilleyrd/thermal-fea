@@ -20,7 +20,7 @@ from ..core.errors import ModelError
 from ..core.units import UnitSettings, from_si, unit_label
 from ..flow.stream import path_coordinate
 from ..model.bcs import Stream
-from .plots import _figure, _time_text
+from .plots import _figure, step_time_text
 from .results import Results
 
 _NO_STREAMS = "no streams"
@@ -158,7 +158,8 @@ def plot_stream(results: Results, stream: str, step: int = -1) -> Figure:
     ax.plot(s_wall, t_wall, label="mean wall")
     ax.set_xlabel(f"s [{unit_label('length', units)}]")
     ax.set_ylabel(f"T [{unit_label('temperature', units)}]")
-    ax.set_title(f"Stream {stream}, t = {_time_text(float(results.times[index]), units)}")
+    when = step_time_text(results, float(results.times[index]), units)
+    ax.set_title(f"Stream {stream}, {when}")
     ax.grid(True)
     ax.legend()
     return fig

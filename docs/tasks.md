@@ -402,7 +402,7 @@ Boundary Conditions, Flow (Streams, Network), Enclosures, Analysis Settings, Sol
   reference with validity ranges, stated limitations.
 - [ ] **M11.5 [B] Windows build.** PyInstaller spec (gmsh DLL and Qt plugins included);
   smoke test that the built executable opens, solves an example, and exits.
-- [ ] **M11.7 [B] Axisymmetric control in the GUI.** Defect Q26.4(a); owner's choices in
+- [x] **M11.7 [B] Axisymmetric control in the GUI.** Defect Q26.4(a); owner's choices in
   Q27. A "Geometry type: Planar / Axisymmetric" choice at the top of the Analysis Settings
   panel sets `Model.analysis`, through the undo stack; changing it marks the mesh and the
   results out of date. The region "Thickness" field is hidden for an axisymmetric model,
@@ -410,7 +410,7 @@ Boundary Conditions, Flow (Streams, Network), Enclosures, Analysis Settings, Sol
   out-of-date mesh; V-05 built from scratch in the window meets its own verification
   target. Remove the limitation from `guide/limitations.md`, `guide/getting-started.md`
   and `docs/gui-walkthrough.md`.
-- [ ] **M11.8 [A] Display fixes.** Defects Q26.4(b), (c), (f). (b) An unset optional
+- [x] **M11.8 [A] Display fixes.** Defects Q26.4(b), (c), (f). (b) An unset optional
   function (stream mass flow) is shown as unset, not "Constant 0"; reproduce with a
   failing GUI test first. (c) The HTC calculator offers the cross-section type for the
   duct correlation and passes it to `api.htc`; test: it reproduces the h pinned by the

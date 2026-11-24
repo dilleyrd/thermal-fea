@@ -435,7 +435,8 @@ class SolveController(QObject):
         n_steps = _n_steps(run)
         if cancelled and n_steps < 1:
             run = None
-        at = f" at t = {info.time:.6g} s" if info is not None else ""
+        # a steady run has no time to report (its one step is "steady state", not t = 0 s)
+        at = f" at t = {info.time:.6g} s" if info is not None and self._transient else ""
         if cancelled:
             text = (
                 f"Solve cancelled{at}; the {n_steps} step(s) written so far were kept"

@@ -130,6 +130,29 @@ def test_fluid_combo_lists_the_library_fluids(shell) -> None:
     assert items == library.fluid_names()
 
 
+def test_unset_mass_flow_shows_none_and_stays_none(shell) -> None:
+    """Defect Q26.4(b): a network-fed stream has no mass flow and must not show 'Constant 0'."""
+    shell.document.edit("Unset mass flow", lambda m: setattr(m.streams[0], "mass_flow", None))
+    panel = StreamPanel(form_for(Stream), shell.document, ("streams", 0), shell.view)
+    editor = panel.editors["mass_flow"]
+    assert editor.mode == "none"
+    assert editor.function() is None
+    # applying the panel without the user typing anything leaves the value unset
+    before = shell.undo.count()
+    editor.commit()
+    assert shell.document.model.streams[0].mass_flow is None
+    assert shell.undo.count() == before
+
+
+def test_unset_mass_flow_is_shown_unset_after_a_fresh_load(shell) -> None:
+    """The first load of the editor (no prior function) must show the unset state too."""
+    shell.document.edit("Unset mass flow", lambda m: setattr(m.streams[0], "mass_flow", None))
+    panel = StreamPanel(form_for(Stream), shell.document, ("streams", 0), shell.view)
+    panel.refresh()
+    assert panel.editors["mass_flow"].mode == "none"
+    assert shell.document.model.streams[0].mass_flow is None
+
+
 def test_path_picking_appends_one_point_per_click(shell) -> None:
     panel = StreamPanel(form_for(Stream), shell.document, ("streams", 0), shell.view)
     panel.clear_path()
@@ -379,6 +402,12 @@ def test_plot_window_holds_the_fluid_and_wall_curves(flow_shell) -> None:
     np.testing.assert_allclose(lines[0].get_ydata(), results.fluid_temperature("coolant", last))
 
 
+def test_flow_window_step_says_steady_state(flow_shell) -> None:
+    """M11.8 (Q26.4 f): the stream window labels the steady step, not "t = 0 s"."""
+    window = flow_shell.flow.show_flow()
+    assert window.step_label.text() == "steady state"
+
+
 def test_flow_action_is_enabled_only_with_stream_results(window, view, solved) -> None:
     _model, results = solved
     empty = api.new_model(name="no streams")
@@ -624,6 +653,57 @@ def test_loading_another_model_closes_the_flow_plots(flow_shell) -> None:
     assert chart is not None and window.plot_windows == [chart]
     flow_shell.document.set_model(Model(), None)  # what New, Open and Examples do
     assert window.plot_windows == []
+
+
+def test_cross_section_is_offered_only_for_the_duct_correlation(calc) -> None:
+    """Defect Q26.4(c): the duct correlation needs the cross-section; no other correlation does."""
+    pick(calc.correlation_box, "duct_internal")
+    assert not calc.cross_box.isHidden() and not calc.cross_label.isHidden()
+    items = [calc.cross_box.itemText(i) for i in range(calc.cross_box.count())]
+    assert items == list(bcs.STREAM_CROSS_SECTIONS)
+    pick(calc.correlation_box, "vplate_natural")
+    assert calc.cross_box.isHidden() and calc.cross_label.isHidden()
+
+
+def test_duct_htc_reproduces_the_cold_plate_tutorial(calc) -> None:
+    """The cold-plate tutorial pins h = 770.2 W/(m^2 K) by hand (tests/verification, 0.05).
+
+    Water in the channel: mass flow 0.02 kg/s, flow area 1e-4 m^2, wetted perimeter 0.104 m,
+    one side insulated (parallel_plates_one_side). The tutorial's inlet is 300 K.
+    """
+    pick(calc.correlation_box, "duct_internal")
+    pick(calc.fluid_box, "Water")
+    pick(calc.cross_box, "parallel_plates_one_side")
+    calc.t_surface_edit.setText("300")
+    calc.t_inf_edit.setText("300")
+    calc.input_edits["mass_flow"].setText("0.02")
+    calc.input_edits["area"].setText("1e-4")
+    calc.input_edits["wetted_perimeter"].setText("0.104")
+    result = calc.calculate()
+    assert result is not None and calc.message == ""
+    assert result.h == pytest.approx(770.2, abs=0.05)
+    assert result.regime == "laminar"
+    expected = api.htc(
+        "duct_internal", "Water", 300.0, 300.0, mass_flow=0.02, area=1e-4,
+        wetted_perimeter=0.104, cross_section="parallel_plates_one_side",
+    )  # fmt: skip
+    assert result.h == pytest.approx(expected.h, rel=1e-12)
+
+
+def test_duct_cross_section_changes_h_through_api_htc(calc) -> None:
+    pick(calc.correlation_box, "duct_internal")
+    pick(calc.fluid_box, "Water")
+    calc.t_surface_edit.setText("300")
+    calc.t_inf_edit.setText("300")
+    calc.input_edits["mass_flow"].setText("0.02")
+    calc.input_edits["area"].setText("1e-4")
+    calc.input_edits["wetted_perimeter"].setText("0.104")
+    circular = calc.calculate()
+    pick(calc.cross_box, "parallel_plates_one_side")
+    plates = calc.calculate()
+    assert circular is not None and plates is not None
+    assert circular.h != pytest.approx(plates.h, rel=1e-3)
+    assert plates.h == pytest.approx(770.2, abs=0.05)
 
 
 def test_htc_calculator_says_nothing_before_an_entry(calc) -> None:

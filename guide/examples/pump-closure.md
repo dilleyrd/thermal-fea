@@ -154,7 +154,7 @@ extremes are 179.2 °C on the casing wall and 35.9 °C on the jacket-cooled stat
 
 ![Temperature, steady hot case](img/pump-T-steady.png)
 
-*Temperature in the steady hot case (a steady result is stored at t = 0 s).*
+*Temperature in the steady hot case. A steady result has no time, so its title says "steady state".*
 
 ### Heat flows over time
 

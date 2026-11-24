@@ -185,6 +185,10 @@ class SceneView(Protocol):
         """Show load symbols; an empty list clears them."""
         ...
 
+    def set_axis_visible(self, visible: bool) -> None:
+        """Show or hide the axis of symmetry x = 0 (shown for an axisymmetric model)."""
+        ...
+
     def set_selection_mode(self, mode: SelectionMode) -> None:
         """Choose what can be picked; ``"none"`` disables picking."""
         ...

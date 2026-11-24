@@ -171,6 +171,16 @@ def summarize(results: Results, step: int = -1) -> Summary:
     )
 
 
+def _steps_line(s: Summary) -> str:
+    """The "Steps stored" line; a steady analysis has no time to report."""
+    if s.analysis.endswith("steady"):
+        return f"Steps stored:  {s.n_steps} (steady state)"
+    return (
+        f"Steps stored:  {s.n_steps} (end at t = {s.end_time:.6g} s); "
+        f"summary at t = {s.time:.6g} s"
+    )
+
+
 def format_summary(summary: Summary) -> str:
     """Lay out a :class:`Summary` as text.
 
@@ -187,8 +197,7 @@ def format_summary(summary: Summary) -> str:
     lines = [
         f"Analysis:      {s.analysis}",
         f"Mesh:          {s.n_nodes} nodes, {s.n_elements} elements",
-        f"Steps stored:  {s.n_steps} (end at t = {s.end_time:.6g} s); "
-        f"summary at t = {s.time:.6g} s",
+        _steps_line(s),
         f"Temperature:   min {s.t_min:.6g} {s.unit} at node {s.t_min_node} "
         f"({s.t_min_at[0]:.6g}, {s.t_min_at[1]:.6g})",
         f"               max {s.t_max:.6g} {s.unit} at node {s.t_max_node} "

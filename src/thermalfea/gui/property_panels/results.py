@@ -33,7 +33,7 @@ from PySide6.QtWidgets import (
 from thermalfea.core.errors import ModelError
 from thermalfea.core.forms import unit_label
 from thermalfea.core.units import from_si, to_si
-from thermalfea.post.plots import FIELDS
+from thermalfea.post.plots import FIELDS, is_steady
 
 if TYPE_CHECKING:
     from thermalfea.gui.results_tools import ResultController
@@ -298,9 +298,13 @@ class ResultPanel(QWidget):
             self.step_slider.setEnabled(n > 1)
             self.step_spin.setEnabled(n > 1)
             units = controller.document.model.display_units
-            self.time_unit.setText(unit_label("time", units))
-            shown_time = float(from_si(controller.time_of(obj.step), "time", units))
-            self.time_edit.setText(f"{shown_time:.6g}")
+            if controller.results is not None and is_steady(controller.results):
+                self.time_unit.setText("")
+                self.time_edit.setText("steady state")  # a steady file has no time to show
+            else:
+                self.time_unit.setText(unit_label("time", units))
+                shown_time = float(from_si(controller.time_of(obj.step), "time", units))
+                self.time_edit.setText(f"{shown_time:.6g}")
             self.time_edit.setEnabled(n > 1)
             self.mesh_check.setChecked(obj.show_mesh)
 

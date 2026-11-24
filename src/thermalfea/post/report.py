@@ -151,7 +151,11 @@ def _model_section(results: Results, summary: Summary) -> str:
         ("Nodes", summary.n_nodes),
         ("Elements", summary.n_elements),
         ("Stored steps", summary.n_steps),
-        ("Reported step: time [s]", _number(summary.time)),
+        (
+            ("Reported step", "steady state")
+            if summary.analysis.endswith("steady")
+            else ("Reported step: time [s]", _number(summary.time))
+        ),
         ("End time [s]", _number(summary.end_time)),
         (
             "Minimum temperature",

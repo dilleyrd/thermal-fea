@@ -483,7 +483,8 @@ def test_cold_plate_in_the_gui(
     generate_mesh(ctx, qtbot, cold.MESH_SIZE)
     solve(ctx, qtbot)
     assert [r for r in caplog.records if r.levelno >= logging.WARNING] == []
-    assert ctx.solve.message.startswith("Solve finished at t = 0 s: 1 stored step(s)")
+    # a steady solve has no time to report (M11.8, Q26.4(f))
+    assert ctx.solve.message.startswith("Solve finished: 1 stored step(s)")
     assert (doc.mesh.n_nodes, doc.mesh.n_elements) == (126, 166)
     results = results_of(ctx)
     assert float(results.temperature().max()) == pytest.approx(ref["T_max"], rel=1e-9)

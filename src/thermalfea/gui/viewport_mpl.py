@@ -86,6 +86,7 @@ Z_GEOMETRY = 1.0
 Z_MESH = 2.0
 Z_RESULTS = 3.0
 Z_SYMBOLS = 4.0
+Z_AXIS = 4.2
 Z_HIGHLIGHT = 5.0
 Z_MESH_OVER_FIELD = Z_RESULTS + 0.5
 
@@ -105,6 +106,8 @@ AXES_RECT = (0.01, 0.01, 0.98, 0.93)
 _SELECT_COLOR = "#fcc419"
 _HOVER_COLOR = "#000000"
 _BAND_COLOR = "#1c7ed6"
+#: The axis of symmetry of an axisymmetric model; not one of scene.KIND_COLORS.
+_AXIS_COLOR = "#087f5b"
 _SURFACE_FILL = "#adb5bd"
 _CURVE_COLOR = "#343a40"
 _POINT_COLOR = "#212529"
@@ -273,6 +276,12 @@ class MplSceneView(QObject):
             alpha=0.2, animated=True, visible=False, zorder=Z_HIGHLIGHT + 0.5,
         )
         self._ax.add_artist(self._band)
+        # the axis of symmetry x = 0: x in data, y in axes coordinates, so it spans the view
+        self._axis_line = Line2D(
+            [0.0, 0.0], [0.0, 1.0], color=_AXIS_COLOR, linestyle="-.", linewidth=1.4,
+            transform=self._ax.get_xaxis_transform(), zorder=Z_AXIS, visible=False,
+        )
+        self._ax.add_artist(self._axis_line)
         self._background: object | None = None
         self._background_valid = False
 
@@ -352,6 +361,17 @@ class MplSceneView(QObject):
         if symbols and self._built is not None:
             self._draw_symbols(symbols, self._built)
         self._invalidate()
+
+    def set_axis_visible(self, visible: bool) -> None:
+        """Show or hide the axis of symmetry x = 0 (a dash-dot line, not pickable)."""
+        if self._axis_line.get_visible() != bool(visible):
+            self._axis_line.set_visible(bool(visible))
+            self._invalidate()
+
+    @property
+    def axis_visible(self) -> bool:
+        """``True`` while the axis of symmetry is shown."""
+        return bool(self._axis_line.get_visible())
 
     def set_selection_mode(self, mode: str) -> None:
         """Choose what can be picked: ``none``, ``point``, ``curve``, ``surface``,
@@ -1090,6 +1110,8 @@ def attach_viewport(window: MainWindow, document: Document) -> MplSceneView:
     view.coordinates_changed.connect(show_coordinates)
     document.geometry_built.connect(lambda: view.set_geometry(document.built))
     document.mesh_changed.connect(lambda: view.set_mesh(document.mesh))
+    document.model_changed.connect(lambda: view.set_axis_visible(document.model.axisymmetric))
     view.set_geometry(document.built)
     view.set_mesh(document.mesh)
+    view.set_axis_visible(document.model.axisymmetric)
     return view

@@ -14,6 +14,8 @@ Attributes ``result`` (the last :class:`~thermalfea.convection.calculator.HtcRes
 
 from __future__ import annotations
 
+from typing import Any
+
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (
     QComboBox,
@@ -38,6 +40,10 @@ from thermalfea.convection.correlations import CORRELATIONS
 from thermalfea.core.errors import ModelError
 from thermalfea.gui.property_panels.network import parse_number
 from thermalfea.materials import library
+from thermalfea.model.bcs import STREAM_CROSS_SECTIONS
+
+#: The correlation whose Nusselt number depends on the cross-section (Theory §8.1).
+DUCT_CORRELATION = "duct_internal"
 
 #: Label and unit of the correlation inputs (SI; no unit conversion here).
 INPUT_LABELS: dict[str, tuple[str, str]] = {
@@ -95,6 +101,9 @@ class HtcCalculator(QWidget):
         self.correlation_box.addItems(list(CORRELATIONS))
         self.fluid_box = QComboBox()
         self.fluid_box.addItems(library.fluid_names())
+        self.cross_box = QComboBox()
+        self.cross_box.addItems(list(STREAM_CROSS_SECTIONS))
+        self.cross_label = QLabel("Cross-section")
         self.t_surface_edit = QLineEdit()
         self.t_inf_edit = QLineEdit()
         self.input_edits: dict[str, QLineEdit] = {}
@@ -113,6 +122,7 @@ class HtcCalculator(QWidget):
         self.form = QFormLayout()
         self.form.addRow("Correlation", self.correlation_box)
         self.form.addRow("Fluid", self.fluid_box)
+        self.form.addRow(self.cross_label, self.cross_box)
         self.form.addRow("Surface temperature [K]", self.t_surface_edit)
         self.form.addRow("Fluid temperature [K]", self.t_inf_edit)
         for key, (label, unit) in INPUT_LABELS.items():
@@ -141,6 +151,7 @@ class HtcCalculator(QWidget):
 
         self.correlation_box.currentIndexChanged.connect(lambda _i: self._on_correlation())
         self.fluid_box.currentIndexChanged.connect(lambda _i: self.calculate())
+        self.cross_box.currentIndexChanged.connect(lambda _i: self.calculate())
         for edit in (self.t_surface_edit, self.t_inf_edit, *self.input_edits.values()):
             edit.textChanged.connect(lambda _t: self.calculate())
         self.calculate_button.clicked.connect(lambda _c=False: self.calculate())
@@ -171,6 +182,9 @@ class HtcCalculator(QWidget):
             shown = key in needed
             self.form.setRowVisible(edit, shown)
             self.input_labels[key].setVisible(shown)
+        is_duct = self.correlation == DUCT_CORRELATION
+        self.form.setRowVisible(self.cross_box, is_duct)
+        self.cross_label.setVisible(is_duct)
         if info is None:
             self.title_label.setText(f"Unknown correlation {self.correlation!r}")
             for label in (self.formula_label, self.validity_label, self.length_label):
@@ -223,11 +237,13 @@ class HtcCalculator(QWidget):
     def _compute(self, input_names: tuple[str, ...], needs_fluid: bool) -> HtcResult:
         t_surface = self._number(self.t_surface_edit, "surface temperature")
         t_inf = self._number(self.t_inf_edit, "fluid temperature")
-        values: dict[str, float] = {}
+        values: dict[str, Any] = {}
         for key in input_names:
             label, unit = INPUT_LABELS.get(key, (key, "-"))
             name = label if unit == "-" else f"{label} [{unit}]"
             values[key] = self._number(self.input_edits[key], name)
+        if self.correlation == DUCT_CORRELATION:
+            values["cross_section"] = self.cross_box.currentText()
         fluid: str | None = None
         if needs_fluid:
             fluid = self.fluid_box.currentText()

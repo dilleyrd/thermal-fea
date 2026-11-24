@@ -33,7 +33,7 @@ from PySide6.QtWidgets import (
 
 from thermalfea.core.errors import ThermalFEAError
 from thermalfea.core.forms import unit_label
-from thermalfea.core.units import UnitSettings, from_si
+from thermalfea.core.units import UnitSettings
 from thermalfea.gui.charts import ChartWindow
 from thermalfea.gui.dialogs.htc_calculator import HtcCalculator
 from thermalfea.gui.document import Document
@@ -41,6 +41,7 @@ from thermalfea.gui.main_window import MainWindow
 from thermalfea.gui.results_tools import ResultController
 from thermalfea.gui.scene import SceneView
 from thermalfea.post.flow import StreamSummary, stream_summary, summary_numbers
+from thermalfea.post.plots import step_time_text
 from thermalfea.post.results import Results
 
 FLOW_ACTION_ID = "results.flow"
@@ -192,8 +193,8 @@ class FlowResultsWindow(QWidget):
         if results is not None:
             try:
                 self.rows = stream_summary(results, self.step_spin.value())
-                time = float(from_si(float(results.times[self.step_spin.value()]), "time", units))
-                self.step_label.setText(f"t = {time:.6g} {unit_label('time', units)}")
+                time = float(results.times[self.step_spin.value()])
+                self.step_label.setText(step_time_text(results, time, units))
             except (ThermalFEAError, OSError, KeyError) as exc:
                 self.status_label.setText(f"Results cannot be read: {exc}")
         else:

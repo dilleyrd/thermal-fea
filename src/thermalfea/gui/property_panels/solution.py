@@ -17,7 +17,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from PySide6.QtWidgets import QHBoxLayout, QPushButton, QWidget
+from PySide6.QtWidgets import QComboBox, QFormLayout, QHBoxLayout, QLabel, QPushButton, QWidget
 
 from thermalfea.core.forms import FormSpec
 from thermalfea.gui.addressing import Address
@@ -29,6 +29,9 @@ from thermalfea.model.solution_forms import (
     OUTPUT_TIMES_FIELD,
     TRANSIENT_ONLY_FIELDS,
 )
+
+#: ``(text, Model.analysis value)`` of the "Geometry type" choice.
+GEOMETRY_TYPES = (("Planar", "planar"), ("Axisymmetric", "axisymmetric"))
 
 
 class SolutionPanel(FormPanel):
@@ -66,6 +69,20 @@ class SolutionPanel(FormPanel):
         super().__init__(spec, document, address, view, parent)
         self._controller = controller
         self._row = {field.name: i for i, field in enumerate(spec.fields)}
+        # "Geometry type" belongs to the model, not to SolutionSettings: its own form row
+        # above the settings, written through one undoable edit of ``Model.analysis``
+        self.analysis_combo = QComboBox()
+        for label, value in GEOMETRY_TYPES:
+            self.analysis_combo.addItem(label, value)
+        self.analysis_combo.setToolTip(
+            "Planar: a section with a thickness. Axisymmetric: x is the radius, the axis "
+            "x = 0 is the axis of symmetry."
+        )
+        self.analysis_combo.activated.connect(lambda _i: self._on_geometry_type())
+        geometry_form = QFormLayout()
+        geometry_form.addRow(QLabel("Geometry type"), self.analysis_combo)
+        outer = self.layout()
+        outer.insertLayout(outer.indexOf(self.form_layout), geometry_form)
         row = QHBoxLayout()
         self.validate_button = QPushButton("Validate")
         self.validate_button.clicked.connect(lambda _checked=False: self._on_validate())
@@ -74,7 +91,6 @@ class SolutionPanel(FormPanel):
         row.addWidget(self.validate_button)
         row.addWidget(self.solve_button)
         row.addStretch(1)
-        outer = self.layout()
         outer.insertLayout(outer.count() - 1, row)  # before the trailing stretch
         self._extras_built = True
         for signal in (
@@ -87,6 +103,7 @@ class SolutionPanel(FormPanel):
         if state is not None:
             state.connect(self._refresh_buttons)
         self._update_visibility()
+        self._sync_geometry_type()
         self._refresh_buttons()
 
     # ------------------------------------------------------------------ refresh
@@ -95,6 +112,17 @@ class SolutionPanel(FormPanel):
         super().refresh()
         if self._extras_built:
             self._update_visibility()
+            self._sync_geometry_type()
+
+    def _sync_geometry_type(self) -> None:
+        index = self.analysis_combo.findData(self.document.model.analysis)
+        self.analysis_combo.blockSignals(True)
+        self.analysis_combo.setCurrentIndex(max(index, 0))
+        self.analysis_combo.blockSignals(False)
+
+    def _on_geometry_type(self) -> None:
+        value = self.analysis_combo.currentData()
+        self.document.edit("Edit Geometry type", lambda m: setattr(m, "analysis", value))
 
     def is_field_shown(self, name: str) -> bool:
         """``True`` if the field's row is shown (independent of the window being visible)."""

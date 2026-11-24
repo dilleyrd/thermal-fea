@@ -183,8 +183,8 @@ The analysis type was never changed: a new model is steady, which is what this p
 
 The plate is hottest along the bottom edge (373.15 K) and coldest at the top right corner
 (273.7 K, a little above the fluid at 273.15 K). Heat leaves mainly through the lower part of
-the right edge, where the plate is hottest and the difference to the fluid is largest. The title says "t = 0 s"; a steady result has no
-time and the 0 carries no meaning.
+the right edge, where the plate is hottest and the difference to the fluid is largest. The title says "steady state", because a steady
+result has no time.
 
 ![Temperature along the right edge, from y = 0 to y = 1](img/t4-right-edge.png)
 

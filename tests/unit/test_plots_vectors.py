@@ -14,6 +14,7 @@ from matplotlib.quiver import Quiver
 from thermalfea import api
 from thermalfea.core.errors import ModelError
 from thermalfea.model.bcs import FixedTemperature
+from thermalfea.model.settings import SolutionSettings
 from thermalfea.post.plots import vector_data, vectors
 from thermalfea.post.results import Results
 from thermalfea.solver.results_writer import ResultsWriter
@@ -30,10 +31,16 @@ def write(problem, path: Path, T: np.ndarray, times=(0.0,)) -> Results:
 
 
 def slab(etype: str, path: Path, cells=(4, 2), size=(4.0, 2.0), times=(0.0,)) -> Results:
-    """A slab 400 K at the left and 300 K at the right: a uniform flux in +x."""
+    """A slab 400 K at the left and 300 K at the right: a uniform flux in +x.
+
+    Several ``times`` are stored as a transient run (a steady file has no time, M11.8).
+    """
     problem = make_problem(etype, size=size, cells=cells, bcs=(
         FixedTemperature("hot", "left", T=400.0), FixedTemperature("cold", "right", T=300.0)))
-    return write(problem, path, solve_steady(problem), times=times)
+    T = solve_steady(problem)
+    if len(times) > 1:
+        problem.settings = SolutionSettings(kind="transient", end_time=max(times), initial_dt=1.0)
+    return write(problem, path, T, times=times)
 
 
 def grid_cells(xy_all: np.ndarray, xy: np.ndarray, density: int) -> tuple[np.ndarray, ...]:

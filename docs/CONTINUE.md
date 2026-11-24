@@ -218,7 +218,15 @@ In order:
   not logged for the suggested Δt₀ (Theory §6.1, Q27.3).
 - **M10.5 (report)** followed: `post/report.py: write_report`, File > Export > Report
   (HTML). There is no API or CLI entry, because scripting is on hold.
-  - **Next, in the agreed order:** M11.7–M11.9, M11.2, M11.3, M11.5, then M11.6.
+- **M11.7 (axisymmetric control)** and **M11.8 (display fixes)** followed:
+  - Geometry type in Analysis Settings, through the undo stack. The thickness is hidden and
+    the axis x = 0 is drawn (`SceneView.set_axis_visible`). V-05 is built in the window.
+  - An unset mass flow shows as None.
+  - The HTC calculator has a cross-section for the duct correlation (cold-plate h = 770.2).
+  - "steady state" replaces "t = 0 s".
+  - Left over: annulus cross-sections in the HTC calculator need a diameter ratio, which it
+    does not ask for. `guide/examples/img/pump-T-steady.png` still shows the old title.
+  - **Next, in the agreed order:** M11.9, M11.2, M11.3, M11.5, then M11.6.
 
 ## 5. Next work: tasks M11.12–M11.16
 

@@ -142,8 +142,8 @@ now complete.
    may instead press **Pick path points** and click the inlet and then the outlet in the
    viewport. The clicks are not exact, so typing is better here.) The path runs along the wall
    from the inlet end to the outlet end.
-3. **Mass flow.** The box "Mass flow" shows the mode Constant and the value 0, although no mass
-   flow has been set yet. Type `0.02` and press Enter (kg/s). (Leave the field empty only when
+3. **Mass flow.** The box "Mass flow" shows the mode None, because no mass flow has been set
+   yet. Type `0.02` and press Enter (kg/s). (Leave the field empty only when
    a flow network supplies the flow.)
 4. Leave the rest as it is: "Wall roughness" 0 (smooth), "Number of cells" empty (one fluid
    cell per wall edge along the path, which is 40 here), "Nusselt option" **auto** (laminar
@@ -158,7 +158,8 @@ now complete.
 3. Choose **Solve > Solve**. The analysis is steady (the default), but nonlinear, because the
    heat-transfer coefficient and the fluid properties depend on temperature. The "Solving"
    window shows 3 iterations. The status bar reads "Solve finished ... 1 stored step(s)".
-   (For a steady solution the time shown is a placeholder, "t = 0 s".)
+   (A steady solution has no time, so the status bar gives none, and the plot titles say
+   "steady state".)
 
 The unknowns are the plate temperatures and the water temperature at the 41 fluid nodes of
 the stream, solved together in one system.

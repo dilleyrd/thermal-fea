@@ -19,6 +19,7 @@ from thermalfea.gui.property_panels.form import FormPanel
 from thermalfea.gui.scene import SceneView
 
 _MATERIAL = "material"
+_THICKNESS = "thickness"
 
 
 class RegionPanel(FormPanel):
@@ -59,6 +60,18 @@ class RegionPanel(FormPanel):
         """Fill the material list from the model, then reload every editor."""
         self._fill_materials()
         super().refresh()
+        self._update_thickness_row()
+
+    def is_thickness_shown(self) -> bool:
+        """``True`` if the Thickness row is shown (hidden for an axisymmetric model)."""
+        names = [f.name for f in self.spec.fields]
+        return self.form_layout.isRowVisible(names.index(_THICKNESS))
+
+    def _update_thickness_row(self) -> None:
+        names = [f.name for f in self.spec.fields]
+        if _THICKNESS in names:
+            shown = not self.document.model.axisymmetric
+            self.form_layout.setRowVisible(names.index(_THICKNESS), shown)
 
     def material_names(self) -> tuple[str, ...]:
         """The names offered by the material combo box."""

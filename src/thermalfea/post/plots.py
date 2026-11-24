@@ -277,9 +277,20 @@ def field_si_values(field: str, shown: ndarray | float, units: UnitSettings) -> 
     return np.asarray(to_si(v / per_length, "temperature_difference", units), float)
 
 
-def _time_text(time: float, units: UnitSettings) -> str:
-    """A time [s] as ``"1.5 min"`` in the display time unit."""
-    return f"{float(from_si(float(time), 'time', units)):.6g} {unit_label('time', units)}"
+def is_steady(results: Results) -> bool:
+    """True when the file holds a steady analysis (``/meta`` ``analysis`` ends with "steady")."""
+    return str(results.meta["analysis"]).endswith("steady")
+
+
+def step_time_text(results: Results, time: float, units: UnitSettings) -> str:
+    """The time of a stored step for titles and labels.
+
+    ``"t = 1.5 min"`` in the display time unit; ``"steady state"`` for a steady analysis,
+    whose single stored step has no time of its own.
+    """
+    if is_steady(results):
+        return "steady state"
+    return f"t = {float(from_si(float(time), 'time', units)):.6g} {unit_label('time', units)}"
 
 
 class _ScaledLocator(MaxNLocator):
@@ -409,7 +420,7 @@ def contour_data(results: Results, step: int = -1, field: str = "T") -> ContourD
         xy_max=np.asarray(xy_max),
         unit=unit,
         label=f"{name} [{unit}]",
-        title=f"{name}, t = {_time_text(time, units)}",
+        title=f"{name}, {step_time_text(results, time, units)}",
         time=time,
     )
 
@@ -770,7 +781,7 @@ def vector_data(results: Results, step: int = -1, density: int = 30) -> VectorDa
         magnitude=np.linalg.norm(q, axis=1),
         elements=ids,
         time=time,
-        title=f"Heat flux, t = {_time_text(time, units)}",
+        title=f"Heat flux, {step_time_text(results, time, units)}",
         label=f"Heat flux [{unit}]",
     )
 
@@ -1202,7 +1213,7 @@ def path_data(
         s=np.asarray(from_si(s, "length", units), dtype=float),
         values=np.asarray(values, dtype=float),
         ylabel=f"{name} [{unit}]",
-        title=f"{name} along path, t = {_time_text(float(times[step]), units)}",
+        title=f"{name} along path, {step_time_text(results, float(times[step]), units)}",
         xlabel=f"Distance along path [{unit_label('length', units)}]",
     )
 

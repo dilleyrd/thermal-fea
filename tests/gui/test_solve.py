@@ -611,6 +611,14 @@ def test_cancel_reports_no_error_dialog(window, qtbot, dialogs) -> None:
     assert dialogs.calls == []
 
 
+def test_steady_finish_status_bar_has_no_time(steady, qtbot) -> None:
+    """M11.8 (Q26.4 f): a steady solve is reported without "at t = 0 s"."""
+    assert run_to_end(qtbot, steady) == "finished"
+    message = steady.window.statusBar().currentMessage()
+    assert message.startswith("Solve finished") and "1 stored step(s)" in message
+    assert "t = " not in message
+
+
 def test_steady_cancel_is_reported_as_cancelled(steady, qtbot) -> None:
     assert run_to_end(qtbot, steady) == "finished"
     info = steady.solve._last_info

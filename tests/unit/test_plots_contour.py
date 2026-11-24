@@ -16,6 +16,7 @@ from thermalfea.core.units import UnitSettings
 from thermalfea.materials.material import Material
 from thermalfea.model.bcs import FixedTemperature
 from thermalfea.model.model import Model
+from thermalfea.model.settings import SolutionSettings
 from thermalfea.post.plots import FIELDS, contour, contour_data, display_triangulation
 from thermalfea.post.recovery import gradient, nodal_flux
 from thermalfea.post.results import Results
@@ -240,7 +241,7 @@ def test_contour_returns_a_figure_with_title_colorbar_and_markers(results: Resul
     assert isinstance(fig, Figure)
     assert len(fig.axes) == 2  # plot and colour bar
     ax = fig.axes[0]
-    assert "0" in ax.get_title() and "s" in ax.get_title()
+    assert "steady state" in ax.get_title()  # a steady file has no time (M11.8)
     # the colour bar is vertical for tall models and horizontal for flat ones
     bar = fig.axes[1]
     assert "Temperature [K]" in (bar.get_ylabel(), bar.get_xlabel())
@@ -251,7 +252,10 @@ def test_contour_returns_a_figure_with_title_colorbar_and_markers(results: Resul
 def test_title_contains_the_time(tmp_path: Path) -> None:
     problem = make_problem("T3", bcs=(FixedTemperature("h", "left", T=400.0),
                                       FixedTemperature("c", "right", T=300.0)))
-    results = write(problem, tmp_path / "r.h5", solve_steady(problem), times=(0.0, 12.5))
+    T = solve_steady(problem)
+    # stored as a transient run
+    problem.settings = SolutionSettings(kind="transient", end_time=12.5, initial_dt=12.5)
+    results = write(problem, tmp_path / "r.h5", T, times=(0.0, 12.5))
     assert "12.5 s" in contour(results, step=-1).axes[0].get_title()
     assert "0 s" in contour(results, step=0).axes[0].get_title()
 

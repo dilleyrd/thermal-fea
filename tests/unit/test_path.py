@@ -216,7 +216,7 @@ def test_path_plot(tmp_path: Path) -> None:
     np.testing.assert_allclose(artist.get_ydata(), kelvin)  # no model: displayed in K
     assert np.isnan(artist.get_ydata()[-1])
     assert "K" in ax.get_ylabel() and "Distance" in ax.get_xlabel()
-    assert "t = 0" in ax.get_title()
+    assert "steady state" in ax.get_title() and "t = " not in ax.get_title()  # M11.8
     png = tmp_path / "path.png"
     plots.path(results, POLYLINE, field="qmag", path=png)
     assert png.is_file() and png.stat().st_size > 0

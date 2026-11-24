@@ -424,7 +424,10 @@ class FormPanel(QWidget):
             editor.setCurrentIndex(choices.index(value) if value in choices else 0)
             editor.blockSignals(False)
         elif isinstance(editor, FunctionEditor):
-            if editor.error_text() or not same_function(editor.function(), value):
+            # an unset optional function must show the "None" mode even on a first load, when
+            # the editor's own function is also None (same_function(None, None) is True)
+            unset_shown = value is None and editor.mode != "none"
+            if editor.error_text() or unset_shown or not same_function(editor.function(), value):
                 editor.set_function(value)
         elif isinstance(editor, SelectionEditor):
             # an object without a name (a region) lends the title of its form instead

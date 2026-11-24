@@ -55,9 +55,6 @@ message that says so; it is never solved with that part left out.
 
 ## Modelling
 
-- **A new model is planar.** The window has no control to change a model to axisymmetric
-  (the examples V-05 and V-07 are axisymmetric; from Python, `api.new_model` takes the
-  type).
 - **Free points and curves inside a surface are not part of the mesh.** After the geometry
   is built, points and curves that bound no surface are removed. A point load or a probe
   line cannot be made this way.

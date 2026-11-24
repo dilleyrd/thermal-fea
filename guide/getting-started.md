@@ -71,7 +71,8 @@ every OK. Notes:
   reported. Edit > Undo recovers.
 - DXF import needs the `dxf` extra ([Installation](installation.md#optional-extras)). See
   [Limitations](limitations.md#dxf-import) for what it ignores.
-- A new model is a planar model. The window has no control to change that.
+- A new model is a planar model. To make it axisymmetric, set "Geometry type" in Analysis
+  Settings (step 5); draw the geometry with x as the radius.
 
 ### 2. Materials and regions
 
@@ -111,6 +112,7 @@ shows load symbols.
   node is also under Flow. Results > Flow results...
   shows the fluid temperature along the stream.
 - Tools > HTC calculator... evaluates a correlation at single values without a model.
+  For the internal-duct correlation it also asks for the cross-section (default circular).
 
 ### 4. Mesh
 
@@ -120,7 +122,10 @@ reports the number of nodes and elements and the mesh is drawn in the viewport.
 
 ### 5. Analysis settings and initial condition
 
-Click Analysis Settings. "Analysis type" is `steady` or `transient`. A transient analysis
+Click Analysis Settings. "Geometry type" is `Planar` or `Axisymmetric`. In an axisymmetric
+model x is the radius and the axis x = 0 is drawn in the viewport; regions then have no
+Thickness. Changing it is one undo step and marks the mesh and the results out of date.
+"Analysis type" is `steady` or `transient`. A transient analysis
 shows "End time", "Initial time step", "Smallest time step", "Largest time step",
 "Adaptive time step", "Time-step tolerance", "Largest temperature change per step",
 "Theta", "Lumped capacitance" and the output controls ("Output steps", "Store every n-th
