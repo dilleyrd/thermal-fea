@@ -14,6 +14,7 @@ Actions (all in ``window.actions``)
 ``export.csv``            File > Export > Nodal results (CSV)...
 ``export.vtu``            File > Export > ParaView (VTU)...
 ``export.gif``            File > Export > Animation (GIF)...
+``export.report``         File > Export > Report (HTML)...
 
 Picking nodes (nodal history)
 -----------------------------
@@ -86,6 +87,7 @@ from thermalfea.gui.results_tools import (
     ResultController,
 )
 from thermalfea.gui.scene import NODE_DIM, SceneView
+from thermalfea.post.report import write_report
 
 _log = logging.getLogger(__name__)
 
@@ -101,8 +103,10 @@ EXPORT_IMAGE_ID = "export.image"
 EXPORT_CSV_ID = "export.csv"
 EXPORT_VTU_ID = "export.vtu"
 EXPORT_GIF_ID = "export.gif"
+EXPORT_REPORT_ID = "export.report"
 
 GIF_FILTER = "GIF animation (*.gif)"
+REPORT_FILTER = "HTML report (*.html)"
 IMAGE_EXPORT_DPI = 200
 #: Most vertices listed in the status bar while picking a path.
 _LISTED_POINTS = 6
@@ -210,6 +214,7 @@ class ChartController(QObject):
             (EXPORT_CSV_ID, "Nodal results (&CSV)...", self.export_csv),
             (EXPORT_VTU_ID, "&ParaView (VTU)...", self.export_vtu),
             (EXPORT_GIF_ID, "Animation (&GIF)...", self.export_gif),
+            (EXPORT_REPORT_ID, "&Report (HTML)...", self.export_report),
         ):
             self._add_action(export_menu, key, text, slot)
 
@@ -235,6 +240,7 @@ class ChartController(QObject):
         actions[EXPORT_CSV_ID].setEnabled(has)
         actions[EXPORT_VTU_ID].setEnabled(has)
         actions[EXPORT_GIF_ID].setEnabled(has)
+        actions[EXPORT_REPORT_ID].setEnabled(has)
         actions[EXPORT_IMAGE_ID].setEnabled(has or self.document.built is not None)
         if self.history_pending:
             n = len(self.selected_nodes)
@@ -572,6 +578,23 @@ class ChartController(QObject):
             self._error("Export animation failed", str(exc))
             return None
         self._status(f"Animation written to {written}")
+        return written
+
+    def export_report(self) -> Path | None:
+        """Write the HTML report with the displayed step and field (``write_report``)."""
+        results = self.results_controller.results
+        if results is None:
+            return None
+        target = self._target("Export report", REPORT_FILTER, ".html")
+        if target is None:
+            return None
+        step, field = self._displayed()
+        try:
+            written = write_report(results, target, step, (field,))
+        except (ThermalFEAError, OSError, KeyError) as exc:
+            self._error("Export report failed", str(exc))
+            return None
+        self._status(f"HTML report written to {written}")
         return written
 
 

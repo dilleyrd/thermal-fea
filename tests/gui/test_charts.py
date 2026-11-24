@@ -22,6 +22,7 @@ from thermalfea.gui.chart_tools import (
     EXPORT_CSV_ID,
     EXPORT_GIF_ID,
     EXPORT_IMAGE_ID,
+    EXPORT_REPORT_ID,
     EXPORT_VTU_ID,
     HEAT_FLOWS_ID,
     HISTORY_ID,
@@ -301,6 +302,17 @@ def test_export_actions(shell) -> None:
     assert "Animation written" in shell.window.statusBar().currentMessage()
 
 
+def test_report_export_action(shell, monkeypatch) -> None:
+    action = shell.window.actions[EXPORT_REPORT_ID]
+    assert action.isEnabled()
+    target = shell.tmp / "report.html"
+    monkeypatch.setattr(shell.charts, "_target", lambda caption, flt, suffix: target)
+    action.trigger()
+    text = target.read_text(encoding="utf-8")
+    assert text.startswith("<!DOCTYPE html>") and 'id="plots"' in text
+    assert "HTML report written" in shell.window.statusBar().currentMessage()
+
+
 def test_export_cancel_writes_nothing(shell) -> None:
     before = set(shell.tmp.iterdir())
     for key in (EXPORT_IMAGE_ID, EXPORT_CSV_ID, EXPORT_VTU_ID, EXPORT_GIF_ID):
@@ -332,7 +344,7 @@ def test_actions_disabled_without_results(window) -> None:
     attach_charts(window, document, view, ctrl)
     for key in (
         HISTORY_ID, PATH_ID, HEAT_FLOWS_ID, ENERGY_ID, EXPORT_CSV_ID, EXPORT_VTU_ID,
-        EXPORT_GIF_ID, EXPORT_IMAGE_ID, PATH_FINISH_ID, PATH_CANCEL_ID,
+        EXPORT_GIF_ID, EXPORT_IMAGE_ID, EXPORT_REPORT_ID, PATH_FINISH_ID, PATH_CANCEL_ID,
     ):
         assert not window.actions[key].isEnabled(), key
 

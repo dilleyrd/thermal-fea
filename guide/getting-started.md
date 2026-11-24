@@ -154,9 +154,14 @@ balance and Flow results.... Nodal history and Path plot ask you to pick nodes o
 points in the viewport first. Probe shows x, y and the value at the pixel you click. It is
 a rough check; use the CSV export for exact values.
 
-File > Export has: Viewport image..., Nodal results (CSV)..., ParaView (VTU)... and
-Animation (GIF).... The CSV has the columns `step, time, node, x, y, T, qx, qy` in SI
-units. Charts have their own export.
+File > Export has: Viewport image..., Nodal results (CSV)..., ParaView (VTU)...,
+Animation (GIF)... and Report (HTML).... The CSV has the columns `step, time, node, x, y, T,
+qx, qy` in SI units. Charts have their own export.
+
+The report is one HTML file that opens in any browser and needs no other files. For the
+displayed step it shows the model, the materials, the mesh and its quality, every load with
+its values, the solver settings and step counts, and the energy balance. It also has a
+contour plot of the displayed field, and for a transient run the heat-flow history.
 
 ## Which things are out of date
 

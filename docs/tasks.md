@@ -378,7 +378,7 @@ Boundary Conditions, Flow (Streams, Network), Enclosures, Analysis Settings, Sol
   → holes.
 - [x] **M10.4 [B] Unit systems.** Full `UnitSettings` (Data §7) through the form generator
   and all plot labels; SI m, SI mm, US customary presets.
-- [ ] **M10.5 [A] Report.** Self-contained HTML report: model summary, materials, mesh
+- [x] **M10.5 [A] Report.** Self-contained HTML report: model summary, materials, mesh
   statistics, load tables, solver log summary, energy balance, chosen plots.
   *(On hold from 2026-11-16; released by the owner on 2026-11-22, Q29.15.)*
 - [x] **M10.6 [A] Restart.** Continue a transient run from the last stored step to a later
