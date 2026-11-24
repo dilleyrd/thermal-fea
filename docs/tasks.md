@@ -400,7 +400,7 @@ Boundary Conditions, Flow (Streams, Network), Enclosures, Analysis Settings, Sol
   steady plate; transient quench of a fin with natural convection and radiation; cold
   plate with a water stream), theory manual generated from `docs/theory.md`, correlation
   reference with validity ranges, stated limitations.
-- [ ] **M11.5 [B] Windows build.** PyInstaller spec (gmsh DLL and Qt plugins included);
+- [x] **M11.5 [B] Windows build.** PyInstaller spec (gmsh DLL and Qt plugins included);
   smoke test that the built executable opens, solves an example, and exits.
 - [x] **M11.7 [B] Axisymmetric control in the GUI.** Defect Q26.4(a); owner's choices in
   Q27. A "Geometry type: Planar / Axisymmetric" choice at the top of the Analysis Settings

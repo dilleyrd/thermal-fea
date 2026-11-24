@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import argparse
 import logging
 import sys
 import traceback
@@ -256,21 +257,41 @@ def build_application(
 def main(argv: list[str] | None = None) -> int:
     """Run the GUI.
 
+    Options (Qt's own options are passed on to Qt): ``--smoke-test MODEL`` opens MODEL,
+    meshes and solves it, writes a one-line JSON status to the ``--smoke-out PATH`` file
+    (standard output without it) and exits, 0 only on success. It is a hook for testing a
+    built program, see :mod:`thermalfea.gui.smoke`.
+
     Parameters
     ----------
     argv : list of str, optional
-        Command-line arguments.
+        Command-line arguments, program name first (default ``sys.argv``).
 
     Returns
     -------
     int
         Process exit code.
     """
-    app = create_app(argv)
+    args = list(sys.argv if argv is None else argv)
+    parser = argparse.ArgumentParser(prog="thermalfea-gui", add_help=False)
+    parser.add_argument("--smoke-test", metavar="MODEL", default=None)
+    parser.add_argument("--smoke-out", metavar="PATH", default=None)
+    options, qt_args = parser.parse_known_args(args[1:])
+    app = create_app([args[0], *qt_args])
     context = build_application()
     app.aboutToQuit.connect(context.shutdown)
     context.window.show()
-    return int(app.exec())
+    if options.smoke_test is None:
+        return int(app.exec())
+    from thermalfea.gui.smoke import run_smoke_test, write_status
+
+    try:
+        status = run_smoke_test(app, context, options.smoke_test)
+    except Exception as exc:  # report every failure as a status, never a dialog
+        status = {"ok": False, "stage": "exception", "error": f"{type(exc).__name__}: {exc}"}
+    context.shutdown()
+    write_status(status, options.smoke_out)
+    return 0 if status["ok"] else 1
 
 
 if __name__ == "__main__":

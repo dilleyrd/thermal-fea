@@ -121,3 +121,36 @@ From the project folder:
 
 The first command rewrites the generated pages in `guide/` (with `--check` it only reports
 whether they are out of date). The second builds the site into `site/`.
+
+## Windows build
+
+The program can be built into a folder that runs on Windows without Python. From the
+project folder, with the virtual environment set up as above and PyInstaller installed in
+it (`.venv\Scripts\python.exe -m pip install pyinstaller`):
+
+```
+powershell -NoProfile -File scriptsuild_exe.ps1
+```
+
+The script builds with the spec file `packaging\thermalfea.spec` into `dist\ThermalFEA\`
+(the intermediate files go to `build\`), then runs a smoke test and exits with a non-zero
+code if the build or the test fails. The build takes about a minute and the folder is
+about 380 MB.
+
+The folder holds two programs that share the files in `_internal`:
+
+- `ThermalFEA.exe` opens the window (no console).
+- `thermalfea-cli.exe` is the [command line](#the-command-line) (`thermalfea-cli.exe solve
+  model.tfea`). Its name differs from the window's only because Windows file names ignore
+  case.
+
+Copy the whole `dist\ThermalFEA` folder to another computer to use it there; the programs
+need no Python and no installation. The folder also holds gmsh's library, the Qt files
+and the example models.
+
+The smoke test, `scripts\smoke_exe.py`, solves the V-01 slab example with
+`thermalfea-cli.exe`, then starts `ThermalFEA.exe --smoke-test MODEL --smoke-out
+STATUS.json`, which opens the window (offscreen), loads the model, meshes and solves it,
+writes the result to the status file and exits by itself. Run it alone with
+`.venv\Scripts\python.exe scripts\smoke_exe.py`. The test suite runs it too when
+`dist\ThermalFEA` exists.

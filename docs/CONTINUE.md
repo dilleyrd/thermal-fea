@@ -232,7 +232,15 @@ In order:
   `empty-fluid`, `zero-ambient` and `zero-emissivity`.
 - **M11.2 (V&V report)** followed. `scripts/vv_report.py` runs every version-1 case the way
   its test does and writes `docs/vv-report.md`: 359 rows, all passed, about 23 s.
-  - **Next, in the agreed order:** M11.3, M11.5, then M11.6.
+- **M11.5 (Windows build)** followed:
+  - `packaging/thermalfea.spec`, run through `scripts/build_exe.ps1`, builds the onedir
+    `dist/ThermalFEA/`: `ThermalFEA.exe` (GUI) and `thermalfea-cli.exe`. The CLI gets
+    another name because Windows file names ignore case.
+  - The build takes about 70 s and the folder is 379 MB.
+  - `scripts/smoke_exe.py` drives both programs. The GUI's `--smoke-test MODEL` opens,
+    meshes, solves and exits.
+  - `tests/packaging/test_frozen.py` runs the smoke test when `dist/` exists.
+  - **Next, in the agreed order:** M11.3, then M11.6.
 
 ## 5. Next work: tasks M11.12–M11.16
 
