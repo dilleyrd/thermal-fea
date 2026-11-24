@@ -274,13 +274,15 @@ After all of them: M11.6, the release review, which depends on M11.7–M11.16.
 - **M8.G**, human gate: build V-10 and V-17 in the window following
   `docs/gui-walkthrough.md`. The owner started it on 2026-11-24. A new material now starts
   with every property at 0 (owner, 2026-11-24, commit 433a469).
-- **M11.43–M11.47 (owner's requests of 2026-11-24) are held** until the owner
+- **M11.43–M11.48 (owner's requests of 2026-11-24) are held** until the owner
   has finished the V-10 review: material fields limited to temperature with the label "As
   a function of"; library values in the material panel with type-to-search, keeping the
   material's own name; region highlight, region names and load values in the viewport
   (`SceneView.set_labels` approved as an addition to Data §13); the probe value shown at
   the clicked point, cleared when the probe is turned off (M11.46); a table in the energy
-  balance window and no imbalance line (M11.47; its steady-state layout is a proposal). One question is open in M11.43: whether Heat Power, Heat Flow and
+  balance window and no imbalance line, table only for a steady result (M11.47); the path
+  plot's vertices and polyline drawn in the viewport (M11.48; its lifetime and the general
+  `set_overlay` in place of `set_labels` await the owner). One question is open in M11.43: whether Heat Power, Heat Flow and
   Fixed Temperature are limited to time the same way.
 - ~~**M11.1**~~, human task: closed on 2026-11-23 after M11.37–M11.42 (Q30); the owner
   kept the printed oxygen row and declined the Q30.4 additions.

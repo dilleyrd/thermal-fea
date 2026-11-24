@@ -704,13 +704,30 @@ Boundary Conditions, Flow (Streams, Network), Enclosures, Analysis Settings, Sol
     `relative_imbalance`, in the display units (relative imbalance as a plain number). The
     values are the stored ones, with no computation (as `energy_data`). The table can be
     copied; Export CSV is unchanged and still writes every column.
-  - **Steady results (proposal; the owner may change it):** a steady solve has one row at
-    t = 0, so the window shows the table only and no chart, titled "Energy balance (steady
+  - **Steady results (owner confirmed, 2026-11-24):** a steady solve has one row at t = 0,
+    so the window shows the table only and no chart, titled "Energy balance (steady
     state)".
   - **Tests:** the chart has no imbalance line, the table's rows and columns match
     `Results.energy_balance()` in SI and in other display units, the steady window, and
     Export CSV unchanged.
+- [ ] **M11.48 [B] Path plot: show the vertices and the path.** Owner's request,
+  2026-11-24. **Held: start only after the owner has finished the M8.G V-10 review.**
+  Depends on M11.45 (the viewport overlay).
+  - **Today:** Results > Path plot... lists the clicked vertices only in the status bar;
+    the viewport draws nothing (`gui/chart_tools.py`, "Picking a path").
+  - **Change:** while picking, each clicked vertex is drawn as a numbered marker and the
+    vertices are joined by the polyline, updated on every click.
+  - **Lifetime (proposal; the owner may change it):** Cancel path plot clears the drawing.
+    After Finish, the path stays drawn while its chart window is open and is cleared when
+    that window closes; a new path pick replaces it.
+  - **Viewport (needs the owner's approval):** rather than a second new method beside
+    M11.45's `set_labels`, M11.45 adds one general `SceneView.set_overlay(layer, items)`
+    whose items are text labels, point markers and polylines, each layer replaced as a
+    whole. M11.45 (region names, load values), M11.46 (probe markers) and this task each
+    use their own layer.
+  - **Tests:** markers and polyline after each click, cleared on Cancel, kept with the
+    chart and cleared when it closes, and replaced by a new pick.
 - [ ] **M11.6 [C] Release review.** Check every item of Plan §6; resolve or document every
   entry in `docs/OPEN_QUESTIONS.md`. Version 1 excludes the held features M9 and M10.2 and
   their cases V-22a–d, V-23, V-24 and V-36 (owner, 2026-11-22, Q29.15); the guide's
-  limitations say so. Depends on M11.7–M11.47, M8.G and M11.1.
+  limitations say so. Depends on M11.7–M11.48, M8.G and M11.1.
