@@ -38,9 +38,8 @@ Changed since the walkthrough was written:
 - built on 2026-11-23:
   - M11.7: the Geometry type choice in Analysis Settings;
   - M11.8: a None mass flow, the HTC calculator's cross-section, and "steady state";
-  - M11.9: a dialog when a correlation convection or radiation load is added. This
-    changes V-17's radiation step and the walkthrough's load steps a little: fill the
-    dialog instead of the panel.
+  - M11.9: a dialog when a correlation convection or radiation load is added. V-10 and
+    V-17 use neither, so the walkthrough steps are unchanged.
 
 Every build task except the release review M11.6 is now done. M11.6 waits for this
 session.
