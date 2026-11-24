@@ -281,6 +281,22 @@ After all of them: M11.6, the release review, which depends on M11.7–M11.16.
   region names, load values), M11.46 (probe markers), M11.47 (energy table) and M11.48
   (path drawing). The check passed with 2718 tests. `dist\ThermalFEA` predates them;
   rebuild with `scripts\build_exe.ps1` before using the built program.
+- **Held for the GUI identification proposal (owner, 2026-11-24); no task written yet:**
+  - **Geometry highlight:** clicking a Geometry operation in the tree should highlight its
+    entities, as regions do. Evaluated: `BuiltGeometry.op_entities` already holds what
+    each operation owns after the build, so this is a lookup in
+    `LoadSymbolController.highlight_address`. A cut's tool and a Delete own nothing.
+  - **Selection names:** the GUI names a picked selection itself (`"<owner> selection"`,
+    from `form.py`). There is no way to type, rename or delete a selection, and
+    selections are not listed in the tree. Only scripts give names such as `top` or
+    `cooled`.
+  - The owner wants these assessed together with the wider problem: the tree's generic
+    names (Rectangle 1, Material 1, Convection 1, "Region selection") do not tell an
+    engineer what each item is on the model. The library name of a material is lost, and
+    the result displays do not show which model state they were solved from. The design
+    must extend naturally to 3D. A proposal (CalculiX cgx used as a reference; decisions
+    D1–D8) is with the owner for review: https://claude.ai/artifact/RGQmdWAkgsREaaEwPiMgWq
+    (private). Write tasks only after they decide.
 - ~~**M11.1**~~, human task: closed on 2026-11-23 after M11.37–M11.42 (Q30); the owner
   kept the printed oxygen row and declined the Q30.4 additions.
 - **Confirm the Theory §6.1 sentence in Q27.3** before M11.10 is built.
