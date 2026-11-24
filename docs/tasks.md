@@ -691,7 +691,26 @@ Boundary Conditions, Flow (Streams, Network), Enclosures, Analysis Settings, Sol
   - **Tests:** a marker and its text after a click, none outside the mesh, re-evaluation on
     a step change and in degC, turning the probe off clearing them, and new results
     clearing them.
+- [ ] **M11.47 [B] Energy balance window: a table, and no imbalance line.** Owner's request,
+  2026-11-24, from the V-10 review. **Held: start only after the owner has finished the
+  M8.G V-10 review.**
+  - **Today:** Results > Energy balance draws `heat_in`, `heat_out`, `net`, `stored_rate`
+    and `imbalance` against time on one axis (`gui/charts.py: energy_data`,
+    `ENERGY_POWER_COLUMNS`). The imbalance is many orders smaller than the heat flows, and
+    equal values hide each other (in V-10, `heat_in` lies under `heat_out`).
+  - **Chart:** `imbalance` is no longer drawn; the other four columns are.
+  - **Table:** the window gains a table under the chart with one row per stored step and
+    the columns time, `heat_in`, `heat_out`, `net`, `stored_rate`, `imbalance` and
+    `relative_imbalance`, in the display units (relative imbalance as a plain number). The
+    values are the stored ones, with no computation (as `energy_data`). The table can be
+    copied; Export CSV is unchanged and still writes every column.
+  - **Steady results (proposal; the owner may change it):** a steady solve has one row at
+    t = 0, so the window shows the table only and no chart, titled "Energy balance (steady
+    state)".
+  - **Tests:** the chart has no imbalance line, the table's rows and columns match
+    `Results.energy_balance()` in SI and in other display units, the steady window, and
+    Export CSV unchanged.
 - [ ] **M11.6 [C] Release review.** Check every item of Plan §6; resolve or document every
   entry in `docs/OPEN_QUESTIONS.md`. Version 1 excludes the held features M9 and M10.2 and
   their cases V-22a–d, V-23, V-24 and V-36 (owner, 2026-11-22, Q29.15); the guide's
-  limitations say so. Depends on M11.7–M11.46, M8.G and M11.1.
+  limitations say so. Depends on M11.7–M11.47, M8.G and M11.1.
