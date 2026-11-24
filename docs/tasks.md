@@ -833,7 +833,7 @@ tasks come before the owner's M8.G session (D8).
     a missing snapshot shows "comparison unavailable".
   - **Tests:** edit, undo and redo; an unchanged remesh; an edit during a solve; save and
     reopen; a missing snapshot; and a restart. Depends on M11.50 and M11.58.
-- [ ] **M11.60 [B] Entity report.** Plan §4.6, §7.12.
+- [x] **M11.60 [B] Entity report.** Plan §4.6, §7.12.
   - `gui/inspect.py: entity_report(document, dim, tag)` gives the role and number, the
     selections, the loads and contacts (active and suppressed), and every incident part.
   - Adds `BuiltGeometry.point_curves`.

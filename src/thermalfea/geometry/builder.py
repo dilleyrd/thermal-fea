@@ -54,6 +54,8 @@ class BuiltGeometry:
         Final entities by tag, with their fingerprints.
     curve_surfaces : dict of int to list of int
         For each curve, the tags of the surfaces it bounds (two on an interface).
+    point_curves : dict of int to list of int
+        For each point, the tags of the curves that end at it (M11.60).
     curve_polylines : dict of int to ndarray, shape (n, 3)
         Sampled points along each curve [m], for display.
     bbox : tuple of 6 float
@@ -66,6 +68,7 @@ class BuiltGeometry:
     curves: dict[int, Fingerprint] = field(default_factory=dict)
     points: dict[int, Fingerprint] = field(default_factory=dict)
     curve_surfaces: dict[int, list[int]] = field(default_factory=dict)
+    point_curves: dict[int, list[int]] = field(default_factory=dict)
     curve_polylines: dict[int, ndarray] = field(default_factory=dict)
     bbox: tuple[float, float, float, float, float, float] = (0.0, 0.0, 0.0, 0.0, 0.0, 0.0)
 
@@ -534,8 +537,10 @@ def _describe(ctx: BuildContext, serial: int) -> BuiltGeometry:
         for _, tag in model.getEntities(dim):
             target[int(tag)] = _fingerprint(ctx, dim, int(tag))
     for tag in built.curves:
-        upward, _ = model.getAdjacencies(CURVE_DIM, tag)
+        upward, downward = model.getAdjacencies(CURVE_DIM, tag)
         built.curve_surfaces[tag] = sorted(int(t) for t in upward)
+        for point in downward:
+            built.point_curves.setdefault(int(point), []).append(tag)
         lo, hi = model.getParametrizationBounds(CURVE_DIM, tag)
         u = np.linspace(lo[0], hi[0], POLYLINE_POINTS)
         built.curve_polylines[tag] = np.asarray(model.getValue(CURVE_DIM, tag, u)).reshape(
