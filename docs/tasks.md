@@ -623,27 +623,31 @@ Boundary Conditions, Flow (Streams, Network), Enclosures, Analysis Settings, Sol
     the new field defaults to None.
   - **Tests:** the laminar table values, the annulus interpolation and its limits, a
     Sieder–Tate stream against the formula, and V-27–V-29 still pass.
-- [ ] **M11.43 [B] Material fields as a function of temperature only.** Owner's request,
-  2026-11-24. **Held: start only after the owner has finished the M8.G V-10 review.**
+- [x] **M11.43 [B] Material fields as a function of temperature only.** Owner's request,
+  2026-11-24. The owner finished the V-10 review on 2026-11-24, so M11.43–M11.48 may start.
   Material properties are never modelled as a function of time or of a state variable
   (owner, 2026-11-24); Validate already refuses them (`material-not-temperature-only`).
-  - **Field setting:** `FieldSpec` gains an optional `variables` (the table variables the
-    field may use), default `("t", "T")`, so every other field is unchanged (Q21.6). The
-    material form's `k`, `k2`, `rho` and `cp` use `("T",)`.
+  - **Field setting:** `FieldSpec` gains an optional `variables`: the variables of
+    `t, x, y, T` the field's function may use. The default `None` allows all four, so every
+    other field is unchanged (Q21.6). A table offers those of `t` and `T` the field allows,
+    in that order. The settings are:
+    - the material form's `k`, `k2`, `rho` and `cp`: `("T",)`;
+    - Heat Power's and Heat Flow's `P`: `("t",)` (owner, 2026-11-24);
+    - Fixed Temperature's `T`: `("t", "x", "y")` (owner, 2026-11-24; it may vary with
+      position, but not with temperature).
   - **Editor:** the table's variable box shows only the allowed variables, so a material
-    table starts on temperature and cannot be switched to time. An expression that uses a
-    variable the field does not allow (`t`, `x`, `y` for a material) is refused as it is
-    typed, with a message naming the allowed one.
+    table starts on temperature and cannot be switched to time, and a total load's table
+    is against time only. An expression that uses a variable the field does not allow is
+    refused as it is typed, with a message naming the allowed ones.
   - **Old files:** a material table against time is shown as it is, with the error, and is
     never converted silently.
   - **Label:** the table's "Against" becomes "As a function of" for every field; the guide
     pages that quote it follow.
-  - **Not yet decided:** whether Heat Power, Heat Flow and Fixed Temperature (which refuse
-    T) are limited to time the same way. Ask the owner before including them.
-  - **Tests:** the variable box of a material field and of a load field, the live
-    expression refusal, an old file with a time table, and the new label.
+  - **Tests:** the variable box of a material field, of a total load, of Fixed Temperature
+    and of an unrestricted load field; the live expression refusal; an old file with a
+    time table; and the new label.
 - [ ] **M11.44 [B] Library values in the material panel.** Owner's request, 2026-11-24.
-  **Held: start only after the owner has finished the M8.G V-10 review.**
+  Released: the owner finished the V-10 review on 2026-11-24.
   - **Panel:** a `MaterialPanel` (registered like `RegionPanel`) with a "From library"
     box above the properties, listing the built-in solids and then the user library, with
     type-to-search, and a **Use library values** button.
@@ -657,8 +661,7 @@ Boundary Conditions, Flow (Streams, Network), Enclosures, Analysis Settings, Sol
     name and region kept, one undo step), and an unreadable user library shown as an error
     without losing the built-ins.
 - [ ] **M11.45 [B] Region highlight, region names and load values in the viewport.**
-  Owner's request, 2026-11-24. **Held: start only after the owner has finished the M8.G
-  V-10 review.**
+  Owner's request, 2026-11-24. Released: the owner finished the V-10 review on 2026-11-24.
   - **Region highlight:** selecting a region in the model tree highlights its surfaces
     (`LoadSymbolController.highlight_address`, which today handles only loads and
     contacts); selecting a material highlights every region that uses it.
@@ -679,7 +682,7 @@ Boundary Conditions, Flow (Streams, Network), Enclosures, Analysis Settings, Sol
     constant, a table and an expression in SI and in degC, and the labels following
     undo, suppress and rename.
 - [ ] **M11.46 [B] Probe value at the clicked point.** Owner's request, 2026-11-24.
-  **Held: start only after the owner has finished the M8.G V-10 review.** Depends on M11.45
+  Released: the owner finished the V-10 review on 2026-11-24. Depends on M11.45
   (`SceneView.set_overlay`).
   - **Today:** a probe click reports x, y and the value only in the status bar
     (`ResultController.probe_at`).
@@ -695,8 +698,7 @@ Boundary Conditions, Flow (Streams, Network), Enclosures, Analysis Settings, Sol
     a step change and in degC, turning the probe off clearing them, and new results
     clearing them.
 - [ ] **M11.47 [B] Energy balance window: a table, and no imbalance line.** Owner's request,
-  2026-11-24, from the V-10 review. **Held: start only after the owner has finished the
-  M8.G V-10 review.**
+  2026-11-24, from the V-10 review. Released: the owner finished the V-10 review on 2026-11-24.
   - **Today:** Results > Energy balance draws `heat_in`, `heat_out`, `net`, `stored_rate`
     and `imbalance` against time on one axis (`gui/charts.py: energy_data`,
     `ENERGY_POWER_COLUMNS`). The imbalance is many orders smaller than the heat flows, and
@@ -714,7 +716,7 @@ Boundary Conditions, Flow (Streams, Network), Enclosures, Analysis Settings, Sol
     `Results.energy_balance()` in SI and in other display units, the steady window, and
     Export CSV unchanged.
 - [ ] **M11.48 [B] Path plot: show the vertices and the path.** Owner's request,
-  2026-11-24. **Held: start only after the owner has finished the M8.G V-10 review.**
+  2026-11-24. Released: the owner finished the V-10 review on 2026-11-24.
   Depends on M11.45 (`SceneView.set_overlay`).
   - **Today:** Results > Path plot... lists the clicked vertices only in the status bar;
     the viewport draws nothing (`gui/chart_tools.py`, "Picking a path").

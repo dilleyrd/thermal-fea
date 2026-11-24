@@ -398,7 +398,7 @@ None of these blocks the build. Please confirm, or say what to change.
    now); chart modules are added to it as they are written (Plan §7 rule 8 allows charts).
 6. **`FormSpec` (M8.4, Data §13 names it but does not define it).** **Done for now:**
    `core/forms.py` (no Qt): `FieldSpec(name, label, kind, quantity, minimum, maximum,
-   choices, optional, tooltip, selection_dims)` and `FormSpec(title, fields, category,
+   choices, optional, tooltip, selection_dims, variables)` and `FormSpec(title, fields, category,
    description)`; a class registered without a form gets one derived from its dataclass
    fields. The built-in forms are in `model/bc_forms.py`.
 7. **No velocity quantity in `core/units.py`:** the velocity of a correlation convection

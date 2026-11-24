@@ -21,14 +21,18 @@ def _sel(dims: tuple[int, ...], what: str) -> FieldSpec:
     )  # fmt: skip
 
 
-def _temperature(name: str, label: str) -> FieldSpec:
-    return FieldSpec(name, label, "function", quantity="temperature", minimum=0.0)
+def _temperature(
+    name: str, label: str, variables: tuple[str, ...] | None = None
+) -> FieldSpec:
+    return FieldSpec(
+        name, label, "function", quantity="temperature", minimum=0.0, variables=variables
+    )
 
 
 BC_FORMS: dict[str, FormSpec] = {
     "fixed_temperature": FormSpec(
         "Fixed Temperature",
-        [_sel((0, 1), "curves or points"), _temperature("T", "Temperature")],
+        [_sel((0, 1), "curves or points"), _temperature("T", "Temperature", ("t", "x", "y"))],
         description="Prescribed temperature on curves or points.",
     ),
     "heat_flux": FormSpec(
@@ -38,7 +42,10 @@ BC_FORMS: dict[str, FormSpec] = {
     ),
     "heat_flow": FormSpec(
         "Heat Flow",
-        [_sel(_CURVES, "curves"), FieldSpec("P", "Heat flow", "function", quantity="power")],
+        [
+            _sel(_CURVES, "curves"),
+            FieldSpec("P", "Heat flow", "function", quantity="power", variables=("t",)),
+        ],
         description="Total heat flow spread uniformly over curves, positive into the body.",
     ),
     "heat_generation": FormSpec(
@@ -51,7 +58,10 @@ BC_FORMS: dict[str, FormSpec] = {
     ),
     "heat_power": FormSpec(
         "Heat Power",
-        [_sel(_SURFACES, "surfaces"), FieldSpec("P", "Power", "function", quantity="power")],
+        [
+            _sel(_SURFACES, "surfaces"),
+            FieldSpec("P", "Power", "function", quantity="power", variables=("t",)),
+        ],
         description="Total power generated uniformly in surfaces.",
     ),
     "convection": FormSpec(

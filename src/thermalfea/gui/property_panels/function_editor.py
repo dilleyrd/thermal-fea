@@ -61,7 +61,20 @@ _MODE_LABELS = {
 }
 _VARIABLE_LABELS = {"t": "time (t)", "T": "temperature (T)"}
 _BAD_STYLE = "background-color: #ffd0d0;"
-_EXPRESSION_TIP = "SI units. Variables: t [s], x, y [m], T [K]."
+_VARIABLE_TIPS = {"t": "t [s]", "x": "x [m]", "y": "y [m]", "T": "T [K]"}
+
+
+def _allowed_words(allowed: tuple[str, ...]) -> str:
+    """The allowed variables in words, e.g. ``"time (t) and position (x, y)"``."""
+    parts = []
+    if "t" in allowed:
+        parts.append("time (t)")
+    position = [v for v in ("x", "y") if v in allowed]
+    if position:
+        parts.append(f"position ({', '.join(position)})")
+    if "T" in allowed:
+        parts.append("temperature (T)")
+    return " and ".join(parts)
 
 
 def parse_number(text: str) -> float:
@@ -143,6 +156,11 @@ class FunctionEditor(QWidget):
         Inclusive limits of a constant's SI value.
     optional : bool
         Add a "None" mode that emits ``None``.
+    variables : tuple of str, optional
+        The variables of ``t, x, y, T`` the function may use (``None``: all). The table's
+        variable box offers those of ``t`` and ``T`` among them, and an expression that uses
+        another is refused. A function loaded with :meth:`set_function` that breaks this is
+        shown as it is, with the error, and never emitted.
     parent : QWidget, optional
 
     Signals
@@ -161,8 +179,18 @@ class FunctionEditor(QWidget):
         maximum: float | None = None,
         optional: bool = False,
         parent: QWidget | None = None,
+        variables: tuple[str, ...] | None = None,
     ) -> None:
         super().__init__(parent)
+        self.variables = variables
+        self._table_variables = tuple(
+            v for v in ("t", "T") if variables is None or v in variables
+        )
+        self._expression_tip = "SI units. Variables: " + ", ".join(
+            _VARIABLE_TIPS[v]
+            for v in ("t", "x", "y", "T")
+            if variables is None or v in variables
+        ) + "."
         self.quantity = quantity
         self.settings = settings if settings is not None else UnitSettings()
         self.minimum = minimum
@@ -176,6 +204,8 @@ class FunctionEditor(QWidget):
         layout.setContentsMargins(0, 0, 0, 0)
         self.mode_combo = QComboBox()
         for mode in MODES if optional else MODES[:3]:
+            if mode == "table" and not self._table_variables:
+                continue  # no variable a table could be a function of
             self.mode_combo.addItem(_MODE_LABELS[mode], mode)
         layout.addWidget(self.mode_combo)
         self.stack = QStackedWidget()
@@ -212,12 +242,12 @@ class FunctionEditor(QWidget):
         col.setContentsMargins(0, 0, 0, 0)
         top = QHBoxLayout()
         self.variable_combo = QComboBox()
-        for key, text in _VARIABLE_LABELS.items():
-            self.variable_combo.addItem(text, key)
+        for key in self._table_variables:
+            self.variable_combo.addItem(_VARIABLE_LABELS[key], key)
         self.extrapolate_combo = QComboBox()
         self.extrapolate_combo.addItem("hold ends", "hold")
         self.extrapolate_combo.addItem("extrapolate linearly", "linear")
-        top.addWidget(QLabel("Against"))
+        top.addWidget(QLabel("As a function of"))
         top.addWidget(self.variable_combo)
         top.addWidget(self.extrapolate_combo)
         col.addLayout(top)
@@ -249,7 +279,7 @@ class FunctionEditor(QWidget):
         col.setContentsMargins(0, 0, 0, 0)
         self.expr_edit = QLineEdit()
         self.expr_edit.setPlaceholderText("e.g. 300 + 20*sin(2*pi*t/60)")
-        self.expr_edit.setToolTip(_EXPRESSION_TIP)
+        self.expr_edit.setToolTip(self._expression_tip)
         col.addWidget(self.expr_edit)
         self.si_note = QLabel("")
         self.si_note.setWordWrap(True)
@@ -342,8 +372,15 @@ class FunctionEditor(QWidget):
                 if function is None:
                     self._select_mode("none" if self.optional else "constant")
                 elif isinstance(function, Table):
+                    if self.mode_combo.findData("table") < 0:  # a table this field has no use for
+                        self.mode_combo.addItem(_MODE_LABELS["table"], "table")
                     self._select_mode("table")
                     with QSignalBlocker(self.variable_combo):
+                        if self.variable_combo.findData(function.variable) < 0:
+                            # shown as it is (an old file); the error says it is not allowed
+                            self.variable_combo.addItem(
+                                _VARIABLE_LABELS[function.variable], function.variable
+                            )
                         self.variable_combo.setCurrentIndex(
                             self.variable_combo.findData(function.variable)
                         )
@@ -362,7 +399,7 @@ class FunctionEditor(QWidget):
                     self._select_mode("constant")
                     self.value_edit.setText(self._fmt(self._y_from_si(float(function()))))
             self._function = function
-            self._set_error("")
+            self._set_error(self._variable_error(function) or "")
             self._update_preview()
         finally:
             self._loading = False
@@ -457,7 +494,32 @@ class FunctionEditor(QWidget):
                 self.grid.setItem(r, 0, QTableWidgetItem(self._fmt(self._x_from_si(x))))
                 self.grid.setItem(r, 1, QTableWidgetItem(self._fmt(self._y_from_si(y))))
 
+    def _variable_error(self, function: Function | None) -> str | None:
+        """The message if ``function`` uses a variable this field does not allow."""
+        allowed = self.variables
+        if allowed is None:
+            return None
+        bad = False
+        if isinstance(function, Table):
+            bad = function.variable not in allowed
+        elif isinstance(function, Expression):
+            bad = (
+                (function.depends_on_T and "T" not in allowed)
+                or (function.depends_on_time and "t" not in allowed)
+                or (function.depends_on_position and not {"x", "y"} & set(allowed))
+            )
+        if not bad:
+            return None
+        return f"this value may depend on {_allowed_words(allowed)} only"
+
     def _evaluate(self) -> Function | None:
+        function = self._evaluate_input()
+        message = self._variable_error(function)
+        if message:
+            raise ValueError(message)
+        return function
+
+    def _evaluate_input(self) -> Function | None:
         mode = self.mode
         if mode == "none":
             return None
@@ -506,7 +568,7 @@ class FunctionEditor(QWidget):
         self._error = message
         self.error_label.setText(message)
         self.error_label.setVisible(bool(message))
-        for edit, tip in ((self.value_edit, ""), (self.expr_edit, _EXPRESSION_TIP)):
+        for edit, tip in ((self.value_edit, ""), (self.expr_edit, self._expression_tip)):
             bad = bool(message) and edit.isVisibleTo(self)
             edit.setStyleSheet(_BAD_STYLE if bad else "")
             edit.setToolTip(message if bad else tip)

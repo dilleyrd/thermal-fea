@@ -73,6 +73,10 @@ class FieldSpec:
     selection_dims : tuple of int, optional
         Geometry dimensions a selection field accepts (0 point, 1 curve, 2 surface);
         ``None`` allows any.
+    variables : tuple of str, optional
+        For a ``function`` field: the variables of ``t, x, y, T`` its function may use
+        (an expression using another is refused; a table offers those of ``t`` and ``T``).
+        ``None`` allows all four; an empty tuple or any other name is refused.
     """
 
     name: str
@@ -85,8 +89,16 @@ class FieldSpec:
     optional: bool = False
     tooltip: str = ""
     selection_dims: tuple[int, ...] | None = None
+    variables: tuple[str, ...] | None = None
 
     def __post_init__(self) -> None:
+        if self.variables is not None:
+            bad = [v for v in self.variables if v not in ("t", "x", "y", "T")]
+            if not self.variables or bad:
+                raise ModelError(
+                    f"field {self.name!r}: variables must be a non-empty subset of "
+                    f"t, x, y, T (got {self.variables!r})"
+                )
         if self.kind not in FIELD_KINDS:
             raise ModelError(f"field {self.name!r}: unknown form kind {self.kind!r}")
         if self.quantity is not None and self.quantity not in QUANTITIES:

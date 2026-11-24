@@ -327,7 +327,8 @@ class FormPanel(QWidget):
             return combo, None
         if f.kind == "function":
             func = FunctionEditor(
-                f.quantity, self._units, f.minimum, f.maximum, optional=f.optional
+                f.quantity, self._units, f.minimum, f.maximum, optional=f.optional,
+                variables=f.variables,
             )
             func.function_changed.connect(lambda v, n=name: self._apply(n, v))
             return func, None

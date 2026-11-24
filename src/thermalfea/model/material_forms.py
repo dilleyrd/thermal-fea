@@ -27,19 +27,22 @@ MATERIAL_FORM = FormSpec(
     [
         FieldSpec(
             "k", "Thermal conductivity", "function", quantity="conductivity", minimum=0.0,
+            variables=("T",),
             tooltip="Conductivity along the material axis (for orthotropic materials).",
         ),  # fmt: skip
         FieldSpec(
             "rho", "Density", "function", quantity="density", minimum=0.0,
+            variables=("T",),
             tooltip="Density of the solid.",
         ),  # fmt: skip
         FieldSpec(
             "cp", "Specific heat", "function", quantity="specific_heat", minimum=0.0,
+            variables=("T",),
             tooltip="Specific heat capacity of the solid.",
         ),  # fmt: skip
         FieldSpec(
             "k2", "Conductivity across axis", "function", quantity="conductivity",
-            minimum=0.0, optional=True,
+            minimum=0.0, optional=True, variables=("T",),
             tooltip="Empty: isotropic. Otherwise the conductivity across the material axis.",
         ),  # fmt: skip
     ],
