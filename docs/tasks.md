@@ -681,7 +681,7 @@ Boundary Conditions, Flow (Streams, Network), Enclosures, Analysis Settings, Sol
   - **Tests:** the region and material highlight, both toggles, the label text of a
     constant, a table and an expression in SI and in degC, and the labels following
     undo, suppress and rename.
-- [ ] **M11.46 [B] Probe value at the clicked point.** Owner's request, 2026-11-24.
+- [x] **M11.46 [B] Probe value at the clicked point.** Owner's request, 2026-11-24.
   Released: the owner finished the V-10 review on 2026-11-24. Depends on M11.45
   (`SceneView.set_overlay`).
   - **Today:** a probe click reports x, y and the value only in the status bar

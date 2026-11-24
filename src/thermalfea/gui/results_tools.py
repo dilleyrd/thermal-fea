@@ -47,7 +47,10 @@ Probe
 While the probe is on, a viewport click evaluates the displayed field at that point of the
 displayed step with :func:`thermalfea.post.path.value_at` and reports x, y and the value in
 display units (status bar, :attr:`ResultController.probes`, :attr:`probe_changed`). A click
-outside the mesh reports "outside the model". A vector object is probed for the heat-flux
+outside the mesh reports "outside the model". Each click inside the mesh also leaves a
+marker with its value on the viewport overlay layer ``"probe"``; the markers are evaluated
+again when the step, the field or the display units change, and cleared when the probe is
+turned off or the results are replaced. A vector object is probed for the heat-flux
 magnitude.
 """
 
@@ -69,7 +72,7 @@ from thermalfea.gui.document import Document
 from thermalfea.gui.field_display import field_display_from_contour, field_display_from_vectors
 from thermalfea.gui.main_window import MainWindow
 from thermalfea.gui.property_panels.results import RESULT_ADDRESS
-from thermalfea.gui.scene import FieldDisplay, SceneView
+from thermalfea.gui.scene import FieldDisplay, OverlayMarker, SceneView
 from thermalfea.post.path import value_at
 from thermalfea.post.plots import (
     FIELDS,
@@ -252,6 +255,8 @@ class ResultController(QObject):
         self.shown: str | None = None
         self.display: FieldDisplay | None = None
         self.probes: list[ProbeReading] = []
+        self._markers: list[tuple[float, float]] = []
+        self._items: list[OverlayMarker] = []
         self.loop = False
         self._interval_ms = 200
         self._results: Results | None = None
@@ -344,6 +349,7 @@ class ResultController(QObject):
         self.shown = None
         self.display = None
         self.probes = []
+        self._clear_markers()  # before set_probe(False), which only clears kept markers
         self._follow_document_units = False
         self._units = self.document.model.display_units
         self.set_probe(False)
@@ -356,6 +362,7 @@ class ResultController(QObject):
         self._ranges.clear()
         self._results = None
         self._times = np.zeros(0)
+        self._clear_markers()
         path = self.document.results_path
         if path is not None:
             try:
@@ -657,6 +664,7 @@ class ResultController(QObject):
                 self.pause()
         self.display = spec
         self.view.set_field(spec)
+        self._reevaluate_markers()
         self._update_actions()
         self.display_changed.emit()
 
@@ -756,6 +764,8 @@ class ResultController(QObject):
             action.blockSignals(True)
             action.setChecked(on)
             action.blockSignals(False)
+        if not on:
+            self._clear_markers()
         if on:
             self._status("Probe: click in the viewport to read the displayed field", 5000)
 
@@ -763,6 +773,42 @@ class ResultController(QObject):
     def probe_text(self) -> str:
         """Text of the latest probe reading (empty if none)."""
         return self.probes[-1].text if self.probes else ""
+
+    def _marker_text(self, x: float, y: float) -> str | None:
+        """Value and unit at a point for the displayed object and step (``None`` if outside)."""
+        obj = self.get(self.shown)
+        results = self._results
+        if obj is None or results is None:
+            return None
+        field = obj.field if isinstance(obj, ContourObject) else VECTOR_PROBE_FIELD
+        try:
+            si = value_at(results, obj.step, [x, y][: results.mesh.dim], field)
+            value, unit = display_value(results, field, si)
+        except (ThermalFEAError, OSError, KeyError):
+            return None
+        return f"{value:.4g} {unit}" if np.isfinite(value) else None
+
+    def _show_markers(self, items: list[OverlayMarker]) -> None:
+        self._items = list(items)
+        self._markers = [(m.x, m.y) for m in items]
+        self.view.set_overlay("probe", list(items))
+
+    def _clear_markers(self) -> None:
+        if self._markers:
+            self._markers = []
+            self._items = []
+            self.view.set_overlay("probe", [])
+
+    def _reevaluate_markers(self) -> None:
+        """Evaluate the kept markers again for the displayed object and step."""
+        if not self._markers:
+            return
+        items: list[OverlayMarker] = []
+        for x, y in self._markers:
+            text = self._marker_text(x, y)
+            if text is not None:
+                items.append(OverlayMarker(x, y, text))
+        self._show_markers(items)
 
     def probe_at(self, x: float, y: float) -> ProbeReading | None:
         """Evaluate the displayed field at ``(x, y)`` [m] for the displayed step.
@@ -798,6 +844,9 @@ class ResultController(QObject):
         reading = ProbeReading(x, y, value, unit, label, inside, obj.step, text)
         self.probes.append(reading)
         del self.probes[:-MAX_PROBES]
+        if inside:
+            items = [*self._items, OverlayMarker(x, y, f"{value:.4g} {unit}")]
+            self._show_markers(items[-MAX_PROBES:])
         self._status(text, 15000)
         self.probe_changed.emit(text)
         return reading
