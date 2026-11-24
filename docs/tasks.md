@@ -393,7 +393,7 @@ Boundary Conditions, Flow (Streams, Network), Enclosures, Analysis Settings, Sol
 - [x] **M11.2 [B] V&V report.** Script that runs the verification suite and writes a table
   of case, quantity, analytic value, computed value, error and tolerance to
   `docs/vv-report.md`.
-- [ ] **M11.3 [B] Performance.** Benchmark test for Plan §6 item 6; profile; cache the
+- [x] **M11.3 [B] Performance.** Benchmark test for Plan §6 item 6; profile; cache the
   sparsity pattern and element geometry; reuse factorisations; consider `pypardiso` as an
   optional faster solver behind the `Factorization` wrapper.
 - [x] **M11.4 [B] User guide.** MkDocs site: installation, three tutorials (NAFEMS T4

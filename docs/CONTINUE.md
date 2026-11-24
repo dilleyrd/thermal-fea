@@ -240,7 +240,18 @@ In order:
   - `scripts/smoke_exe.py` drives both programs. The GUI's `--smoke-test MODEL` opens,
     meshes, solves and exits.
   - `tests/packaging/test_frozen.py` runs the smoke test when `dist/` exists.
-  - **Next, in the agreed order:** M11.3, then M11.6.
+- **M11.3 (performance)** followed. Plan §6 item 6 is met: 107k nodes, 100 steps of a linear
+  transient in 12.8 s in total (mesh 7.4 s, solve 5.3 s). Before, it ran for more than 15
+  minutes without finishing.
+  - Cause: SuperLU's partial pivoting destroyed the symmetric MMD ordering.
+  - Fix: symmetric matrices are factorised in SuperLU's symmetric mode with a diagonal
+    pivot threshold of 0.01 (`linear.py`). The step matrix and the fixed-column block are
+    reused while Δt and θ are unchanged.
+  - The test is `tests/performance/test_plan_item6.py`.
+  - Considered but not needed: caching the sparsity pattern and element geometry (assembly
+    is under 10 % of the solve), and pypardiso (not installed; the `Factorization` wrapper
+    still allows it).
+  - **Next:** M11.6, the release review, after the owner's M8.G session.
 
 ## 5. Next work: tasks M11.12–M11.16
 

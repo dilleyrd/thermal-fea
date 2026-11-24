@@ -21,6 +21,12 @@ log = logging.getLogger(__name__)
 
 #: A factorisation whose smallest pivot is below this fraction of the largest is singular.
 SINGULAR_PIVOT_RATIO = 1e-13
+#: Symmetric matrices are factorised in SuperLU's symmetric mode: the fill-reducing ordering
+#: of A^T + A is kept and the diagonal is taken as the pivot unless it is smaller than this
+#: fraction of the largest entry of its column (then a row is swapped as usual). Partial
+#: pivoting with the default threshold of 1 destroys that ordering: on an unstructured
+#: 12k-node mesh it made the factorisation 70 times and each solve 10 times slower (M11.3).
+SYMMETRIC_PIVOT_THRESHOLD = 0.01
 
 
 class Factorization(Protocol):
@@ -71,7 +77,13 @@ class SuperLUFactorization:
         if not np.all(np.isfinite(csc.data)):
             raise SolverError("matrix contains non-finite values")
         try:
-            self._lu = splu(csc, permc_spec="MMD_AT_PLUS_A" if symmetric else "COLAMD")
+            if symmetric:
+                self._lu = splu(
+                    csc, permc_spec="MMD_AT_PLUS_A", diag_pivot_thresh=SYMMETRIC_PIVOT_THRESHOLD,
+                    options={"SymmetricMode": True},
+                )
+            else:
+                self._lu = splu(csc, permc_spec="COLAMD")
         except RuntimeError as exc:  # "Factor is exactly singular"
             raise SolverError(f"matrix is singular: {exc}") from exc
         pivots = np.abs(self._lu.U.diagonal())

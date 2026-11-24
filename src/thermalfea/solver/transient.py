@@ -533,25 +533,29 @@ def solve_transient(
         theta_r = row_theta(theta)
         if linear:
             base = system if not problem.is_time_dependent else assemble(problem, T, t_new, T, dt)
-            A = (C_const / dt + _row_scaled(theta_r, base.tangent())).tocsr()
             free, fixed_idx = split_dofs(T.size, fixed_idx)
-            reuse = (
-                cached.get("key") == (dt, theta)
-                and np.array_equal(cached["free"], free)
-                and (base is cached.get("base") or (A != cached["A"]).nnz == 0)
-            )
+            reuse = cached.get("key") == (dt, theta) and np.array_equal(cached["free"], free)
+            if reuse and base is cached.get("base"):
+                A = cached["A"]  # same step size and the same matrices: nothing to rebuild
+            else:
+                A = (C_const / dt + _row_scaled(theta_r, base.tangent())).tocsr()
+                reuse = reuse and (A != cached["A"]).nnz == 0
             if not reuse:
                 factor: Factorization | None = (
                     solver.factorize(A[free][:, free].tocsr(), symmetric) if free.size else None
                 )
                 cached.update(key=(dt, theta), free=free, base=base, A=A, factor=factor)
+                cached.pop("fixed", None)
                 result.factorizations += 1
+            if not np.array_equal(cached.get("fixed"), fixed_idx):
+                # the coupling of the free rows to the prescribed values, kept with the factor
+                cached.update(fixed=fixed_idx, A_fixed=cached["A"][free][:, fixed_idx])
             T_new = np.empty_like(T)
             T_new[fixed_idx] = fixed_val
             rhs = C_const @ T / dt + theta_r * (base.F + base.r_extra) + (1.0 - theta_r) * g
             if free.size:
                 T_new[free] = cached["factor"].solve(  # type: ignore[union-attr]
-                    rhs[free] - A[free][:, fixed_idx] @ fixed_val
+                    rhs[free] - cached["A_fixed"] @ fixed_val
                 )
             step_system = StepSystem(base, C_const, T, g, dt, theta_r)
             residual = float(np.linalg.norm(step_system.residual(T_new)[free]))
