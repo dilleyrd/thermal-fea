@@ -81,6 +81,10 @@ Right-click Materials and choose Add material. The new material starts with ever
 also refuses a density or specific heat of 0. Each physical property has a mode box
 (Constant, Table or Expression) above its value; leave it on Constant for a constant.
 Tools > Material library... opens the built-in library ([Materials](materials.md)).
+To start from a library material, select the material, type part of a name in the "From
+library" box (built-in entries first, then your own marked "(user)"), and press Use library
+values: the conductivity, density, specific heat and phase change are copied in one undo step
+and the material keeps its name, so its regions stay assigned.
 
 Right-click Regions and choose Add region. In its Selection field press "Pick in
 viewport", set the toolbar to Surface, click the surfaces, press Apply, then press "Pick in
@@ -165,7 +169,11 @@ and, for a transient run, a "Step" slider and spin box, a "Time" box and "Play".
 The Results menu has: Add contour, Add vector plot, Probe, Play animation, Nodal
 history..., Path plot..., Finish path plot, Cancel path plot, Heat-flow history, Energy
 balance and Flow results.... Nodal history and Path plot ask you to pick nodes or path
-points in the viewport first. Probe shows x, y and the value at the pixel you click. It is
+points in the viewport first. Each path point is drawn as a numbered marker and the points
+are joined by a line; Cancel path plot removes them, and after Finish they stay until the
+chart window is closed. Probe shows x, y and the value at the pixel you click, and each click inside the model
+leaves a marker with its value and unit; the markers follow the displayed step, field and
+units, and are cleared when you turn Probe off. It is
 a rough check; use the CSV export for exact values.
 
 File > Export has: Viewport image..., Nodal results (CSV)..., ParaView (VTU)...,

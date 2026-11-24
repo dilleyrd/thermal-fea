@@ -27,10 +27,14 @@ selected then. No modal dialog is involved.
 Picking a path
 --------------
 ``results.path`` starts the pick mode: the view's selection mode is set to ``"none"`` and each
-``point_picked`` click adds a polyline vertex (the status bar lists the vertices; the
-viewport has no temporary-polyline layer, so none is drawn). ``results.path_finish`` (or
-triggering ``results.path`` again) plots the displayed field of the displayed step against
-distance; ``results.path_cancel`` leaves without a window. Needs at least two vertices.
+``point_picked`` click adds a polyline vertex (the status bar lists the vertices). After every
+click the viewport overlay layer ``"path"`` (``SceneView.set_overlay``) shows one numbered
+marker per vertex and, from two vertices on, the polyline joining them. ``results.path_finish``
+(or triggering ``results.path`` again) plots the displayed field of the displayed step against
+distance; the drawing then stays while that chart window is open and is cleared when it
+closes. ``results.path_cancel`` (also a cancel caused by the probe, a node pick or new
+results) leaves without a window and clears the drawing; a new path pick replaces any
+earlier drawing. Needs at least two vertices.
 
 One click consumer at a time
 ----------------------------
@@ -86,7 +90,13 @@ from thermalfea.gui.results_tools import (
     ContourObject,
     ResultController,
 )
-from thermalfea.gui.scene import NODE_DIM, SceneView
+from thermalfea.gui.scene import (
+    NODE_DIM,
+    OverlayItem,
+    OverlayMarker,
+    OverlayPolyline,
+    SceneView,
+)
 from thermalfea.post.report import write_report
 
 _log = logging.getLogger(__name__)
@@ -108,6 +118,8 @@ EXPORT_REPORT_ID = "export.report"
 GIF_FILTER = "GIF animation (*.gif)"
 REPORT_FILTER = "HTML report (*.html)"
 IMAGE_EXPORT_DPI = 200
+#: Viewport overlay layer (``SceneView.set_overlay``) of the picked path.
+PATH_OVERLAY_LAYER = "path"
 #: Most vertices listed in the status bar while picking a path.
 _LISTED_POINTS = 6
 
@@ -175,6 +187,7 @@ class ChartController(QObject):
         self.path_active = False
         self.path_points: list[tuple[float, float]] = []
         self._saved_mode: str | None = None
+        self._path_chart: ChartWindow | None = None
         self._build_actions()
         view.selection_changed.connect(self._on_selection_changed)
         view.point_picked.connect(self._on_point_picked)
@@ -312,6 +325,8 @@ class ChartController(QObject):
         return chart
 
     def _on_chart_closed(self, chart: object) -> None:
+        if chart is self._path_chart:
+            self._clear_path_drawing()
         if chart in self.windows:
             self.windows.remove(chart)  # type: ignore[arg-type]
             chart.deleteLater()  # type: ignore[attr-defined]
@@ -383,6 +398,7 @@ class ChartController(QObject):
         self.history_pending = False
         self.results_controller.set_probe(False)
         self.path_points = []
+        self._clear_path_drawing()  # a new pick replaces the drawing kept for a chart
         self.path_active = True
         self._enter_pick("none")
         self.update_actions()
@@ -402,6 +418,20 @@ class ChartController(QObject):
             for px, py in shown
         )
         self._status(f"Path: {len(self.path_points)} vertex(es): {listing}", 30000)
+        self._draw_path()
+
+    def _draw_path(self) -> None:
+        """Draw the numbered vertices and, from two vertices on, the polyline joining them."""
+        items: list[OverlayItem] = [
+            OverlayMarker(px, py, text=str(i)) for i, (px, py) in enumerate(self.path_points, 1)
+        ]
+        if len(self.path_points) >= 2:
+            items.append(OverlayPolyline(list(self.path_points)))
+        self.view.set_overlay(PATH_OVERLAY_LAYER, items)
+
+    def _clear_path_drawing(self) -> None:
+        self._path_chart = None
+        self.view.set_overlay(PATH_OVERLAY_LAYER, [])
 
     def _on_probe_toggled(self, on: bool) -> None:
         if on and self.path_active:
@@ -425,12 +455,18 @@ class ChartController(QObject):
         polyline = list(self.path_points)
         step, field = self._displayed()
         self._end_path()
-        return self._open(lambda w: w.show_path(results, polyline, step, field))
+        chart = self._open(lambda w: w.show_path(results, polyline, step, field))
+        if chart is None:
+            self._clear_path_drawing()
+        else:
+            self._path_chart = chart  # the drawing stays while this window is open
+        return chart
 
     def cancel_path(self) -> None:
-        """Leave the path pick without plotting."""
+        """Leave the path pick without plotting; the drawing is cleared."""
         if self.path_active:
             self._end_path()
+            self._clear_path_drawing()
             self._status("Path plot cancelled", 5000)
 
     def _end_path(self) -> None:

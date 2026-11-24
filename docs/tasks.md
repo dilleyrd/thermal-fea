@@ -715,7 +715,7 @@ Boundary Conditions, Flow (Streams, Network), Enclosures, Analysis Settings, Sol
   - **Tests:** the chart has no imbalance line, the table's rows and columns match
     `Results.energy_balance()` in SI and in other display units, the steady window, and
     Export CSV unchanged.
-- [ ] **M11.48 [B] Path plot: show the vertices and the path.** Owner's request,
+- [x] **M11.48 [B] Path plot: show the vertices and the path.** Owner's request,
   2026-11-24. Released: the owner finished the V-10 review on 2026-11-24.
   Depends on M11.45 (`SceneView.set_overlay`).
   - **Today:** Results > Path plot... lists the clicked vertices only in the status bar;
