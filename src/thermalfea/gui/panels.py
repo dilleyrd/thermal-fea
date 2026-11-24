@@ -33,6 +33,7 @@ from thermalfea.gui.property_panels.solution import SolutionPanel
 from thermalfea.gui.property_panels.stream import StreamPanel
 from thermalfea.gui.scene import SceneView
 from thermalfea.gui.tree import ModelTree
+from thermalfea.gui.tree_summary import TreeSummaryController
 from thermalfea.materials.material import Material
 from thermalfea.model.bcs import Contact, CorrelationConvection, Stream
 from thermalfea.model.model import RegionAssignment
@@ -188,9 +189,7 @@ class PropertyController:
         if action is not None and not action.isChecked():
             action.setChecked(True)
 
-    def _install(
-        self, widget: QWidget, panel: FormPanel | None, address: Address | None
-    ) -> None:
+    def _install(self, widget: QWidget, panel: FormPanel | None, address: Address | None) -> None:
         previous = self._installed
         if previous is not None and previous is not widget:
             # a panel that is being replaced must not keep picking into the viewport
@@ -220,9 +219,7 @@ class PropertyController:
 
 register_panel(
     MeshSettings,
-    lambda c, spec, address: MeshPanel(
-        spec, c.document, address, c.view, generate=c.generate_mesh
-    ),
+    lambda c, spec, address: MeshPanel(spec, c.document, address, c.view, generate=c.generate_mesh),
 )
 register_panel(
     SolutionSettings,
@@ -233,19 +230,13 @@ register_panel(
 register_panel(
     RegionAssignment, lambda c, spec, address: RegionPanel(spec, c.document, address, c.view)
 )
-register_panel(
-    Material, lambda c, spec, address: MaterialPanel(spec, c.document, address, c.view)
-)
+register_panel(Material, lambda c, spec, address: MaterialPanel(spec, c.document, address, c.view))
 register_panel(
     CorrelationConvection,
     lambda c, spec, address: CorrelationPanel(spec, c.document, address, c.view),
 )
-register_panel(
-    Stream, lambda c, spec, address: StreamPanel(spec, c.document, address, c.view)
-)
-register_panel(
-    Contact, lambda c, spec, address: ContactPanel(spec, c.document, address, c.view)
-)
+register_panel(Stream, lambda c, spec, address: StreamPanel(spec, c.document, address, c.view))
+register_panel(Contact, lambda c, spec, address: ContactPanel(spec, c.document, address, c.view))
 
 
 def attach_tree(
@@ -270,4 +261,5 @@ def attach_tree(
     tree.error_occurred.connect(lambda text: window.show_error("Model tree", text))
     controller = PropertyController(window, document, tree, view)
     tree.property_controller = controller  # type: ignore[attr-defined]
+    tree.summary_controller = TreeSummaryController(window, document, tree)  # type: ignore[attr-defined]
     return tree, controller

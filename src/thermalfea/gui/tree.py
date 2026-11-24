@@ -24,8 +24,15 @@ from dataclasses import dataclass, replace
 from typing import Any
 
 from PySide6.QtCore import QPoint, Qt, Signal
-from PySide6.QtGui import QAction, QBrush, QColor
-from PySide6.QtWidgets import QAbstractItemView, QMenu, QTreeWidget, QTreeWidgetItem, QWidget
+from PySide6.QtGui import QAction, QBrush, QColor, QPalette
+from PySide6.QtWidgets import (
+    QAbstractItemView,
+    QHeaderView,
+    QMenu,
+    QTreeWidget,
+    QTreeWidgetItem,
+    QWidget,
+)
 
 from thermalfea.core import registry
 from thermalfea.core.errors import ModelError
@@ -34,6 +41,7 @@ from thermalfea.gui.addressing import Address, exists, resolve
 from thermalfea.gui.dialogs.new_load import LOAD_DIALOGS
 from thermalfea.gui.dialogs.new_stream import NewStreamDialog
 from thermalfea.gui.document import Document
+from thermalfea.gui.tree_summary import summary_for
 from thermalfea.materials.material import Material
 from thermalfea.model.bcs import Contact, Stream
 from thermalfea.model.geometry_edit import dependents
@@ -122,7 +130,11 @@ class ModelTree(QTreeWidget):
         self._actions: list[QAction] = []
         #: Providers of view objects shown under the Solution node (see :meth:`add_provider`).
         self.providers: list[Any] = []
+        self.setColumnCount(2)
         self.setHeaderHidden(True)
+        header = self.header()
+        header.setStretchLastSection(True)
+        header.setSectionResizeMode(0, QHeaderView.ResizeMode.ResizeToContents)
         # geometry operations replay in order: the history can never be reordered
         self.setDragDropMode(QAbstractItemView.DragDropMode.NoDragDrop)
         self.setAcceptDrops(False)
@@ -134,7 +146,47 @@ class ModelTree(QTreeWidget):
         self.itemExpanded.connect(lambda item: self._remember(item, True))
         self.itemCollapsed.connect(lambda item: self._remember(item, False))
         document.model_changed.connect(self.rebuild)
+        for signal in (
+            document.geometry_built,
+            document.mesh_changed,
+            document.results_changed,
+            document.stale_changed,
+        ):
+            signal.connect(self.refresh_summaries)
         self.rebuild()
+
+    def set_summary_visible(self, visible: bool) -> None:
+        """Show or hide the summary column (column 1)."""
+        self.setColumnHidden(1, not visible)
+
+    def edit(self, index: Any, trigger: Any = None, event: Any = None) -> bool:
+        """Only column 0 (the name) is ever edited."""
+        if index.column() != 0:
+            return False
+        return super().edit(index, trigger, event)
+
+    def refresh_summaries(self) -> None:
+        """Set the summary text of every item (column 1) from the document state."""
+        brush = self.palette().brush(QPalette.ColorRole.PlaceholderText)
+        self._rebuilding = True
+        self.blockSignals(True)
+        try:
+
+            def walk(item: QTreeWidgetItem) -> None:
+                ref = self.ref_of(item)
+                if ref is not None:
+                    text = summary_for(self.document, ref.section, ref.address, self.providers)
+                    item.setText(1, text)
+                    item.setToolTip(1, text)
+                    item.setForeground(1, brush)
+                for i in range(item.childCount()):
+                    walk(item.child(i))
+
+            for i in range(self.topLevelItemCount()):
+                walk(self.topLevelItem(i))
+        finally:
+            self.blockSignals(False)
+            self._rebuilding = False
 
     def add_provider(self, provider: Any) -> None:
         """Let ``provider`` contribute objects under the Solution node and their actions.
@@ -227,6 +279,7 @@ class ModelTree(QTreeWidget):
         finally:
             self.blockSignals(False)
             self._rebuilding = False
+        self.refresh_summaries()
 
     def _restore_expansion(self, item: QTreeWidgetItem) -> None:
         item.setExpanded(self._expanded.get(self._key(item), item.parent() is None))
@@ -236,9 +289,7 @@ class ModelTree(QTreeWidget):
     def _populate(self, model: Model) -> None:
         sections: dict[str, QTreeWidgetItem] = {}
         for key, title in SECTIONS:
-            sections[key] = self._make_item(
-                self, title, NodeRef(key, SECTION_OBJECTS.get(key))
-            )
+            sections[key] = self._make_item(self, title, NodeRef(key, SECTION_OBJECTS.get(key)))
         for i, op in enumerate(model.geometry):
             self._make_item(
                 sections["geometry"], op.id, NodeRef("geometry", ("geometry", i)),
@@ -246,7 +297,9 @@ class ModelTree(QTreeWidget):
             )  # fmt: skip
         for name in model.materials:
             self._make_item(
-                sections["materials"], name, NodeRef("materials", ("materials", name)),
+                sections["materials"],
+                name,
+                NodeRef("materials", ("materials", name)),
                 renameable=True,
             )
         for i, region in enumerate(model.regions):
@@ -279,7 +332,9 @@ class ModelTree(QTreeWidget):
         for provider in self.providers:
             for text, address, renameable in provider.tree_items():
                 self._make_item(
-                    sections["solution"], text, NodeRef("solution", address),
+                    sections["solution"],
+                    text,
+                    NodeRef("solution", address),
                     renameable=renameable,
                 )
 
@@ -561,9 +616,7 @@ class ModelTree(QTreeWidget):
         def mutate(model: Model) -> None:
             material = next(iter(model.materials), "")
             model.regions.append(
-                RegionAssignment(
-                    selection="", material=material, thickness=1.0, material_angle=0.0
-                )
+                RegionAssignment(selection="", material=material, thickness=1.0, material_angle=0.0)
             )
             holder.append(len(model.regions) - 1)
 
@@ -723,9 +776,7 @@ class ModelTree(QTreeWidget):
             obj.active = not suppressed
 
         name = resolve(self.document.model, address).name
-        return self.document.edit(
-            f"{'Suppress' if suppressed else 'Unsuppress'} {name}", mutate
-        )
+        return self.document.edit(f"{'Suppress' if suppressed else 'Unsuppress'} {name}", mutate)
 
     def delete(self, address: Address) -> bool:
         """Delete an object."""
@@ -776,9 +827,9 @@ class ModelTree(QTreeWidget):
         if item is not None:
             self.editItem(item, 0)
 
-    def _on_item_changed(self, item: QTreeWidgetItem, _column: int) -> None:
+    def _on_item_changed(self, item: QTreeWidgetItem, column: int) -> None:
         """Inline rename finished: apply it, or restore the old text if refused."""
-        if self._rebuilding:
+        if self._rebuilding or column != 0:
             return
         address = self.address_of(item)
         provider = self._provider_of(address)

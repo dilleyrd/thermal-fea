@@ -745,7 +745,7 @@ tasks come before the owner's M8.G session (D8).
     "curve".
   - **Tests:** the role mapping for a synthetic 3D domain, an unbuilt model, the toolbar
     labels and the editor texts.
-- [ ] **M11.50 [B] Summary column in the model tree.** Plan §5.
+- [x] **M11.50 [B] Summary column in the model tree.** Plan §5.
   - A second, read-only column filled by `gui/tree_summary.py`, refreshed on the model,
     build, mesh, results and stale signals.
   - The Model dock title gives the model name, type, thickness or axis, and units.
