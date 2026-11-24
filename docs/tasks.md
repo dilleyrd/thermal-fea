@@ -623,7 +623,40 @@ Boundary Conditions, Flow (Streams, Network), Enclosures, Analysis Settings, Sol
     the new field defaults to None.
   - **Tests:** the laminar table values, the annulus interpolation and its limits, a
     Sieder–Tate stream against the formula, and V-27–V-29 still pass.
+- [ ] **M11.43 [B] Material fields as a function of temperature only.** Owner's request,
+  2026-11-24. **Held: start only after the owner has finished the M8.G V-10 review.**
+  Material properties are never modelled as a function of time or of a state variable
+  (owner, 2026-11-24); Validate already refuses them (`material-not-temperature-only`).
+  - **Field setting:** `FieldSpec` gains an optional `variables` (the table variables the
+    field may use), default `("t", "T")`, so every other field is unchanged (Q21.6). The
+    material form's `k`, `k2`, `rho` and `cp` use `("T",)`.
+  - **Editor:** the table's variable box shows only the allowed variables, so a material
+    table starts on temperature and cannot be switched to time. An expression that uses a
+    variable the field does not allow (`t`, `x`, `y` for a material) is refused as it is
+    typed, with a message naming the allowed one.
+  - **Old files:** a material table against time is shown as it is, with the error, and is
+    never converted silently.
+  - **Label:** the table's "Against" becomes "As a function of" for every field; the guide
+    pages that quote it follow.
+  - **Not yet decided:** whether Heat Power, Heat Flow and Fixed Temperature (which refuse
+    T) are limited to time the same way. Ask the owner before including them.
+  - **Tests:** the variable box of a material field and of a load field, the live
+    expression refusal, an old file with a time table, and the new label.
+- [ ] **M11.44 [B] Library values in the material panel.** Owner's request, 2026-11-24.
+  **Held: start only after the owner has finished the M8.G V-10 review.**
+  - **Panel:** a `MaterialPanel` (registered like `RegionPanel`) with a "From library"
+    box above the properties, listing the built-in solids and then the user library, with
+    type-to-search, and a **Use library values** button.
+  - **Effect:** the button replaces this material's `k`, `k2`, `rho`, `cp` and
+    `phase_change` with the library entry's, in one undo step. **The material keeps its
+    own name** (owner, 2026-11-24), so the regions that use it stay assigned. The values
+    stay editable.
+  - **Tools > Material library...** stays, for saving to and removing from the user
+    library.
+  - **Tests:** the list (built-in, then user), type-to-search, use-values (properties,
+    name and region kept, one undo step), and an unreadable user library shown as an error
+    without losing the built-ins.
 - [ ] **M11.6 [C] Release review.** Check every item of Plan §6; resolve or document every
   entry in `docs/OPEN_QUESTIONS.md`. Version 1 excludes the held features M9 and M10.2 and
   their cases V-22a–d, V-23, V-24 and V-36 (owner, 2026-11-22, Q29.15); the guide's
-  limitations say so. Depends on M11.7–M11.42, M8.G and M11.1.
+  limitations say so. Depends on M11.7–M11.44, M8.G and M11.1.
