@@ -14,6 +14,7 @@ from ..core.errors import ModelError
 
 if TYPE_CHECKING:  # the builder imports gmsh; this module must not (Plan §3)
     from ..geometry.builder import BuiltGeometry
+    from .model import Model
 
 #: Matching tolerance of :func:`resolve`: centre within ``TOL * L``, measure within ``TOL``.
 RESOLVE_TOL = 1e-6
@@ -162,3 +163,245 @@ def refresh(selections: dict[str, Selection], built: BuiltGeometry) -> dict[str,
         except StaleSelectionError as exc:
             stale[name] = str(exc)
     return stale
+
+
+# ------------------------------------------------------------------ selection editing
+#
+# One traversal (``selection_refs``) finds every place a selection name is stored. The
+# list of users, renaming and the delete protection all go through it, so a holder added
+# later is either found through its registered form (loads) or listed once in
+# ``_explicit_refs`` below.
+
+#: The selection that every build rewrites (all surfaces). It may be used but never
+#: renamed, deleted, edited or created by hand.
+ALL_SELECTION = "all"
+
+
+@dataclass
+class SelectionRef:
+    """One stored reference to a selection name.
+
+    Attributes
+    ----------
+    address : tuple
+        Address of the object holding the reference, e.g. ``("bcs", 2)``,
+        ``("regions", 0)``, ``("mesh_settings",)`` (see ``gui/addressing``).
+    label : str
+        What uses the selection, for messages and the users list ("load cooling").
+    container : object
+        The dataclass, list or dict that stores the name.
+    key : str or int
+        Attribute name (dataclass), index (list) or the name itself (dict key).
+    kind : {"attr", "item", "key"}
+        How the name is stored: as an attribute value, as a list item, or as a dict key.
+    """
+
+    address: tuple
+    label: str
+    container: object
+    key: str | int
+    kind: str
+
+
+@dataclass
+class SelectionUse:
+    """One user of a selection: the address of the object and a readable label."""
+
+    address: tuple
+    label: str
+
+
+def _value_refs(obj: object, attr: str, name: str, address: tuple, label: str):
+    """References to ``name`` in ``obj.attr``, which holds a name or a list of names."""
+    value = getattr(obj, attr, None)
+    if value == name:
+        yield SelectionRef(address, label, obj, attr, "attr")
+    elif isinstance(value, list):
+        for i, item in enumerate(value):
+            if item == name:
+                yield SelectionRef(address, label, value, i, "item")
+
+
+def _form_selection_fields(obj: object) -> list[str]:
+    """Names of the fields of ``obj`` whose registered form kind is a selection."""
+    from ..core.forms import form_for  # the forms import the registry; keep this lazy
+
+    return [
+        f.name
+        for f in form_for(type(obj)).fields
+        if f.kind in ("selection", "selection_list")
+    ]
+
+
+def _title(obj: object) -> str:
+    from ..core.forms import form_for
+
+    return form_for(type(obj)).title
+
+
+def _part_label(region: object) -> str:
+    return getattr(region, "name", "") or getattr(region, "selection", "")
+
+
+def selection_refs(model: Model, name: str) -> list[SelectionRef]:
+    """Every stored reference to the selection ``name`` in ``model``.
+
+    Covers regions, every boundary condition (suppressed ones too; their selection
+    fields come from the registered forms), contacts, enclosure surfaces, stream walls
+    (one reference per repeated entry), the mesh settings (``curve_sizes``,
+    ``point_sizes`` and ``curve_divisions`` keys, ``structured_surfaces``, refinements)
+    and the keys of ``InitialCondition.per_region``.
+    """
+    refs: list[SelectionRef] = []
+    for i, region in enumerate(model.regions):
+        refs += _value_refs(region, "selection", name, ("regions", i),
+                            f"part {_part_label(region)}")  # fmt: skip
+    for i, bc in enumerate(model.bcs):
+        label = f"{_title(bc).lower()} {bc.name}"
+        for attr in _form_selection_fields(bc):
+            refs += _value_refs(bc, attr, name, ("bcs", i), label)
+    for i, contact in enumerate(model.contacts):
+        refs += _value_refs(contact, "selection", name, ("contacts", i),
+                            f"contact {contact.name}")  # fmt: skip
+    for i, enclosure in enumerate(model.enclosures):
+        for j, surface in enumerate(enclosure.surfaces):
+            refs += _value_refs(surface, "selection", name, ("enclosures", i),
+                                f"enclosure {enclosure.name} surface {j + 1}")  # fmt: skip
+    for i, stream in enumerate(model.streams):
+        refs += _value_refs(stream, "walls", name, ("streams", i), f"stream {stream.name} walls")
+    refs += _explicit_refs(model, name)
+    return refs
+
+
+def _explicit_refs(model: Model, name: str) -> list[SelectionRef]:
+    """The references stored as dict keys or nested values outside any form field."""
+    refs: list[SelectionRef] = []
+    mesh = model.mesh_settings
+    where = ("mesh_settings",)
+    for attr, label in (
+        ("curve_sizes", "mesh: boundary size"),
+        ("point_sizes", "mesh: point size"),
+        ("curve_divisions", "mesh: divisions"),
+    ):
+        table = getattr(mesh, attr)
+        if name in table:
+            refs.append(SelectionRef(where, label, table, name, "key"))
+    refs += _value_refs(mesh, "structured_surfaces", name, where, "mesh: structured parts")
+    for i, refinement in enumerate(mesh.refinements):
+        refs += _value_refs(refinement, "selection", name, where, f"mesh: refinement {i + 1}")
+    per_region = model.initial_condition.per_region
+    if per_region and name in per_region:
+        refs.append(SelectionRef(("initial_condition",), "initial condition (per part)",
+                                 per_region, name, "key"))  # fmt: skip
+    return refs
+
+
+def selection_users(model: Model, name: str) -> list[SelectionUse]:
+    """The objects that use the selection ``name``, one entry per object and label."""
+    seen: list[SelectionUse] = []
+    for ref in selection_refs(model, name):
+        use = SelectionUse(ref.address, ref.label)
+        if use not in seen:
+            seen.append(use)
+    return seen
+
+
+def _key_tables(model: Model) -> list[dict]:
+    """Every dict keyed by selection names (mesh sizes, divisions, per-region values)."""
+    mesh = model.mesh_settings
+    tables: list[dict] = [mesh.curve_sizes, mesh.point_sizes, mesh.curve_divisions]
+    if model.initial_condition.per_region:
+        tables.append(model.initial_condition.per_region)
+    return tables
+
+
+def check_new_selection_name(model: Model, name: str) -> str:
+    """Return the stripped ``name`` if a new selection may take it.
+
+    Raises
+    ------
+    ModelError
+        If the name is empty, reserved (``"all"``), already a selection, or already a key
+        of a table keyed by selection names (a dangling mesh size, say, which the new
+        selection would silently pick up).
+    """
+    name = name.strip()
+    if not name:
+        raise ModelError("a selection name cannot be empty")
+    if name == ALL_SELECTION:
+        raise ModelError(f"the name {ALL_SELECTION!r} is reserved for all parts")
+    if name in model.selections:
+        raise ModelError(f"the selection name {name!r} is already used")
+    if any(name in table for table in _key_tables(model)):
+        raise ModelError(
+            f"the name {name!r} is still used in the mesh settings or the initial "
+            "condition; remove that entry first"
+        )
+    return name
+
+
+def _replace_key(table: dict, old: str, new: str) -> None:
+    """Rename a dict key in place, keeping the order of the keys."""
+    items = [(new if k == old else k, v) for k, v in table.items()]
+    table.clear()
+    table.update(items)
+
+
+def rename_selection(model: Model, old: str, new: str) -> bool:
+    """Rename a selection and every reference to it.
+
+    Every check runs before anything changes, so a refusal leaves the model untouched
+    (and :meth:`Document.edit` records no undo step).
+
+    Returns
+    -------
+    bool
+        ``False`` when ``new`` equals ``old`` (nothing to do).
+
+    Raises
+    ------
+    ModelError
+        If ``old`` is not a selection or is ``"all"``, or ``new`` cannot be taken (see
+        :func:`check_new_selection_name`).
+    """
+    if old == ALL_SELECTION:
+        raise ModelError(f"the selection {ALL_SELECTION!r} cannot be renamed")
+    if old not in model.selections:
+        raise ModelError(f"there is no selection {old!r}")
+    if new.strip() == old:
+        return False
+    new = check_new_selection_name(model, new)
+    refs = selection_refs(model, old)
+    for region in model.regions:  # an unnamed part keeps the name it was shown with
+        if region.selection == old and hasattr(region, "name") and not region.name:
+            region.name = old
+    for ref in refs:
+        if ref.kind == "attr":
+            setattr(ref.container, str(ref.key), new)
+        elif ref.kind == "item":
+            ref.container[ref.key] = new  # type: ignore[index]
+        else:
+            _replace_key(ref.container, old, new)  # type: ignore[arg-type]
+    model.selections[old].name = new
+    _replace_key(model.selections, old, new)
+    return True
+
+
+def delete_selection(model: Model, name: str) -> None:
+    """Delete a selection that nothing uses.
+
+    Raises
+    ------
+    ModelError
+        If it is ``"all"``, does not exist, or is still used (the message names the
+        users).
+    """
+    if name == ALL_SELECTION:
+        raise ModelError(f"the selection {ALL_SELECTION!r} cannot be deleted")
+    if name not in model.selections:
+        raise ModelError(f"there is no selection {name!r}")
+    users = selection_users(model, name)
+    if users:
+        names = ", ".join(u.label for u in users)
+        raise ModelError(f"the selection {name!r} is used by {names}")
+    del model.selections[name]

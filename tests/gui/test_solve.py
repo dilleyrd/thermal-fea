@@ -815,3 +815,25 @@ def test_loading_another_model_closes_the_finished_solve_dialog(steady, qtbot) -
     assert steady.solve.dialog is not None
     steady.doc.set_model(Model(), None)  # what New, Open and Examples do
     assert steady.solve.dialog is None
+
+
+def test_selections_changed_after_meshing_reach_the_results(window, qtbot) -> None:
+    """M11.53: a selection renamed or added after meshing gets its node set in the results
+    file, without a remesh (the node sets are found again on the same mesh)."""
+    from thermalfea.model.selections import rename_selection
+
+    shell = make_shell(window, make_document())
+    doc = shell.doc
+    meshed = doc.mesh
+    doc.edit("rename", lambda m: rename_selection(m, "east", "cooled"))
+    doc.edit(
+        "add",
+        lambda m: api.select_curves(
+            m, doc.built, "south", where=lambda c: abs(c.center[1]) < 1e-9
+        ),
+    )
+    assert not doc.mesh_stale and doc.mesh is meshed  # no remesh needed
+    assert run_to_end(qtbot, shell) == "finished"
+    sets = Results(doc.results_path).mesh.node_sets
+    assert {"cooled", "south", "west"} <= set(sets) and "east" not in sets
+    assert set(meshed.node_sets) == {"all", "west", "east"}  # the document's mesh is untouched

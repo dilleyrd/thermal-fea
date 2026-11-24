@@ -110,10 +110,14 @@ role mapping (part→3, boundary→2, edge→1, point→0).
    - **Reserved `all`:** the build recreates it (`api.build`), so rename, delete, changes
      to its members, and creating a selection under that name are refused. Parts and
      loads may still use it.
-   - **Mesh invalidation:** the mesher writes a node set for every selection
-     (`mesher.py`). A change to a selection key or to its members therefore makes the
-     mesh stale in `Document._invalidate`, which today treats selection edits as
-     results-only. Results already written stay intact.
+   - **Node sets:** the mesher writes a node set for every selection (`mesher.py`), and
+     the results file stores them. Instead of making the mesh stale on every selection
+     change (which would force a remesh for each new load), the GUI solve finds the node
+     sets again on the same mesh just before it starts
+     (`meshing/node_sets.py: node_sets_of`, no gmsh). A renamed, added or redefined
+     selection therefore reaches the results without a remesh. The document's mesh and
+     any results already written stay untouched. A test checks that the recomputed sets
+     equal the mesher's. (This changes Codex finding 6's remedy; reason recorded here.)
 4. **Data §4 `rename_operation(model, old_id, new_id)`** in `model/geometry_edit.py`.
    - **How:** it rewrites every reference by walking `REF_RULES`, keeping repeats, order
      and nested hole loops. It does not use `dependents`, which flattens and removes

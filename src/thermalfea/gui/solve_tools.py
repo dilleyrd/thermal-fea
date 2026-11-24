@@ -49,6 +49,7 @@ the window closes; :meth:`SolveController.shutdown` does the same on demand.
 
 from __future__ import annotations
 
+import dataclasses
 import logging
 from collections.abc import Callable
 from typing import Any
@@ -66,6 +67,7 @@ from thermalfea.gui.main_window import MainWindow
 from thermalfea.gui.scene import SceneView
 from thermalfea.gui.tree import ModelTree
 from thermalfea.gui.worker import JOIN_TIMEOUT_MS, BackgroundTask, TaskContext
+from thermalfea.meshing.node_sets import node_sets_of
 from thermalfea.model.serialize import from_json, to_json
 from thermalfea.model.validate import Issue, errors, validate
 from thermalfea.post.results import Results
@@ -318,7 +320,12 @@ class SolveController(QObject):
             path = document.results_path
         else:
             path = api.results_path(document.path) if document.path is not None else None
-        mesh, built = document.mesh, document.built
+        built = document.built
+        # selections added, renamed or redefined since meshing need their node sets in the
+        # results file; they are found again on the same mesh (the mesh itself is unchanged)
+        mesh = dataclasses.replace(
+            document.mesh, node_sets=node_sets_of(document.mesh, model, built)
+        )
 
         def work(context: TaskContext) -> Results:
             return api.solve(model, mesh, context.report, built=built, path=path, restart=restart)

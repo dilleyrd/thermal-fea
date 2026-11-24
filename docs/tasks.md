@@ -768,7 +768,7 @@ tasks come before the owner's M8.G session (D8).
     status bar.
   - **Tests:** a rectangle, a cut (its object and its tool), a union, a line, a Delete,
     and a stale build.
-- [ ] **M11.53 [C] Selection references, rename and delete.** Plan §4.3.
+- [x] **M11.53 [C] Selection references, rename and delete.** Plan §4.3.
   - `selection_refs` and `selection_users`, from one traversal over every place a
     selection name can appear.
   - `rename_selection`, with a preflight against every collision, and
