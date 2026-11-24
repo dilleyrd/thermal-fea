@@ -75,6 +75,8 @@ def test_the_part_panel_name_and_a_changed_selection(shell, doc) -> None:
 
 def test_rename_a_geometry_step_in_the_tree(shell, doc) -> None:
     tree, _ = shell
+    data = [a.data() for a in tree.actions_for(tree.item_for(("geometry", 0)))]
+    assert ("rename", ("geometry", 0)) in data
     count = doc.undo_stack.count()
     assert tree.rename(("geometry", 0), "frame")
     ops = {op.id: op for op in doc.model.geometry}

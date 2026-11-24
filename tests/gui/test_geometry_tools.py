@@ -512,7 +512,7 @@ def test_tree_actions_for_geometry_items(env) -> None:
     item = env.tree.item_for(("geometry", 0))
     actions = env.tree.actions_for(item)
     kinds = [a.data()[0] for a in actions]
-    assert kinds == ["edit_op", "delete_op"]
+    assert kinds == ["edit_op", "rename", "delete_op"]  # Rename: M11.63
     texts = [a.text() for a in actions]
     assert "Edit" in texts
     assert not [t for t in texts if "up" in t.lower() or "down" in t.lower() or "move" in t.lower()]

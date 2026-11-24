@@ -576,6 +576,7 @@ class ModelTree(QTreeWidget):
         elif ref.address is not None and ref.address[0] == "geometry":
             address = ref.address
             add("Edit", lambda: self.edit_operation(address), ("edit_op", address))
+            add("Rename", lambda: self.begin_rename(address), ("rename", address))
             add(
                 "Delete operation", lambda: self.delete_operation(address),
                 ("delete_op", address),
