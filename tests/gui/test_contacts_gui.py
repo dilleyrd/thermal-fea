@@ -41,6 +41,9 @@ class FakeView:
     def set_symbols(self, symbols: list[LoadSymbol]) -> None:
         self.symbols = list(symbols)
 
+    def set_overlay(self, layer: str, items: list) -> None:
+        pass
+
     def highlight(self, dim: int, tags: list[int]) -> None:
         self.highlights.append((dim, list(tags)))
 

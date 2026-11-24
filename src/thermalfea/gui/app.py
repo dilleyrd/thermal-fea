@@ -23,6 +23,7 @@ from thermalfea.gui.load_symbols import LoadSymbolController, attach_loads
 from thermalfea.gui.main_window import MainWindow
 from thermalfea.gui.materials_tools import MaterialLibraryController, attach_materials
 from thermalfea.gui.mesh_tools import MeshController, attach_mesh_tools
+from thermalfea.gui.overlay_labels import attach_labels
 from thermalfea.gui.panels import PropertyController, attach_tree
 from thermalfea.gui.results_tools import ResultController, attach_results
 from thermalfea.gui.solve_tools import SolveController, attach_solve
@@ -218,6 +219,7 @@ def build_application(
     mesh_tools = attach_mesh_tools(window, document, view)
     properties.generate_mesh = mesh_tools.generate
     loads = attach_loads(window, document, view)
+    attach_labels(window, document, view)
     solve = attach_solve(window, document, view)
     properties.solve_controller = solve
     results_controller = attach_results(window, document, view)

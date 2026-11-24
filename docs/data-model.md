@@ -578,6 +578,7 @@ class SceneView(Protocol):
     def set_mesh(self, mesh: Mesh | None, color_by: ndarray | None = None) -> None: ...
     def set_field(self, spec: FieldDisplay | None) -> None: ...      # contour / vector display
     def set_symbols(self, symbols: list[LoadSymbol]) -> None: ...
+    def set_overlay(self, layer: str, items: list[OverlayItem]) -> None: ...  # named layer, replaced whole (M11.45)
     def set_selection_mode(self, mode: Literal["none","point","curve","surface","node","element"]) -> None: ...
     def highlight(self, dim: int, tags: list[int]) -> None: ...
     def set_axis_visible(self, visible: bool) -> None: ...  # axis x = 0 of an axisymmetric model (M11.7)
@@ -586,6 +587,12 @@ class SceneView(Protocol):
 ```
 `FieldDisplay` carries plain arrays (display simplices, values, vectors, range, levels,
 labels) prepared by `post/`, so a different renderer needs no access to solver objects.
+`set_overlay(layer, items)` replaces the named overlay layer as a whole (an empty list clears
+it). `OverlayItem = OverlayText | OverlayMarker | OverlayPolyline` are plain records in model
+coordinates [m]: `OverlayText(x, y, text, color=None)`, `OverlayMarker(x, y, text="", color=None)`
+(a point with optional text beside it) and `OverlayPolyline(points, color=None)`. Layers are
+drawn above the symbols and below the selection highlight, are not part of the fit bounds, and
+are cleared by `set_geometry(None)`.
 
 ```python
 # solver/linear.py

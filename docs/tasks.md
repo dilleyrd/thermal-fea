@@ -660,7 +660,7 @@ Boundary Conditions, Flow (Streams, Network), Enclosures, Analysis Settings, Sol
   - **Tests:** the list (built-in, then user), type-to-search, use-values (properties,
     name and region kept, one undo step), and an unreadable user library shown as an error
     without losing the built-ins.
-- [ ] **M11.45 [B] Region highlight, region names and load values in the viewport.**
+- [x] **M11.45 [B] Region highlight, region names and load values in the viewport.**
   Owner's request, 2026-11-24. Released: the owner finished the V-10 review on 2026-11-24.
   - **Region highlight:** selecting a region in the model tree highlights its surfaces
     (`LoadSymbolController.highlight_address`, which today handles only loads and

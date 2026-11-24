@@ -34,6 +34,8 @@ ACTION_ID = "view.load_symbols"
 #: Symbol kind of the thermal contacts (their interface curves).
 CONTACT_KIND = "contact"
 CURVE_DIM = 1
+_SURFACE_DIM = 2
+_ITEM_ADDRESS = 2  # (section, key)
 _SELECTION_KINDS = ("selection", "selection_list")
 _GEOMETRY_DIMS = (0, 1, 2)
 
@@ -119,6 +121,24 @@ def _groups_of(document: Document, names: list[str]) -> list[tuple[int, list[int
     return sorted(groups.items())
 
 
+def region_surfaces(document: Document, address: Address) -> list[int]:
+    """Surface tags of the region at ``("regions", i)`` or of every region using the material
+    at ``("materials", name)``; empty without a built geometry or when nothing resolves."""
+    model = document.model
+    if document.built is None:
+        return []
+    if address[0] == "regions":
+        regions = [resolve(model, address)]
+    else:
+        regions = [r for r in model.regions if r.material == address[1]]
+    tags: list[int] = []
+    for region in regions:
+        for dim, found in _groups_of(document, [region.selection]):
+            if dim == _SURFACE_DIM:
+                tags.extend(t for t in found if t not in tags)
+    return sorted(tags)
+
+
 class LoadSymbolController(QObject):
     """Keeps the viewport's load symbols equal to the model's active conditions.
 
@@ -172,6 +192,14 @@ class LoadSymbolController(QObject):
     def highlight_address(self, address: Address) -> None:
         """Highlight the entities of the load at ``address``; other objects clear it."""
         model = self.document.model
+        if (
+            len(address) == _ITEM_ADDRESS
+            and address[0] in ("regions", "materials")
+            and exists(model, address)
+        ):
+            tags = region_surfaces(self.document, address)
+            self.view.highlight(2, tags)
+            return
         if not address or address[0] not in ("bcs", "contacts") or not exists(model, address):
             self.view.highlight(1, [])  # the previous load's highlight must not stay
             return

@@ -149,6 +149,38 @@ class LoadSymbol:
     color: str | None = None
 
 
+@dataclass
+class OverlayText:
+    """A text label at model coordinates ``(x, y)`` [m]; ``color`` ``None`` = renderer default."""
+
+    x: float
+    y: float
+    text: str
+    color: str | None = None
+
+
+@dataclass
+class OverlayMarker:
+    """A point marker at ``(x, y)`` [m] with optional ``text`` beside it."""
+
+    x: float
+    y: float
+    text: str = ""
+    color: str | None = None
+
+
+@dataclass
+class OverlayPolyline:
+    """A polyline through ``points`` (``(x, y)`` pairs [m])."""
+
+    points: list[tuple[float, float]]
+    color: str | None = None
+
+
+#: One record of an overlay layer (see :meth:`SceneView.set_overlay`).
+OverlayItem = OverlayText | OverlayMarker | OverlayPolyline
+
+
 @runtime_checkable
 class SceneView(Protocol):
     """The viewport interface (Data §13).
@@ -183,6 +215,10 @@ class SceneView(Protocol):
 
     def set_symbols(self, symbols: list[LoadSymbol]) -> None:
         """Show load symbols; an empty list clears them."""
+        ...
+
+    def set_overlay(self, layer: str, items: list[OverlayItem]) -> None:
+        """Replace the named overlay layer as a whole; an empty list clears it."""
         ...
 
     def set_axis_visible(self, visible: bool) -> None:

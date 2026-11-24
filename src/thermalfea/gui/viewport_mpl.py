@@ -11,8 +11,13 @@ geometry  surface fills, curves, points               1.0 .. 1.3
 mesh      per-element colours, element outlines       1.9, 2.0
 results   field, arrows, extrema markers              3.0 .. 3.3
 symbols   load / boundary-condition symbols, legend   4.0
+overlay   named layers of text, markers, polylines    4.5
 highlight selection and hover overlays, rubber band   5.0, 5.5
 ========  ==========================================  =====================
+
+The overlay layers (:meth:`MplSceneView.set_overlay`) are replaced one named layer at a
+time and survive ``set_field``, ``set_mesh``, ``set_symbols`` and ``fit``; they are not part of
+the fit bounds, and ``set_geometry(None)`` (a new model) clears them all.
 
 Element outlines are lifted above the results (``Z_MESH_OVER_FIELD``) when a field is shown
 with ``show_mesh``; without ``show_mesh`` the mesh layer is hidden while a field is shown.
@@ -57,6 +62,10 @@ from thermalfea.gui.scene import (
     NODE_DIM,
     FieldDisplay,
     LoadSymbol,
+    OverlayItem,
+    OverlayMarker,
+    OverlayPolyline,
+    OverlayText,
     kind_color,
 )
 from thermalfea.post.plots import DisplayMesh, display_triangulation
@@ -87,6 +96,7 @@ Z_MESH = 2.0
 Z_RESULTS = 3.0
 Z_SYMBOLS = 4.0
 Z_AXIS = 4.2
+Z_OVERLAY = 4.5
 Z_HIGHLIGHT = 5.0
 Z_MESH_OVER_FIELD = Z_RESULTS + 0.5
 
@@ -108,6 +118,8 @@ _HOVER_COLOR = "#000000"
 _BAND_COLOR = "#1c7ed6"
 #: The axis of symmetry of an axisymmetric model; not one of scene.KIND_COLORS.
 _AXIS_COLOR = "#087f5b"
+#: Default colour of overlay markers and polylines.
+_OVERLAY_COLOR = "#c2255c"
 _SURFACE_FILL = "#adb5bd"
 _CURVE_COLOR = "#343a40"
 _POINT_COLOR = "#212529"
@@ -236,6 +248,7 @@ class MplSceneView(QObject):
         self._layers: dict[str, list[Artist]] = {
             "geometry": [], "mesh": [], "results": [], "symbols": [],
         }
+        self._overlays: dict[str, list[Artist]] = {}
         self._mesh_lines: list[LineCollection] = []
         self._mesh_fill: PolyCollection | None = None
         self._colorbar: object | None = None
@@ -318,6 +331,9 @@ class MplSceneView(QObject):
         self._index_geometry(built)
         if built is not None:
             self._draw_geometry(built)
+        else:
+            for name in list(self._overlays):
+                self._remove_overlay(name)
         self._reset_overlays(geometry=True)
         self._after_content_change(had_content)
 
@@ -361,6 +377,66 @@ class MplSceneView(QObject):
         if symbols and self._built is not None:
             self._draw_symbols(symbols, self._built)
         self._invalidate()
+
+    def set_overlay(self, layer: str, items: list[OverlayItem]) -> None:
+        """Replace the named overlay layer as a whole; an empty list clears it.
+
+        Items are :class:`~thermalfea.gui.scene.OverlayText`, ``OverlayMarker`` and
+        ``OverlayPolyline`` in model coordinates [m]. Other layers are not touched.
+        """
+        self._remove_overlay(layer)
+        artists: list[Artist] = []
+        for item in items:
+            artists.extend(self._draw_overlay_item(item))
+        if artists:
+            self._overlays[layer] = artists
+        self._invalidate()
+
+    def overlay_artists(self, layer: str) -> list[Artist]:
+        """The artists of an overlay layer (empty when the layer is empty or unknown)."""
+        return list(self._overlays.get(layer, []))
+
+    def _remove_overlay(self, layer: str) -> None:
+        for artist in self._overlays.pop(layer, []):
+            try:
+                artist.remove()
+            except (ValueError, NotImplementedError):  # pragma: no cover - defensive
+                log.debug("overlay artist already removed")
+
+    def _draw_overlay_item(self, item: OverlayItem) -> list[Artist]:
+        ax = self._ax
+        out: list[Artist] = []
+        bbox = {"boxstyle": "round,pad=0.2", "fc": "white", "alpha": 0.75, "lw": 0.3}
+        if isinstance(item, OverlayPolyline):
+            if len(item.points) >= _PLANE:
+                pts = np.asarray(item.points, float).reshape(-1, _PLANE)
+                line = Line2D(
+                    pts[:, 0], pts[:, 1], color=item.color or _OVERLAY_COLOR, lw=1.8,
+                    zorder=Z_OVERLAY,
+                )
+                ax.add_artist(line)
+                out.append(line)
+        elif isinstance(item, OverlayMarker):
+            dot = Line2D(
+                [item.x], [item.y], ls="none", marker="o", ms=7,
+                mfc=item.color or _OVERLAY_COLOR, mec="black", mew=0.8, zorder=Z_OVERLAY,
+            )
+            ax.add_artist(dot)
+            out.append(dot)
+            if item.text:
+                note = ax.annotate(
+                    item.text, xy=(item.x, item.y), xytext=(7, 7), textcoords="offset points",
+                    fontsize=8, zorder=Z_OVERLAY + 0.1, annotation_clip=False, bbox=bbox,
+                )
+                out.append(note)
+        elif isinstance(item, OverlayText):
+            note = ax.annotate(
+                item.text, xy=(item.x, item.y), ha="center", va="center", fontsize=8,
+                color=item.color or "black", zorder=Z_OVERLAY, annotation_clip=False,
+                bbox=bbox,
+            )
+            out.append(note)
+        return out
 
     def set_axis_visible(self, visible: bool) -> None:
         """Show or hide the axis of symmetry x = 0 (a dash-dot line, not pickable)."""
