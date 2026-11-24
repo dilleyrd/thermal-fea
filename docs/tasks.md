@@ -683,12 +683,14 @@ Boundary Conditions, Flow (Streams, Network), Enclosures, Analysis Settings, Sol
   - **Change:** each probe click also leaves a marker at the clicked point with the value
     and unit beside it, e.g. `18.21 °C`, in the display units; a click outside the mesh
     leaves no marker.
-  - **Behaviour (proposed defaults; the owner may change them):** markers stay until
-    Results > **Clear probe labels**, or until the results are replaced. When the displayed
-    step, field or unit system changes, each marker is evaluated again, so it never shows a
-    stale value. At most `MAX_PROBES` markers are kept, as with the readings.
+  - **Behaviour:** markers stay while the probe is on. **Turning the probe off clears
+    them** (owner, 2026-11-24), and so does replacing the results; there is no separate
+    clear action. When the displayed step, field or unit system changes, each marker is
+    evaluated again, so it never shows a stale value. At most `MAX_PROBES` markers are
+    kept, as with the readings.
   - **Tests:** a marker and its text after a click, none outside the mesh, re-evaluation on
-    a step change and in degC, Clear probe labels, and new results clearing them.
+    a step change and in degC, turning the probe off clearing them, and new results
+    clearing them.
 - [ ] **M11.6 [C] Release review.** Check every item of Plan §6; resolve or document every
   entry in `docs/OPEN_QUESTIONS.md`. Version 1 excludes the held features M9 and M10.2 and
   their cases V-22a–d, V-23, V-24 and V-36 (owner, 2026-11-22, Q29.15); the guide's

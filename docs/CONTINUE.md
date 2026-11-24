@@ -279,7 +279,7 @@ After all of them: M11.6, the release review, which depends on M11.7–M11.16.
   a function of"; library values in the material panel with type-to-search, keeping the
   material's own name; region highlight, region names and load values in the viewport
   (`SceneView.set_labels` approved as an addition to Data §13); the probe value shown at
-  the clicked point (its behaviour in M11.46 is a proposal the owner may change). One question is open in M11.43: whether Heat Power, Heat Flow and
+  the clicked point, cleared when the probe is turned off (M11.46). One question is open in M11.43: whether Heat Power, Heat Flow and
   Fixed Temperature are limited to time the same way.
 - ~~**M11.1**~~, human task: closed on 2026-11-23 after M11.37–M11.42 (Q30); the owner
   kept the printed oxygen row and declined the Q30.4 additions.
