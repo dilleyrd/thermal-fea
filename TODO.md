@@ -31,10 +31,19 @@ steps:
 4. Confirm or dismiss the eight known frictions in walkthrough §4. Item 2 there is the
    "Pick in viewport" start mode, which you asked to check here (Q29.12).
 
-Changed since the walkthrough was written: M10 (contacts, DXF, units, restart), M11.24
-(colour bar) and M11.25 (New, Open, remesh, closing the solve dialog). If you would rather
-test after the released GUI tasks are built, wait for M11.7–M11.9: the axisymmetric
-choice, the display fixes and the dialog for new loads.
+Changed since the walkthrough was written:
+- M10: contacts, DXF, units and restart;
+- M11.24: the colour bar;
+- M11.25: New, Open, remesh, and closing the solve dialog;
+- built on 2026-11-23:
+  - M11.7: the Geometry type choice in Analysis Settings;
+  - M11.8: a None mass flow, the HTC calculator's cross-section, and "steady state";
+  - M11.9: a dialog when a correlation convection or radiation load is added. This
+    changes V-17's radiation step and the walkthrough's load steps a little: fill the
+    dialog instead of the panel.
+
+Every build task except the release review M11.6 is now done. M11.6 waits for this
+session.
 
 **Files.**
 - `docs/gui-walkthrough.md`;
