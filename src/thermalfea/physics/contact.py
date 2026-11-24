@@ -31,6 +31,9 @@ if TYPE_CHECKING:
 #: Key of ``CompiledProblem.cache`` holding the partner arrays of the opened interfaces
 #: (entity tag -> far-side node of every near-side node), set by the compiler.
 PARTNERS = "contact_partners"
+#: ``problem.cache`` key of the node origin of an opened mesh (``SplitMesh.origin``): for
+#: every node, the node of the unopened mesh it was copied from.
+ORIGIN = "contact_origin"
 
 
 class ContactTerm(BaseTerm):

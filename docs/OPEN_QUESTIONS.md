@@ -467,6 +467,9 @@ and M10.2 (phase change), which are on hold. None of the points below blocks the
    the lower region id. A fixed temperature on a geometry *point* at the end of a contact
    curve therefore fixes that side only; on a boundary *curve* it fixes each side's own
    nodes, as expected.
+   **Changed by M11.36 (2026-11-23, owner's decision D12.6):** a fixed temperature on a
+   geometry point fixes every copy of its node, so a point at the end of a contact curve
+   fixes both sides. Other point loads are unchanged.
 6. **Reported heat.** The heat crossing a contact is internal to the body, so it is not
    in the energy balance; the term reports it as `contact_heat:<name>` (from the lower
    to the higher region id) [W].

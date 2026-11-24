@@ -94,8 +94,8 @@ message that says so; it is never solved with that part left out.
 - **The geometry factor (thickness or 2πr) is taken from the side with the lower region
   number.** Two regions of different thickness meeting at a contact are not treated
   specially.
-- **A fixed temperature on a geometry point at the end of a contact curve fixes one side
-  only** (the side of the lower region number). On a curve it fixes each side's own nodes.
+- **Other point loads at the end of a contact curve act on one side only** (the side of the
+  lower region number). A fixed temperature on such a point fixes both sides.
 
 ## DXF import
 

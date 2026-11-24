@@ -24,7 +24,7 @@ from ..physics import (
 )
 from ..physics.capacitance import CapacitanceTerm
 from ..physics.conduction import ConductionTerm
-from ..physics.contact import PARTNERS, ContactTerm
+from ..physics.contact import ORIGIN, PARTNERS, ContactTerm
 from .dofs import DofMap
 from .problem import TEMPERATURE, CompiledProblem, RegionData
 
@@ -174,10 +174,10 @@ def compile(  # noqa: A001
     missing = not_implemented(model)
     if missing:  # never solve a model while silently leaving part of it out
         raise ModelError("; ".join(message for _, _, message in missing))
-    partners = None
+    partners = origin = None
     if model.contacts:  # open the mesh along the contact curves (Theory §11)
         split = split_interfaces(mesh, _contact_tags(model, built, mesh))
-        mesh, partners = split.mesh, split.partner
+        mesh, partners, origin = split.mesh, split.partner, split.origin
         log.info("contact: %d node(s) duplicated along the contact curves", split.n_new)
     dofs = DofMap()
     dofs.add_field(TEMPERATURE, mesh.n_nodes)
@@ -191,6 +191,7 @@ def compile(  # noqa: A001
     )
     if partners is not None:
         problem.cache[PARTNERS] = partners
+        problem.cache[ORIGIN] = origin
     conduction = ConductionTerm()
     _setup(problem, conduction)
     problem.terms.append(conduction)

@@ -15,6 +15,7 @@ from numpy import ndarray
 from ..core import registry
 from ..core.errors import ModelError
 from ..model.bcs import FixedTemperature
+from .contact import ORIGIN
 from .evaluate import at_points
 
 if TYPE_CHECKING:
@@ -45,7 +46,11 @@ class FixedTemperatureConstraint:
         self._coords: ndarray = np.empty((0, 0))
 
     def setup(self, problem: CompiledProblem) -> None:
-        """Collect the nodes of the selected curves or points."""
+        """Collect the nodes of the selected curves or points.
+
+        On a mesh opened along contact curves, a geometry point fixes every copy of its
+        node, so a point at the end of a contact curve fixes both sides.
+        """
         mesh = problem.mesh
         dim, tags = problem.selection_tags(self.selection, (POINT_DIM, mesh.dim - 1))
         if dim == POINT_DIM:
@@ -53,6 +58,11 @@ class FixedTemperatureConstraint:
             if missing:
                 raise ModelError(f"point(s) {missing} of {self.selection!r} have no mesh node")
             nodes = np.array([mesh.point_nodes[t] for t in tags], dtype=np.int64)
+            origin = problem.cache.get(ORIGIN)
+            if origin is not None:
+                # a point at the end of a contact curve: every copy of its node, on both
+                # sides of the contact (owner's decision D12.6, Q29.12)
+                nodes = np.flatnonzero(np.isin(origin, origin[nodes]))
         else:
             found = [fb.conn.ravel() for fb in mesh.facets_on(tags)]
             nodes = np.concatenate(found) if found else np.empty(0, dtype=np.int64)

@@ -212,8 +212,9 @@ In order:
   the Δt₀ wording, Q20.1, `thermalfea export` dropped from PLAN.
 - **M11.34 (transforms of points and curves)** and **M11.35 (user fluids)** followed
   (Data §4, §6; Q29.12).
-  - **Next, in the agreed order:** M11.36, M10.5, M11.7–M11.10, M11.2, M11.3, M11.5,
-    then M11.6.
+- **M11.36 (fixed temperature at a contact end)** followed: both copies of the node are
+  prescribed (Q22.5 changed).
+  - **Next, in the agreed order:** M10.5, M11.7–M11.10, M11.2, M11.3, M11.5, then M11.6.
 
 ## 5. Next work: tasks M11.12–M11.16
 

@@ -565,7 +565,7 @@ Boundary Conditions, Flow (Streams, Network), Enclosures, Analysis Settings, Sol
   of the user library, as `library.solid` finds user solids. Tests: a user fluid is found
   and used by a convection load; a built-in name still wins, or a clash is reported as for
   solids.
-- [ ] **M11.36 [B] Fixed temperature at a contact end.** Q29.12 (D12.6), changing Q22.5. A
+- [x] **M11.36 [B] Fixed temperature at a contact end.** Q29.12 (D12.6), changing Q22.5. A
   fixed temperature on a geometry point at the end of a contact curve fixes the nodes on
   both sides of the contact. Tests: both copies of the node are prescribed; V-35 still
   passes.
