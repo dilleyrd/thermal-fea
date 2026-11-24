@@ -675,7 +675,21 @@ Boundary Conditions, Flow (Streams, Network), Enclosures, Analysis Settings, Sol
   - **Tests:** the region and material highlight, both toggles, the label text of a
     constant, a table and an expression in SI and in degC, and the labels following
     undo, suppress and rename.
+- [ ] **M11.46 [B] Probe value at the clicked point.** Owner's request, 2026-11-24.
+  **Held: start only after the owner has finished the M8.G V-10 review.** Depends on M11.45
+  (`SceneView.set_labels`).
+  - **Today:** a probe click reports x, y and the value only in the status bar
+    (`ResultController.probe_at`).
+  - **Change:** each probe click also leaves a marker at the clicked point with the value
+    and unit beside it, e.g. `18.21 °C`, in the display units; a click outside the mesh
+    leaves no marker.
+  - **Behaviour (proposed defaults; the owner may change them):** markers stay until
+    Results > **Clear probe labels**, or until the results are replaced. When the displayed
+    step, field or unit system changes, each marker is evaluated again, so it never shows a
+    stale value. At most `MAX_PROBES` markers are kept, as with the readings.
+  - **Tests:** a marker and its text after a click, none outside the mesh, re-evaluation on
+    a step change and in degC, Clear probe labels, and new results clearing them.
 - [ ] **M11.6 [C] Release review.** Check every item of Plan §6; resolve or document every
   entry in `docs/OPEN_QUESTIONS.md`. Version 1 excludes the held features M9 and M10.2 and
   their cases V-22a–d, V-23, V-24 and V-36 (owner, 2026-11-22, Q29.15); the guide's
-  limitations say so. Depends on M11.7–M11.45, M8.G and M11.1.
+  limitations say so. Depends on M11.7–M11.46, M8.G and M11.1.
