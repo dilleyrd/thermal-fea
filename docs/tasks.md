@@ -533,7 +533,7 @@ Boundary Conditions, Flow (Streams, Network), Enclosures, Analysis Settings, Sol
     guide).
 
   Both copies of the showcase images are kept.
-- [ ] **M11.31 [C] Fluid rows fully implicit.** `REVIEW-2.md` 2.1-3; Q29.2 (owner's decision
+- [x] **M11.31 [C] Fluid rows fully implicit.** `REVIEW-2.md` 2.1-3; Q29.2 (owner's decision
   D2, 2026-11-22). Write into Theory §6 and §9.1, then the code:
   - rows without capacitance (stream fluid rows) are stepped with θ = 1 whatever the
     solid's θ, in both the linear and the Newton paths;

@@ -144,7 +144,9 @@ message that says so; it is never solved with that part left out.
   fluid. For an ideal gas the expansion coefficient is still 1/T.
 - **Fluid thermal storage is neglected:** the fluid in a stream is quasi-steady. A stream
   has no initial condition; its starting temperatures follow from the initial wall
-  temperatures.
+  temperatures. In a transient, the fluid temperatures are always stepped fully implicitly
+  (θ = 1), whatever θ the solid uses. A continued run first recomputes them for the stored
+  wall temperatures and the current mass flow and inlet temperature.
 - **One specific heat per stream,** taken at its inlet temperature (open question Q18.2,
   awaiting confirmation).
 - **Flow must run along the path.** A stream needs a positive mass flow, and a network

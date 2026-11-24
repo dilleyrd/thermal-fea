@@ -149,6 +149,7 @@ def step_energy_balance(
     g_prev: ndarray,
     capacitance_rate: ndarray,
     heats_prev: dict[str, float],
+    row_theta: float | ndarray | None = None,
 ) -> tuple[EnergyBalance, dict[str, float]]:
     """Energy balance of one time step of the theta-method.
 
@@ -173,6 +174,11 @@ def step_energy_balance(
         ``C (T - T_prev) / dt`` [W].
     heats_prev : dict of str to float
         Result of :func:`~thermalfea.post.reactions.term_heats` at the start of the step.
+    row_theta : float or ndarray, optional
+        The theta of every row as the solver used it (1 on the rows without capacitance,
+        Theory §6); by default ``theta``. The reactions at prescribed DOFs use it. The
+        loads keep the weighting by ``theta``: a row without capacitance is converged at
+        both ends of the step (``g_r = 0``), so the balance still closes.
 
     Returns
     -------
@@ -185,7 +191,8 @@ def step_energy_balance(
         name: theta * heat + (1.0 - theta) * heats_prev.get(name, heat)
         for name, heat in heats_new.items()
     }
-    reaction = capacitance_rate - theta * g_new - (1.0 - theta) * g_prev
+    weight = theta if row_theta is None else row_theta
+    reaction = capacitance_rate - weight * g_new - (1.0 - weight) * g_prev
     for name, heat in constraint_heats(problem, reaction, t).items():
         flows[name] = flows.get(name, 0.0) + heat
     balance = EnergyBalance(

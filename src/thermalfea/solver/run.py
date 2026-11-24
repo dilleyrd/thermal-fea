@@ -350,11 +350,19 @@ def run_transient(
             if writer.n_steps % FLUSH_EVERY == 0:
                 writer.flush()
 
+        first = [True]
+
         def on_step(record: StepRecord) -> bool:
             nonlocal heats
+            if first[0] and resumed is not None:
+                # a restart re-solves the fluid rows before its first step (Theory §6): the
+                # heats at the start are those of the state the step actually started from
+                heats = term_heats(problem, record.T_prev, t0)
+            first[0] = False
             balance, heats = step_energy_balance(
                 problem, record.theta, record.t, record.dt, record.T, record.T_prev,
                 record.system.residual(record.T), record.g_prev, record.capacitance_rate, heats,
+                row_theta=record.row_theta,
             )
             stored = selector.wanted(record.step, record.t)
             # taken now: the flow solution moves on with the next step

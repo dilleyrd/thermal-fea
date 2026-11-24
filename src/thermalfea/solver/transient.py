@@ -32,7 +32,7 @@ from dataclasses import dataclass, field
 
 import numpy as np
 from numpy import ndarray
-from scipy.sparse import csr_matrix
+from scipy.sparse import csr_matrix, diags
 
 from ..core.errors import ConvergenceError, ModelError
 from .assembler import Assembler
@@ -88,6 +88,9 @@ class StepRecord:
         ``g(T_prev, t - dt)`` [W].
     capacitance_rate : ndarray
         ``C (T - T_prev) / dt`` [W]; its sum is the rate of change of stored energy.
+    row_theta : float or ndarray
+        The theta of every row: ``theta``, except 1 on the rows without capacitance
+        (Theory §6); a single number when all rows use the same.
     """
 
     step: int
@@ -102,6 +105,7 @@ class StepRecord:
     system: Assembled
     g_prev: ndarray
     capacitance_rate: ndarray
+    row_theta: float | ndarray | None = None
 
 
 @dataclass
@@ -179,7 +183,8 @@ class StepSystem:
     """The nonlinear system of one time step, in the form the Newton driver expects.
 
     ``residual(u)`` returns ``-R(u)`` so that the driver's ``tangent dT = residual`` is
-    the update ``A dT = -R`` of Theory §6.
+    the update ``A dT = -R`` of Theory §6. ``theta`` is one number, or one per row (1 on
+    the rows without capacitance, Theory §6).
     """
 
     def __init__(
@@ -189,7 +194,7 @@ class StepSystem:
         u_prev: ndarray,
         g_prev: ndarray,
         dt: float,
-        theta: float,
+        theta: float | ndarray,
     ) -> None:
         self.base, self.C = base, C
         self.u_prev, self.g_prev = u_prev, g_prev
@@ -206,8 +211,8 @@ class StepSystem:
         )
 
     def tangent(self) -> csr_matrix:
-        """``A = C / dt + theta (K + K_tan)`` [W/K]."""
-        return (self.C / self.dt + self.theta * self.base.tangent()).tocsr()
+        """``A = C / dt + theta (K + K_tan)`` [W/K], row by row."""
+        return (self.C / self.dt + _row_scaled(self.theta, self.base.tangent())).tocsr()
 
     def reference(self, u: ndarray) -> float:
         """``F_ref = max(|C (u - u_prev) / dt|, |F|, |K u|, 1e-12)`` [W]."""
@@ -221,6 +226,45 @@ class StepSystem:
     def roundoff(self, u: ndarray, free: ndarray) -> float:
         """Residual level of the round-off test (Theory §5, §6) on the free rows [W]."""
         return self.base.roundoff(u, free)
+
+
+def _row_scaled(theta: float | ndarray, M: csr_matrix) -> csr_matrix:
+    """``theta M`` with ``theta`` one number or one factor per row."""
+    if np.ndim(theta) == 0:
+        return theta * M
+    return diags(np.asarray(theta, dtype=float)) @ M
+
+
+def _resolve_algebraic(
+    problem: CompiledProblem, T: ndarray, t0: float, algebraic: ndarray, solver: LinearSolver
+) -> ndarray:
+    """Solve the free rows without capacitance for the rest of ``T`` held fixed (Theory §6).
+
+    On a restart the stored fluid temperatures belong to the data of the earlier run; they
+    are brought into balance with the stored wall temperatures and the current data
+    (``g_r(T, t0) = 0`` on those rows) before ``g(T0, t0)`` is built.
+    """
+    fixed_idx, fixed_val = problem.prescribed(t0)
+    rows = algebraic.copy()
+    rows[fixed_idx] = False
+    if not rows.any():
+        return T
+    T = T.copy()
+    T[fixed_idx] = fixed_val
+    held = np.flatnonzero(~rows)
+
+    def refresh(u: ndarray) -> None:
+        update_providers(problem, State(u=u, u_prev=u, t=t0, dt=None, dofs=problem.dofs))
+
+    outcome = newton(
+        lambda u: assemble(problem, u, t0, update=False), T, (held, T[held]), problem.settings,
+        symmetric=False, solver=solver, refresh=refresh if problem.providers else None,
+    )
+    log.info(
+        "restart: %d fluid temperature(s) re-solved for the stored walls (%d iteration(s))",
+        int(rows.sum()), outcome.iterations,
+    )
+    return outcome.T
 
 
 def initial_state(
@@ -438,6 +482,23 @@ def solve_transient(
     controller = StepController(settings, t0, mandatory_times(problem), first_dt)
     if problem.check_dt is not None:
         problem.check_dt(T, controller.dt)
+
+    # DOFs with capacitance (a nonzero row of C): the solid temperatures. A row without
+    # capacitance (a fluid row of a stream) is algebraic and stepped with theta = 1 (§6).
+    C_const = assemble_capacitance(problem, T, t0, T, None) if linear else None
+    C_cap = C_const if C_const is not None else assemble_capacitance(problem, T, t0, T, None)
+    cap_rows = np.flatnonzero(np.asarray(abs(C_cap).sum(axis=1)).ravel() > 0.0)
+    algebraic = np.ones(T.size, dtype=bool)
+    algebraic[cap_rows] = False
+    if resume and algebraic.any():
+        T = _resolve_algebraic(problem, T, t0, algebraic, solver)
+
+    def row_theta(theta: float) -> float | ndarray:
+        """The theta of every row: 1 for a row without capacitance, ``theta`` otherwise."""
+        if theta == 1.0 or not algebraic.any():
+            return theta
+        return np.where(algebraic, 1.0, theta)
+
     system = assemble(problem, T, t0)
     g = system.residual(T)
     # Loads applied to a body that is not in equilibrium with them at the start are a
@@ -458,21 +519,17 @@ def solve_transient(
         result.temperatures.append(T.copy())
 
     # data reused between the steps of a linear problem
-    C_const = assemble_capacitance(problem, T, t0, T, None) if linear else None
     cached: dict[str, object] = {}
-
-    # DOFs with capacitance (a nonzero row of C): the solid temperatures; a fluid row has none
-    C_cap = C_const if C_const is not None else assemble_capacitance(problem, T, t0, T, None)
-    cap_rows = np.flatnonzero(np.asarray(abs(C_cap).sum(axis=1)).ravel() > 0.0)
     breakpoints = problem.breakpoints()
 
     def attempt(dt: float, theta: float) -> tuple:
         """Solve one step from the current state; returns the new state and its systems."""
         t_new = controller.t + dt
         fixed_idx, fixed_val = problem.prescribed(t_new)
+        theta_r = row_theta(theta)
         if linear:
             base = system if not problem.is_time_dependent else assemble(problem, T, t_new, T, dt)
-            A = (C_const / dt + theta * base.tangent()).tocsr()
+            A = (C_const / dt + _row_scaled(theta_r, base.tangent())).tocsr()
             free, fixed_idx = split_dofs(T.size, fixed_idx)
             reuse = (
                 cached.get("key") == (dt, theta)
@@ -487,19 +544,20 @@ def solve_transient(
                 result.factorizations += 1
             T_new = np.empty_like(T)
             T_new[fixed_idx] = fixed_val
-            rhs = C_const @ T / dt + theta * (base.F + base.r_extra) + (1.0 - theta) * g
+            rhs = C_const @ T / dt + theta_r * (base.F + base.r_extra) + (1.0 - theta_r) * g
             if free.size:
                 T_new[free] = cached["factor"].solve(  # type: ignore[union-attr]
                     rhs[free] - A[free][:, fixed_idx] @ fixed_val
                 )
-            step_system = StepSystem(base, C_const, T, g, dt, theta)
+            step_system = StepSystem(base, C_const, T, g, dt, theta_r)
             residual = float(np.linalg.norm(step_system.residual(T_new)[free]))
             return T_new, 1, True, residual, step_system, base
 
         def assemble_step(u: ndarray) -> StepSystem:
             base = assemble(problem, u, t_new, T, dt, update=False)
+            # rho c at T_theta, with the solid's theta (a row without capacitance has no C)
             C = assemble_capacitance(problem, theta * u + (1.0 - theta) * T, t_new, T, dt)
-            return StepSystem(base, C, T, g, dt, theta)
+            return StepSystem(base, C, T, g, dt, theta_r)
 
         def refresh_providers(u: ndarray) -> None:
             # once per iterate (Theory §9.2); line-search trials never update the providers
@@ -563,7 +621,7 @@ def solve_transient(
         record = StepRecord(
             step=step, t=controller.t, dt=dt, theta=theta, T=T_new, T_prev=T,
             iterations=iterations, converged=converged, residual=residual, system=new_system,
-            g_prev=g, capacitance_rate=rate,
+            g_prev=g, capacitance_rate=rate, row_theta=row_theta(theta),
         )
         T_before, dt_before = T, dt
         T, g, system = T_new, g_new, new_system

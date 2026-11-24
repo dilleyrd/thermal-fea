@@ -698,6 +698,17 @@ commit 314093c) and in the evaluation, §4.
      whatever θ the solid uses, in both the linear and the Newton paths.
    - On a restart the fluid nodes are first re-solved for the stored wall temperatures
      and the current data, and g(n) is then rebuilt.
+
+   **Built in M11.31 (2026-11-23)**, written into Theory §6 and §9.1:
+   - A row without capacitance is one whose row of C is all zero. Its θ is 1 in the
+     residual, the tangent and the reactions of the step energy balance.
+   - The ρc of the solid is still evaluated at T_θ with the solid's θ.
+   - The loads of the energy balance keep the θ weighting. A fluid row that is converged
+     at both ends of a step has g_r = 0, so the balance closes. On a restart, the start
+     heats are taken from the re-solved state.
+   - Reproduced on a plate with a linear stream (h given) at θ = 0.5, restarted with a
+     fifth of the mass flow: before, the outlet alternated by about ±0.3 K a step; now it
+     rises smoothly.
 3. **D3, Theory §6.1 error estimate (M11.19): yes, as recommended.**
    - The prescribed DOFs are left out of the error estimate and out of
      `max_dT_per_step`; a model with no free DOF is handled.

@@ -156,6 +156,21 @@ unchanged, with K, F and r_extra assembled at the iterate T_{n+1}.
 - θ = 2/3 Galerkin
 - θ = 1/2 Crank–Nicolson (second order; may oscillate after a thermal shock)
 
+**Rows without capacitance.** A row of C that is all zero (the fluid rows of a stream,
+§9.1) is algebraic. It is stepped with θ = 1 whatever θ the solid uses, in both the linear
+and the Newton paths. With θ_r the θ of row r (θ_r = 1 for such a row, θ otherwise):
+
+  R_r = C_r (T_{n+1} − T_n)/Δt − θ_r g_r(T_{n+1}, t_{n+1}) − (1 − θ_r) g_r(T_n, t_n)
+
+and the row of the tangent is A_r = C_r/Δt + θ_r (K + K_rad)_r. The step energy balance
+(reactions at prescribed DOFs) uses the same θ_r. A fluid row converged at both ends of a
+step has g_r = 0 there, so the balance stays closed.
+
+**Restart.** A run continued from a stored solution first solves the fluid rows, g_r(T,
+t₀) = 0 for the free rows without capacitance. Every other DOF is held at its stored value,
+and the current data are used (a mass flow or inlet temperature may have changed). Then
+g(T₀, t₀) is rebuilt from the result.
+
 g(T_n, t_n) is stored from the end of the previous step, not recomputed. At a step where a
 prescribed temperature or a load jumps discontinuously, use θ = 1 for that one step.
 A jump at t_n is found from the prescribed values and from g(T_n, ·) at the probe times
@@ -410,7 +425,8 @@ Q_i is removed from the wall nodes of edge i with the same weights w_j. This sch
 exact for a constant wall temperature per cell, cannot oscillate for any NTU, and conserves
 energy exactly. The resulting matrix rows are linear in the unknown temperatures (for
 frozen h and c_p) and **unsymmetric**. Fluid thermal storage is neglected (quasi-steady
-fluid) — state this in the user guide.
+fluid) — state this in the user guide. The fluid rows therefore have no capacitance, and a
+transient steps them with θ = 1 (§6).
 
 Matrix contributions for one cell, written as a conductance-type matrix K_s such that the
 heat *leaving* each DOF is K_s·T: for wall DOF a (weight w_a,i on edge i):

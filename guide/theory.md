@@ -165,6 +165,21 @@ unchanged, with K, F and r\_extra assembled at the iterate T\_{n+1}.
 - θ = 2/3 Galerkin
 - θ = 1/2 Crank–Nicolson (second order; may oscillate after a thermal shock)
 
+**Rows without capacitance.** A row of C that is all zero (the fluid rows of a stream,
+§9.1) is algebraic. It is stepped with θ = 1 whatever θ the solid uses, in both the linear
+and the Newton paths. With θ\_r the θ of row r (θ\_r = 1 for such a row, θ otherwise):
+
+  R\_r = C\_r (T\_{n+1} − T\_n)/Δt − θ\_r g\_r(T\_{n+1}, t\_{n+1}) − (1 − θ\_r) g\_r(T\_n, t\_n)
+
+and the row of the tangent is A\_r = C\_r/Δt + θ\_r (K + K\_rad)\_r. The step energy balance
+(reactions at prescribed DOFs) uses the same θ\_r. A fluid row converged at both ends of a
+step has g\_r = 0 there, so the balance stays closed.
+
+**Restart.** A run continued from a stored solution first solves the fluid rows, g\_r(T,
+t₀) = 0 for the free rows without capacitance. Every other DOF is held at its stored value,
+and the current data are used (a mass flow or inlet temperature may have changed). Then
+g(T₀, t₀) is rebuilt from the result.
+
 g(T\_n, t\_n) is stored from the end of the previous step, not recomputed. At a step where a
 prescribed temperature or a load jumps discontinuously, use θ = 1 for that one step.
 A jump at t\_n is found from the prescribed values and from g(T\_n, ·) at the probe times
@@ -428,7 +443,8 @@ Q\_i is removed from the wall nodes of edge i with the same weights w\_j. This s
 exact for a constant wall temperature per cell, cannot oscillate for any NTU, and conserves
 energy exactly. The resulting matrix rows are linear in the unknown temperatures (for
 frozen h and c\_p) and **unsymmetric**. Fluid thermal storage is neglected (quasi-steady
-fluid) — state this in the user guide.
+fluid) — state this in the user guide. The fluid rows therefore have no capacitance, and a
+transient steps them with θ = 1 (§6).
 
 Matrix contributions for one cell, written as a conductance-type matrix K\_s such that the
 heat *leaving* each DOF is K\_s·T: for wall DOF a (weight w\_a,i on edge i):

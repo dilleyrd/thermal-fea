@@ -204,7 +204,9 @@ In order:
   (`contact_heat:<contact>` [W], `h_mean:<bc>`); schema-1 files still open, and continuing
   one adds the group. Results > Contact-heat history and Mean-h history show them. The
   pump example reads the stored heat and only applies its sign.
-  - **Next, in the agreed order:** M11.31–M11.36, M10.5, M11.7–M11.10, M11.2, M11.3,
+- **M11.31 (fluid rows fully implicit)** followed. Rows without capacitance take θ = 1, and a
+  restart re-solves the fluid for the stored walls (Theory §6, §9.1; Q29.2).
+  - **Next, in the agreed order:** M11.32–M11.36, M10.5, M11.7–M11.10, M11.2, M11.3,
     M11.5, then M11.6.
 
 ## 5. Next work: tasks M11.12–M11.16
