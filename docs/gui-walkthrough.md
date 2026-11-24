@@ -146,13 +146,16 @@ tree highlights its curves.
   row with x = 0.6 and y = 0.2. T minus 273.15 must be between 18.15 and 18.45 degC (target
   18.3, tolerance 0.15). Expect about 291.356 K (18.206 degC).
 - **A quick look.** Results > **Probe**, then click the viewport as close as you can to the
-  right edge at the line y = 0.2. The status bar shows x, y and the temperature in K. This is
+  right edge at the line y = 0.2. The status bar shows x, y and the temperature in K, and each click leaves a marker with
+  its value (cleared when the probe is turned off). This is
   limited by the pixel you hit and by the point lying on the boundary, so use it only as a
   rough check; the CSV is the exact one.
 - **Energy balance.** The "Messages" dock shows the solver log. It lists the heat entering
   through each condition (Fixed Temperature 1 about +10396 W, Convection 1 about -10396 W)
   and "relative imbalance". The value must be below 1e-8; it is about 1e-14.
-  Results > **Energy balance** plots it.
+  Results > **Energy balance** plots the heat flows against time and lists every stored step
+  in a table (with the imbalance; select cells and press Ctrl+C to copy them). A steady
+  result shows the table only.
 
 ### 1.7 Extra checks (optional, they test the editing machinery)
 

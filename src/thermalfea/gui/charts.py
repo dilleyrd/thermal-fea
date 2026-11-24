@@ -26,8 +26,17 @@ import numpy as np
 from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg
 from matplotlib.figure import Figure
 from PySide6.QtCore import Qt, Signal
-from PySide6.QtGui import QCloseEvent
-from PySide6.QtWidgets import QHBoxLayout, QPushButton, QVBoxLayout, QWidget
+from PySide6.QtGui import QCloseEvent, QGuiApplication, QKeySequence
+from PySide6.QtWidgets import (
+    QAbstractItemView,
+    QHBoxLayout,
+    QMenu,
+    QPushButton,
+    QTableWidget,
+    QTableWidgetItem,
+    QVBoxLayout,
+    QWidget,
+)
 
 from thermalfea.core.errors import ThermalFEAError
 from thermalfea.core.forms import unit_label
@@ -44,9 +53,15 @@ SaveChooser = Callable[["QWidget | None", str, str], "str | None"]
 
 IMAGE_FILTER = "PNG image (*.png);;PDF (*.pdf);;SVG (*.svg)"
 CSV_FILTER = "CSV table (*.csv)"
-#: Columns of ``Results.energy_balance()`` that are powers [W]; the last column of the file
-#: (``relative_imbalance``) is dimensionless and is not drawn.
-ENERGY_POWER_COLUMNS = ("heat_in", "heat_out", "net", "stored_rate", "imbalance")
+#: Columns of ``Results.energy_balance()`` that are powers [W] and are drawn. The imbalance is
+#: many orders smaller than the flows (it only clutters the chart; M11.47): it is in the table
+#: and the CSV, not in the chart. ``relative_imbalance`` is dimensionless.
+ENERGY_POWER_COLUMNS = ("heat_in", "heat_out", "net", "stored_rate")
+#: Power columns of the window's data (what Export CSV writes): the drawn ones and the imbalance.
+ENERGY_CSV_COLUMNS = (*ENERGY_POWER_COLUMNS, "imbalance")
+#: Columns of the energy table, in order; those the file lacks are left out.
+ENERGY_TABLE_COLUMNS = (*ENERGY_CSV_COLUMNS, "relative_imbalance")
+ENERGY_STEADY_TITLE = "Energy balance (steady state)"
 IMAGE_DPI = 200
 
 
@@ -70,15 +85,17 @@ def energy_data(results: Results) -> plots.HistoryData:
     Returns
     -------
     thermalfea.post.plots.HistoryData
-        One series per power column (:data:`ENERGY_POWER_COLUMNS` that the file has), in the
-        display power unit of the results (W by default), against time in the display unit.
+        One series per power column (:data:`ENERGY_CSV_COLUMNS` that the file has, the
+        imbalance included: this is what Export CSV writes; the chart leaves the imbalance
+        out), in the display power unit of the results (W by default), against time in the
+        display unit.
     """
     units = results.display_units
     columns = results.energy_balance()
     series = {
         name: np.asarray(from_si(np.asarray(columns[name], dtype=float), "power", units),
                          dtype=float)
-        for name in ENERGY_POWER_COLUMNS
+        for name in ENERGY_CSV_COLUMNS
         if name in columns
     }
     return plots.HistoryData(
@@ -86,9 +103,42 @@ def energy_data(results: Results) -> plots.HistoryData:
                          dtype=float),
         series=series,
         ylabel=f"Power [{unit_label('power', units)}]",
-        title="Energy balance",
+        title=ENERGY_STEADY_TITLE if plots.is_steady(results) else "Energy balance",
         xlabel=f"Time [{unit_label('time', units)}]",
     )
+
+
+def energy_table(results: Results) -> tuple[list[str], list[list[str]]]:
+    """Headers and text cells of the energy-balance table (one row per stored step).
+
+    No computation: the values are those of :meth:`Results.energy_balance`, converted to the
+    display units (powers and time) and formatted with 6 significant digits; the relative
+    imbalance is a plain number.
+    """
+    units = results.display_units
+    columns = results.energy_balance()
+    names = [name for name in ENERGY_TABLE_COLUMNS if name in columns]
+    time_unit = unit_label("time", units)
+    power_unit = unit_label("power", units)
+    headers = [f"time [{time_unit}]"] + [
+        f"{name} [-]" if name == "relative_imbalance" else f"{name} [{power_unit}]"
+        for name in names
+    ]
+    values = [np.asarray(from_si(np.asarray(results.times, dtype=float), "time", units))]
+    for name in names:
+        raw = np.asarray(columns[name], dtype=float)
+        values.append(raw if name == "relative_imbalance"
+                      else np.asarray(from_si(raw, "power", units), dtype=float))
+    rows = [[_cell(float(col[i])) for col in values] for i in range(len(values[0]))]
+    return headers, rows
+
+
+#: Text of a table cell with no stored value (a NaN, e.g. the initial row of a transient).
+NO_VALUE = "—"
+
+
+def _cell(value: float) -> str:
+    return f"{value:.6g}" if np.isfinite(value) else NO_VALUE
 
 
 class ChartWindow(QWidget):
@@ -160,8 +210,16 @@ class ChartWindow(QWidget):
         buttons.addStretch(1)
         buttons.addWidget(self.save_button)
         buttons.addWidget(self.csv_button)
+        self.table = QTableWidget(0, 0)
+        self.table.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
+        self.table.setSelectionMode(QAbstractItemView.SelectionMode.ExtendedSelection)
+        self.table.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
+        self.table.customContextMenuRequested.connect(self._table_menu)
+        self.table.installEventFilter(self)
+        self.table.hide()
         layout = QVBoxLayout(self)
         layout.addWidget(self.canvas, 1)
+        layout.addWidget(self.table, 1)
         layout.addLayout(buttons)
         self.resize(720, 520)
         self._set_title("Chart")
@@ -171,7 +229,61 @@ class ChartWindow(QWidget):
         self._title = text
         self.setWindowTitle(text + (" (out of date)" if self.out_of_date else ""))
 
+    def _chart_mode(self) -> None:
+        """Show the chart alone (hide the energy table), as for every kind but the energy one."""
+        self.table.hide()
+        self.canvas.show()
+        self.save_button.show()
+        self.csv_button.setEnabled(True)
+        self.csv_button.setToolTip("")
+
+    # ------------------------------------------------------------------ energy table
+    def eventFilter(self, obj, event):  # noqa: N802, ANN001, ANN201 (Qt override)
+        """Ctrl+C in the table copies the selected cells."""
+        from PySide6.QtCore import QEvent
+
+        if (obj is self.table and event.type() == QEvent.Type.KeyPress
+                and event.matches(QKeySequence.StandardKey.Copy)):
+            self.copy_table()
+            return True
+        return super().eventFilter(obj, event)
+
+    def table_text(self) -> str:
+        """The selected cells as tab-separated text under the header row (all if none)."""
+        table = self.table
+        cells = table.selectedIndexes()
+        rows = sorted({i.row() for i in cells}) or list(range(table.rowCount()))
+        cols = sorted({i.column() for i in cells}) or list(range(table.columnCount()))
+        header = [table.horizontalHeaderItem(c).text() for c in cols]
+        lines = ["\t".join(header)]
+        for r in rows:
+            lines.append("\t".join(table.item(r, c).text() for c in cols))
+        return "\n".join(lines) + "\n"
+
+    def copy_table(self) -> None:
+        """Put the selected table cells on the clipboard (tab-separated, with headers)."""
+        QGuiApplication.clipboard().setText(self.table_text())
+
+    def _table_menu(self, pos) -> None:  # noqa: ANN001
+        menu = QMenu(self.table)
+        menu.addAction("Copy", self.copy_table)
+        menu.exec(self.table.viewport().mapToGlobal(pos))
+
+    def _fill_table(self, headers: list[str], rows: list[list[str]]) -> None:
+        table = self.table
+        table.clear()
+        table.setColumnCount(len(headers))
+        table.setRowCount(len(rows))
+        table.setHorizontalHeaderLabels(headers)
+        for r, row in enumerate(rows):
+            for c, text in enumerate(row):
+                item = QTableWidgetItem(text)
+                item.setFlags(Qt.ItemFlag.ItemIsEnabled | Qt.ItemFlag.ItemIsSelectable)
+                table.setItem(r, c, item)
+        table.resizeColumnsToContents()
+
     def _fresh_axes(self) -> None:
+        self._chart_mode()
         self.figure.clear()
         self.axes = self.figure.add_subplot(111)
 
@@ -219,8 +331,31 @@ class ChartWindow(QWidget):
         self.show_history(plots.term_history_data(results, quantity), quantity)
 
     def show_energy_balance(self, results: Results) -> None:
-        """The stored energy-balance columns against time."""
-        self.show_history(energy_data(results), "energy")
+        """The stored energy-balance columns against time, and a table of every step.
+
+        The chart draws :data:`ENERGY_POWER_COLUMNS` (not the imbalance); :attr:`data` keeps
+        every power column for Export CSV. A steady result shows the table only.
+        """
+        data = energy_data(results)
+        headers, rows = energy_table(results)
+        if plots.is_steady(results):
+            self._chart_mode()
+            self.figure.clear()
+            self.axes = self.figure.add_subplot(111)
+            self.canvas.hide()
+            self.save_button.hide()  # nothing to draw
+            self._finish("energy", data)
+        else:
+            drawn = plots.HistoryData(
+                times=data.times,
+                series={k: v for k, v in data.series.items() if k in ENERGY_POWER_COLUMNS},
+                ylabel=data.ylabel, title=data.title, xlabel=data.xlabel,
+            )
+            self._fresh_axes()
+            plots.draw_history(drawn, self.axes, None, "chart")
+            self._finish("energy", data)
+        self._fill_table(headers, rows)
+        self.table.show()
 
     def show_path(
         self,
@@ -274,6 +409,7 @@ class ChartWindow(QWidget):
         self.axes.grid(True)
         self.axes.legend()
         self.stream_curves = {"fluid": (s_fluid, t_fluid), "mean wall": (s_wall, t_wall)}
+        self.data = None
         self.kind = "stream"
         self.out_of_date = False
         # The two curves have their own s grids, so they do not form one CSV table.

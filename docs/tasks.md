@@ -697,7 +697,7 @@ Boundary Conditions, Flow (Streams, Network), Enclosures, Analysis Settings, Sol
   - **Tests:** a marker and its text after a click, none outside the mesh, re-evaluation on
     a step change and in degC, turning the probe off clearing them, and new results
     clearing them.
-- [ ] **M11.47 [B] Energy balance window: a table, and no imbalance line.** Owner's request,
+- [x] **M11.47 [B] Energy balance window: a table, and no imbalance line.** Owner's request,
   2026-11-24, from the V-10 review. Released: the owner finished the V-10 review on 2026-11-24.
   - **Today:** Results > Energy balance draws `heat_in`, `heat_out`, `net`, `stored_rate`
     and `imbalance` against time on one axis (`gui/charts.py: energy_data`,
