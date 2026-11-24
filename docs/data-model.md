@@ -110,6 +110,7 @@ class RegionAssignment:
     material: str
     thickness: float = 1.0       # m, planar only
     material_angle: float = 0.0  # rad, orthotropic only
+    name: str = ""               # part name (M11.56); "" displays as the selection name
 
 @dataclass
 class MeshSettings:
@@ -171,7 +172,13 @@ Each op has a unique `id: str`, and refers to earlier ops' results by id.
 `geometry.builder.build(model) -> BuiltGeometry` replays the list in gmsh, then performs one
 final `occ.fragment` over **all** surfaces so that neighbouring regions share curves and the
 mesh is conformal. `BuiltGeometry` lists final surface, curve and point tags, each with a
-fingerprint (§5), and sampled polylines for display.
+fingerprint (§5), and sampled polylines for display. Its `op_entities` gives the entities each
+operation owns after the build, `curve_surfaces` the surfaces each curve bounds, and
+`point_curves` (M11.60) the curves meeting at each point.
+
+`model/geometry_edit.py: rename_operation(model, old_id, new_id)` (M11.63) renames an
+operation and rewrites every reference to it through `REF_RULES` (keeping repeats, order and
+hole loops); a blank or duplicate id raises `ModelError` before anything changes.
 
 ## §5 Selections
 
@@ -198,6 +205,17 @@ entity of the same dim whose centre is within 1e-6·L and measure within 1e-6 re
 (L = model bounding-box diagonal). If none matches, the selection is **stale**: validation
 fails with a message naming the selection. `resolve` runs on every build.
 
+Selection editing (M11.53), in `model/selections.py`:
+- `selection_refs(model, name)` is the one traversal of every place a selection name is
+  stored: regions, BCs (suppressed too), contacts, enclosure surfaces, stream walls, the
+  mesh `curve_sizes` / `point_sizes` / `curve_divisions` keys, `structured_surfaces`,
+  refinements and `InitialCondition.per_region` keys.
+- `selection_users(model, name) -> list[SelectionUse]` (address and label of each user).
+- `rename_selection(model, old, new)` checks every collision first and changes nothing on
+  refusal (`ModelError`); `delete_selection(model, name)` is refused while it has users.
+- `all` is rebuilt by every build: renaming, deleting, editing its members or creating a
+  selection of that name is refused.
+
 ## §6 Materials
 
 ```python
@@ -209,6 +227,12 @@ class Material:
     rho: Function                  # kg/m³
     cp: Function                   # J/kg·K
     phase_change: PhaseChange | None = None   # T_sol, T_liq [K], latent_heat [J/kg]
+    source: MaterialSource | None = None      # keyword-only; library entry the values were copied from (M11.57)
+
+@dataclass
+class MaterialSource:
+    library: Literal["builtin", "user"]
+    entry: str                     # entry name in that library
 
 @dataclass
 class Fluid:
@@ -573,6 +597,8 @@ The 1D stream/network solver is `flow/coupling.py: StreamNetworkProvider`.
 class SceneView(Protocol):
     selection_changed: Signal            # (dim: int, tags: list[int])
     point_picked: Signal                 # (x, y, z)
+    entity_hovered: Signal               # (dim, tag) under the pointer in the pick mode; (-1, -1) for none (M11.61)
+    entity_clicked: Signal               # (dim, tag) hit by a single click, not box or Ctrl picks (M11.61)
     def widget(self) -> QWidget: ...
     def set_geometry(self, built: BuiltGeometry | None) -> None: ...
     def set_mesh(self, mesh: Mesh | None, color_by: ndarray | None = None) -> None: ...
@@ -581,6 +607,8 @@ class SceneView(Protocol):
     def set_overlay(self, layer: str, items: list[OverlayItem]) -> None: ...  # named layer, replaced whole (M11.45)
     def set_selection_mode(self, mode: Literal["none","point","curve","surface","node","element"]) -> None: ...
     def highlight(self, dim: int, tags: list[int]) -> None: ...
+    def set_entity_colors(self, dim: int, colors: dict[int, str],
+                          legend: list[tuple[str, str]]) -> None: ...  # fill entities, legend (label, colour); empty clears (M11.62)
     def set_axis_visible(self, visible: bool) -> None: ...  # axis x = 0 of an axisymmetric model (M11.7)
     def fit(self) -> None: ...
     def save_image(self, path: str, dpi: int = 200) -> None: ...

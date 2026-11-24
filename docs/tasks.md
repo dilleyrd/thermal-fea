@@ -349,7 +349,9 @@ Boundary Conditions, Flow (Streams, Network), Enclosures, Analysis Settings, Sol
   `QT_QPA_PLATFORM=offscreen`: start the app, build the V-10 model through the command
   layer, mesh, solve, open a contour, undo/redo ten edits, save and reopen.
 - [ ] **M8.G Human gate.** A person builds V-10 and V-17 from scratch in the GUI following
-  the tutorial text, and lists every point of friction.
+  the tutorial text, and lists every point of friction. V-10 was reviewed on 2026-11-24.
+  The owner then decided to review V-10 and V-17 again on the GUI-identity changes, so
+  this gate depends on M11.64 (owner, 2026-11-24).
 
 ## M9 — Enclosure radiation
 
@@ -728,7 +730,139 @@ Boundary Conditions, Flow (Streams, Network), Enclosures, Analysis Settings, Sol
   - **Viewport:** drawn in its own layer with M11.45's `SceneView.set_overlay`.
   - **Tests:** markers and polyline after each click, cleared on Cancel, kept with the
     chart and cleared when it closes, and replaced by a new pick.
+### GUI identity (owner's decisions D1–D8, 2026-11-24)
+
+The design, the approved data changes and the independent review are in
+`docs/gui-identity-plan.md`; each task below names the section it implements. These
+tasks come before the owner's M8.G session (D8).
+
+- [ ] **M11.49 [B] Part · Boundary · Point vocabulary.** Plan §3.
+  - `model/vocabulary.py` provides `domain_dim`, `role_dim`, `role_of` and `entity_word`.
+  - It drives the selection toolbar's labels and tooltips, the selection editor's texts,
+    the selection-field labels of the forms, and the validation and issue messages that
+    name a dimension.
+  - The `SelectionMode` values are unchanged, and geometry dialogs keep "surface" and
+    "curve".
+  - **Tests:** the role mapping for a synthetic 3D domain, an unbuilt model, the toolbar
+    labels and the editor texts.
+- [ ] **M11.50 [B] Summary column in the model tree.** Plan §5.
+  - A second, read-only column filled by `gui/tree_summary.py`, refreshed on the model,
+    build, mesh, results and stale signals.
+  - The Model dock title gives the model name, type, thickness or axis, and units.
+  - View > Summary column shows or hides the column. Inline rename edits column 0 only.
+  - Summaries for the geometry steps, loads (form title, values, → selection), mesh,
+    initial condition, analysis and materials.
+  - **Tests:** each summary, the refresh after each signal, column 1 not editable, and
+    the existing tree tests still passing.
+- [ ] **M11.51 [A] Fold empty sections.** Plan §5.
+  - While Contacts, Flow (no streams, no network) and Enclosures are all empty, they
+    show as one dimmed line, "Contacts · Flow · Enclosures".
+  - Its context menu offers Add contact, Add stream and Create network.
+  - Once one of them is used, the three show as before. Undo back to empty folds them
+    again.
+  - **Tests:** folded, unfolded, the menu actions, and undo. Depends on M11.50.
+- [ ] **M11.52 [B] Geometry steps highlight what they own.** Plan §7.4.
+  - Selecting a geometry step highlights `BuiltGeometry.op_entities[id]` of the current
+    build, at its highest dimension.
+  - A step that owns nothing, or a failed build, clears the highlight and says so in the
+    status bar.
+  - **Tests:** a rectangle, a cut (its object and its tool), a union, a line, a Delete,
+    and a stale build.
+- [ ] **M11.53 [C] Selection references, rename and delete.** Plan §4.3.
+  - `selection_refs` and `selection_users`, from one traversal over every place a
+    selection name can appear.
+  - `rename_selection`, with a preflight against every collision, and
+    `delete_selection`, refused while the selection is used.
+  - `all` is reserved.
+  - Changing a selection's key or members makes the mesh stale.
+  - **Tests:** a model that uses one selection in every possible place, refusals that
+    leave the model and the undo stack untouched, and the node sets of the next solve.
+- [ ] **M11.54 [B] Selections section and panel.** Plan §4.3, §5.
+  - **Tree:** a Selections section, each entry with its role glyph, count and users.
+    Selecting an entry highlights it in the current build, and a stale entry is shown as
+    stale.
+  - **Panel:** rename, kind, entities, the parts it bounds, its users as links, Add from
+    viewport, Remove from viewport, and Delete (disabled while used and for `all`).
+  - **Navigation:** Page Up / Page Down step through the selections, and the issues
+    panel gains a selection branch.
+  - **Tests:** the section, the highlight, rename through the panel, delete refused and
+    allowed, stepping, and issue navigation.
+  - Depends on M11.49, M11.50 and M11.53.
+- [ ] **M11.55 [B] Name the selection at Apply.** Plan §7.7.
+  - The selection editor gains a "New name" box with an unused suggested name.
+  - The name is checked inside the same `Document.edit` that assigns the field, and
+    Apply reports success explicitly.
+  - **Tests:** re-Apply, and a refused collision (widget, model and undo count). Depends
+    on M11.53.
+- [ ] **M11.56 [C] Parts.** Plan §4.1.
+  - `RegionAssignment.name` (Data §3) and `part_name()`.
+  - "Regions" becomes "Parts" in the tree, the panel and the menus.
+  - Add part names each part "Part N". Parts can be renamed inline, and their display
+    names are unique.
+  - Region labels and the highlight use the part name.
+  - Issues navigate by address.
+  - The per-region initial-condition editor labels its rows with part names and keeps
+    the selection keys.
+  - **Tests:** old files and scripts (empty name), uniqueness on add, rename and
+    reassignment, a selection rename keeping the display name, and per-region keys.
+  - Depends on M11.50 and M11.53.
+- [ ] **M11.57 [B] Material library source.** Plan §4.2.
+  - `Material.source` (`MaterialSource`, Data §6) is set by Use library values from the
+    picked `(library, entry)`.
+  - The summary and the panel show "‹entry› · library", "· edited" (and which
+    properties), "· custom", or "library entry not found".
+  - A Restore library values button.
+  - The restart check and "edited" compare physical properties only.
+  - **Tests:** the same name in the built-in and user libraries, a missing entry, and a
+    provenance-only change against an older result. Depends on M11.50.
+- [ ] **M11.58 [C] Model comparison.** Plan §6.
+  - `model/compare.py: model_changes(solved, current) -> list[str]`.
+  - It normalises the serialised models and reports every difference left, described
+    through names and form labels, with a fallback to the section.
+  - It ignores display units, cached tags, `all` and the result displays.
+  - **Tests:** a value change, suppress, refinements, geometry reorder, a table value, a
+    rename, the ignored items, and the fallback.
+- [ ] **M11.59 [B] Result header and changes since the solve.** Plan §6.
+  - "Solution" becomes "Results".
+  - The section summary, the results panel and the viewport title show the analysis, the
+    mesh, "results written ‹created›", and current or out of date.
+  - The test is `model_changes` against `Results.model`. The panel lists the changes, and
+    a missing snapshot shows "comparison unavailable".
+  - **Tests:** edit, undo and redo; an unchanged remesh; an edit during a solve; save and
+    reopen; a missing snapshot; and a restart. Depends on M11.50 and M11.58.
+- [ ] **M11.60 [B] Entity report.** Plan §4.6, §7.12.
+  - `gui/inspect.py: entity_report(document, dim, tag)` gives the role and number, the
+    selections, the loads and contacts (active and suppressed), and every incident part.
+  - Adds `BuiltGeometry.point_curves`.
+  - **Tests:** a shared interface, a point, and a stale build. Depends on M11.53 and
+    M11.56.
+- [ ] **M11.61 [B] Hover and inspect.** Plan §4.5.
+  - Adds the `SceneView.entity_hovered` and `entity_clicked` signals (Data §13).
+  - In a Part, Boundary or Point mode, hovering shows a tooltip with the entity report.
+  - A single click, while no selection editor or geometry tool is picking, shows the
+    report in Properties and marks the tree items involved.
+  - **Tests:** the tooltip, the click report, box and Ctrl picks not reporting, and an
+    active tool taking precedence. Depends on M11.60.
+- [ ] **M11.62 [B] Colour by part.** Plan §4.5.
+  - Adds `SceneView.set_entity_colors(dim, colors, legend)` (Data §13).
+  - View > Colour by: Part / Material / None (default Part), with tree swatches in the
+    same colours.
+  - **Tests:** the colours of parts and materials, holes kept, fills hidden under a
+    result contour, and the load legend kept. Depends on M11.56.
+- [ ] **M11.63 [C] Rename geometry steps.** Plan §4.4.
+  - `rename_operation` (Data §4) rewrites every reference through `REF_RULES`.
+  - Inline rename in the tree, in one undo step.
+  - **Tests:** references from a point, line, arc, spline, hole loop, boolean, transform
+    and delete; rename, build, undo, rebuild; and blank or duplicate ids refused.
+  - Depends on M11.52.
+- [ ] **M11.64 [B] Guide and walkthrough for the new names.**
+  - Rewrite the V-10 and V-17 steps of `docs/gui-walkthrough.md`, plus
+    `guide/getting-started.md` and the tutorial pages, for Parts, Selections, the
+    vocabulary, the summary column and the result header.
+  - Give the expected tree of each case.
+  - The owner's M8.G re-review of V-10 and V-17 depends on this task.
+  - Depends on M11.49–M11.63.
 - [ ] **M11.6 [C] Release review.** Check every item of Plan §6; resolve or document every
   entry in `docs/OPEN_QUESTIONS.md`. Version 1 excludes the held features M9 and M10.2 and
   their cases V-22a–d, V-23, V-24 and V-36 (owner, 2026-11-22, Q29.15); the guide's
-  limitations say so. Depends on M11.7–M11.48, M8.G and M11.1.
+  limitations say so. Depends on M11.7–M11.64, M8.G and M11.1.
