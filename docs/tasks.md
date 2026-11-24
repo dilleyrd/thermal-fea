@@ -646,7 +646,7 @@ Boundary Conditions, Flow (Streams, Network), Enclosures, Analysis Settings, Sol
   - **Tests:** the variable box of a material field, of a total load, of Fixed Temperature
     and of an unrestricted load field; the live expression refusal; an old file with a
     time table; and the new label.
-- [ ] **M11.44 [B] Library values in the material panel.** Owner's request, 2026-11-24.
+- [x] **M11.44 [B] Library values in the material panel.** Owner's request, 2026-11-24.
   Released: the owner finished the V-10 review on 2026-11-24.
   - **Panel:** a `MaterialPanel` (registered like `RegionPanel`) with a "From library"
     box above the properties, listing the built-in solids and then the user library, with
