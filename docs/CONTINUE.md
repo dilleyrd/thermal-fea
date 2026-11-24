@@ -278,12 +278,16 @@ After all of them: M11.6, the release review, which depends on M11.7–M11.16.
   has finished the V-10 review: material fields limited to temperature with the label "As
   a function of"; library values in the material panel with type-to-search, keeping the
   material's own name; region highlight, region names and load values in the viewport
-  (`SceneView.set_labels` approved as an addition to Data §13); the probe value shown at
-  the clicked point, cleared when the probe is turned off (M11.46); a table in the energy
-  balance window and no imbalance line, table only for a steady result (M11.47); the path
-  plot's vertices and polyline drawn in the viewport (M11.48; its lifetime and the general
-  `set_overlay` in place of `set_labels` await the owner). One question is open in M11.43: whether Heat Power, Heat Flow and
-  Fixed Temperature are limited to time the same way.
+  (M11.45); the probe value shown at the clicked point, cleared when the probe is turned
+  off (M11.46); a table in the energy balance window and no imbalance line, table only for
+  a steady result (M11.47); the path plot's vertices and polyline drawn in the viewport,
+  kept while its chart is open (M11.48).
+  - The owner approved one addition to Data §13, `SceneView.set_overlay(layer, items)`,
+    which draws text labels, point markers and polylines in separate layers. It replaces
+    the `set_labels` approved earlier the same day. M11.45 adds it, and M11.46 and M11.48
+    use it.
+  - One question is open in M11.43: whether Heat Power, Heat Flow and Fixed Temperature
+    are limited to time the same way.
 - ~~**M11.1**~~, human task: closed on 2026-11-23 after M11.37–M11.42 (Q30); the owner
   kept the printed oxygen row and declined the Q30.4 additions.
 - **Confirm the Theory §6.1 sentence in Q27.3** before M11.10 is built.

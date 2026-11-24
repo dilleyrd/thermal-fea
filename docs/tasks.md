@@ -669,15 +669,18 @@ Boundary Conditions, Flow (Streams, Network), Enclosures, Analysis Settings, Sol
     the load's form fields, so a load registered later is labelled without GUI changes; a
     table is shown as `table(T)` or `table(t)`, an expression as its text. Shown or hidden
     by its own View menu entry.
-  - **Viewport:** adds `SceneView.set_labels(labels)` with a plain label record (position,
-    text, layer), approved by the owner on 2026-11-24 as an addition to Data §13; the
-    existing methods do not change.
+  - **Viewport:** adds one general `SceneView.set_overlay(layer, items)`, approved by the
+    owner on 2026-11-24 as an addition to Data §13 (it replaces the `set_labels` approved
+    earlier that day). Its items are plain records with no solver objects: text labels,
+    point markers and polylines. Each named layer is replaced as a whole, and an empty
+    list clears it. This task, M11.46 and M11.48 each use their own layers. The existing
+    methods do not change.
   - **Tests:** the region and material highlight, both toggles, the label text of a
     constant, a table and an expression in SI and in degC, and the labels following
     undo, suppress and rename.
 - [ ] **M11.46 [B] Probe value at the clicked point.** Owner's request, 2026-11-24.
   **Held: start only after the owner has finished the M8.G V-10 review.** Depends on M11.45
-  (`SceneView.set_labels`).
+  (`SceneView.set_overlay`).
   - **Today:** a probe click reports x, y and the value only in the status bar
     (`ResultController.probe_at`).
   - **Change:** each probe click also leaves a marker at the clicked point with the value
@@ -712,19 +715,15 @@ Boundary Conditions, Flow (Streams, Network), Enclosures, Analysis Settings, Sol
     Export CSV unchanged.
 - [ ] **M11.48 [B] Path plot: show the vertices and the path.** Owner's request,
   2026-11-24. **Held: start only after the owner has finished the M8.G V-10 review.**
-  Depends on M11.45 (the viewport overlay).
+  Depends on M11.45 (`SceneView.set_overlay`).
   - **Today:** Results > Path plot... lists the clicked vertices only in the status bar;
     the viewport draws nothing (`gui/chart_tools.py`, "Picking a path").
   - **Change:** while picking, each clicked vertex is drawn as a numbered marker and the
     vertices are joined by the polyline, updated on every click.
-  - **Lifetime (proposal; the owner may change it):** Cancel path plot clears the drawing.
-    After Finish, the path stays drawn while its chart window is open and is cleared when
-    that window closes; a new path pick replaces it.
-  - **Viewport (needs the owner's approval):** rather than a second new method beside
-    M11.45's `set_labels`, M11.45 adds one general `SceneView.set_overlay(layer, items)`
-    whose items are text labels, point markers and polylines, each layer replaced as a
-    whole. M11.45 (region names, load values), M11.46 (probe markers) and this task each
-    use their own layer.
+  - **Lifetime (owner confirmed, 2026-11-24):** Cancel path plot clears the drawing. After
+    Finish, the path stays drawn while its chart window is open and is cleared when that
+    window closes; a new path pick replaces it.
+  - **Viewport:** drawn in its own layer with M11.45's `SceneView.set_overlay`.
   - **Tests:** markers and polyline after each click, cleared on Cancel, kept with the
     chart and cleared when it closes, and replaced by a new pick.
 - [ ] **M11.6 [C] Release review.** Check every item of Plan §6; resolve or document every
