@@ -213,7 +213,7 @@ def Qt_MatchExactly() -> Any:  # noqa: N802 (a flag, spelled like Qt spells it)
 
 
 def add_region(ctx: AppContext, material: str, thickness: float) -> None:
-    """Regions > Add region: Selection "all", the material, Thickness."""
+    """Parts > Add part: Selection "all", the material, Thickness."""
     tree_action(ctx, "regions", ("add_region", None))
     panel = ctx.properties.panel
     assert "all" in panel.editors["selection"].allowed_names()

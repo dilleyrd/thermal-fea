@@ -32,7 +32,7 @@ from thermalfea.gui.load_symbols import contact_entities, entities_of
 from thermalfea.gui.main_window import MainWindow
 from thermalfea.gui.scene import OverlayItem, OverlayText, SceneView
 from thermalfea.model.bcs import BoundaryCondition, Contact
-from thermalfea.model.model import RegionAssignment
+from thermalfea.model.model import RegionAssignment, part_name
 
 REGION_ACTION_ID = "view.region_names"
 LOAD_ACTION_ID = "view.load_values"
@@ -44,8 +44,8 @@ _XY = 2
 
 
 def region_title(region: RegionAssignment) -> str:
-    """The text of a region in the model tree: ``"<selection> -> <material>"``."""
-    return f"{region.selection} -> {region.material}"
+    """The label of a part: its name, as the model tree shows it (M11.56)."""
+    return part_name(region)
 
 
 def label_text(obj: Any, units: UnitSettings) -> str:

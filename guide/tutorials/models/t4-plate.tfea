@@ -118,6 +118,7 @@
     {
       "material": "solid",
       "material_angle": 0.0,
+      "name": "",
       "selection": "all",
       "thickness": 1.0
     }

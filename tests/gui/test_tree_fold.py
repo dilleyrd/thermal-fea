@@ -15,14 +15,14 @@ from thermalfea.model.bcs import Contact, FlowNetwork
 
 #: The top-level titles of a model with every section shown (order of SECTIONS).
 EXPANDED_TITLES = [
-    "Geometry", "Materials", "Regions", "Selections", "Mesh", "Initial Condition",
+    "Geometry", "Parts", "Selections", "Materials", "Mesh", "Initial Condition",
     "Loads & Boundary Conditions", "Contacts", "Flow", "Enclosures", "Analysis Settings",
-    "Solution",
+    "Results",
 ]  # fmt: skip
 #: The top-level titles of an empty model.
 FOLDED_TITLES = [
-    "Geometry", "Materials", "Regions", "Selections", "Mesh", "Initial Condition",
-    "Loads & Boundary Conditions", FOLDED_TITLE, "Analysis Settings", "Solution",
+    "Geometry", "Parts", "Selections", "Materials", "Mesh", "Initial Condition",
+    "Loads & Boundary Conditions", FOLDED_TITLE, "Analysis Settings", "Results",
 ]  # fmt: skip
 
 

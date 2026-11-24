@@ -92,11 +92,11 @@ def test_region_names_at_the_area_weighted_centre(window, doc) -> None:
     view, ctl = make(window, doc)
     ctl.region_action.setChecked(True)
     items = {i.text: i for i in view.layers[REGION_LAYER]}
-    assert set(items) == {"L -> Copper (pure)", "R -> Zinc"}
+    assert set(items) == {"L", "R"}  # the part names (M11.56); unnamed parts show their selection
     assert all(isinstance(i, OverlayText) for i in items.values())
-    left = items["L -> Copper (pure)"]
+    left = items["L"]
     assert (left.x, left.y) == pytest.approx((0.5, 0.5))
-    assert (items["R -> Zinc"].x, items["R -> Zinc"].y) == pytest.approx((2.5, 0.5))
+    assert (items["R"].x, items["R"].y) == pytest.approx((2.5, 0.5))
 
 
 def test_label_text_constant_in_si_and_degc(window, doc) -> None:

@@ -95,6 +95,7 @@
     {
       "material": "Aluminum, Alloy 2024-T6",
       "material_angle": 0.0,
+      "name": "",
       "selection": "all",
       "thickness": 0.05
     }

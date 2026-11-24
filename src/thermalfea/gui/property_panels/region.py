@@ -1,4 +1,4 @@
-"""Property panel of a region assignment (Plan M8.6).
+"""Property panel of a part, i.e. a region assignment (Plan M8.6, M11.56).
 
 :class:`RegionPanel` is a :class:`~thermalfea.gui.property_panels.form.FormPanel` whose
 ``material`` field is a combo box listing the names of the materials currently in the
@@ -9,6 +9,8 @@ dynamic, so the combo is filled on every refresh. Choosing a name goes through t
 
 from __future__ import annotations
 
+from typing import Any
+
 from PySide6.QtWidgets import QComboBox, QWidget
 
 from thermalfea.core.errors import ModelError
@@ -17,6 +19,7 @@ from thermalfea.gui.addressing import Address, resolve
 from thermalfea.gui.document import Document
 from thermalfea.gui.property_panels.form import FormPanel
 from thermalfea.gui.scene import SceneView
+from thermalfea.model.model import check_part_name, part_name
 
 _MATERIAL = "material"
 _THICKNESS = "thickness"
@@ -46,6 +49,16 @@ class RegionPanel(FormPanel):
         parent: QWidget | None = None,
     ) -> None:
         super().__init__(spec, document, address, view, parent)
+
+    def _set_attribute(self, model: Any, name: str, value: Any) -> None:
+        """Set a field; a part name must be unique, and an unnamed (older) part keeps the
+        name it was shown with when its selection is changed (M11.56)."""
+        region = resolve(model, self.address)
+        if name == "name":
+            value = check_part_name(model, str(value), index=self.address[1])
+        elif name == "selection" and not region.name and region.selection != value:
+            region.name = part_name(region)
+        super()._set_attribute(model, name, value)
 
     def _make_editor(self, f: FieldSpec) -> tuple[QWidget, None]:
         if f.name != _MATERIAL:

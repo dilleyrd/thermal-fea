@@ -75,8 +75,10 @@ role mapping (part→3, boundary→2, edge→1, point→0).
    - **Ambiguous rows:** legacy rows with an ambiguous or empty display name stay
      addressable by index (`("regions", i)`), as today.
    - **Per-region initial temperatures:** `InitialCondition.per_region` stays keyed by
-     selection name. The editor labels rows with part names, stores the selection keys,
-     and keeps valid keys that match no part.
+     selection name. As built (M11.56), the field reads "Temperature per part" and its
+     tooltip says the keys are the parts' selections. A row editor that shows part names
+     is left for the owner's review: the field is a `name=T` text field today, and
+     replacing it is a separate piece of work.
 2. **Data §6 `Material.source: MaterialSource | None = None`** (keyword-only), with
    `MaterialSource(library: Literal["builtin", "user"], entry: str)`.
    - **Where it is set:** Use library values sets it. The `(library, entry)` comes from

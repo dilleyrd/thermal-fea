@@ -48,9 +48,9 @@ def test_top_level_nodes(tree) -> None:
     titles = [tree.topLevelItem(i).text(0) for i in range(tree.topLevelItemCount())]
     # an empty model folds Contacts, Flow and Enclosures into one node (M11.51)
     assert titles == [
-        "Geometry", "Materials", "Regions", "Selections", "Mesh", "Initial Condition",
+        "Geometry", "Parts", "Selections", "Materials", "Mesh", "Initial Condition",
         "Loads & Boundary Conditions", "Contacts · Flow · Enclosures", "Analysis Settings",
-        "Solution",
+        "Results",
     ]  # fmt: skip
     assert texts(tree, "geometry") == ["plate"]
     assert texts(tree, "loads") == ["Flux 1", "Conv 1"]
@@ -156,7 +156,7 @@ def test_materials_and_regions(qtbot) -> None:
     tree = ModelTree(doc)
     qtbot.addWidget(tree)
     assert texts(tree, "materials") == ["Copper (pure)"]
-    assert texts(tree, "regions") == ["all -> Copper (pure)"]
+    assert texts(tree, "regions") == ["all"]  # an unnamed (older) part shows its selection
     tree.rename(("materials", "Copper (pure)"), "Cu")
     assert list(doc.model.materials) == ["Cu"] and doc.model.materials["Cu"].name == "Cu"
     assert doc.model.regions[0].material == "Cu"

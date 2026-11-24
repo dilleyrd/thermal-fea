@@ -20,6 +20,7 @@ from typing import TYPE_CHECKING, Any
 from PySide6.QtCore import QObject
 from PySide6.QtGui import QAction
 
+from thermalfea.core.errors import ModelError
 from thermalfea.core.forms import FieldSpec, form_for
 from thermalfea.core.units import UnitSettings, from_si, unit_label
 from thermalfea.gui.overlay_labels import format_value
@@ -27,7 +28,7 @@ from thermalfea.materials import library
 from thermalfea.model import geometry_ops as ops
 from thermalfea.model.model import Model
 from thermalfea.model.selections import StaleSelectionError, resolve, selection_users
-from thermalfea.model.vocabulary import entity_word
+from thermalfea.model.vocabulary import entity_word, shape_word
 
 if TYPE_CHECKING:
     from thermalfea.gui.document import Document
@@ -162,13 +163,22 @@ def material_summary(material: Any, units: UnitSettings) -> str:
     return f"{entry}{_SEP}{label}"
 
 
-def region_summary(region: Any, model: Model) -> str:
-    """Material, and the thickness of a planar model."""
-    if model.analysis != "planar":
-        return str(region.material)
-    return f"{region.material}{_SEP}t {_length(region.thickness, model.display_units)} " + (
-        unit_label("length", model.display_units)
-    )
+def region_summary(region: Any, model: Model, built: Any = None) -> str:
+    """Material, the number of surfaces (with a build) and the thickness of a planar part."""
+    parts = [str(region.material) or "no material"]
+    if not region.selection:
+        parts.append("no selection")
+    elif built is not None and region.selection in model.selections:
+        try:
+            selection = model.selections[region.selection]
+            n = len(resolve(selection, built))
+            parts.append(f"{n} {shape_word(selection.dim, n != 1)}")
+        except (StaleSelectionError, ModelError):
+            parts.append("stale selection")
+    if model.analysis == "planar":
+        t = _length(region.thickness, model.display_units)
+        parts.append(f"t {t} {unit_label('length', model.display_units)}")
+    return _SEP.join(parts)
 
 
 def selection_summary(document: Document, name: str) -> str:
@@ -239,7 +249,8 @@ def _object_summary(document: Document, address: tuple) -> str:
     if kind == "materials":
         return material_summary(model.materials[key], units)
     if kind == "regions":
-        return region_summary(model.regions[key], model)
+        built = None if document.geometry_stale else document.built
+        return region_summary(model.regions[key], model, built)
     if kind == "selections":
         return selection_summary(document, key)
     if kind == "bcs":

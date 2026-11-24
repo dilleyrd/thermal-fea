@@ -24,7 +24,7 @@ DEFAULT_INITIAL_TEMPERATURE = 293.15
 
 @dataclass
 class RegionAssignment:
-    """Assigns a material to the surfaces of a selection.
+    """Assigns a material to the surfaces of a selection: a *part* in the GUI (M11.56).
 
     Parameters
     ----------
@@ -36,12 +36,38 @@ class RegionAssignment:
         Thickness [m]; planar models only.
     material_angle : float
         Angle of the material axis [rad], counter-clockwise from x; orthotropic only.
+    name : str
+        Name of the part. Empty (old files and scripts) displays as the selection name;
+        see :func:`part_name`.
     """
 
     selection: str
     material: str
     thickness: float = 1.0
     material_angle: float = 0.0
+    name: str = ""
+
+
+def part_name(region: RegionAssignment) -> str:
+    """The name a part is shown with: its own name, else its selection's name."""
+    return region.name or region.selection
+
+
+def check_part_name(model: Model, name: str, index: int | None = None) -> str:
+    """Return the stripped ``name`` if part ``index`` (``None``: a new part) may take it.
+
+    Raises
+    ------
+    ModelError
+        If the name is empty or another part is already shown with it.
+    """
+    name = name.strip()
+    if not name:
+        raise ModelError("a part name cannot be empty")
+    for i, region in enumerate(model.regions):
+        if i != index and part_name(region) == name:
+            raise ModelError(f"the part name {name!r} is already used")
+    return name
 
 
 @dataclass

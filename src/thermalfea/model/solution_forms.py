@@ -119,8 +119,9 @@ INITIAL_CONDITION_FORM = FormSpec(
             tooltip="Initial temperature for 'uniform' and 'expression'.",
         ),  # fmt: skip
         FieldSpec(
-            "per_region", "Temperature per region", "dict", quantity="temperature",
-            tooltip="Region selection and temperature, as 'name=T, name=T'.",
+            "per_region", "Temperature per part", "dict", quantity="temperature",
+            tooltip="Each part's selection and its temperature, as 'selection=T, "
+            "selection=T' (a part's panel shows its selection).",
         ),  # fmt: skip
         FieldSpec(
             "results_path", "Results file", "str", optional=True,

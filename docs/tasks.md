@@ -797,7 +797,7 @@ tasks come before the owner's M8.G session (D8).
     Apply reports success explicitly.
   - **Tests:** re-Apply, and a refused collision (widget, model and undo count). Depends
     on M11.53.
-- [ ] **M11.56 [C] Parts.** Plan §4.1.
+- [x] **M11.56 [C] Parts.** Plan §4.1.
   - `RegionAssignment.name` (Data §3) and `part_name()`.
   - "Regions" becomes "Parts" in the tree, the panel and the menus.
   - Add part names each part "Part N". Parts can be renamed inline, and their display

@@ -121,3 +121,21 @@ def entity_word(dim: int, model_or_dim: Model | int, plural: bool = False) -> st
     """
     word = role_of(dim, model_or_dim)
     return _PLURAL[word] if plural else word
+
+
+#: The shape of an entity of each dimension, whatever role it plays.
+_SHAPES = {0: ("point", "points"), 1: ("curve", "curves"), 2: ("surface", "surfaces"),
+           3: ("volume", "volumes")}  # fmt: skip
+
+
+def shape_word(dim: int, plural: bool = False) -> str:
+    """The geometric word for entities of dimension ``dim`` ("curve", "surfaces", ...).
+
+    Used where the shape itself is meant (a part made of two surfaces), unlike
+    :func:`entity_word`, which names the role.
+    """
+    try:
+        single, many = _SHAPES[dim]
+    except KeyError:
+        raise ModelError(f"no shape word for dimension {dim}") from None
+    return many if plural else single

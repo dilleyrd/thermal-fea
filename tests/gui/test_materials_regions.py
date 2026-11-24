@@ -107,12 +107,12 @@ def test_an_unedited_new_material_cannot_be_solved(shell, doc) -> None:
 
 def test_add_region_is_one_undo_step(shell, doc) -> None:
     tree, _ = shell
-    action_named(tree, "regions", "Add region").trigger()
+    action_named(tree, "regions", "Add part").trigger()
     assert len(doc.model.regions) == 2
     region = doc.model.regions[1]
-    assert region.selection == "" and region.material == COPPER
+    assert region.selection == "" and region.material == COPPER and region.name == "Part 1"
     assert region.thickness == 1.0 and region.material_angle == 0.0
-    assert doc.undo_stack.count() == 1 and doc.undo_stack.undoText() == "Add region"
+    assert doc.undo_stack.count() == 1 and doc.undo_stack.undoText() == "Add part"
     doc.undo_stack.undo()
     assert len(doc.model.regions) == 1
     assert doc.model.regions[0].selection == "all"
@@ -128,7 +128,7 @@ def test_selecting_material_and_region_shows_their_forms(window, shell, doc) -> 
 
     tree.select_address(("regions", 0))
     assert isinstance(controller.panel, RegionPanel)
-    fields = ["selection", "material", "thickness", "material_angle"]
+    fields = ["name", "selection", "material", "thickness", "material_angle"]
     assert list(controller.panel.editors) == fields
 
 
@@ -179,7 +179,8 @@ def test_choosing_another_material_updates_the_region(shell, doc) -> None:
     combo.activated.emit(1)
     assert doc.model.regions[0].material == "Material 1"
     assert doc.undo_stack.count() == before + 1
-    assert tree.item_for(("regions", 0)).text(0) == "all -> Material 1"
+    item = tree.item_for(("regions", 0))  # an unnamed (older) part shows its selection
+    assert item.text(0) == "all" and item.toolTip(0) == "all -> Material 1"
     doc.undo_stack.undo()
     assert doc.model.regions[0].material == COPPER
 

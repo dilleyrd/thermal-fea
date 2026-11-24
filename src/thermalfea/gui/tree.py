@@ -42,11 +42,12 @@ from thermalfea.gui.addressing import Address, exists, resolve
 from thermalfea.gui.dialogs.new_load import LOAD_DIALOGS
 from thermalfea.gui.dialogs.new_stream import NewStreamDialog
 from thermalfea.gui.document import Document
+from thermalfea.gui.part_colors import color_of_material, color_of_part
 from thermalfea.gui.tree_summary import summary_for
 from thermalfea.materials.material import Material
 from thermalfea.model.bcs import Contact, FlowNetwork, Stream
-from thermalfea.model.geometry_edit import dependents
-from thermalfea.model.model import Model, RegionAssignment
+from thermalfea.model.geometry_edit import dependents, rename_operation
+from thermalfea.model.model import Model, RegionAssignment, check_part_name, part_name
 from thermalfea.model.selections import (
     ALL_SELECTION,
     delete_selection,
@@ -58,9 +59,9 @@ from thermalfea.model.vocabulary import entity_word
 #: ``(key, title)`` of the top-level nodes, in display order.
 SECTIONS: tuple[tuple[str, str], ...] = (
     ("geometry", "Geometry"),
-    ("materials", "Materials"),
-    ("regions", "Regions"),
+    ("regions", "Parts"),
     ("selections", "Selections"),
+    ("materials", "Materials"),
     ("mesh", "Mesh"),
     ("initial", "Initial Condition"),
     ("loads", "Loads & Boundary Conditions"),
@@ -68,7 +69,7 @@ SECTIONS: tuple[tuple[str, str], ...] = (
     ("flow", "Flow"),
     ("enclosures", "Enclosures"),
     ("analysis", "Analysis Settings"),
-    ("solution", "Solution"),
+    ("solution", "Results"),
 )
 #: Section key -> address of the settings object the node itself edits.
 SECTION_OBJECTS: dict[str, Address] = {
@@ -105,6 +106,24 @@ def role_icon(role: str) -> QIcon:
     painter.end()
     icon = QIcon(pixmap)
     _ROLE_ICONS[role] = icon
+    return icon
+
+
+_SWATCHES: dict[str, QIcon] = {}
+
+
+def swatch_icon(color: str) -> QIcon:
+    """A small square of ``color``: the colour a part or material has in the viewport."""
+    icon = _SWATCHES.get(color)
+    if icon is None:
+        pixmap = QPixmap(16, 16)
+        pixmap.fill(Qt.GlobalColor.transparent)
+        painter = QPainter(pixmap)
+        painter.setPen(QColor("#606060"))
+        painter.setBrush(QColor(color))
+        painter.drawRect(2, 2, 11, 11)
+        painter.end()
+        icon = _SWATCHES[color] = QIcon(pixmap)
     return icon
 
 
@@ -343,20 +362,23 @@ class ModelTree(QTreeWidget):
         for i, op in enumerate(model.geometry):
             self._make_item(
                 sections["geometry"], op.id, NodeRef("geometry", ("geometry", i)),
-                tooltip=type(op).__name__,
+                tooltip=type(op).__name__, renameable=True,
             )  # fmt: skip
         for name in model.materials:
-            self._make_item(
+            item = self._make_item(
                 sections["materials"],
                 name,
                 NodeRef("materials", ("materials", name)),
                 renameable=True,
             )
+            item.setIcon(0, swatch_icon(color_of_material(name, model)))
         for i, region in enumerate(model.regions):
-            self._make_item(
-                sections["regions"], f"{region.selection} -> {region.material}",
-                NodeRef("regions", ("regions", i)),
+            item = self._make_item(
+                sections["regions"], part_name(region), NodeRef("regions", ("regions", i)),
+                tooltip=f"{region.selection or '(no selection)'} -> {region.material}",
+                renameable=True,
             )  # fmt: skip
+            item.setIcon(0, swatch_icon(color_of_part(i)))
         names = [n for n in model.selections if n != ALL_SELECTION]
         names += [n for n in model.selections if n == ALL_SELECTION]  # "all" last
         for name in names:
@@ -523,7 +545,7 @@ class ModelTree(QTreeWidget):
         elif ref.address is None and ref.section == "materials":
             add("Add material", self.add_material, ("add_material", None))
         elif ref.address is None and ref.section == "regions":
-            add("Add region", self.add_region, ("add_region", None))
+            add("Add part", self.add_region, ("add_region", None))
         elif ref.address is None and ref.section == "folded":
             add("Add contact", self.add_contact, ("add_contact", None))
             add("Add stream", self.add_stream, ("add_stream", None))
@@ -560,6 +582,7 @@ class ModelTree(QTreeWidget):
             )  # fmt: skip
         elif ref.address is not None and ref.address[0] == "regions":
             address = ref.address
+            add("Rename", lambda: self.begin_rename(address), ("rename", address))
             add("Delete", lambda: self.delete(address), ("delete", address))
         self._actions = out
         return out
@@ -700,12 +723,16 @@ class ModelTree(QTreeWidget):
 
         def mutate(model: Model) -> None:
             material = next(iter(model.materials), "")
+            name = unique_name("Part", {part_name(r) for r in model.regions})
             model.regions.append(
-                RegionAssignment(selection="", material=material, thickness=1.0, material_angle=0.0)
-            )
+                RegionAssignment(
+                    selection="", material=material, thickness=1.0, material_angle=0.0,
+                    name=name,
+                )
+            )  # fmt: skip
             holder.append(len(model.regions) - 1)
 
-        self.document.edit("Add region", mutate)
+        self.document.edit("Add part", mutate)
         address = ("regions", holder[0])
         self.select_address(address)
         return address
@@ -803,6 +830,21 @@ class ModelTree(QTreeWidget):
             If the name is empty or already used.
         """
         new_name = new_name.strip()
+        if address[0] == "regions":
+            index = address[1]
+
+            def rename_part(model: Model) -> None:
+                region = model.regions[index]
+                if part_name(region) != new_name:
+                    region.name = check_part_name(model, new_name, index)
+
+            return self.document.edit(f"Rename part {new_name}", rename_part)
+        if address[0] == "geometry":
+            old_id = resolve(self.document.model, address).id
+            return self.document.edit(
+                f"Rename geometry step {new_name}",
+                lambda model: rename_operation(model, old_id, new_name),
+            )
         if address[0] == "selections":
             old = address[1]
             changed = self.document.edit(
@@ -951,6 +993,27 @@ class ModelTree(QTreeWidget):
 
         return self.document.edit(f"Delete {op_id}", mutate)
 
+    def mark_addresses(self, addresses: list[Address]) -> None:
+        """Show the items of ``addresses`` in bold (an inspected entity's objects, M11.61);
+        the previous marks are cleared, and an empty list clears them all."""
+        wanted = {tuple(a) for a in addresses}
+        self._marked = wanted
+
+        def walk(item: QTreeWidgetItem) -> None:
+            ref = self.ref_of(item)
+            font = item.font(0)
+            font.setBold(ref is not None and ref.address is not None and ref.address in wanted)
+            item.setFont(0, font)
+            for i in range(item.childCount()):
+                walk(item.child(i))
+
+        self.blockSignals(True)
+        try:
+            for i in range(self.topLevelItemCount()):
+                walk(self.topLevelItem(i))
+        finally:
+            self.blockSignals(False)
+
     def begin_rename(self, address: Address) -> None:
         """Start inline editing of an item's text."""
         item = self.item_for(address)
@@ -970,7 +1033,8 @@ class ModelTree(QTreeWidget):
                 self.error_occurred.emit(str(exc))
             self.rebuild()
             return
-        if address is None or address[0] not in _NAMED_LISTS + ("materials", "selections"):
+        renameable = _NAMED_LISTS + ("materials", "selections", "regions", "geometry")
+        if address is None or address[0] not in renameable:
             return
         try:
             self.rename(address, item.text(0))

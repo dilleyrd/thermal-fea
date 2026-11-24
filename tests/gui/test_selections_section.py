@@ -94,7 +94,7 @@ def panel(shell, name: str) -> SelectionPanel:
 def test_section_lists_every_selection_with_summaries(shell) -> None:
     tree = shell.tree
     titles = [tree.topLevelItem(i).text(0) for i in range(tree.topLevelItemCount())]
-    assert titles.index("Selections") == titles.index("Regions") + 1
+    assert titles.index("Selections") == titles.index("Parts") + 1
     assert names(tree) == ["plate", "cooled", "spare", "all"]
     assert tree.section_item("selections").text(1) == "4"
     assert summary(tree, "cooled") == "2 boundaries · convection cooling"

@@ -41,7 +41,8 @@ def test_material_quantities_exist_in_units() -> None:
 def test_region_form_uses_real_fields() -> None:
     spec = form_for(RegionAssignment)
     assert spec is material_forms.REGION_FORM
-    assert [f.name for f in spec.fields] == ["selection", "material", "thickness", "material_angle"]
+    fields = ["name", "selection", "material", "thickness", "material_angle"]  # name: M11.56
+    assert [f.name for f in spec.fields] == fields
     assert {f.name for f in spec.fields} <= _names(RegionAssignment)
 
 
