@@ -19,6 +19,7 @@ from thermalfea.gui.document import Document
 from thermalfea.gui.file_tools import FileController, attach_files
 from thermalfea.gui.flow_results import FlowController, attach_flow
 from thermalfea.gui.geometry_tools import GeometryController, attach_geometry_tools
+from thermalfea.gui.inspect_tools import attach_inspect
 from thermalfea.gui.load_symbols import LoadSymbolController, attach_loads
 from thermalfea.gui.main_window import MainWindow
 from thermalfea.gui.materials_tools import MaterialLibraryController, attach_materials
@@ -227,6 +228,10 @@ def build_application(
     results_controller = attach_results(window, document, view)
     charts = attach_charts(window, document, view, results_controller)
     flow = attach_flow(window, document, view, results_controller)
+    attach_inspect(
+        window, document, view, tree,
+        extra_busy=[lambda: results_controller.probe_active, lambda: charts.path_active],
+    )
     # attached last: its close filter runs first, so a refused close cancels no solve
     files = attach_files(window, document)
     gmsh_worker: SerialWorker | None = None

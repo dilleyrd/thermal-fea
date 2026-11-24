@@ -192,6 +192,15 @@ class SceneView(Protocol):
         docstring for ``dim`` and ``tags`` of nodes and elements.
     point_picked : Signal(float, float, float)
         ``(x, y, z)`` [m]: a click in the viewport (z is 0 in a planar view).
+    entity_hovered : Signal(int, int)
+        ``(dim, tag)`` under the pointer in a point / curve / surface pick mode;
+        ``(-1, -1)`` for none.
+    entity_clicked : Signal(int, int)
+        ``(dim, tag)`` hit by a plain single click (not a box or Ctrl pick); ``(-1, -1)`` for
+        empty space.
+
+    ``entity_hovered`` / ``entity_clicked`` are not protocol attributes checked by
+    ``isinstance`` (partial fakes lack them); consumers connect through ``getattr``.
     """
 
     selection_changed: Signal

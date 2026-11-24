@@ -132,6 +132,7 @@ _MESH_COLOR = "#495057"
 #: at round-off level would give contour levels that are not increasing).
 _UNIFORM_RTOL = 1e-9
 _LEFT, _MIDDLE = 1, 2
+_GEOMETRIC_MODES = ("point", "curve", "surface")
 _FEW_ELEMENTS = 32  # up to this many selected elements are looked up one by one
 _PLANE = 2  # coordinates of the viewport plane (x, y)
 
@@ -218,6 +219,13 @@ class MplSceneView(QObject):
         selection with sorted tags (see :mod:`thermalfea.gui.scene` for nodes/elements).
     point_picked(float, float, float)
         ``(x, y, z)`` [m] of a left click (z = 0).
+    entity_hovered(int, int)
+        ``(dim, tag)`` of the geometry entity under the pointer in a point / curve /
+        surface pick mode; ``(-1, -1)`` for none (also in the none, node and element modes).
+    entity_clicked(int, int)
+        ``(dim, tag)`` of a plain single click (no Ctrl, no box drag) on a geometry entity
+        in a point / curve / surface pick mode; ``(-1, -1)`` for a plain click on empty space.
+        Box picks and Ctrl clicks do not emit it.
     coordinates_changed(float, float)
         Cursor position [m] while it moves over the axes.
 
@@ -229,6 +237,8 @@ class MplSceneView(QObject):
 
     selection_changed = Signal(int, list)
     point_picked = Signal(float, float, float)
+    entity_hovered = Signal(int, int)
+    entity_clicked = Signal(int, int)
     coordinates_changed = Signal(float, float)
 
     def __init__(self, parent: QObject | None = None) -> None:
@@ -284,6 +294,7 @@ class MplSceneView(QObject):
         self._sel_dim = 0
         self._sel_tags: set[int] = set()
         self._hover: tuple[int, int] | None = None
+        self._hover_sent: tuple[int, int] = (-1, -1)  # last value of entity_hovered
         self._press: tuple[float, float, float, float, bool] | None = None
         self._banding = False
         self._pan: tuple[float, float, tuple[float, float], tuple[float, float]] | None = None
@@ -517,6 +528,7 @@ class MplSceneView(QObject):
         self._mode = mode
         self._hover = None
         self._hover_overlay.clear()
+        self._announce_hover()
         self._press, self._banding = None, False
         self._band.set_visible(False)
         had_selection = bool(self._sel_tags)
@@ -947,6 +959,7 @@ class MplSceneView(QObject):
         if self._hover is not None:
             self._hover = None
             self._hover_overlay.clear()
+            self._announce_hover()
             self._blit()
 
     def _on_release(self, event: MouseEvent) -> None:
@@ -972,6 +985,11 @@ class MplSceneView(QObject):
         if self._mode != "none":
             hit = self._pick(x0, y0)
             self._select_click(hit, ctrl)
+            if not ctrl and self._mode in _GEOMETRIC_MODES:
+                if hit is None:
+                    self.entity_clicked.emit(-1, -1)
+                else:
+                    self.entity_clicked.emit(MODE_DIM[self._mode], int(hit))
 
     def _do_pan(self, event: MouseEvent) -> None:
         assert self._pan is not None
@@ -991,6 +1009,7 @@ class MplSceneView(QObject):
         self._banding = True
         self._hover = None
         self._hover_overlay.clear()
+        self._announce_hover()
         xmin, ymin, xmax, ymax = picking.normalized_box((x0, y0), pos)
         self._band.set_xy((xmin, ymin))
         self._band.set_width(xmax - xmin)
@@ -1008,7 +1027,16 @@ class MplSceneView(QObject):
             self._hover_overlay.clear()
         else:
             self._update_overlay(self._hover_overlay, new[0], [new[1]])
+        self._announce_hover()
         self._blit()
+
+    def _announce_hover(self) -> None:
+        """Emit ``entity_hovered`` if the geometric hover differs from the last one sent."""
+        h = self._hover
+        now = (-1, -1) if h is None or h[0] not in (0, 1, 2) else (int(h[0]), int(h[1]))
+        if now != self._hover_sent:
+            self._hover_sent = now
+            self.entity_hovered.emit(*now)
 
     # -------------------------------------------------------------------- picking
 
@@ -1149,6 +1177,7 @@ class MplSceneView(QObject):
         """
         self._hover = None
         self._hover_overlay.clear()
+        self._announce_hover()
         dim = self._sel_dim
         if dim in (NODE_DIM, ELEMENT_DIM) or (geometry and self._built is None):
             self._sel_tags = set()

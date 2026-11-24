@@ -839,7 +839,7 @@ tasks come before the owner's M8.G session (D8).
   - Adds `BuiltGeometry.point_curves`.
   - **Tests:** a shared interface, a point, and a stale build. Depends on M11.53 and
     M11.56.
-- [ ] **M11.61 [B] Hover and inspect.** Plan §4.5.
+- [x] **M11.61 [B] Hover and inspect.** Plan §4.5.
   - Adds the `SceneView.entity_hovered` and `entity_clicked` signals (Data §13).
   - In a Part, Boundary or Point mode, hovering shows a tooltip with the entity report.
   - A single click, while no selection editor or geometry tool is picking, shows the
