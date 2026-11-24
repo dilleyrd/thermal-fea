@@ -423,7 +423,7 @@ Boundary Conditions, Flow (Streams, Network), Enclosures, Analysis Settings, Sol
   stream does); no value is filled in by the program. Validation also reports an error
   for an empty correlation or fluid and a warning for an ambient temperature of 0 K or an
   emissivity of 0, for models from files and scripts. Update the guide.
-- [ ] **M11.10 [B] First time step without a false warning.** Defect Q26.4(e); owner's
+- [x] **M11.10 [B] First time step without a false warning.** Defect Q26.4(e); owner's
   choice (ii) in Q27. The oscillation warning of Theory §6.1 is not logged for a step the
   program suggested itself; it still applies to a first step set by the user. Add the
   rule to Theory §6.1 in the wording the owner chose on 2026-11-22 (Q27.3, Q29.15): "The

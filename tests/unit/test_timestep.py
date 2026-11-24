@@ -258,6 +258,32 @@ def test_driver_uses_the_suggestion_and_warns_once(caplog: pytest.LogCaptureFixt
     assert sum("oscillate" in r.getMessage() for r in caplog.records) == 1
 
 
+def test_no_oscillation_warning_for_the_suggested_first_step(
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    """M11.10, Q27.3: checked once, for the first step; not logged for the suggested Δt₀.
+
+    On a graded mesh or with mixed materials the suggestion (smallest edge, largest
+    diffusivity of the whole model) fails the per-element test; a suggestion well below
+    h² ρc/(6k) stands in for that case here.
+    """
+    problem = make_problem("Q4", size=(0.1, 0.01), cells=(10, 1), bcs=(
+        FixedTemperature("hot", "left", T=400.0),))
+    transient(problem, end_time=1.0)
+    tiny = 0.01 * 0.01**2 / (6 * ALPHA)  # every element fails the test at this step
+    problem.suggest_dt = lambda T: tiny
+    with caplog.at_level(logging.WARNING, logger="thermalfea"):
+        result = solve_transient(problem, T0=300.0)
+    assert result.times[1] == pytest.approx(tiny)
+    assert not any("oscillate" in r.getMessage() for r in caplog.records)
+    # the same step set by the user is warned about, once
+    problem.settings.initial_dt = tiny
+    caplog.clear()
+    with caplog.at_level(logging.WARNING, logger="thermalfea"):
+        solve_transient(problem, T0=300.0)
+    assert sum("oscillate" in r.getMessage() for r in caplog.records) == 1
+
+
 def test_compile_installs_the_hooks() -> None:
     model = api.new_model()
     api.Geometry(model).rectangle(0.0, 0.0, 0.1, 0.1)

@@ -140,14 +140,20 @@ def test_fin_runs_without_a_warning(fin_logged) -> None:
     assert [r.getMessage() for r in records] == []
 
 
-def test_fin_the_suggested_first_step_warns_on_this_mesh(caplog) -> None:
-    """The page tells the reader to set the initial time step, because of this warning."""
+def test_fin_the_suggested_first_step_is_not_warned_about(caplog) -> None:
+    """M11.10 (Q26.4(e), Q27.3): the suggested step fails the per-element test on this mesh
+    (86 % of the elements) but is not warned about; the same step typed by the user is."""
     import common
 
     fin = load("tutorial_fin_quench")
     model, built = fin.build()
     model.solution.initial_dt = None
     model.solution.end_time = 10.0
+    with caplog.at_level(logging.WARNING, logger="thermalfea"):
+        common.solve(model, built)
+    assert [r.getMessage() for r in caplog.records if r.levelno >= logging.WARNING] == []
+    model.solution.initial_dt = 0.0367
+    caplog.clear()
     with caplog.at_level(logging.WARNING, logger="thermalfea"):
         common.solve(model, built)
     messages = [r.getMessage() for r in caplog.records if r.levelno >= logging.WARNING]

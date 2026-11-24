@@ -159,18 +159,15 @@ Radiation to Ambient 1 and Adiabatic 1. Their heat flows are reported under thes
    is stored).
 
 *Why set the first time step?* If the field is empty the program suggests a first step from
-the mesh and the material (0.0367 s for this plate). It then warns in the **Messages** dock:
+the mesh and the material (0.0367 s for this plate) and starts from it. Here the start is
+uniform, so a first step of 1 s is accurate enough and saves the first few steps. The time
+stepping adapts from there on its own: it halves a step whose error estimate is too large and
+enlarges a step whose error is small.
 
-```
-the time step of 0.0367 s is below h^2 rho c / (6 k) in 86 % of the elements; with
-consistent capacitance the temperatures may oscillate near sudden changes. Use lumped
-capacitance or a finer mesh.
-```
-
-The warning is about a start in which the temperature jumps from one element to the next. Here
-the start is uniform, so nothing jumps. The program cannot know that, and typing a first step
-of 1 s keeps the message log clean. The time stepping adapts from there on its own: it halves
-a step whose error estimate is too large and enlarges a step whose error is small.
+A first step that you type is checked once. If it is below h² ρc/(6k) in more than 5 % of the
+elements, the **Messages** dock warns that with consistent capacitance the temperatures may
+oscillate near sudden changes. The suggested step is not checked: on a graded mesh it would
+fail the test in most elements even when nothing jumps.
 
 ### 8. Solve
 

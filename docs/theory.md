@@ -222,7 +222,8 @@ Suggested initial step (logged, shown in the Messages panel): Δt₀ = h_min² /
 h_min = smallest element edge length.
 
 Oscillation warning: if consistent capacitance is used and Δt < h² ρc /(6k) for more than
-5% of elements, log a warning recommending lumped capacitance or a finer mesh.
+5% of elements, log a warning recommending lumped capacitance or a finer mesh. The warning is checked
+once, for the first step, and is not logged when that step is the suggested Δt₀.
 
 ## §7 Recovered quantities
 

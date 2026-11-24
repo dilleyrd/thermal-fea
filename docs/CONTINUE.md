@@ -214,7 +214,9 @@ In order:
   (Data §4, §6; Q29.12).
 - **M11.36 (fixed temperature at a contact end)** followed: both copies of the node are
   prescribed (Q22.5 changed).
-  - **Next, in the agreed order:** M10.5, M11.7–M11.10, M11.2, M11.3, M11.5, then M11.6.
+- **M11.10 (first time step without a false warning)** followed: the oscillation warning is
+  not logged for the suggested Δt₀ (Theory §6.1, Q27.3).
+  - **Next, in the agreed order:** M10.5, M11.7–M11.9, M11.2, M11.3, M11.5, then M11.6.
 
 ## 5. Next work: tasks M11.12–M11.16
 

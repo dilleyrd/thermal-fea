@@ -478,9 +478,13 @@ def solve_transient(
     linear = problem.is_linear
 
     T, shock = initial_state(problem, T0, t0, resume)
-    first_dt = dt0 if dt0 is not None and settings.auto_timestep else first_step_size(problem, T)
+    given_dt0 = dt0 is not None and settings.auto_timestep
+    first_dt = dt0 if given_dt0 else first_step_size(problem, T)
     controller = StepController(settings, t0, mandatory_times(problem), first_dt)
-    if problem.check_dt is not None:
+    # Theory §6.1: the oscillation warning is checked once, for the first step, and is not
+    # logged when that step is the suggested initial step (M11.10, Q27.3)
+    suggested = not given_dt0 and settings.initial_dt is None
+    if problem.check_dt is not None and not suggested:
         problem.check_dt(T, controller.dt)
 
     # DOFs with capacitance (a nonzero row of C): the solid temperatures. A row without
