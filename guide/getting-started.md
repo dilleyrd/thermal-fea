@@ -11,14 +11,19 @@ The program has not yet been reviewed on a real screen by its owner (see
 
 Start the program as described in [Installation](installation.md#start-the-program).
 
-- **Model** dock (top left): the model tree.
+- **Model** dock (top left): the model tree. It has two columns, the name and a summary of
+  each item. The dock title shows the model, for example "Model — plate · planar · t 1 m · K"
+  (name, planar or axisymmetric, the thickness of the parts, the temperature unit).
+  View > Summary column hides the second column.
 - **Properties** dock (below it): the panel of the item selected in the tree.
 - **Viewport** (centre): the geometry, the mesh, load symbols and result plots.
 - **Messages** dock (bottom): the solver log. An **Issues** dock is tabbed with it and lists
   the findings of validation. The View menu shows and hides the docks, and switches the
-  load symbols on and off ("Load symbols").
-- **Toolbar**: the selection modes None, Point, Curve, Surface, Node and Element, and
-  "Fit view" (the key F).
+  load symbols on and off ("Load symbols"), the part names on and off ("Region names"), the
+  load values on and off ("Load values"), and chooses how the viewport is coloured
+  ("Colour by": Part, Material or None).
+- **Toolbar**: the selection modes None, Point, Boundary, Part, Node and Element, and
+  "Fit view" (the key F). In a 2D model a boundary is a curve and a part is a surface.
 
 Menus: File, Edit, View, Geometry, Mesh, Solve, Results, Tools, Help.
 
@@ -26,30 +31,41 @@ Menus: File, Edit, View, Geometry, Mesh, Solve, Results, Tools, Help.
 
 A click selects the item under the pointer (8 pixels of tolerance). Ctrl-click adds to or
 removes from the selection. A click on nothing clears it. A drag longer than 4 pixels
-selects by a box: curves must lie wholly inside the box, surfaces are chosen by their
+selects by a box: boundaries must lie wholly inside the box, parts are chosen by their
 bounding box, elements by their centre. Changing the selection mode clears the selection.
 The mouse wheel zooms and the middle button pans.
 
 ## The workflow
 
-The model tree lists the parts of a model in the order you normally fill them in:
+The model tree lists the items of a model in the order you normally fill them in:
 
 | Tree node | What it holds |
 |---|---|
 | Geometry | the geometry operations, in the order they were applied |
+| Parts | which material (and thickness and material angle) each part has; a part is a named selection of surfaces |
+| Selections | every named selection, with its count and the objects that use it |
 | Materials | the materials used by the model |
-| Regions | which material (and thickness and material angle) each surface selection has |
 | Mesh | mesh settings and the Generate mesh button |
 | Initial Condition | the starting temperature of a transient analysis |
 | Loads & Boundary Conditions | fixed temperatures, fluxes, convection, radiation, symmetry, ... |
-| Contacts | thermal contact between regions |
-| Flow | streams and networks |
-| Enclosures | enclosure radiation (not available in this version) |
+| Contacts · Flow · Enclosures | one dimmed line while the model has no contact, stream, network or enclosure; once one is added it is replaced by the three sections Contacts (thermal contact between parts), Flow (streams and networks) and Enclosures (enclosure radiation, not available in this version) |
 | Analysis Settings | steady or transient, time stepping, output, nonlinear controls |
-| Solution | the result objects (contour plots, vector plots) after a solve |
+| Results | the result objects (contour plots, vector plots) after a solve |
 
 Right-click a node to see its actions. Loads can be added, renamed, duplicated, suppressed
-and deleted. Materials, streams, contacts and enclosures can be renamed, duplicated and deleted.
+and deleted. Materials, streams, contacts and enclosures can be renamed, duplicated and
+deleted. Parts, selections and geometry steps can be renamed; a part or an unused selection
+can be deleted. Right-click the dimmed line "Contacts · Flow · Enclosures" to Add contact,
+Add stream or Create network.
+
+The second column of the tree summarises each item, for example "k 52 W/(m K) · custom" for a
+material, "2 boundaries · convection Convection 1" for a selection, or "T3 · 0.025 m ·
+1 210 nodes · 2 290 elements · current" for the mesh. Temperatures there are shown with
+four significant digits.
+
+**Inspecting.** In the Point, Boundary or Part mode, hover over an entity: a tooltip names
+it, its selections and the loads on it. A single click (while no "Pick in viewport" is on)
+shows the same report in the status bar and puts the items it names in bold in the tree.
 
 ### 1. Geometry
 
@@ -61,6 +77,9 @@ Rebuild geometry.
 Each operation opens a dialog with numeric entry. The geometry is rebuilt by itself after
 every OK. Notes:
 
+- Click a step in the tree to highlight what it owns in the viewport. Right-click a step >
+  Rename (or edit the name in place) to give it a name of your own; later steps that refer
+  to it follow.
 - For Union, Cut and Intersect select the shapes in the viewport first. The earliest
   selected shape (in history order) is the object; the others are the tools.
 - The parameters of Translate, Rotate, Mirror and Scale follow the display units: lengths
@@ -74,7 +93,7 @@ every OK. Notes:
 - A new model is a planar model. To make it axisymmetric, set "Geometry type" in Analysis
   Settings (step 5); draw the geometry with x as the radius.
 
-### 2. Materials and regions
+### 2. Materials and parts
 
 Right-click Materials and choose Add material. The new material starts with every property at
 0, which means "not set yet": Validate refuses a conductivity of 0, and a transient analysis
@@ -84,12 +103,27 @@ Tools > Material library... opens the built-in library ([Materials](materials.md
 To start from a library material, select the material, type part of a name in the "From
 library" box (built-in entries first, then your own marked "(user)"), and press Use library
 values: the conductivity, density, specific heat and phase change are copied in one undo step
-and the material keeps its name, so its regions stay assigned.
+and the material keeps its name, so its parts stay assigned. The summary of the material
+reads "<entry> · library", or "<entry> · edited" after you change a value, or "k ... · custom"
+for a material that never came from the library; the panel shows the source, and **Restore
+library values** brings an edited material back.
 
-Right-click Regions and choose Add region. In its Selection field press "Pick in
-viewport", set the toolbar to Surface, click the surfaces, press Apply, then press "Pick in
-viewport" again to switch picking off. Choose the Material, and set the Thickness (planar
-models) and the Material angle if needed.
+Right-click Parts and choose Add part. A part "Part 1" appears; its panel has the fields
+Name, Selection, Material, Thickness and Material angle. Rename the part (for example
+"Plate"). In its Selection field press "Pick in viewport", set the toolbar to Part, click
+the surfaces (the status line says "2 parts picked"), type a name for the new selection in
+the "New name" box (it is pre-filled with an unused suggestion), press Apply, then press
+"Pick in viewport" again to switch picking off. A name that is already used is refused with
+a red message. To replace the entities of a field's own selection, pick again and type its
+name. Choose the Material, and set the Thickness (planar models) and the Material angle if
+needed. Parts and materials have a colour swatch; the viewport fills use the same colours
+(View > Colour by).
+
+The Selections section lists every named selection with its users. Click one to highlight
+it. Its panel shows Name (renaming it renames it wherever it is used), Kind, Entities,
+Bounds parts and Used by (each user is a link), and has the buttons "Add from viewport",
+"Remove from viewport" and Delete (not available while the selection is used). With the
+focus on the tree, Page Down and Page Up step through the selections.
 
 ### 3. Loads and boundary conditions
 
@@ -99,9 +133,9 @@ Add Fixed Temperature, Add Heat Flux, Add Heat Flow, Add Heat Generation,
 Add Heat Power, Add Convection, Add Correlation Convection, Add Radiation to Ambient,
 Add Symmetry, Add Adiabatic.
 
-Each load has a Selection field that works as described for regions (set the toolbar to
-Curve for edges). Selecting a load in the tree highlights its curves, and the viewport
-shows load symbols.
+Each load has a Selection field that works as described for parts (set the toolbar to
+Boundary for edges, and type a name such as "base" or "cooled" in "New name"). Selecting a
+load in the tree highlights its boundaries, and the viewport shows load symbols.
 
 - **Press Enter after typing a number.** The value is applied when you press Enter or leave
   the field. Each applied change is one undo step.
@@ -119,9 +153,12 @@ shows load symbols.
 - Correlation Convection takes its heat-transfer coefficient from a
   [correlation](correlations.md). A correlation used outside its validity range still
   gives a value and logs one warning.
-- A Contact (right-click Contacts, Add contact) starts with an empty selection and a
-  conductance of 0, which you must set. A temperature-dependent conductance is refused.
-- Streams are under Flow: right-click the node Streams and choose Add stream. The Network
+- A Contact (right-click Contacts, Add contact; while the model has none, right-click the
+  dimmed line "Contacts · Flow · Enclosures") starts with an empty selection ("Interface
+  boundaries") and a conductance of 0, which you must set. A temperature-dependent
+  conductance is refused.
+- Streams are under Flow: right-click the node Streams and choose Add stream (while the
+  model has no stream, use the dimmed line "Contacts · Flow · Enclosures"). The Network
   node is also under Flow. Results > Flow results...
   shows the fluid temperature along the stream.
 - Tools > HTC calculator... evaluates a correlation at single values without a model.
@@ -130,13 +167,14 @@ shows load symbols.
 ### 4. Mesh
 
 Click the Mesh node. The panel has, among others, "Global element size", "Element order"
-and "Element shape". Press **Generate mesh** (or use Mesh > Generate mesh). The status bar
+and "Element shape"; "Boundary sizes", "Point sizes", "Boundary divisions" and "Structured
+parts" refer to named selections. Press **Generate mesh** (or use Mesh > Generate mesh). The status bar
 reports the number of nodes and elements and the mesh is drawn in the viewport.
 
 ### 5. Analysis settings and initial condition
 
 Click Analysis Settings. "Geometry type" is `Planar` or `Axisymmetric`. In an axisymmetric
-model x is the radius and the axis x = 0 is drawn in the viewport; regions then have no
+model x is the radius and the axis x = 0 is drawn in the viewport; parts then have no
 Thickness. Changing it is one undo step and marks the mesh and the results out of date.
 "Analysis type" is `steady` or `transient`. A transient analysis
 shows "End time", "Initial time step", "Smallest time step", "Largest time step",
@@ -146,7 +184,8 @@ step", "Output times"). The nonlinear controls are "Residual tolerance", "Temper
 tolerance", "Maximum iterations" and "Line search".
 
 Click Initial Condition for a transient analysis. "Kind" is `uniform`, `expression`,
-`per_region` or `from_results`. The initial state (step 0) is always stored.
+`per_region` or `from_results`. With `per_region` the field "Temperature per part" takes the
+selection name of each part and its temperature. The initial state (step 0) is always stored.
 
 ### 6. Validate and solve
 
@@ -162,8 +201,10 @@ relative imbalance of the energy balance.
 
 ### 7. Results
 
-After a solve the Solution node holds a temperature contour (for example "Temperature 1").
-Its panel has "Levels", "Banded (otherwise smooth)", "Colour scale" and "Mesh overlay",
+After a solve the Results node holds a temperature contour (for example "Temperature 1").
+Its summary in the tree reads "contour · current", or "contour · out of date" when the model
+changed since the solve. Its panel starts with a header (Analysis, Mesh, Results written,
+Status) and has "Levels", "Banded (otherwise smooth)", "Colour scale" and "Mesh overlay",
 and, for a transient run, a "Step" slider and spin box, a "Time" box and "Play".
 
 The Results menu has: Add contour, Add vector plot, Probe, Play animation, Nodal
@@ -197,7 +238,10 @@ An edit makes parts of the work out of date. What is affected depends on what yo
 
 How it shows:
 
-- Results panels show "These results are out of date: the model changed since the solve."
+- The summary of each result in the tree reads "contour · out of date", the viewport title
+  ends " · out of date", and the result panel shows "These results are out of date: the model
+  changed since the solve" followed by the list of changes (for example the old and new value
+  of a heat-transfer coefficient). Undoing the change makes the results current again.
 - Chart windows are marked "(out of date)" in their title when new results arrive.
   They are not redrawn.
 - Solve is not available while the geometry or the mesh is out of date. Press Rebuild
@@ -256,7 +300,7 @@ On the command line: `thermalfea solve model.tfea --restart`. From Python:
 
 What to know:
 
-- The mesh, the materials, thicknesses and material angles of the regions, and the
+- The mesh, the materials, thicknesses and material angles of the parts, and the
   streams must be the same as in the results file, or the restart is refused and the file
   is left unchanged. So is a steady solution, a last step that did not converge, and an end
   time the file has already reached.

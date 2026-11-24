@@ -111,6 +111,8 @@ class RegionAssignment:
     thickness: float = 1.0       # m, planar only
     material_angle: float = 0.0  # rad, orthotropic only
     name: str = ""               # part name (M11.56); "" displays as the selection name
+# model/model.py: part_name(region) -> name or selection; check_part_name(model, name, index)
+# refuses an empty name or one another part is shown with.
 
 @dataclass
 class MeshSettings:

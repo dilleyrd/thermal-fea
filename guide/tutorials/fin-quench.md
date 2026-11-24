@@ -24,12 +24,12 @@ The ends are a simplification: they are small, and insulating them keeps the mod
 plate in a plain environment.
 
 The model is a drawing of the plate seen edge-on: a rectangle 0.01 m wide (x, the thickness)
-and 0.1 m tall (y). The depth of 0.1 m is entered as the region "Thickness". The two long
+and 0.1 m tall (y). The depth of 0.1 m is entered as the part's "Thickness". The two long
 vertical edges are the faces.
 
 | Item | Value |
 |---|---|
-| Geometry | rectangle 0.01 m (x) by 0.1 m (y); depth 0.1 m ("Thickness" of the region) |
+| Geometry | rectangle 0.01 m (x) by 0.1 m (y); depth 0.1 m ("Thickness" of the part) |
 | Material | Aluminum, Alloy 2024-T6, from the library: k = 177 W/(m K), density 2770 kg/m³, specific heat 875 J/(kg K) |
 | Initial temperature | 500 K, uniform |
 | Convection on the two faces | correlation `vplate_natural` (vertical plate, Churchill and Chu), fluid Air at 300 K, characteristic length 0.1 m |
@@ -70,7 +70,8 @@ wheel if you cannot hit the edges later. A middle-button drag pans.
 
 ### 3. Assign it to the plate
 
-1. Right-click **Regions** and choose **Add region**. The panel "Region" opens.
+1. Right-click **Parts** and choose **Add part**. A part "Part 1" appears and the panel
+   "Part" opens. Type `Plate` in "Name" and press Enter.
 2. Open the box of the "Selection" field and choose **all**. ("all" is made by the program: it
    is every surface of the model, here the one plate.)
 3. "Material" already reads "Aluminum, Alloy 2024-T6", because it is the only material.
@@ -86,9 +87,9 @@ wheel if you cannot hit the edges later. A middle-button drag pans.
    **vplate_natural**, open the "Fluid" box and choose **Air**, type `300` in "Ambient
    temperature" and press **OK**. (Cancel adds nothing.) The node "Correlation Convection
    1" appears and its panel opens; the three values are already in it.
-2. In "Selection" press **Pick in viewport**, choose **Curve** in the toolbar, click the left
-   long edge, **Ctrl**-click the right long edge ("2 curve(s) picked"), press **Apply** and
-   switch picking off.
+2. In "Selection" press **Pick in viewport**, choose **Boundary** in the toolbar, click the
+   left long edge, **Ctrl**-click the right long edge ("2 boundaries picked"), type `faces`
+   in "New name", press **Apply** and switch picking off.
 3. A frame below the form shows the correlation you chose: the title "Vertical plate
    (Churchill–Chu)", its formula, its validity ("all Ra") and its characteristic length
    (the height).
@@ -128,13 +129,13 @@ temperature of `400` or `320`.
    In the window "New radiation" type `0.8` in "Emissivity" and `300` in "Ambient
    temperature", then press **OK**.
 2. The two faces already have a selection, made for the convection. Do not pick them again.
-   Open the box of the "Selection" field and choose **Correlation Convection 1 selection**.
+   Open the box of the "Selection" field and choose **faces**.
 
 **Insulated ends.**
 
 1. Right-click **Loads & Boundary Conditions** and choose **Add > Add Adiabatic**.
-2. In "Selection" pick the bottom edge, **Ctrl**-click the top edge ("2 curve(s) picked"),
-   press **Apply** and switch picking off.
+2. In "Selection" pick the bottom edge, **Ctrl**-click the top edge ("2 boundaries
+   picked"), type `ends` in "New name", press **Apply** and switch picking off.
 
 Three nodes now stand under **Loads & Boundary Conditions**: Correlation Convection 1,
 Radiation to Ambient 1 and Adiabatic 1. Their heat flows are reported under these names.
@@ -186,7 +187,7 @@ fail the test in most elements even when nothing jumps.
    ```
 
    There were 217 steps. The 218 "stored steps" count the initial state as well.
-4. A node "Temperature 1" appears under **Solution**, and the viewport shows the last step.
+4. A node "Temperature 1" appears under **Results**, and the viewport shows the last step.
    The plate is almost uniform: the colour scale spans less than a thousandth of a kelvin.
    The "Step" and "Time" boxes of its panel move between stored steps.
 

@@ -107,13 +107,13 @@ def test_initial_condition_and_analysis_summaries(tree, doc) -> None:
         "ic",
         lambda m: setattr(m, "initial_condition", InitialCondition("uniform", Constant(293.15))),
     )
-    assert summary(tree, section="initial") == "uniform 293.1 K"
+    assert summary(tree, section="initial") == "uniform 293.15 K"
     doc.edit("units", lambda m: setattr(m, "display_units", UnitSettings(temperature="degC")))
     assert summary(tree, section="initial") == "uniform 20 °C"
     doc.edit(
         "ic", lambda m: setattr(m, "initial_condition", InitialCondition("per_region", None, {}))
     )
-    assert summary(tree, section="initial") == "per region"
+    assert summary(tree, section="initial") == "per part"
     assert summary(tree, section="analysis") == "steady"
     doc.edit(
         "tr",

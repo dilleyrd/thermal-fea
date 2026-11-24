@@ -50,7 +50,7 @@ Start the program from the project folder:
 The window has the model tree (the **Model** dock, top left), the property panel (the
 **Properties** dock, below it), the viewport in the middle, and the **Messages** dock at the
 bottom. The solver writes its log to Messages. An **Issues** dock shares that space as a
-tab. The toolbar holds the selection modes (None, Point, Curve, Surface, Node, Element) and
+tab. The toolbar holds the selection modes (None, Point, Boundary, Part, Node, Element) and
 **Fit view**.
 
 Three habits save trouble:
@@ -61,9 +61,12 @@ Three habits save trouble:
   coefficient, ...) has a mode box with Constant, Table and Expression. Leave it on
   **Constant** and type the number.
 - Edges and faces are chosen from the panel of the object that needs them: press **Pick in
-  viewport** in the **Selection** field, choose the matching toolbar mode, click, press
-  **Apply**, then press **Pick in viewport** again to switch picking off. Hold **Ctrl** to
-  add a second item to the selection.
+  viewport** in the **Selection** field, choose the matching toolbar mode (**Boundary** for
+  edges, **Part** for faces), click, type a name for the selection in the "New name" box
+  (it is pre-filled with a suggestion), press **Apply**, then press **Pick in viewport**
+  again to switch picking off. Hold **Ctrl** to add a second item to the selection.
+- The tree has a second column that summarises each item, for example the conductivity of a
+  material or the number of nodes of the mesh. **View > Summary column** hides it.
 
 ## Steps
 
@@ -93,15 +96,17 @@ curves.
 
 ### 3. Assign it to the plate
 
-1. Right-click **Regions** and choose **Add region**. A region node appears and its panel
-   ("Region") opens. Its "Material" box already shows "Material 1".
-2. In the "Selection" field press **Pick in viewport**, choose **Surface** in the toolbar,
+1. Right-click **Parts** and choose **Add part**. A part "Part 1" appears under **Parts** and
+   its panel ("Part") opens, with the fields "Name", "Selection", "Material", "Thickness" and
+   "Material angle". Its "Material" box already shows "Material 1". Type `Plate` in "Name"
+   and press Enter.
+2. In the "Selection" field press **Pick in viewport**, choose **Part** in the toolbar,
    click inside the lower rectangle, **Ctrl**-click inside the upper one (the status line
-   under the buttons says "2 surface(s) picked"), press **Apply**, and switch picking off.
-   The new selection is named "Region selection".
+   under the buttons says "2 parts picked"). Type `plate` in "New name", press **Apply**, and
+   switch picking off.
 3. Leave "Thickness" at 1 and "Material angle" at 0.
 
-A region ties a material to some faces and, in a planar model, gives the depth of the plate
+A part ties a material to some faces and, in a planar model, gives the depth of the plate
 perpendicular to the drawing. Every heat flow the program reports is for that depth: here, per
 metre.
 
@@ -114,32 +119,34 @@ There are three. Each is added from the node **Loads & Boundary Conditions**.
 1. Right-click **Loads & Boundary Conditions** and choose **Add > Add Fixed Temperature**. A
    node "Fixed Temperature 1" appears and its panel opens.
 2. In "Selection" press **Pick in viewport**. The panel starts in Point mode, because a fixed
-   temperature may also be put on points, so choose **Curve** in the toolbar. Click the bottom
-   edge of the plate. The status line says "1 curve(s) picked". Press **Apply**. The field
-   now reads "Fixed Temperature 1 selection". Switch picking off.
+   temperature may also be put on points, so choose **Boundary** in the toolbar. Click the
+   bottom edge of the plate. The status line says "1 boundary picked". Type `base` in "New
+   name" and press **Apply**. The field now reads "base". Switch picking off.
 3. In "Temperature" type `373.15` and press Enter (the unit shown is K).
 
 **Convection on the right and top edges.**
 
 1. Right-click **Loads & Boundary Conditions** and choose **Add > Add Convection**.
-2. In "Selection" press **Pick in viewport** and choose **Curve**. The right edge is two curves
-   (it is split at y = 0.2). Click the lower right edge, then hold **Ctrl** and click the upper
-   right edge and the top edge. The status line says "3 curve(s) picked". Press **Apply** and
-   switch picking off.
+2. In "Selection" press **Pick in viewport** and choose **Boundary**. The right edge is two
+   boundaries (it is split at y = 0.2). Click the lower right edge, then hold **Ctrl** and
+   click the upper right edge and the top edge. The status line says "3 boundaries picked".
+   Type `cooled` in "New name", press **Apply** and switch picking off.
 3. In "Heat-transfer coefficient" type `750` and press Enter (W/(m² K)).
 4. In "Fluid temperature" type `273.15` and press Enter (K).
 
 **Adiabatic on the left edge.**
 
 1. Right-click **Loads & Boundary Conditions** and choose **Add > Add Adiabatic**.
-2. In "Selection" pick the lower left edge, **Ctrl**-click the upper left edge ("2 curve(s)
-   picked"), press **Apply**, and switch picking off.
+2. In "Selection" pick the lower left edge, **Ctrl**-click the upper left edge ("2 boundaries
+   picked"), type `left side` in "New name", press **Apply**, and switch picking off.
 
 An adiabatic edge changes nothing: every edge without a condition is already insulated. The
 condition is there so that the model says what you meant, and so that the edge has a name.
 
 The viewport now draws a symbol for each condition. Click a condition in the tree and its
-curves are highlighted.
+boundaries are highlighted. The **Selections** section lists `base`, `cooled`, `left side`
+and `plate`, each with the objects that use it, for example "3 boundaries · convection
+Convection 1".
 
 ### 5. Mesh
 
@@ -157,8 +164,9 @@ curves are highlighted.
 2. Choose **Solve > Solve**. A window titled "Solving" shows progress and ends in the state
    "Finished". It stays open until you close it. A linear steady case takes a moment.
    (The **Analysis Settings** node has the same Validate and Solve buttons.)
-3. A node "Temperature 1" appears under **Solution** in the tree, and the temperature
-   contour is drawn in the viewport. Click the node to see its panel: "Field", "Levels",
+3. A node "Temperature 1" appears under **Results** in the tree, with the summary "contour ·
+   current", and the temperature contour is drawn in the viewport. Click the node to see its
+   panel: a header ("Analysis", "Mesh", "Results written", "Status"), then "Field", "Levels",
    "Banded (otherwise smooth)", "Colour scale", "Mesh overlay".
 
 The analysis type was never changed: a new model is steady, which is what this problem is.
@@ -242,9 +250,13 @@ has about 2300 triangles and no local refinement.
 
 ## Things to try
 
-- Select the Convection 1 node and change "Heat-transfer coefficient" to `800`. The results
-  panel shows "These results are out of date: the model changed since the solve." The mesh is
-  still valid, so you can solve again at once. **Edit > Undo** returns the value to 750.
+- Select the Convection 1 node and change "Heat-transfer coefficient" to `800`. The tree
+  shows "contour · out of date" for the result, the viewport title ends " · out of date", and
+  the results panel shows "These results are out of date: the model changed since the
+  solve." with the change listed beneath it. The mesh is still valid, so you can solve again
+  at once. **Edit > Undo** returns the value to 750 and the results are current again.
+- In **Boundary** mode, hover over an edge of the plate: a tooltip names the boundary, its
+  selections and the loads on it. Click it once to see the same report in the status bar.
 - Set "Element shape" to quad and compare. Set "Element order" to 2 and compare with the
   table.
 - Save the model (**File > Save As...**), choose **File > New**, then **File > Open...** the

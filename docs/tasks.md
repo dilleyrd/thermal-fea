@@ -858,7 +858,7 @@ tasks come before the owner's M8.G session (D8).
   - **Tests:** references from a point, line, arc, spline, hole loop, boolean, transform
     and delete; rename, build, undo, rebuild; and blank or duplicate ids refused.
   - Depends on M11.52.
-- [ ] **M11.64 [B] Guide and walkthrough for the new names.**
+- [x] **M11.64 [B] Guide and walkthrough for the new names.**
   - Rewrite the V-10 and V-17 steps of `docs/gui-walkthrough.md`, plus
     `guide/getting-started.md` and the tutorial pages, for Parts, Selections, the
     vocabulary, the summary column and the result header.

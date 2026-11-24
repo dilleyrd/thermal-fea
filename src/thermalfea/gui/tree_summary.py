@@ -131,7 +131,7 @@ def initial_summary(model: Model) -> str:
     if ic.kind == "uniform":
         text = format_value(_spec("temperature"), ic.value, model.display_units)
         return f"uniform {text}" if text else "uniform"
-    return {"per_region": "per region", "from_results": "from results"}.get(ic.kind, ic.kind)
+    return {"per_region": "per part", "from_results": "from results"}.get(ic.kind, ic.kind)
 
 
 def analysis_summary(model: Model) -> str:

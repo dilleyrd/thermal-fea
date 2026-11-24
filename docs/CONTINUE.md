@@ -281,15 +281,39 @@ After all of them: M11.6, the release review, which depends on M11.7–M11.16.
   region names, load values), M11.46 (probe markers), M11.47 (energy table) and M11.48
   (path drawing). The check passed with 2718 tests. `dist\ThermalFEA` predates them;
   rebuild with `scripts\build_exe.ps1` before using the built program.
-- **GUI identity, M11.49–M11.64 (owner's decisions D1–D8, 2026-11-24): build next.**
-  The owner decided on the proposal (https://claude.ai/artifact/RGQmdWAkgsREaaEwPiMgWq,
-  private): Parts with names, a Selections section, the material's library source beside
-  its name, Part · Boundary · Point wording, one result with a header and a list of
-  changes, folded empty sections, and a summary column. Codex reviewed the plan (16
-  findings, all taken in). The design is in `docs/gui-identity-plan.md`, and the approved
-  data additions are in Data §3–§6 and §13. **Build them in the plan's order before the
-  owner's V-17 session**; the owner then reviews V-10 and V-17 on the updated GUI after
-  M11.64 (the rewritten walkthrough).
+- **GUI identity, M11.49–M11.64 (owner's decisions D1–D8, 2026-11-24): built.**
+  - **What it is:** the owner decided on the proposal
+    (https://claude.ai/artifact/RGQmdWAkgsREaaEwPiMgWq, private):
+    - Parts with names;
+    - a Selections section;
+    - the material's library source beside its name;
+    - Part · Boundary · Point wording;
+    - one result with a header and a list of changes;
+    - folded empty sections;
+    - a summary column.
+
+    Codex reviewed the plan (16 findings, all taken in). The design is in
+    `docs/gui-identity-plan.md`, and the data additions are in Data §3–§6 and §13.
+  - **Next:** the owner reviews V-10 and V-17 on the updated GUI, following the rewritten
+    `docs/gui-walkthrough.md` (M8.G).
+  - **Choices made while building, for the owner's review:**
+    - **Node sets (M11.53):** a renamed or new selection reaches the results through
+      node sets found again at solve time (`meshing/node_sets.py`), not through a
+      forced remesh.
+    - **Name at Apply (M11.55):** the "New name" box always suggests an unused name.
+      To redefine a field's own selection, type its name again.
+    - **Per-part initial temperatures (M11.56):** "Temperature per part" is still a
+      `selection=T` text field keyed by the parts' selections. A row editor that shows
+      part names is not built.
+    - **Restart (M11.59):** a continued run overwrites the stored model, so the result
+      is compared with the latest continued model. There is no restart wording.
+    - **SceneView signals (M11.61):** `entity_hovered` and `entity_clicked` are on the
+      Matplotlib view and in Data §13. GUI code reads them with `getattr`, so the test
+      fakes need not have them.
+  - **Saved models:** saved models now write `"source": null` for each material and
+    `"name": ""` for each part. The tutorial models were re-saved.
+  - **Built program:** `dist\ThermalFEA` predates all of this. Rebuild it with
+    `scriptsuild_exe.ps1` before using it.
 - ~~**M11.1**~~, human task: closed on 2026-11-23 after M11.37–M11.42 (Q30); the owner
   kept the printed oxygen row and declined the Q30.4 additions.
 - **Confirm the Theory §6.1 sentence in Q27.3** before M11.10 is built.

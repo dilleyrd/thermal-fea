@@ -429,7 +429,8 @@ def copy_name(name: str, existing: set[str] | list[str], keep_digits: bool = Fal
 def format_value(spec: FieldSpec, value: Any, units: UnitSettings) -> str | None:
     """The text of one field value in display units; ``None`` for an unset field.
 
-    A constant or number is converted from SI and shown with ``:.4g`` and its unit label, a
+    A constant or number is converted from SI and shown with ``:.6g`` (so 273.15 K stays
+    273.15 K) and its unit label, a
     table as ``table(T)`` / ``table(t)``, an expression as its text.
     """
     if value is None:
@@ -447,4 +448,4 @@ def format_value(spec: FieldSpec, value: Any, units: UnitSettings) -> str | None
     if spec.quantity is not None:
         number = float(from_si(number, spec.quantity, units))
     unit = unit_label(spec.quantity, units)
-    return f"{number:.4g} {unit}" if unit else f"{number:.4g}"
+    return f"{number:.6g} {unit}" if unit else f"{number:.6g}"

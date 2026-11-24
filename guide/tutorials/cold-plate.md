@@ -26,7 +26,7 @@ is deep) and 2 mm high. The mass flow is 0.02 kg/s, about 1.2 litres per minute.
 of the plate are insulated.
 
 The model is a drawing of the plate seen from the side: a rectangle 0.2 m long (x) and 0.01 m
-tall (y). The depth of 0.05 m is the region "Thickness". The bottom edge is the *wall* the
+tall (y). The depth of 0.05 m is the part's "Thickness". The bottom edge is the *wall* the
 water touches.
 
 The stream does not know the shape of the channel. It is told five things:
@@ -42,13 +42,13 @@ The stream does not know the shape of the channel. It is told five things:
 - the **path**: the polyline the water follows, from inlet to outlet, in the model plane. It
   tells the program which wall edges are upstream of which.
 
-The heat-exchange area is taken from the model: the length of the wall edge times the region
+The heat-exchange area is taken from the model: the length of the wall edge times the part
 thickness, 0.2 m × 0.05 m = 0.01 m². It agrees with the channel because the channel is as wide
 as the plate is deep.
 
 | Item | Value |
 |---|---|
-| Geometry | rectangle 0.2 m (x) by 0.01 m (y); depth 0.05 m ("Thickness" of the region) |
+| Geometry | rectangle 0.2 m (x) by 0.01 m (y); depth 0.05 m ("Thickness" of the part) |
 | Material | Aluminum, Alloy 2024-T6, from the library: k = 177 W/(m K) |
 | Heat flux on the top edge | 20 000 W/m², into the plate (200 W in all) |
 | Left and right edges | adiabatic |
@@ -85,7 +85,8 @@ wheel if you cannot hit the edges later. A middle-button drag pans.
 
 ### 3. Assign it to the plate
 
-1. Right-click **Regions** and choose **Add region**. The panel "Region" opens.
+1. Right-click **Parts** and choose **Add part**. A part "Part 1" appears and the panel
+   "Part" opens. Type `Plate` in "Name" and press Enter.
 2. Open the box of the "Selection" field and choose **all** (every surface of the model, here
    the one plate).
 3. "Material" already reads "Aluminum, Alloy 2024-T6". In "Thickness" type `0.05` and press Enter.
@@ -96,21 +97,23 @@ wheel if you cannot hit the edges later. A middle-button drag pans.
 
 1. Right-click **Loads & Boundary Conditions** and choose **Add > Add Heat Flux**. The node
    "Heat Flux 1" appears and its panel opens.
-2. In "Selection" press **Pick in viewport**, choose **Curve** in the toolbar, click the top
-   edge ("1 curve(s) picked"), press **Apply** and switch picking off.
+2. In "Selection" press **Pick in viewport**, choose **Boundary** in the toolbar, click the
+   top edge ("1 boundary picked"), type `top` in "New name", press **Apply** and switch
+   picking off.
 3. In "Heat flux" type `20000` and press Enter (W/m²). A positive flux heats the plate.
 
 **Insulated ends.**
 
 1. Right-click **Loads & Boundary Conditions** and choose **Add > Add Adiabatic**.
-2. In "Selection" pick the left edge, **Ctrl**-click the right edge ("2 curve(s) picked"), press
-   **Apply** and switch picking off.
+2. In "Selection" pick the left edge, **Ctrl**-click the right edge ("2 boundaries picked"),
+   type `ends` in "New name", press **Apply** and switch picking off.
 
 The bottom edge gets no load. It belongs to the stream, which you add next.
 
 ### 5. Create the stream
 
-1. In the tree, open **Flow**. Right-click the node **Streams** and choose **Add stream**.
+1. In the tree the line "Contacts · Flow · Enclosures" is dimmed, because the model has no
+   contact, stream or enclosure yet. Right-click it and choose **Add stream**.
 2. Because the model has no stream yet, a window titled "New stream" opens. It says "The model
    has no stream yet. Enter the values of the first one." Its fields start empty, so no value
    is assumed. Fill in:
@@ -125,7 +128,7 @@ The bottom edge gets no load. It belongs to the stream, which you add next.
 
 3. Press **Create**. If a field is empty, the window stays open and says which one ("enter the
    flow area", "choose a fluid", ...). When it closes, a node **Stream 1** appears under
-   **Streams** and its panel "Stream: Stream 1" opens. The mode is `in_plane`: the water
+   **Streams** (under **Flow**, which now replaces the dimmed line) and its panel "Stream: Stream 1" opens. The mode is `in_plane`: the water
    flows along a path in the plane of the drawing. (The other mode, `through_plane`, is for
    flow perpendicular to the drawing, such as a cooling hole seen in cross-section.)
 
@@ -134,9 +137,9 @@ now complete.
 
 ### 6. Complete the stream
 
-1. **Walls.** In the "Walls" field press **Pick in viewport**, choose **Curve** in the toolbar,
-   click the bottom edge ("1 curve(s) picked"), press **Apply** and switch picking off. The
-   field now lists "Stream 1 walls". This is the edge the water cools.
+1. **Walls.** In the "Walls" field press **Pick in viewport**, choose **Boundary** in the toolbar,
+   click the bottom edge ("1 boundary picked"), type `wall` in "New name", press **Apply** and
+   switch picking off. The field now lists "wall". This is the edge the water cools.
 2. **Path.** In "Path" type `0, 0; 0.2, 0` and press Enter. The format is `x, y; x, y`, one
    pair per point, in metres. The label under the "Path" buttons reads "2 path points". (You
    may instead press **Pick path points** and click the inlet and then the outlet in the
@@ -243,7 +246,7 @@ the end of the log in the "Messages" dock, under "relative imbalance".
 
 1. Click the node **Stream 1**. In "Mass flow" type `0.1` and press Enter. The result panel
    now says "These results are out of date: the model changed since the solve." (Click the
-   result node under **Solution** to see it.) The mesh is still valid.
+   result node under **Results** to see it; its summary in the tree reads "contour · out of date".) The mesh is still valid.
 2. Choose **Solve > Solve** again. The "Flow results" window, if still open, shows the new
    numbers when the solve finishes.
 3. Repeat with `0.005`.
