@@ -818,7 +818,7 @@ tasks come before the owner's M8.G session (D8).
   - The restart check and "edited" compare physical properties only.
   - **Tests:** the same name in the built-in and user libraries, a missing entry, and a
     provenance-only change against an older result. Depends on M11.50.
-- [ ] **M11.58 [C] Model comparison.** Plan §6.
+- [x] **M11.58 [C] Model comparison.** Plan §6.
   - `model/compare.py: model_changes(solved, current) -> list[str]`.
   - It normalises the serialised models and reports every difference left, described
     through names and form labels, with a fallback to the section.

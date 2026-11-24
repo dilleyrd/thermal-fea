@@ -24,9 +24,11 @@ import types
 from dataclasses import dataclass
 from typing import Any, Literal, Union, get_args, get_origin, get_type_hints
 
+import numpy as np
+
 from . import registry
 from .errors import ModelError
-from .functions import Constant, Function
+from .functions import Constant, Expression, Function, Table
 from .units import QUANTITIES, UnitSettings, from_si, to_si
 from .units import unit_label as unit_label  # re-exported: forms and panels import it here
 
@@ -422,3 +424,27 @@ def copy_name(name: str, existing: set[str] | list[str], keep_digits: bool = Fal
     """
     stem = name if keep_digits else (re.sub(r"\s+\d+$", "", name) or name)
     return unique_name(stem, existing, start=2)
+
+
+def format_value(spec: FieldSpec, value: Any, units: UnitSettings) -> str | None:
+    """The text of one field value in display units; ``None`` for an unset field.
+
+    A constant or number is converted from SI and shown with ``:.4g`` and its unit label, a
+    table as ``table(T)`` / ``table(t)``, an expression as its text.
+    """
+    if value is None:
+        return None
+    if isinstance(value, Table):
+        return f"table({value.variable})"
+    if isinstance(value, Expression):
+        return str(value.text)
+    if isinstance(value, Constant):
+        number: float = value.value
+    elif isinstance(value, (int, float, np.integer, np.floating)) and not isinstance(value, bool):
+        number = float(value)
+    else:
+        return type(value).__name__
+    if spec.quantity is not None:
+        number = float(from_si(number, spec.quantity, units))
+    unit = unit_label(spec.quantity, units)
+    return f"{number:.4g} {unit}" if unit else f"{number:.4g}"

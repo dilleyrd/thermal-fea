@@ -23,9 +23,9 @@ import numpy as np
 from PySide6.QtCore import QObject
 from PySide6.QtGui import QAction
 
-from thermalfea.core.forms import FieldSpec, form_for
-from thermalfea.core.functions import Constant, Expression, Table
-from thermalfea.core.units import UnitSettings, from_si, unit_label
+from thermalfea.core.forms import form_for
+from thermalfea.core.forms import format_value as format_value  # re-exported (M11.58 moved it)
+from thermalfea.core.units import UnitSettings
 from thermalfea.geometry.builder import BuiltGeometry
 from thermalfea.gui.document import Document
 from thermalfea.gui.load_symbols import contact_entities, entities_of
@@ -46,30 +46,6 @@ _XY = 2
 def region_title(region: RegionAssignment) -> str:
     """The text of a region in the model tree: ``"<selection> -> <material>"``."""
     return f"{region.selection} -> {region.material}"
-
-
-def format_value(spec: FieldSpec, value: Any, units: UnitSettings) -> str | None:
-    """The text of one field value in display units; ``None`` for an unset field.
-
-    A constant or number is converted from SI and shown with ``:.4g`` and its unit label, a
-    table as ``table(T)`` / ``table(t)``, an expression as its text.
-    """
-    if value is None:
-        return None
-    if isinstance(value, Table):
-        return f"table({value.variable})"
-    if isinstance(value, Expression):
-        return str(value.text)
-    if isinstance(value, Constant):
-        number: float = value.value
-    elif isinstance(value, (int, float, np.integer, np.floating)) and not isinstance(value, bool):
-        number = float(value)
-    else:
-        return type(value).__name__
-    if spec.quantity is not None:
-        number = float(from_si(number, spec.quantity, units))
-    unit = unit_label(spec.quantity, units)
-    return f"{number:.4g} {unit}" if unit else f"{number:.4g}"
 
 
 def label_text(obj: Any, units: UnitSettings) -> str:
