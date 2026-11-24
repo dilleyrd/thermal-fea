@@ -104,7 +104,9 @@ def test_second_apply_with_a_taken_name_gets_a_unique_one(qtbot, built_doc) -> N
     editor.pick_button.setChecked(True)
     view.pick(1, [top_curve(built_doc)])
     assert editor.apply() == "Edge"
-    assert editor.apply() == "Edge"  # re-applying replaces our own selection
+    assert editor.name_edit.text() == "Edge 2"  # the suggestion is always unused
+    editor.name_edit.setText("Edge")  # typing the field's own name replaces its selection
+    assert editor.apply() == "Edge"
     other = SelectionEditor(built_doc, view, SPEC)
     qtbot.addWidget(other)
     other.name_hint = "Edge"

@@ -791,7 +791,7 @@ tasks come before the owner's M8.G session (D8).
   - **Tests:** the section, the highlight, rename through the panel, delete refused and
     allowed, stepping, and issue navigation.
   - Depends on M11.49, M11.50 and M11.53.
-- [ ] **M11.55 [B] Name the selection at Apply.** Plan §7.7.
+- [x] **M11.55 [B] Name the selection at Apply.** Plan §7.7.
   - The selection editor gains a "New name" box with an unused suggested name.
   - The name is checked inside the same `Document.edit` that assigns the field, and
     Apply reports success explicitly.

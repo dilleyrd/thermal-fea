@@ -20,6 +20,7 @@ from PySide6.QtWidgets import (
     QComboBox,
     QHBoxLayout,
     QLabel,
+    QLineEdit,
     QPushButton,
     QVBoxLayout,
     QWidget,
@@ -32,6 +33,11 @@ from thermalfea.geometry.builder import BuiltGeometry
 from thermalfea.gui.document import Document
 from thermalfea.gui.scene import SceneView
 from thermalfea.model.model import Model
+from thermalfea.model.selections import (
+    ALL_SELECTION,
+    check_new_selection_name,
+    selection_users,
+)
 from thermalfea.model.vocabulary import entity_word
 
 _DIM_MODE = {0: "point", 1: "curve", 2: "surface"}
@@ -50,12 +56,49 @@ class SelectionRequest:
     tags : list of int
         Entity tags in the current build.
     name : str
-        Name of the selection to create (replaced if it exists).
+        Name of the selection to create.
+    replace : str
+        Name of the field's current selection; typing exactly this name replaces that
+        selection's entities (when no other object uses it). Empty: no replacement.
     """
 
     dim: int
     tags: list[int]
     name: str
+    replace: str = ""
+
+
+def used_selection_names(model: Model) -> set[str]:
+    """Names a new selection must avoid: selections, ``all`` and mesh/per-region keys."""
+    mesh = model.mesh_settings
+    names = set(model.selections) | {ALL_SELECTION}
+    for table in (mesh.curve_sizes, mesh.point_sizes, mesh.curve_divisions):
+        names |= set(table)
+    names |= set(model.initial_condition.per_region or {})
+    return names
+
+
+def check_request_name(
+    model: Model, request: SelectionRequest, owner: tuple | None = None
+) -> None:
+    """Validate ``request.name`` against ``model`` (call inside the edit mutation).
+
+    The name must pass ``check_new_selection_name``, unless it equals ``request.replace``,
+    that selection exists, and every user of it is the object at ``owner`` (with no
+    ``owner``, it must have no user at all). ``request.name`` is set to the stripped name.
+
+    Raises
+    ------
+    ModelError
+        If the name is refused.
+    """
+    name = request.name.strip()
+    if name and name == request.replace and name in model.selections:
+        allowed = {owner} if owner is not None else set()
+        if {use.address for use in selection_users(model, name)} <= allowed:
+            request.name = name
+            return
+    request.name = check_new_selection_name(model, name)
 
 
 def store_selection(model: Model, built: BuiltGeometry | None, request: SelectionRequest) -> str:
@@ -120,8 +163,10 @@ class SelectionEditor(QWidget):
         self.document = document
         self.view = view
         self.spec = spec
-        self.name_hint = spec.name
-        self.apply_handler: Callable[[SelectionRequest], None] | None = None
+        self._name_hint = spec.name
+        self._name_dirty = False
+        self._error = ""
+        self.apply_handler: Callable[[SelectionRequest], str | None] | None = None
         #: ``sync(mode)`` shows the selection mode in the toolbar (set by whoever creates the
         #: editor in a window; ``None`` leaves the toolbar alone).
         self.mode_sync: Callable[[str], None] | None = None
@@ -141,7 +186,13 @@ class SelectionEditor(QWidget):
         self.pick_button = QPushButton("Pick in viewport")
         self.pick_button.setCheckable(True)
         self.apply_button = QPushButton("Apply")
+        self.name_edit = QLineEdit()
+        self.name_edit.setPlaceholderText("selection name")
+        self.name_edit.setToolTip("New name")
+        self.name_edit.textEdited.connect(self._on_name_edited)
         row.addWidget(self.pick_button)
+        row.addWidget(QLabel("New name"))
+        row.addWidget(self.name_edit)
         row.addWidget(self.apply_button)
         if self._is_list:
             self.clear_button = QPushButton("Clear")
@@ -157,6 +208,20 @@ class SelectionEditor(QWidget):
         document.geometry_built.connect(self.refresh)
         document.model_changed.connect(self.refresh)
         self.refresh()
+
+    @property
+    def name_hint(self) -> str:
+        """Base of the suggested selection name; a new hint resets the typed name."""
+        return self._name_hint
+
+    @name_hint.setter
+    def name_hint(self, hint: str) -> None:
+        if hint != self._name_hint:
+            self._name_hint = hint
+            self._name_dirty = False  # another object: forget what was typed
+            self._error = ""
+            if hasattr(self, "name_edit"):
+                self.name_edit.setText(self.suggest_name())
 
     # --------------------------------------------------------------------- value
     def value(self) -> str | list[str]:
@@ -207,6 +272,8 @@ class SelectionEditor(QWidget):
         )
         if not built and self.pick_button.isChecked():
             self.pick_button.setChecked(False)
+        if not self._name_dirty:
+            self.name_edit.setText(self.suggest_name())
         self._update_apply()
 
     def choose(self, name: str) -> None:
@@ -268,6 +335,7 @@ class SelectionEditor(QWidget):
         if dim not in _DIM_NAME:
             return
         self._picked = (int(dim), [int(t) for t in tags])
+        self._error = ""
         self._update_apply()
 
     def picked(self) -> tuple[int, list[int]]:
@@ -277,6 +345,10 @@ class SelectionEditor(QWidget):
     def _update_apply(self) -> None:
         dim, tags = self._picked
         self.apply_button.setEnabled(bool(tags) and self.document.built is not None)
+        self.status_label.setStyleSheet("color: #c0392b;" if self._error else "")
+        if self._error:
+            self.status_label.setText(self._error)
+            return
         if not tags:
             self.status_label.setText("Nothing picked")
             return
@@ -284,35 +356,79 @@ class SelectionEditor(QWidget):
         self.status_label.setText(f"{len(tags)} {word} picked")
 
     # --------------------------------------------------------------------- apply
+    def suggest_name(self) -> str:
+        """An unused name built from :attr:`name_hint` (never collides)."""
+        used = used_selection_names(self.document.model)
+        if self.name_hint not in used:
+            return self.name_hint
+        return unique_name(self.name_hint, used, start=2)
+
     def target_name(self) -> str:
-        """The name Apply will give the selection."""
-        existing = set(self.document.model.selections)
-        base = self.name_hint
-        own = set() if self._is_list else {self._value}  # a list always gets a new selection
-        if base in existing and base not in own:
-            return unique_name(base, existing, start=2)
-        return base
+        """The name Apply will use: what is typed in the "New name" box."""
+        return self.name_edit.text().strip()
+
+    def _on_name_edited(self, _text: str) -> None:
+        self._name_dirty = True
+
+    def show_error(self, message: str) -> None:
+        """Show a refusal in red in the status line (kept until the next pick or success)."""
+        self._error = message
+        self._update_apply()
+
+    def error_text(self) -> str:
+        """The refusal message shown, if any."""
+        return self._error
 
     def apply(self) -> str | None:
-        """Store the picked entities as a selection; return its name (``None``: nothing)."""
+        """Store the picked entities as a selection; return its name (``None``: nothing).
+
+        The name is the one typed in :attr:`name_edit` (suggested unused name by default).
+        It must pass :func:`~thermalfea.model.selections.check_new_selection_name`, with
+        one exception: on a single ``selection`` field, the name of the field's current
+        selection may be typed again to replace that selection's entities, provided no
+        other object uses it (see :func:`check_request_name`). The check runs inside the
+        same ``Document.edit`` mutation that stores the selection (and, with a form's
+        ``apply_handler``, assigns the field), so a refusal records no undo step and
+        leaves the model unchanged; the message is shown by :meth:`show_error` and the
+        typed name is kept. A ``selection_list`` field always creates a new selection.
+
+        Returns
+        -------
+        str or None
+            The stored name, or ``None`` if nothing was picked or the name was refused.
+        """
         dim, tags = self._picked
         if not tags:
             return None
-        request = SelectionRequest(dim, list(tags), self.target_name())
-        if self.apply_handler is not None:
-            self.apply_handler(request)
-        else:
-            self.document.edit(
-                f"Create selection {request.name}",
-                lambda m: store_selection(m, self.document.built, request),
-            )
-        if request.name not in self.document.model.selections:
-            return None  # the store was refused (a handler may report it without raising)
+        replace = "" if self._is_list else str(self._value)
+        request = SelectionRequest(dim, list(tags), self.target_name(), replace)
+        try:
+            if self.apply_handler is not None:
+                stored = self.apply_handler(request)
+            else:
+                stored = self._default_apply(request)
+        except ModelError as exc:
+            self.show_error(str(exc))
+            return None
+        if stored is None:
+            return None  # refused; the handler (or the default) reported why
         if self._is_list:
-            if request.name not in self._value:
-                self._value = [*self._value, request.name]  # type: ignore[misc]
+            if stored not in self._value:
+                self._value = [*self._value, stored]  # type: ignore[misc]
         else:
-            self._value = request.name
+            self._value = stored
+        self._error = ""
+        self._name_dirty = False
         self._update_labels()
         self.refresh()
+        return stored
+
+    def _default_apply(self, request: SelectionRequest) -> str | None:
+        """Store the selection alone (no field to assign) in one undo step."""
+
+        def mutate(model: Model) -> None:
+            check_request_name(model, request)
+            store_selection(model, self.document.built, request)
+
+        self.document.edit(f"Create selection {request.name}", mutate)
         return request.name

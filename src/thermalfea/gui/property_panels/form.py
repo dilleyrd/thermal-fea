@@ -54,6 +54,7 @@ from thermalfea.gui.property_panels.function_editor import (
 from thermalfea.gui.property_panels.selection_editor import (
     SelectionEditor,
     SelectionRequest,
+    check_request_name,
     store_selection,
 )
 from thermalfea.gui.scene import SceneView
@@ -335,7 +336,7 @@ class FormPanel(QWidget):
         if f.kind in ("selection", "selection_list"):
             sel = SelectionEditor(self.document, self.view, f)
             sel.value_changed.connect(lambda v, n=name: self._apply(n, v))
-            sel.apply_handler = lambda request, n=name: self._apply_request(n, request)
+            sel.apply_handler = lambda request, n=name, s=sel: self._apply_request(n, request, s)
             return sel, None
         if f.kind == "dict":
             line = QLineEdit()
@@ -494,11 +495,19 @@ class FormPanel(QWidget):
             self.value_changed.emit(name, value)
         return changed
 
-    def _apply_request(self, name: str, request: SelectionRequest) -> None:
-        """Create the picked selection and store its name in the field (one undo step)."""
+    def _apply_request(
+        self, name: str, request: SelectionRequest, editor: SelectionEditor | None = None
+    ) -> str | None:
+        """Create the picked selection and store its name in the field (one undo step).
+
+        The name is checked inside the mutation, so a refusal leaves the model and the undo
+        stack untouched. Returns the stored name, or ``None`` if refused (the message is
+        recorded for the field and shown by ``editor``).
+        """
         field = self.spec.field(name)
 
         def mutate(model: Any) -> None:
+            check_request_name(model, request, self.address)
             store_selection(model, self.document.built, request)
             current = getattr(resolve(model, self.address), name)
             if field.kind == "selection_list":
@@ -511,9 +520,12 @@ class FormPanel(QWidget):
             self.document.edit(f"Set {field.label}", mutate)
         except ModelError as exc:
             self._set_error(name, str(exc))
-            return
+            if editor is not None:
+                editor.show_error(str(exc))
+            return None
         self._set_error(name, "")
         self.value_changed.emit(name, request.name)
+        return request.name
 
     def _on_text(self, name: str, text: str) -> None:
         field = self.spec.field(name)
