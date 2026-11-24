@@ -42,8 +42,8 @@ def _tet4_dshape(pts: np.ndarray) -> np.ndarray:
     return np.broadcast_to(dn, (pts.shape[0], 3, 4)).copy()
 
 
-@pytest.fixture
-def tet4():
+def make_tet4() -> ElementType:
+    """The 4-node tetrahedron of the guard (not registered)."""
     et = ElementType(
         name="Tet4",
         dim=3,
@@ -60,6 +60,12 @@ def tet4():
         facets=np.array([[0, 2, 1], [0, 1, 3], [1, 2, 3], [0, 3, 2]]),
         display_simplices=np.array([[0, 1, 2, 3]]),
     )
+    return et
+
+
+@pytest.fixture
+def tet4():
+    et = make_tet4()
     registry.register_element(et)
     yield et
     registry._ELEMENTS.pop("Tet4")

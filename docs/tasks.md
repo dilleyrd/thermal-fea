@@ -390,7 +390,7 @@ Boundary Conditions, Flow (Streams, Network), Enclosures, Analysis Settings, Sol
   (Theory §8) against a heat-transfer reference text; record the source and edition.
   Closed by the owner on 2026-11-23 after M11.37–M11.42 (`docs/property-verification.md`,
   OPEN_QUESTIONS Q30).
-- [ ] **M11.2 [B] V&V report.** Script that runs the verification suite and writes a table
+- [x] **M11.2 [B] V&V report.** Script that runs the verification suite and writes a table
   of case, quantity, analytic value, computed value, error and tolerance to
   `docs/vv-report.md`.
 - [ ] **M11.3 [B] Performance.** Benchmark test for Plan §6 item 6; profile; cache the

@@ -230,7 +230,9 @@ In order:
   radiation from the menu opens a dialog whose fields start empty (`gui/dialogs/new_load.py`).
   The programmatic `add_bc` still adds a blank load. Validation has `empty-correlation`,
   `empty-fluid`, `zero-ambient` and `zero-emissivity`.
-  - **Next, in the agreed order:** M11.2, M11.3, M11.5, then M11.6.
+- **M11.2 (V&V report)** followed. `scripts/vv_report.py` runs every version-1 case the way
+  its test does and writes `docs/vv-report.md`: 359 rows, all passed, about 23 s.
+  - **Next, in the agreed order:** M11.3, M11.5, then M11.6.
 
 ## 5. Next work: tasks M11.12–M11.16
 
