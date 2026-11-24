@@ -57,8 +57,10 @@ magnitude.
 from __future__ import annotations
 
 import logging
+import os
 from collections.abc import Callable
 from dataclasses import dataclass, fields, replace
+from datetime import UTC, datetime
 from typing import Any, ClassVar
 
 import numpy as np
@@ -73,6 +75,8 @@ from thermalfea.gui.field_display import field_display_from_contour, field_displ
 from thermalfea.gui.main_window import MainWindow
 from thermalfea.gui.property_panels.results import RESULT_ADDRESS
 from thermalfea.gui.scene import FieldDisplay, OverlayMarker, SceneView
+from thermalfea.gui.tree_summary import analysis_summary
+from thermalfea.model.compare import model_changes
 from thermalfea.post.path import value_at
 from thermalfea.post.plots import (
     FIELDS,
@@ -104,6 +108,142 @@ ADD_CONTOUR_ID = "results.add_contour"
 ADD_VECTORS_ID = "results.add_vectors"
 PROBE_ID = "results.probe"
 PLAY_ID = "results.play"
+
+OUT_OF_DATE_SUFFIX = " · out of date"
+
+
+@dataclass(frozen=True)
+class ResultStatus:
+    """What the results file says about itself and whether the model still matches it.
+
+    Attributes
+    ----------
+    available : bool
+        There is a readable results file.
+    current : bool or None
+        ``True`` when the model equals the one solved, ``False`` when it differs, ``None``
+        when the comparison is impossible (no model stored in the file).
+    changes : list of str
+        Readable differences (``model.compare.model_changes``); empty unless out of date.
+    lines : list of str
+        Header lines: analysis, mesh, "results written ...", and the state.
+    """
+
+    available: bool
+    current: bool | None
+    changes: list[str]
+    lines: list[str]
+
+    @property
+    def state(self) -> str:
+        """``current``, ``out of date (N changes)``, ``comparison unavailable`` or ``""``."""
+        if not self.available:
+            return ""
+        if self.current is None:
+            return "comparison unavailable"
+        if self.current:
+            return "current"
+        n = len(self.changes)
+        return f"out of date ({n} change{'' if n == 1 else 's'})"
+
+    @property
+    def short(self) -> str:
+        """The state without the count: ``current``, ``out of date``, ..."""
+        return self.state.split(" (")[0]
+
+    @property
+    def out_of_date(self) -> bool:
+        return self.available and self.current is False
+
+
+@dataclass(frozen=True)
+class _Stored:
+    model: Any
+    analysis: str
+    mesh: str
+    created: str
+
+
+_STORED_CACHE: dict[tuple, _Stored | None] = {}
+
+
+def _file_key(path: Any) -> tuple | None:
+    try:
+        return (str(path), os.stat(path).st_mtime_ns)
+    except OSError:
+        return None
+
+
+def _written(created: str) -> str:
+    try:
+        stamp = datetime.fromisoformat(created)
+        if stamp.tzinfo is None:
+            stamp = stamp.replace(tzinfo=UTC)
+        return stamp.astimezone().strftime("%d %b %Y %H:%M")
+    except ValueError:
+        return created
+
+
+def _stored(path: Any) -> _Stored | None:
+    """The header facts of a results file, read once per (path, modification time)."""
+    key = _file_key(path)
+    if key is None:
+        return None
+    if key in _STORED_CACHE:
+        return _STORED_CACHE[key]
+    try:
+        results = Results(path)
+        model = results.model
+        mesh = results.mesh
+        meta = results.meta
+        etypes = "/".join(dict.fromkeys(b.etype for b in mesh.blocks))
+        mesh_text = f"{etypes} · {mesh.n_nodes:,} nodes · {mesh.n_elements:,} elements"
+        stored: _Stored | None = _Stored(
+            model,
+            str(meta.get("analysis", "")),
+            mesh_text.replace(",", " "),
+            _written(str(meta.get("created", ""))),
+        )
+    except (ThermalFEAError, OSError, KeyError, ValueError, TypeError) as exc:
+        _log.warning("results %s cannot be read: %s", path, exc)
+        stored = None
+    if len(_STORED_CACHE) > 8:
+        _STORED_CACHE.clear()
+    _STORED_CACHE[key] = stored
+    return stored
+
+
+def result_status(document: Document) -> ResultStatus:
+    """Compare the document's model with the model stored in its results (Plan §6).
+
+    The one definition of "current": ``model_changes(stored, document.model)`` is empty.
+    A results file without a stored model gives ``current=None``.
+    """
+    path = document.results_path
+    stored = _stored(path) if path is not None else None
+    if stored is None:
+        return ResultStatus(False, None, [], [])
+    model = document.model
+    changes: list[str] = []
+    current: bool | None = None
+    if stored.model is not None:
+        try:
+            changes = model_changes(stored.model, model, model.display_units)
+            current = not changes
+        except (ThermalFEAError, KeyError, ValueError, TypeError) as exc:
+            _log.warning("cannot compare the model with its results: %s", exc)
+            changes, current = [], None
+    analysis = stored.analysis
+    if stored.model is not None:
+        analysis = analysis_summary(stored.model)
+    status = ResultStatus(True, current, changes, [])
+    lines = [
+        f"Analysis: {analysis}",
+        f"Mesh: {stored.mesh}",
+        f"Results written {stored.created}",
+        f"Status: {status.state}",
+    ]
+    return ResultStatus(True, current, changes, lines)
 
 
 @dataclass
@@ -244,6 +384,7 @@ class ResultController(QObject):
     display_changed = Signal()
     probe_changed = Signal(str)
     playing_changed = Signal(bool)
+    status_changed = Signal()
 
     def __init__(self, window: MainWindow, document: Document, view: SceneView) -> None:
         super().__init__(window)
@@ -264,6 +405,8 @@ class ResultController(QObject):
         self._ranges: dict[str, tuple[float, float]] = {}
         self._units = document.model.display_units
         self._generation = document.generation
+        self._status_cache: tuple[Any, tuple, ResultStatus] | None = None
+        self._suffixed = False
         #: Results show the units of the model stored in their file until the user
         #: changes the units of the document; from then on they follow the document.
         self._follow_document_units = False
@@ -384,8 +527,30 @@ class ResultController(QObject):
                 self.shown = self.objects[0].name
         self.objects_changed.emit()
         self._refresh()
+        self.status_changed.emit()
+
+    def status(self) -> ResultStatus:
+        """Freshness of the displayed results (cached per model object and file)."""
+        document = self.document
+        rest = (
+            document.results_path, _file_key(document.results_path) if document.results_path
+            else None, document.generation, document.undo_stack.index(),
+        )
+        cache = self._status_cache
+        if cache is not None and cache[0] is document.model and cache[1] == rest:
+            return cache[2]
+        status = result_status(document)
+        self._status_cache = (document.model, rest, status)
+        return status
 
     def _on_model_changed(self) -> None:
+        self._apply_units()
+        status = self.status()
+        if self._results is not None and self._suffixed != status.out_of_date:
+            self._refresh()  # the viewport title gains or loses " · out of date"
+        self.status_changed.emit()
+
+    def _apply_units(self) -> None:
         """Show the results again when the display units changed.
 
         Manual colour ranges are typed in display units, so they are converted to the new
@@ -637,20 +802,25 @@ class ResultController(QObject):
             raise ModelError("there are no results")
         if isinstance(obj, VectorObject):
             data = vector_data(results, obj.step, obj.density)
-            return field_display_from_vectors(data, show_mesh=obj.show_mesh)
-        lo = hi = None
-        if obj.range_mode == "manual":
-            lo, hi = obj.vmin, obj.vmax
-        elif obj.range_mode == "auto_all":
-            lo, hi = self._all_range(obj.field)
-        return field_display_from_contour(
-            contour_data(results, obj.step, obj.field),
-            levels=obj.levels if obj.banded else None,
-            vmin=lo,
-            vmax=hi,
-            show_mesh=obj.show_mesh,
-            markers=obj.markers,
-        )
+            display = field_display_from_vectors(data, show_mesh=obj.show_mesh)
+        else:
+            lo = hi = None
+            if obj.range_mode == "manual":
+                lo, hi = obj.vmin, obj.vmax
+            elif obj.range_mode == "auto_all":
+                lo, hi = self._all_range(obj.field)
+            display = field_display_from_contour(
+                contour_data(results, obj.step, obj.field),
+                levels=obj.levels if obj.banded else None,
+                vmin=lo,
+                vmax=hi,
+                show_mesh=obj.show_mesh,
+                markers=obj.markers,
+            )
+        self._suffixed = self.status().out_of_date
+        if self._suffixed:
+            display.title = f"{display.title}{OUT_OF_DATE_SUFFIX}"
+        return display
 
     def _refresh(self) -> None:
         obj = self.get(self.shown)
@@ -859,6 +1029,14 @@ class ResultController(QObject):
     def tree_items(self) -> list[tuple[str, tuple, bool]]:
         """The children of the Solution node: ``(text, address, renameable)``."""
         return [(o.name, (RESULT_ADDRESS, o.name), True) for o in self.objects]
+
+    def tree_summary(self, address: tuple) -> str:
+        """``contour · current``: the plot kind and the freshness of the results."""
+        obj = self.get(address[1]) if len(address) > 1 else None
+        if obj is None:
+            return ""
+        state = self.status().short
+        return f"{obj.kind} · {state}" if state else obj.kind
 
     def owns(self, address: tuple) -> bool:
         """Whether an address is a result object's."""

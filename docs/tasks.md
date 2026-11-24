@@ -825,7 +825,7 @@ tasks come before the owner's M8.G session (D8).
   - It ignores display units, cached tags, `all` and the result displays.
   - **Tests:** a value change, suppress, refinements, geometry reorder, a table value, a
     rename, the ignored items, and the fallback.
-- [ ] **M11.59 [B] Result header and changes since the solve.** Plan §6.
+- [x] **M11.59 [B] Result header and changes since the solve.** Plan §6.
   - "Solution" becomes "Results".
   - The section summary, the results panel and the viewport title show the analysis, the
     mesh, "results written ‹created›", and current or out of date.

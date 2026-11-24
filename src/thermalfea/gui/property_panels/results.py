@@ -12,7 +12,7 @@ interval, and the probe read-out. The panel holds no numerics; every control cal
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (
@@ -40,7 +40,20 @@ if TYPE_CHECKING:
 
 #: First item of the address of a result object: ``("result", name)``.
 RESULT_ADDRESS = "result"
-STALE_TEXT = "These results are out of date: the model changed since the solve."
+MAX_LISTED_CHANGES = 20
+
+
+def _changes_text(status: Any) -> str:
+    """The out-of-date box: what changed since the solve (at most 20 lines)."""
+    if not status.out_of_date:
+        return ""
+    shown = status.changes[:MAX_LISTED_CHANGES]
+    n = len(status.changes)
+    lines = [f"These results are out of date: the model changed since the solve ({n})."]
+    lines += [f"• {c}" for c in shown]
+    if len(status.changes) > len(shown):
+        lines.append(f"… and {len(status.changes) - len(shown)} more")
+    return "\n".join(lines)
 _RANGE_TITLES = (
     ("auto_step", "Auto (this step)"),
     ("auto_all", "Auto (all steps)"),
@@ -82,15 +95,20 @@ class ResultPanel(QWidget):
         controller.display_changed.connect(self._sync)
         controller.playing_changed.connect(self._sync)
         controller.probe_changed.connect(self._on_probe)
-        controller.document.stale_changed.connect(self._sync)
+        controller.status_changed.connect(self._sync)
         self._sync()
 
     # ------------------------------------------------------------------ layout
     def _build(self) -> None:
         layout = QVBoxLayout(self)
-        self.stale_label = QLabel(STALE_TEXT)
+        self.header_label = QLabel("")
+        self.header_label.setWordWrap(True)
+        layout.addWidget(self.header_label)
+        self.stale_label = QLabel("")
         self.stale_label.setWordWrap(True)
-        self.stale_label.setStyleSheet("color: #b45f06; font-weight: bold;")
+        self.stale_label.setStyleSheet(
+            "background: #fff4c2; color: #6b4a00; border: 1px solid #e0c060; padding: 4px;"
+        )
         layout.addWidget(self.stale_label)
         self.message_label = QLabel("")
         self.message_label.setWordWrap(True)
@@ -283,7 +301,10 @@ class ResultPanel(QWidget):
         self._syncing = True
         try:
             is_contour = obj.kind == "contour"
-            self.stale_label.setVisible(controller.document.results_stale)
+            status = controller.status()
+            self.header_label.setText("\n".join(status.lines))
+            self.stale_label.setText(_changes_text(status))
+            self.stale_label.setVisible(status.out_of_date)
             self.scale_group.setVisible(is_contour)
             for widget in self.field_row:
                 widget.setVisible(is_contour)

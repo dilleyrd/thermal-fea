@@ -64,6 +64,8 @@ class RecordingView(QObject):
     def set_geometry(self, built: Any) -> None: ...
     def set_mesh(self, mesh: Any, color_by: Any = None) -> None: ...
     def set_symbols(self, symbols: Any) -> None: ...
+    def set_entity_colors(self, dim, colors, legend) -> None: ...
+
     def set_overlay(self, layer: str, items: Any) -> None: ...
     def set_selection_mode(self, mode: Any) -> None: ...
     def set_axis_visible(self, visible: bool) -> None: ...
@@ -587,11 +589,12 @@ def test_unreadable_results_show_nothing(steady, tmp_path) -> None:
 def test_stale_results_are_shown_with_a_note(steady) -> None:
     panel = open_panel(steady)
     assert panel.stale_label.isHidden()
-    steady.doc.set_results(steady.path, stale=True)
+    # the note follows the comparison with the stored model (M11.59), not the stale flag
+    steady.doc.edit("h", lambda m: setattr(m.bcs[1], "h", 150.0))
     panel = open_panel(steady)
     assert not panel.stale_label.isHidden() and "out of date" in panel.stale_label.text()
     assert steady.view.last is not None  # still displayed
-    steady.doc.set_results(steady.path, stale=False)
+    steady.doc.undo_stack.undo()
     assert panel.stale_label.isHidden() or open_panel(steady).stale_label.isHidden()
 
 
