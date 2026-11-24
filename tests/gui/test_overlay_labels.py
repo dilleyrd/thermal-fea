@@ -32,6 +32,8 @@ class FakeView:
 
     def set_symbols(self, symbols: Any) -> None: ...
 
+    def set_entity_colors(self, dim, colors, legend) -> None: ...
+
     def set_overlay(self, layer: str, items: list[Any]) -> None:
         self.layers[layer] = list(items)
 

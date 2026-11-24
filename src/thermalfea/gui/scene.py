@@ -221,6 +221,15 @@ class SceneView(Protocol):
         """Replace the named overlay layer as a whole; an empty list clears it."""
         ...
 
+    def set_entity_colors(
+        self, dim: int, colors: dict[int, str], legend: list[tuple[str, str]]
+    ) -> None:
+        """Fill the geometry entities ``colors`` (tag -> colour) of dimension ``dim`` and show
+        ``legend`` as ``(label, colour)`` entries; empty arguments clear both. The fills are
+        hidden while a result field is shown.
+        """
+        ...
+
     def set_axis_visible(self, visible: bool) -> None:
         """Show or hide the axis of symmetry x = 0 (shown for an axisymmetric model)."""
         ...

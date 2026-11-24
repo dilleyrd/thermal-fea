@@ -31,6 +31,8 @@ class RecordingView(FakeView):
         super().__init__()
         self.layers: dict[str, list[Any]] = {}
 
+    def set_entity_colors(self, dim, colors, legend) -> None: ...
+
     def set_overlay(self, layer: str, items: Any) -> None:
         self.layers[layer] = list(items)
 

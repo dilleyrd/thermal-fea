@@ -42,8 +42,9 @@ from matplotlib.backend_bases import MouseEvent
 from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg
 from matplotlib.collections import LineCollection, PathCollection, PolyCollection
 from matplotlib.figure import Figure
+from matplotlib.legend import Legend
 from matplotlib.lines import Line2D
-from matplotlib.patches import Rectangle
+from matplotlib.patches import Patch, Rectangle
 from matplotlib.path import Path
 from matplotlib.tri import Triangulation
 from numpy import ndarray
@@ -99,6 +100,9 @@ Z_AXIS = 4.2
 Z_OVERLAY = 4.5
 Z_HIGHLIGHT = 5.0
 Z_MESH_OVER_FIELD = Z_RESULTS + 0.5
+#: Colour-by-part fills: above the plain surface fill, below curves and mesh lines.
+Z_ENTITY_COLORS = Z_GEOMETRY + 0.1
+_ENTITY_ALPHA = 0.35
 
 #: Picking tolerance [screen pixels].
 PICK_TOL_PX = 8.0
@@ -246,8 +250,11 @@ class MplSceneView(QObject):
         self._display: DisplayMesh | None = None
         self._field: FieldDisplay | None = None
         self._layers: dict[str, list[Artist]] = {
-            "geometry": [], "mesh": [], "results": [], "symbols": [],
+            "geometry": [], "mesh": [], "results": [], "symbols": [], "entity_colors": [],
         }
+        self._entity_colors: tuple[int, dict[int, str], list[tuple[str, str]]] = (
+            _PLANE, {}, [],
+        )
         self._overlays: dict[str, list[Artist]] = {}
         self._mesh_lines: list[LineCollection] = []
         self._mesh_fill: PolyCollection | None = None
@@ -327,6 +334,8 @@ class MplSceneView(QObject):
         """Show the built geometry (surface fills, curves, points); ``None`` clears it."""
         had_content = self._has_content()
         self._clear_layer("geometry")
+        self._clear_layer("entity_colors")
+        self._entity_colors = (_PLANE, {}, [])
         self._built = built
         self._index_geometry(built)
         if built is not None:
@@ -369,6 +378,7 @@ class MplSceneView(QObject):
         if spec is not None:
             self._draw_field(spec)
         self._apply_mesh_visibility()
+        self._apply_entity_color_visibility()
         self._invalidate()
 
     def set_symbols(self, symbols: list[LoadSymbol]) -> None:
@@ -377,6 +387,47 @@ class MplSceneView(QObject):
         if symbols and self._built is not None:
             self._draw_symbols(symbols, self._built)
         self._invalidate()
+
+    def set_entity_colors(
+        self, dim: int, colors: dict[int, str], legend: list[tuple[str, str]]
+    ) -> None:
+        """Fill geometry entities of dimension ``dim`` with colours and show a legend.
+
+        Only surfaces can be filled; holes stay empty. The fills sit above the plain surface
+        fill and below the curves, mesh, symbols and highlights; they and their legend are
+        hidden while a field is shown. Empty ``colors`` and ``legend`` clear both.
+        """
+        self._clear_layer("entity_colors")
+        self._entity_colors = (int(dim), dict(colors), list(legend))
+        if self._built is not None and (colors or legend):
+            self._draw_entity_colors()
+        self._apply_entity_color_visibility()
+        self._invalidate()
+
+    def _draw_entity_colors(self) -> None:
+        dim, colors, legend = self._entity_colors
+        ax = self._ax
+        if dim == _PLANE and colors:
+            lookup = dict(zip(self._surf_tags, self._surf_loops, strict=True))
+            tags = [t for t in colors if t in lookup]
+            if tags:
+                fills = PathCollection(
+                    [_surface_path(lookup[t]) for t in tags],
+                    facecolors=[colors[t] for t in tags], edgecolors="none",
+                    alpha=_ENTITY_ALPHA, zorder=Z_ENTITY_COLORS,
+                )
+                ax.add_collection(fills, autolim=False)
+                self._add("entity_colors", fills)
+        if legend:
+            handles = [Patch(facecolor=c, edgecolor="none", alpha=_ENTITY_ALPHA) for _, c in legend]
+            box = Legend(ax, handles, [label for label, _ in legend], loc="upper left", fontsize=8)
+            box.set_zorder(Z_SYMBOLS + 0.5)
+            ax.add_artist(box)  # a second artist: ``ax.legend`` keeps the load-symbol legend
+            self._add("entity_colors", box)
+
+    def _apply_entity_color_visibility(self) -> None:
+        for artist in self._layers["entity_colors"]:
+            artist.set_visible(self._field is None)
 
     def set_overlay(self, layer: str, items: list[OverlayItem]) -> None:
         """Replace the named overlay layer as a whole; an empty list clears it.

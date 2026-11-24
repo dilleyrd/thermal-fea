@@ -846,7 +846,7 @@ tasks come before the owner's M8.G session (D8).
     report in Properties and marks the tree items involved.
   - **Tests:** the tooltip, the click report, box and Ctrl picks not reporting, and an
     active tool taking precedence. Depends on M11.60.
-- [ ] **M11.62 [B] Colour by part.** Plan §4.5.
+- [x] **M11.62 [B] Colour by part.** Plan §4.5.
   - Adds `SceneView.set_entity_colors(dim, colors, legend)` (Data §13).
   - View > Colour by: Part / Material / None (default Part), with tree swatches in the
     same colours.
