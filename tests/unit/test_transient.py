@@ -18,7 +18,8 @@ from thermalfea.model.bcs import (
 )
 from thermalfea.model.settings import SolutionSettings
 from thermalfea.physics.capacitance import CapacitanceTerm
-from thermalfea.solver.transient import StepRecord, TransientResult, solve_transient
+from thermalfea.solver.steady import assemble
+from thermalfea.solver.transient import StepRecord, TransientResult, _jumps, solve_transient
 
 RHO, CP = 7800.0, 500.0
 SIDE = 0.01  # V-16: square 0.01 x 0.01
@@ -318,3 +319,46 @@ def test_radiative_equilibrium_steps_converge_in_one_iteration(etype: str) -> No
     assert result.iterations == [1] * 5
     assert result.newton_failures == 0
     np.testing.assert_allclose(result.T, 300.0, atol=1e-6)  # round-off drift only
+
+
+# ------------------------------------------------------------- M11.19: the local jump test
+
+
+def _jump_at(problem, t: float, dt: float, T0: float = 300.0, **kw) -> bool:
+    u = np.full(problem.dofs.n_dofs, T0)
+    system = assemble(problem, u, t, update=False)
+    return _jumps(problem, u, t, dt, system, **kw)
+
+
+def test_jump_of_a_right_continuous_prescribed_temperature() -> None:
+    wall = FixedTemperature("wall", "left", T=Expression("where(t >= 2, 400, 300)"))
+    result, problem = slab(0.5, (wall,), n_steps=5)
+    assert result.thetas == [0.5, 0.5, 1.0, 0.5, 0.5]  # the step from 2 to 3
+    assert _jump_at(problem, 2.0, 1.0)
+    assert not _jump_at(problem, 3.0, 1.0)
+
+
+def test_a_load_periodic_over_the_step_is_not_a_jump() -> None:
+    load = HeatGeneration("gen", "all", Q=Expression("1e6*sin(2*pi*t)"))
+    result, problem = slab(0.5, (FixedTemperature("wall", "left", T=300.0), load), n_steps=5)
+    # Q(0) = 0 and T0 matches the wall: in equilibrium, so no start-up step either. The old
+    # test compared the change over a probe with the change over the whole step; one full
+    # period makes the whole-step change 0 and misread every step as a jump.
+    assert set(result.thetas) == {0.5}
+    assert not _jump_at(problem, 3.0, 1.0)
+
+
+def test_a_kink_is_not_a_jump() -> None:
+    ramp = HeatGeneration("gen", "all", Q=Table([0.0, 2.0, 4.0], [0.0, 1e6, 1e6], "t"))
+    result, problem = slab(0.5, (FixedTemperature("wall", "left", T=300.0), ramp))
+    assert not _jump_at(problem, 2.0, 1.0)
+    assert set(result.thetas) == {0.5}
+
+
+def test_the_probe_does_not_round_back_to_t() -> None:
+    load = HeatGeneration("gen", "all", Q=Expression("where(t > 1e9, 1e7, 0)"))
+    problem = make_problem("Q4", size=(0.1, 0.01), cells=(20, 1), bcs=(
+        FixedTemperature("wall", "left", T=300.0), load))
+    transient(problem, theta=0.5, initial_dt=1.0, end_time=2e9, auto_timestep=False)
+    assert _jump_at(problem, 1e9, 1.0)  # dt / t = 1e-9
+    assert not _jump_at(problem, 1e9 - 1.0, 1.0)

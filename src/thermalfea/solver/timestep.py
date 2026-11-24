@@ -12,9 +12,13 @@ compared with the solution:
 * a step is always shortened to land exactly on the next *mandatory time*: every requested
   output time, every breakpoint of every load table, and the end time.
 * if ``max_dT_per_step`` is set, the step is limited so that the largest nodal change does
-  not exceed it.
+  not exceed it (free DOFs only).
 
-For the first step there is no predictor and the error test is skipped.
+For the first step there is no predictor and the error test is skipped. The error is taken
+over the free DOFs only: a prescribed temperature follows its given history, which the
+predictor cannot follow through a fast change (the range ``T_range`` stays over all DOFs).
+On the outgoing side of a physical breakpoint the driver restarts the history: that step
+uses ``T_pred = T_n`` over the free DOFs that have capacitance (``transient.py``).
 """
 
 from __future__ import annotations
@@ -52,8 +56,19 @@ def _later(a: float, b: float) -> bool:
     return a - b > _TIME_EPS * max(abs(a), abs(b), 1.0)
 
 
+def same_time(a: float, b: float) -> bool:
+    """True if times ``a`` and ``b`` [s] are equal up to round-off (see :func:`_later`)."""
+    return not _later(a, b) and not _later(b, a)
+
+
 def error_estimate(
-    T_new: ndarray, T_n: ndarray, T_prev: ndarray | None, dt: float, dt_prev: float | None
+    T_new: ndarray,
+    T_n: ndarray,
+    T_prev: ndarray | None,
+    dt: float,
+    dt_prev: float | None,
+    *,
+    free: ndarray | None = None,
 ) -> float | None:
     """Time-stepping error of a converged step (Theory §6.1).
 
@@ -69,19 +84,27 @@ def error_estimate(
         Size of the step [s].
     dt_prev : float or None
         Size of the previous step [s].
+    free : ndarray of int, optional
+        Indices of the DOFs that count in the numerator; by default all. The temperature
+        range of the denominator is always taken over all DOFs.
 
     Returns
     -------
     float or None
         ``|T_new - T_pred|_inf / max(T_range, 1 K)`` with
         ``T_pred = T_n + (dt / dt_prev) (T_n - T_prev)``; ``None`` when there is no
-        previous step to predict from.
+        previous step to predict from. ``0.0`` when ``free`` is empty.
     """
     if T_prev is None or dt_prev is None or not dt_prev > 0.0:
         return None
+    if free is not None and len(free) == 0:
+        return 0.0
     predicted = T_n + (dt / dt_prev) * (T_n - T_prev)
+    deviation = np.abs(T_new - predicted)
+    if free is not None:
+        deviation = deviation[free]
     spread = float(T_new.max() - T_new.min())
-    return float(np.abs(T_new - predicted).max()) / max(spread, _MIN_RANGE)
+    return float(deviation.max()) / max(spread, _MIN_RANGE)
 
 
 class StepController:

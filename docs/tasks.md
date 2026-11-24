@@ -475,7 +475,7 @@ Boundary Conditions, Flow (Streams, Network), Enclosures, Analysis Settings, Sol
   only once the first new step is written; a `from_results` initial condition uses the
   M11.11 mesh check and refuses a file with no steps. Item 2.1-3 (Q29.2) is added once D2
   is decided. Tests: each case.
-- [ ] **M11.19 [B] Steps at fast changes.** `REVIEW-2.md` 2.1-5 and the `_jumps` defects;
+- [x] **M11.19 [B] Steps at fast changes.** `REVIEW-2.md` 2.1-5 and the `_jumps` defects;
   Q29.3 (owner's decision D3, 2026-11-22). Write into Theory §6.1, then the code:
   - the prescribed DOFs are left out of the error estimate and of `max_dT_per_step`, and a
     model with no free DOF works;

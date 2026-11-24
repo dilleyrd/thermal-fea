@@ -42,17 +42,20 @@ from .nonlinear import F_REF_FLOOR, Assembled, newton
 from .problem import CompiledProblem
 from .steady import assemble, update_providers
 from .terms import State
-from .timestep import StepController, error_estimate
+from .timestep import StepController, error_estimate, same_time
 
 log = logging.getLogger(__name__)
 
-#: A load or prescribed value "jumps" at the start of a step when the change over the
-#: first ``JUMP_PROBE`` of the step exceeds ``JUMP_FRACTION`` of its change over the whole
-#: step. A continuous function changes by about ``JUMP_PROBE`` of it; a jump by all of it.
+#: Local jump test (Theory §6): the probe times are ``t +- JUMP_PROBE * dt`` and twice that
+#: (at least a few round-off units of ``t``). A jump at ``t`` shows as a change ``c1`` between
+#: ``t`` and the first probe that is larger than ``JUMP_TOL`` of the scale while the change
+#: ``c2`` between the two probes is below ``JUMP_FRACTION`` of ``c1``; a continuous function or a
+#: kink has ``c2`` about equal to ``c1``.
 JUMP_PROBE = 1e-8
 JUMP_FRACTION = 1e-3
 #: An initial temperature differs from the prescribed value that replaces it (a jump at
-#: the start) when they differ by more than this fraction of the value.
+#: the start) when they differ by more than this fraction of the value; also the threshold
+#: ``c1`` of the jump test, as a fraction of the scale.
 JUMP_TOL = 1e-6
 
 
@@ -266,30 +269,68 @@ def initial_state(
 
 
 def _jumps(
-    problem: CompiledProblem, u: ndarray, t: float, dt: float, system: Assembled
+    problem: CompiledProblem,
+    u: ndarray,
+    t: float,
+    dt: float,
+    system: Assembled,
+    *,
+    left: bool = True,
 ) -> bool:
-    """True if a prescribed value or a load changes discontinuously at time ``t``.
+    """True if a prescribed value or a load changes discontinuously at time ``t`` (Theory §6).
 
-    The change just after ``t`` is compared with the change over the whole step: for a
-    continuous function the former is a vanishing fraction of the latter, for a jump at
-    ``t`` it is essentially all of it.
+    Two quantities are probed: the prescribed values and ``g(u, .)``. For each, with probe
+    spacing ``delta`` and ``c1 = |f(t + delta) - f(t)|``, ``c2 = |f(t + 2 delta) - f(t + delta)|``,
+    a jump is ``c1 > JUMP_TOL * scale`` and ``c2 < JUMP_FRACTION * c1``. The same test on the
+    left (``t - delta``, ``t - 2 delta``) finds a function continuous from the right that
+    jumps at ``t`` itself; it is skipped when ``left`` is False (first step of a run). The
+    test is local, so a load that is periodic over the step is not a jump, nor is a kink.
+
+    Parameters
+    ----------
+    problem : CompiledProblem
+    u : ndarray
+        Solution at ``t`` [K].
+    t, dt : float
+        Start time and size of the step [s].
+    system : Assembled
+        The system assembled at ``(u, t)``.
+    left : bool, keyword-only
+        Also test the left side of ``t``.
     """
     if not problem.is_time_dependent:
         return False
-    probe, t_new = t + JUMP_PROBE * dt, t + dt
+    delta = max(JUMP_PROBE * dt, 4.0 * float(np.spacing(abs(t))))
+    sides = [1.0, -1.0] if left else [1.0]
+    probes = [(t + s * delta, t + 2.0 * s * delta) for s in sides]
 
-    def is_jump(early: ndarray, whole: ndarray) -> bool:
-        change = float(np.abs(early).max()) if early.size else 0.0
-        return change > 0.0 and change > JUMP_FRACTION * float(np.abs(whole).max())
+    def is_jump(f0, f1, f2, scale: float) -> bool:
+        c1, c2 = float(np.abs(f1 - f0).max()), float(np.abs(f2 - f1).max())
+        return c1 > JUMP_TOL * scale and c2 < JUMP_FRACTION * c1
 
-    _, now = problem.prescribed(t)
-    if is_jump(problem.prescribed(probe)[1] - now, problem.prescribed(t_new)[1] - now):
-        return True
-    g_now = system.residual(u)
-    return is_jump(
-        assemble(problem, u, probe, update=False).residual(u) - g_now,
-        assemble(problem, u, t_new, update=False).residual(u) - g_now,
+    idx0, val0, _ = problem._prescribed(t, warn=False)
+    if val0.size:
+        scale = float(np.abs(val0).max())
+        for first, second in probes:
+            i1, v1, _ = problem._prescribed(first, warn=False)
+            i2, v2, _ = problem._prescribed(second, warn=False)
+            if not (np.array_equal(i1, idx0) and np.array_equal(i2, idx0)):
+                return True
+            if is_jump(val0, v1, v2, scale):
+                return True
+    g0 = system.residual(u)
+    scale = max(
+        float(np.abs(system.F).max()) if system.F.size else 0.0,
+        float(np.abs(abs(system.K) @ np.abs(u)).max()) if u.size else 0.0,
     )
+    if not scale > 0.0:
+        scale = F_REF_FLOOR
+    for first, second in probes:
+        g1 = assemble(problem, u, first, update=False).residual(u)
+        g2 = assemble(problem, u, second, update=False).residual(u)
+        if is_jump(g0, g1, g2, scale):
+            return True
+    return False
 
 
 def first_step_size(problem: CompiledProblem, T: ndarray) -> float:
@@ -420,6 +461,11 @@ def solve_transient(
     C_const = assemble_capacitance(problem, T, t0, T, None) if linear else None
     cached: dict[str, object] = {}
 
+    # DOFs with capacitance (a nonzero row of C): the solid temperatures; a fluid row has none
+    C_cap = C_const if C_const is not None else assemble_capacitance(problem, T, t0, T, None)
+    cap_rows = np.flatnonzero(np.asarray(abs(C_cap).sum(axis=1)).ravel() > 0.0)
+    breakpoints = problem.breakpoints()
+
     def attempt(dt: float, theta: float) -> tuple:
         """Solve one step from the current state; returns the new state and its systems."""
         t_new = controller.t + dt
@@ -476,9 +522,9 @@ def solve_transient(
     while not controller.finished:
         t = controller.t
         dt = controller.propose()
-        discontinuous = (step == first_step and startup) or (
-            settings.theta < 1.0 and _jumps(problem, T, t, dt, system)
-        )
+        first = step == first_step  # the first step of this call
+        jump = settings.theta < 1.0 and _jumps(problem, T, t, dt, system, left=not first)
+        discontinuous = (first and startup) or jump
         theta = 1.0 if discontinuous else float(settings.theta)
         try:
             T_new, iterations, converged, residual, step_system, new_system = attempt(dt, theta)
@@ -493,8 +539,21 @@ def solve_transient(
             result.newton_failures += 1
             continue
 
-        error = error_estimate(T_new, T, T_before, dt, dt_before)
-        if not controller.accept(error, float(np.abs(T_new - T).max())):
+        # the DOFs that are free at the end of the step (a prescribed one follows its history)
+        free = split_dofs(T.size, problem.prescribed_owners(controller.t + dt)[0])[0]
+        change = float(np.abs(T_new[free] - T[free]).max()) if free.size else 0.0
+        restart = T_before is not None and (
+            discontinuous or any(same_time(t, b) for b in breakpoints)
+        )
+        if restart:
+            # outgoing side of a physical breakpoint: the history before it is of a different
+            # function, so T_pred = T_n (zeroth order), taken over the solid free DOFs only
+            error = error_estimate(
+                T_new, T, T, dt, dt, free=np.intersect1d(free, cap_rows)
+            )
+        else:
+            error = error_estimate(T_new, T, T_before, dt, dt_before, free=free)
+        if not controller.accept(error, change):
             result.rejected += 1
             continue
 

@@ -466,3 +466,127 @@ def test_v18_semi_infinite_solid(etype: str) -> None:
         assert np.max(np.abs(result.T[here] - exact)) / exact < 1e-2
     # the far end stays undisturbed
     np.testing.assert_allclose(result.T[np.isclose(x, 0.5)], 300.0, atol=1e-6)
+
+
+# ------------------------------------------------- M11.19: free DOFs, restart at breakpoints
+
+
+def test_error_estimate_counts_free_dofs_only() -> None:
+    t_prev, t_n = np.array([300.0, 300.0, 300.0]), np.array([310.0, 320.0, 300.0])
+    new = np.array([320.0, 340.0, 400.0])  # DOF 2 (prescribed) is far from its prediction
+    free = np.array([0, 1])
+    assert error_estimate(new, t_n, t_prev, 2.0, 2.0, free=free) == 0.0
+    # the spread stays over all DOFs: 320 - ... (max 400 - min 320) = 80
+    new2 = np.array([318.0, 340.0, 400.0])
+    assert error_estimate(new2, t_n, t_prev, 2.0, 2.0, free=free) == pytest.approx(2.0 / 82.0)
+    assert error_estimate(new2, t_n, t_prev, 2.0, 2.0) == pytest.approx(100.0 / 82.0)
+    assert error_estimate(new2, t_n, t_prev, 2.0, 2.0, free=np.array([], dtype=int)) == 0.0
+    assert error_estimate(new2, t_n, None, 2.0, None, free=free) is None
+    assert error_estimate(new2, t_n, None, 2.0, None, free=np.array([], dtype=int)) is None
+
+
+def test_max_dt_per_step_counts_free_dofs_only() -> None:
+    ramp = Table(xs=[0.0, 100.0], ys=[300.0, 400.0], variable="t")  # 1 K/s on the wall
+    # a very large heat capacity: the free solid hardly follows the fast wall
+    problem = make_problem("Q4", size=(0.1, 0.02), cells=(8, 2), k=50.0, rho=1e9, bcs=(
+        FixedTemperature("hot", "left", T=ramp), Convection("air", "right", h=200.0, T_inf=300.0)))
+    transient(problem, lumped=True, end_time=100.0, initial_dt=20.0, max_dT_per_step=5.0)
+    limited = solve_transient(problem, T0=300.0)
+    problem.settings.max_dT_per_step = None
+    free_run = solve_transient(problem, T0=300.0)
+    x = problem.mesh.nodes[:, 0]
+    wall = np.isclose(x, 0.0)
+    # the wall moves 20 K in a 20 s step, far above the limit, yet the limit does not bite
+    change = limited.temperatures[1] - limited.temperatures[0]
+    assert change[wall].max() > 5.0 and np.abs(change[~wall]).max() < 5.0
+    assert limited.rejected == 0
+    assert limited.n_steps == free_run.n_steps
+
+
+def test_a_model_without_free_dofs_takes_growing_steps() -> None:
+    ramp = Table(xs=[0.0, 50.0], ys=[300.0, 400.0], variable="t")
+    problem = make_problem("Q4", size=(0.1, 0.1), cells=(1, 1), bcs=(
+        FixedTemperature("a", "left", T=ramp), FixedTemperature("b", "right", T=300.0)))
+    transient(problem, end_time=100.0, initial_dt=1.0, auto_timestep=True)
+    result = solve_transient(problem, T0=300.0)
+    assert result.rejected == 0
+    dts = np.diff(result.times)
+    assert dts[-1] > dts[0]
+
+
+def test_a_fast_ramp_of_a_fixed_temperature_takes_fewer_steps() -> None:  # review 2.1-5, D3
+    ramp = Table(xs=[0.0, 100.0, 100.001, 400.0], ys=[300.0, 300.0, 400.0, 400.0], variable="t")
+    problem = make_problem("Q4", size=(0.1, 0.02), cells=(8, 2), k=50.0, bcs=(
+        FixedTemperature("hot", "left", T=ramp), Convection("air", "right", h=200.0, T_inf=280.0)))
+    term = CapacitanceTerm()
+    term.setup(problem)
+    problem.terms.append(term)
+    problem.settings = SolutionSettings(kind="transient", theta=0.5, initial_dt=10.0,
+                                        end_time=400.0, auto_timestep=True)
+    result = solve_transient(problem, T0=300.0)
+    # before M11.19: 69 steps, 15 rejected (docs/review-2026-11-21-evaluation.md, 2.1-5)
+    assert result.n_steps < 69 and result.rejected < 15
+
+
+def _solid_problem(bcs, **settings):
+    problem = make_problem("Q4", size=(0.1, 0.01), cells=(10, 1), bcs=bcs)
+    transient(problem, **settings)
+    return problem
+
+
+def _record_errors(monkeypatch):
+    from thermalfea.solver import transient as tr
+
+    calls = []
+    real = tr.error_estimate
+
+    def wrapper(T_new, T_n, T_prev, dt, dt_prev, **kw):
+        e = real(T_new, T_n, T_prev, dt, dt_prev, **kw)
+        calls.append({"restart": T_prev is T_n, "dt": dt, "e": e, "free": kw.get("free")})
+        return e
+
+    monkeypatch.setattr(tr, "error_estimate", wrapper)
+    return calls
+
+
+def test_the_predictor_restarts_at_a_breakpoint_but_not_at_an_output_time(monkeypatch) -> None:
+    ramp = HeatGeneration("gen", "all", Q=Table([0.0, 5.0, 10.0], [0.0, 1e6, 1e6], "t"))
+    problem = _solid_problem(
+        (FixedTemperature("wall", "left", T=300.0), ramp),
+        end_time=12.0, initial_dt=1.0, auto_timestep=True, output="times", output_times=[8.0],
+    )
+    calls = _record_errors(monkeypatch)
+    result = solve_transient(problem, T0=300.0)
+    # reconstruct the start time of every accepted call from the accepted steps; the
+    # recorded calls include rejected ones, so follow time through the accepted steps only
+    starts = {}
+    t = 0.0
+    it = iter(calls)
+    for dt_acc in np.diff(result.times):
+        while True:
+            c = next(it)
+            if np.isclose(c["dt"], dt_acc, rtol=1e-12, atol=0.0):
+                break
+        starts[round(t, 9)] = c
+        t += dt_acc
+    assert starts[5.0]["restart"] is True
+    assert starts[8.0]["restart"] is False
+    assert starts[10.0]["restart"] is True
+
+
+def test_the_restart_step_limits_the_free_solid_change() -> None:
+    # a heat source that starts to ramp at the breakpoint t = 2: the step starting there is
+    # limited to 4 tol max(range, 1 K) of change in the free solid temperatures
+    load = HeatGeneration("gen", "all", Q=Table([0.0, 2.0, 10.0], [0.0, 0.0, 1e8], "t"))
+    problem = _solid_problem(
+        (FixedTemperature("wall", "left", T=300.0), load),
+        end_time=6.0, initial_dt=1.0, auto_timestep=True, time_tol=0.02,
+    )
+    result = solve_transient(problem, T0=300.0)
+    assert result.rejected >= 1
+    # the step starting at 2.0 (restart) changed the solid by at most 4 tol * max(range, 1)
+    times = np.array(result.times)
+    k = int(np.flatnonzero(np.isclose(times, 2.0))[0])
+    T0_, T1_ = result.temperatures[k], result.temperatures[k + 1]
+    rng = result.temperatures[k + 1].max() - result.temperatures[k + 1].min()
+    assert np.abs(T1_ - T0_).max() <= 4 * 0.02 * max(rng, 1.0) * (1 + 1e-9)

@@ -706,6 +706,20 @@ commit 314093c) and in the evaluation, §4.
    - A change limit on the free solid temperatures is kept for the first step after the
      restart.
    - The `_jumps` defects are fixed.
+
+   **Built in M11.19 (2026-11-23)**, written into Theory §6 and §6.1. Readings, none of
+   which needs a new constant:
+   - **Physical breakpoint:** a breakpoint of a load or prescribed-temperature table, or
+     a time at which a jump is found. A jump in an expression with no breakpoint is
+     looked for only when θ < 1, as before; doing it on every θ = 1 step would cost four
+     more assemblies a step.
+   - **Change limit on the first step:** the predictor T_pred = T_n with the same
+     threshold 4·tol·max(T_range, 1 K), taken over the free DOFs that have capacitance
+     (the fluid rows of a stream have none).
+   - **No first-step limit at the start of a run:** the first step of a run still skips
+     the error test, as before.
+   - **Jump test:** a jump is now a local test on each side of t_n (Theory §6). It uses
+     the existing constants 10⁻⁸, 10⁻³ and 10⁻⁶.
 4. **D4, network near Δp = 0 (M11.32): option (a).** Raise a clear error naming the worst
    branch, its Δp, both flow estimates and the largest continuity residual. No change to
    the iteration of Theory §9.2.

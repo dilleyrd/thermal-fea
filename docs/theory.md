@@ -158,6 +158,15 @@ unchanged, with K, F and r_extra assembled at the iterate T_{n+1}.
 
 g(T_n, t_n) is stored from the end of the previous step, not recomputed. At a step where a
 prescribed temperature or a load jumps discontinuously, use θ = 1 for that one step.
+A jump at t_n is found from the prescribed values and from g(T_n, ·) at the probe times
+t_n ± δ and t_n ± 2δ, δ = 10⁻⁸ Δt (at least a few units of round-off in t_n). Write
+c₁ = ‖f(t_n + δ) − f(t_n)‖∞ and c₂ = ‖f(t_n + 2δ) − f(t_n + δ)‖∞ for each of the two
+quantities f. There is a jump just after t_n when c₁ > 10⁻⁶ · scale and c₂ < 10⁻³ · c₁.
+The same test on the left, with t_n − δ and t_n − 2δ, finds a function that is
+continuous from the right and jumps at t_n itself. The scale is ‖T̄‖∞ for the prescribed
+values, and max(‖F‖∞, ‖|K||T_n|‖∞) for g. The left side is not tested on the first step
+of a run. The test is local: a load that is periodic over a step is not a jump, and
+neither is a kink, where only the slope changes.
 
 Prescribed temperatures: set T_{n+1,p} = T̄(t_{n+1}) before the first iteration.
 
@@ -169,7 +178,21 @@ cached, keyed on Δt).
 After a converged step compute the predictor T_pred = T_n + (Δt/Δt_prev)(T_n − T_{n−1})
 (for the first step skip the error test) and the error
 
-  e = ‖T_{n+1} − T_pred‖∞ / max(T_range, 1 K),  T_range = max(T) − min(T) over the model
+  e = ‖(T_{n+1} − T_pred)_f‖∞ / max(T_range, 1 K),  T_range = max(T_{n+1}) − min(T_{n+1}) over the model
+
+The subscript f takes the free DOFs only. A prescribed temperature follows its given
+history, which the predictor cannot follow through a fast change. With no free DOF,
+e = 0.
+
+**Restart at a physical breakpoint.** The predictor history is restarted on the outgoing
+side of a physical breakpoint. That is a step that starts at a breakpoint of a load or
+prescribed-temperature table (`breakpoints()`), or one at which a jump is found (§6,
+then θ = 1). For that step only, T_pred = T_n, and e is taken over the free DOFs that
+have capacitance (the solid temperatures; a fluid row has none and follows the wall at
+once). So the step is limited to a change of at most 4·tol·max(T_range, 1 K) in the free
+solid temperatures. A requested output time is not a physical breakpoint: the history is
+kept across it. Jumps of an expression that has no breakpoint are looked for only when
+θ < 1 (§6).
 
 - If e > 4·tol: reject the step, Δt ← Δt/2, redo.
 - Otherwise accept and set Δt_next = Δt · clip(0.9 √(tol/e), 0.5, 2.0).
@@ -177,7 +200,8 @@ After a converged step compute the predictor T_pred = T_n + (Δt/Δt_prev)(T_n �
 - Newton failure: Δt ← Δt/4, redo. If Δt < Δt_min: raise `ConvergenceError`.
 - Always shorten a step so that it lands exactly on the next **mandatory time**: every
   requested output time, every breakpoint of every load table, and the end time.
-- Also limit the step so the largest nodal change ≤ `max_dT_per_step` if the user set it.
+- Also limit the step so that the largest change of a free DOF ≤ `max_dT_per_step`, if the
+  user set it.
 
 Suggested initial step (shown in the GUI): Δt₀ = h_min² / (4 α_max), α = k/(ρc),
 h_min = smallest element edge length.
