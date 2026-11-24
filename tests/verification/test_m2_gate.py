@@ -167,12 +167,21 @@ def test_released_curve_gives_a_clear_error_when_used_again() -> None:
         api.build(geo.model)
 
 
-def test_moved_shape_releases_its_boundary_ops() -> None:
+def test_moved_shape_keeps_its_boundary_ops() -> None:
+    # Owner's decision D12.4 (Q29.12, M11.34): Transform(copy=False) moves the points and
+    # curves that belong to the shape, so the Point and Line ops follow it. (Before M11.34
+    # they were released: they owned nothing after the move.)
     geo, points, lines = square_from_lines()
     geo.translate(["s"], 5.0, 0.0, id="move")
     built = api.build(geo.model)
-    assert all(owned_curves(built, line) == [] for line in lines)
-    assert all(built.op_entities[p] == [] for p in points)
+    expected = [((6.0, 0.0), 2.0), ((7.0, 0.5), 1.0), ((6.0, 1.0), 2.0), ((5.0, 0.5), 1.0)]
+    for line, (center, length) in zip(lines, expected, strict=True):
+        ((got_center, got_length),) = owned_curves(built, line)
+        assert got_center == pytest.approx(center, abs=1e-6)
+        assert got_length == pytest.approx(length, abs=1e-9)
+    for p, (x, y) in zip(points, [(5, 0), (7, 0), (7, 1), (5, 1)], strict=True):
+        ((d, t),) = built.op_entities[p]
+        assert d == 0 and built.points[t].center[:2] == pytest.approx((x, y), abs=1e-6)
     (tag,) = [t for d, t in built.op_entities["s"] if d == 2]
     assert built.surfaces[tag].center[:2] == pytest.approx((6.0, 0.5))
     assert built.op_entities["move"] == built.op_entities["s"]

@@ -203,7 +203,7 @@ class CorrelationPanel(FormPanel):
         if field.name == "correlation":
             return tuple(cid for cid, info in CORRELATIONS.items() if info.kind != "internal")
         if field.name == "fluid":
-            return tuple(library.fluids())
+            return tuple(library.fluid_names())
         return None
 
     # --------------------------------------------------------------------- refresh

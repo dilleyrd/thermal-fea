@@ -74,7 +74,7 @@ class NewStreamDialog(QDialog):
         self.setWindowTitle("New stream")
         self.fluid_box = QComboBox()
         self.fluid_box.addItem("")
-        self.fluid_box.addItems(list(library.fluids()))
+        self.fluid_box.addItems(library.fluid_names())
         self.cross_box = QComboBox()
         self.cross_box.addItem("")
         self.cross_box.addItems(list(CROSS_SECTIONS))

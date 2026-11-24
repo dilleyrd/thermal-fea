@@ -557,11 +557,11 @@ Boundary Conditions, Flow (Streams, Network), Enclosures, Analysis Settings, Sol
   - Drop `thermalfea export` from PLAN.md.
 
   Regenerate the guide.
-- [ ] **M11.34 [B] Transforms of points and curves.** Q29.12 (owner's decision D12.4).
+- [x] **M11.34 [B] Transforms of points and curves.** Q29.12 (owner's decision D12.4).
   `Transform(copy=False)` moves the points that belong to the shape. Points and curves can
   be transformed, and a transformed point or curve can be used by a Line. Tests: each case,
   and a rebuild keeps the selections.
-- [ ] **M11.35 [A] User fluids.** Q29.12 (D12.5). `library.fluid(name)` also finds the fluids
+- [x] **M11.35 [A] User fluids.** Q29.12 (D12.5). `library.fluid(name)` also finds the fluids
   of the user library, as `library.solid` finds user solids. Tests: a user fluid is found
   and used by a convection load; a built-in name still wins, or a clash is reported as for
   solids.

@@ -152,6 +152,22 @@ Each op has a unique `id: str`, and refers to earlier ops' results by id.
 | `ImportFile` | path, format: step \| brep \| dxf, scale = 1.0 |
 | `Delete` | targets: [ids] |
 
+**Transform (M11.34, D12.4).** A Transform applies to the entities owned by its targets.
+- **Targets:** Point ops, curve ops (Line, Arc, Spline), surface ops, or Transforms of
+  these.
+- **Kind of the result:** a Transform of point ops only counts as a point op, and one of
+  curve ops only as a curve op (`geometry_edit.op_kind`). Any other Transform counts as a
+  surface op. It can be used wherever that kind is expected: a point in Line, Arc or
+  Spline, a curve in SurfaceFromCurves.
+- **`copy=True`:** the Transform owns the copies, and the originals are unchanged.
+- **`copy=False`:** the targets move. The Transform owns the moved entities, and so do the
+  earlier operations that owned them. The Point and Line ops on the boundary of a moved
+  surface keep their points and curves, which follow the shape. A Line created after the
+  move uses the moved position.
+- **Not handled:** moving a point that an earlier Line uses does not move that Line.
+- **Construction geometry:** points and curves that bound no surface after the final
+  fragment are still removed.
+
 `geometry.builder.build(model) -> BuiltGeometry` replays the list in gmsh, then performs one
 final `occ.fragment` over **all** surfaces so that neighbouring regions share curves and the
 mesh is conformal. `BuiltGeometry` lists final surface, curve and point tags, each with a
@@ -283,7 +299,10 @@ by the owner's decision (OPEN_QUESTIONS Q30). The book's water β at 360 K (697.
 from [N].
 
 Users can add their own solids and fluids; user libraries are stored in
-`%APPDATA%/ThermalFEA/materials.json`.
+`%APPDATA%/ThermalFEA/materials.json`. `library.fluid(name)` looks in the built-in fluids
+first, then in the user library (M11.35, D12.5). A user fluid with a built-in name is not
+used, and a warning names it. `library.fluid_names()` lists the built-in names, then the
+other user names.
 
 ## §7 Units
 

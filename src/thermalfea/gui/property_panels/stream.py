@@ -90,7 +90,7 @@ class StreamPanel(FormPanel):
     def field_choices(self, field: FieldSpec) -> tuple[str, ...] | None:
         """Offer the library fluids for the fluid field."""
         if field.name == "fluid":
-            return tuple(library.fluids())
+            return tuple(library.fluid_names())
         return None
 
     def refresh(self) -> None:

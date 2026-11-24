@@ -786,6 +786,18 @@ commit 314093c) and in the evaluation, §4.
       - user fluids become usable through `library.fluid()` (M11.35);
       - a fixed temperature on a point at the end of a contact curve fixes both sides
         (M11.36; changes Q22.5).
+    - **Built in M11.34 (2026-11-23):**
+      - gmsh keeps the tags of a moved surface and its curves, but may renumber the points.
+        The builder follows each owned point with a probe point moved alongside it, and
+        each curve by its moved end points.
+      - The kind of a Transform follows its targets (Data §4).
+      - Not handled: moving a point that an earlier Line already uses.
+      - The M2-gate test that asserted the old release of the boundary ops now asserts that
+        they follow the shape.
+    - **Built in M11.35 (2026-11-23):** `library.fluid` looks in the built-in fluids first,
+      then in the user library (re-read when the file changes). A user fluid with a
+      built-in name is not used and is reported once. The GUI fluid lists use
+      `library.fluid_names()`.
     - The "Pick in viewport" start mode is checked in M8.G.
 13. **D13, scope:** excluded, and the `thermalfea export` line is dropped from PLAN.md
     (M11.33).

@@ -1,7 +1,9 @@
 """Built-in and user material libraries (Data §6).
 
 The built-in solids and fluids ship as JSON files beside this module. A user library with
-the same structure is stored in ``%APPDATA%/ThermalFEA/materials.json``.
+the same structure is stored in ``%APPDATA%/ThermalFEA/materials.json``. :func:`fluid`
+looks in the built-in fluids first and then in the user library (D12.5); a user fluid
+whose name is a built-in name is never used and is reported once.
 """
 
 from __future__ import annotations
@@ -53,11 +55,16 @@ def fluids() -> dict[str, Fluid]:
     return {name: _fresh(f) for name, f in _builtin_fluids().items()}
 
 
-def _lookup(table: dict[str, Any], name: str, kind: str) -> Any:
+def _find(table: dict[str, Any], name: str) -> str | None:
+    """Return the key of ``name`` in ``table``, exact first, then case-insensitive."""
     if name in table:
-        return _fresh(table[name])
+        return name
     folded = {key.casefold(): key for key in table}
-    key = folded.get(name.casefold())
+    return folded.get(name.casefold())
+
+
+def _lookup(table: dict[str, Any], name: str, kind: str) -> Any:
+    key = _find(table, name)
     if key is None:
         raise ModelError(f"no {kind} named {name!r} in the library ({', '.join(sorted(table))})")
     return _fresh(table[key])
@@ -80,19 +87,51 @@ def solid(name: str) -> Material:
 
 
 def fluid(name: str) -> Fluid:
-    """Return a copy of a built-in fluid.
+    """Return a copy of a built-in fluid, or of a fluid in the user library.
+
+    The built-in fluids are searched first (exact name, then case-insensitive). If none
+    matches, the user library at :func:`user_library_path` is searched the same way.
 
     Parameters
     ----------
     name : str
-        Library name, ``"Air"`` or ``"Water"`` (case-insensitive).
+        Library name, e.g. ``"Air"`` or ``"Water"`` (case-insensitive).
 
     Raises
     ------
     ModelError
-        If there is no such fluid.
+        If there is no such fluid in either library, or the user library exists but
+        cannot be read and the name is not a built-in one.
     """
-    return _lookup(_builtin_fluids(), name, "fluid")
+    builtin = _builtin_fluids()
+    key = _find(builtin, name)
+    if key is not None:
+        return _fresh(builtin[key])
+    user = _user_fluids()
+    key = _find(user, name)
+    if key is not None:
+        return _fresh(user[key])
+    user_names = ", ".join(sorted(user)) or "none"
+    raise ModelError(
+        f"no fluid named {name!r} in the library "
+        f"({', '.join(sorted(builtin))}; user library: {user_names})"
+    )
+
+
+def fluid_names() -> list[str]:
+    """Return the fluid names offered in lists: built-in names, then user names.
+
+    A user fluid whose name is a built-in name is left out, as :func:`fluid` never uses it.
+    A user library that cannot be read is logged and left out.
+    """
+    names = list(_builtin_fluids())
+    try:
+        user = _user_fluids()
+    except ModelError as exc:
+        log.warning("%s", exc)
+        return names
+    folded = {name.casefold() for name in names}
+    return names + [name for name in user if name.casefold() not in folded]
 
 
 # ------------------------------------------------------------------------ user library
@@ -103,6 +142,44 @@ def user_library_path() -> Path:
     base = os.environ.get("APPDATA")
     root = Path(base) if base else Path.home() / ".config"
     return root / "ThermalFEA" / "materials.json"
+
+
+# (path, mtime_ns) -> the user fluids read from that file version; one entry at a time.
+_USER_FLUIDS_CACHE: dict[tuple[str, int], dict[str, Fluid]] = {}
+
+
+def _user_fluids() -> dict[str, Fluid]:
+    """Return the user fluids, re-reading the file only when its path or mtime changes.
+
+    A missing file gives ``{}``. A user fluid whose name is a built-in name (case-insensitive)
+    is kept here but never used by :func:`fluid`; one warning per such name is logged on
+    each read.
+
+    Raises
+    ------
+    ModelError
+        If the file exists but cannot be read.
+    """
+    path = user_library_path()
+    try:
+        stamp = path.stat().st_mtime_ns
+    except FileNotFoundError:
+        return {}
+    key = (str(path), stamp)
+    if key not in _USER_FLUIDS_CACHE:
+        _, fluids = load_user_library(path)
+        builtin = {name.casefold() for name in _builtin_fluids()}
+        for name in fluids:
+            if name.casefold() in builtin:
+                log.warning(
+                    "user fluid '%s' has the name of a built-in fluid and is not used; "
+                    "rename it in %s",
+                    name,
+                    path,
+                )
+        _USER_FLUIDS_CACHE.clear()
+        _USER_FLUIDS_CACHE[key] = fluids
+    return _USER_FLUIDS_CACHE[key]
 
 
 def load_user_library(path: Path | None = None) -> tuple[dict[str, Material], dict[str, Fluid]]:

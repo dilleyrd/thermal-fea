@@ -160,6 +160,10 @@ class BuildContext:
             if same[tags == tag].any():
                 continue  # unchanged
             table[entity] = [(dim, int(tags[same][0]))] if same.any() else []
+        self.apply_table(table)
+
+    def apply_table(self, table: dict[DimTag, list[DimTag]]) -> None:
+        """Replace entities by what they became in every operation and in ``curve_ends``."""
         if not table:
             return
         self.remap(list(table), list(table.values()))
@@ -206,6 +210,84 @@ class BuildContext:
             ends = self.gmsh.model.getBoundary([(CURVE_DIM, tag)], combined=False, oriented=False)
             if len(ends) == _CURVE_END_COUNT:
                 self.curve_ends[tag] = (int(ends[0][1]), int(ends[1][1]))
+
+    def descendants(self, entities: list[DimTag]) -> list[DimTag]:
+        """Boundary curves and points of entities, recursively (not the entities themselves)."""
+        frontier = [e for e in entities if e[0] > POINT_DIM]
+        if not frontier:
+            return []
+        self.occ.synchronize()
+        found: dict[DimTag, None] = {}
+        while frontier:
+            lower = [
+                (int(d), int(t))
+                for d, t in self.gmsh.model.getBoundary(frontier, combined=False, oriented=False)
+            ]
+            found.update(dict.fromkeys(lower))
+            frontier = [e for e in lower if e[0] > POINT_DIM]
+        return list(found)
+
+    def curve_end_points(self) -> dict[int, frozenset[int]]:
+        """End-point tags of every curve now in the model."""
+        self.occ.synchronize()
+        out: dict[int, frozenset[int]] = {}
+        for _, tag in self.gmsh.model.getEntities(CURVE_DIM):
+            ends = self.gmsh.model.getBoundary([(CURVE_DIM, tag)], combined=False, oriented=False)
+            out[int(tag)] = frozenset(int(t) for _, t in ends)
+        return out
+
+    def move(self, move_fn: Callable[[list[DimTag]], None], targets: list[DimTag]) -> None:
+        """Apply a transform to ``targets`` in place and keep the operations' entities.
+
+        ``move_fn`` is one of the ``occ`` transforms (translate, rotate, ...) with its
+        parameters bound. gmsh keeps the tags of the moved surfaces and curves but may
+        renumber the points (and curves) below them, and the signature check of
+        :meth:`reidentify` would take their new positions for a loss. Every owned point
+        and curve below the targets is therefore followed explicitly: a probe point is
+        placed at each such point and moved with the targets, which gives the new position
+        without formulas; a curve is the one whose end points are the moved end points.
+        """
+        lower = set(self.descendants(targets))
+        owned = {e for entities in self.op_entities.values() for e in entities}
+        tracked = [e for e in lower if e in owned]
+        points = [e for e in tracked if e[0] == POINT_DIM]
+        curves = [e for e in tracked if e[0] == CURVE_DIM]
+        for curve in curves:  # the end points are needed after the move
+            self.record_curve_ends([curve])
+        before = self.snapshot(exclude=targets + list(lower))
+        probes = []
+        for _, tag in points:
+            x0, y0, _, x1, y1, _ = self.occ.getBoundingBox(POINT_DIM, tag)
+            probes.append(self.occ.addPoint(0.5 * (x0 + x1), 0.5 * (y0 + y1), 0.0))
+        move_fn(targets + [(POINT_DIM, p) for p in probes])
+        probe_sigs = [self.signature((POINT_DIM, p)) for p in probes]
+        self.occ.remove([(POINT_DIM, p) for p in probes])
+        table: dict[DimTag, list[DimTag]] = {}
+        if points:
+            tags = np.array([int(t) for _, t in self.occ.getEntities(POINT_DIM)], dtype=np.int64)
+            sigs = np.array([self.signature((POINT_DIM, int(t))) for t in tags]).reshape(-1, 7)
+            for entity, sig in zip(points, probe_sigs, strict=True):
+                tol = SIGNATURE_TOL * max(1.0, float(np.abs(sig).max()))
+                same = np.all(np.abs(sigs - sig) <= tol, axis=1)
+                found = [int(t) for t in tags[same]]
+                if entity[1] not in found:
+                    table[entity] = [(POINT_DIM, found[0])] if found else []
+        if curves:
+            point_of = {e: table.get(e, [e]) for e in points}
+            now = self.curve_end_points()
+            for entity in curves:
+                ends = self.curve_ends.get(entity[1])
+                if ends is None:
+                    continue
+                new_ends = set()
+                for p in ends:
+                    new_p = point_of.get((POINT_DIM, p), [(POINT_DIM, p)])
+                    new_ends.update(t for _, t in new_p)
+                found = [t for t, e in now.items() if e == frozenset(new_ends)]
+                if entity[1] not in found:
+                    table[entity] = [(CURVE_DIM, found[0])] if found else []
+        self.apply_table(table)
+        self.reidentify(before)
 
     def ordered_loop(self, curve_tags: list[int]) -> list[int]:
         """Return the curves of a closed loop in chain order.
@@ -357,24 +439,29 @@ def _transform(ctx: BuildContext, op: ops.Transform) -> list[DimTag]:
     if op.copy:
         targets = [(int(d), int(t)) for d, t in ctx.occ.copy(targets)]
         ctx.record_curve_ends(targets)
-    # moving a shape moves (and may renumber) its boundary; see BuildContext.reidentify
-    before = {} if op.copy else ctx.snapshot(exclude=targets)
     q = op.params
-    try:
-        if op.kind == "translate":
-            ctx.occ.translate(targets, q["dx"], q["dy"], 0.0)
-        elif op.kind == "rotate":
-            ctx.occ.rotate(targets, q["cx"], q["cy"], 0.0, 0.0, 0.0, 1.0, q["angle"])
-        elif op.kind == "mirror":
-            ctx.occ.mirror(targets, *_mirror_plane(q))
-        else:
-            f = q["factor"]
-            if f <= 0.0:
-                raise GeometryError("scale factor must be positive")
-            ctx.occ.dilate(targets, q["cx"], q["cy"], 0.0, f, f, f)
-    except KeyError as exc:
-        raise GeometryError(f"{op.kind} transform lacks parameter {exc}") from None
-    ctx.reidentify(before)
+
+    def move(entities: list[DimTag]) -> None:
+        try:
+            if op.kind == "translate":
+                ctx.occ.translate(entities, q["dx"], q["dy"], 0.0)
+            elif op.kind == "rotate":
+                ctx.occ.rotate(entities, q["cx"], q["cy"], 0.0, 0.0, 0.0, 1.0, q["angle"])
+            elif op.kind == "mirror":
+                ctx.occ.mirror(entities, *_mirror_plane(q))
+            else:
+                f = q["factor"]
+                if f <= 0.0:
+                    raise GeometryError("scale factor must be positive")
+                ctx.occ.dilate(entities, q["cx"], q["cy"], 0.0, f, f, f)
+        except KeyError as exc:
+            raise GeometryError(f"{op.kind} transform lacks parameter {exc}") from None
+
+    if op.copy:
+        move(targets)
+    else:
+        # moving a shape moves (and may renumber) what lies below it; see BuildContext.move
+        ctx.move(move, targets)
     return targets
 
 

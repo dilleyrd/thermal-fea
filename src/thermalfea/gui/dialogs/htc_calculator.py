@@ -94,7 +94,7 @@ class HtcCalculator(QWidget):
         self.correlation_box = QComboBox()
         self.correlation_box.addItems(list(CORRELATIONS))
         self.fluid_box = QComboBox()
-        self.fluid_box.addItems(list(library.fluids()))
+        self.fluid_box.addItems(library.fluid_names())
         self.t_surface_edit = QLineEdit()
         self.t_inf_edit = QLineEdit()
         self.input_edits: dict[str, QLineEdit] = {}

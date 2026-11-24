@@ -150,11 +150,61 @@ def dependents(ops: Sequence[g.GeometryOp], op_id: str) -> list[str]:
     return [op.id for op in ops if op.id != op_id and op_id in refs_of(op)]
 
 
+#: A representative class of each kind, used to match a transform against ``allowed`` classes.
+_KIND_CLASS: dict[str, type] = {"point": g.Point, "curve": g.Line, "surface": g.Rectangle}
+
+
+def op_kind(op: g.GeometryOp, history: Sequence[g.GeometryOp]) -> str:
+    """Kind of entity an operation yields: ``"point"``, ``"curve"`` or ``"surface"``.
+
+    A :class:`~thermalfea.model.geometry_ops.Transform` has the kind of its targets: a point
+    when all its targets are points, a curve when all are curves (looking through earlier
+    transforms), otherwise a surface. Other operations have the kind of their class.
+
+    Parameters
+    ----------
+    op : GeometryOp
+    history : sequence of GeometryOp
+        The operations before ``op`` (the targets of a transform are looked up here).
+    """
+    return _kind(op, {e.id: e for e in history}, set())
+
+
+def _kind(op: g.GeometryOp, by_id: Mapping[str, g.GeometryOp], seen: set[str]) -> str:
+    if isinstance(op, g.Transform) and op.targets and op.id not in seen:
+        seen = seen | {op.id}
+        kinds = {
+            _kind(by_id[t], by_id, seen) if t in by_id else "surface" for t in op.targets
+        }
+        return kinds.pop() if len(kinds) == 1 else "surface"
+    if isinstance(op, POINT_OPS):
+        return "point"
+    if isinstance(op, CURVE_OPS):
+        return "curve"
+    return "surface"
+
+
+def _fits(op: g.GeometryOp, by_id: Mapping[str, g.GeometryOp], allowed: tuple[type, ...]) -> bool:
+    """Whether ``op`` is of one of the ``allowed`` classes, a transform by its kind."""
+    if isinstance(op, g.Transform):
+        return issubclass(_KIND_CLASS[_kind(op, by_id, set())], allowed)
+    return isinstance(op, allowed)
+
+
 def candidate_ids(
     earlier: Sequence[g.GeometryOp], allowed: tuple[type, ...]
 ) -> list[str]:
-    """Ids of the earlier operations whose class is in ``allowed``."""
-    return [op.id for op in earlier if isinstance(op, allowed)]
+    """Ids of the earlier operations whose class is in ``allowed``.
+
+    A transform counts by the kind of its targets (see :func:`op_kind`).
+    """
+    out: list[str] = []
+    by_id: dict[str, g.GeometryOp] = {}
+    for op in earlier:
+        by_id[op.id] = op
+        if _fits(op, by_id, allowed):
+            out.append(op.id)
+    return out
 
 
 def _positive(value: float, what: str) -> None:
@@ -192,7 +242,7 @@ def validate_op(
         for ref in [value] if isinstance(value, str) else _flatten(value):
             if ref not in by_id:
                 raise ModelError(f"{name}: there is no earlier operation {ref!r}")
-            if not isinstance(by_id[ref], allowed):
+            if not _fits(by_id[ref], by_id, allowed):
                 kinds = "/".join(c.__name__.lower() for c in allowed)
                 raise ModelError(f"{name}: {ref!r} is a {type(by_id[ref]).__name__}, not a {kinds}")
     _check_sizes(op, check_files)

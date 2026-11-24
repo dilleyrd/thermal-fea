@@ -127,7 +127,7 @@ def test_fluid_combo_lists_the_library_fluids(shell) -> None:
     panel = StreamPanel(form_for(Stream), shell.document, ("streams", 0), shell.view)
     combo = panel.editors["fluid"]
     items = [combo.itemText(i) for i in range(combo.count())]
-    assert items == list(library.fluids())
+    assert items == library.fluid_names()
 
 
 def test_path_picking_appends_one_point_per_click(shell) -> None:
