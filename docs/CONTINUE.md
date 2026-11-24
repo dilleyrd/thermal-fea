@@ -272,22 +272,15 @@ After all of them: M11.6, the release review, which depends on M11.7–M11.16.
 ## 6. Waiting on the owner
 
 - **M8.G**, human gate: build V-10 and V-17 in the window following
-  `docs/gui-walkthrough.md`. The owner started it on 2026-11-24. A new material now starts
-  with every property at 0 (owner, 2026-11-24, commit 433a469).
-- **M11.43–M11.48 (owner's requests of 2026-11-24) are held** until the owner
-  has finished the V-10 review: material fields limited to temperature with the label "As
-  a function of"; library values in the material panel with type-to-search, keeping the
-  material's own name; region highlight, region names and load values in the viewport
-  (M11.45); the probe value shown at the clicked point, cleared when the probe is turned
-  off (M11.46); a table in the energy balance window and no imbalance line, table only for
-  a steady result (M11.47); the path plot's vertices and polyline drawn in the viewport,
-  kept while its chart is open (M11.48).
-  - The owner approved one addition to Data §13, `SceneView.set_overlay(layer, items)`,
-    which draws text labels, point markers and polylines in separate layers. It replaces
-    the `set_labels` approved earlier the same day. M11.45 adds it, and M11.46 and M11.48
-    use it.
-  - One question is open in M11.43: whether Heat Power, Heat Flow and Fixed Temperature
-    are limited to time the same way.
+  `docs/gui-walkthrough.md`. **V-10 is done** (owner, 2026-11-24); V-17 is next. A new
+  material now starts with every property at 0 (commit 433a469).
+- **Built from the owner's V-10 review (2026-11-24), all ticked:** M11.43 (material fields
+  as a function of T only; totals of time only; Fixed Temperature of t, x, y; "As a
+  function of"), M11.44 (library values in the material panel), M11.45
+  (`SceneView.set_overlay`, the owner-approved addition to Data §13; region highlight,
+  region names, load values), M11.46 (probe markers), M11.47 (energy table) and M11.48
+  (path drawing). The check passed with 2718 tests. `dist\ThermalFEA` predates them;
+  rebuild with `scripts\build_exe.ps1` before using the built program.
 - ~~**M11.1**~~, human task: closed on 2026-11-23 after M11.37–M11.42 (Q30); the owner
   kept the printed oxygen row and declined the Q30.4 additions.
 - **Confirm the Theory §6.1 sentence in Q27.3** before M11.10 is built.
