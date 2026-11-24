@@ -29,6 +29,7 @@ from thermalfea.gui.property_panels.network import NETWORK_ADDRESS, NetworkPanel
 from thermalfea.gui.property_panels.region import RegionPanel
 from thermalfea.gui.property_panels.results import RESULT_ADDRESS, ResultPanel
 from thermalfea.gui.property_panels.selection_editor import SelectionEditor
+from thermalfea.gui.property_panels.selection_panel import SelectionPanel
 from thermalfea.gui.property_panels.solution import SolutionPanel
 from thermalfea.gui.property_panels.stream import StreamPanel
 from thermalfea.gui.scene import SceneView
@@ -37,6 +38,7 @@ from thermalfea.gui.tree_summary import TreeSummaryController
 from thermalfea.materials.material import Material
 from thermalfea.model.bcs import Contact, CorrelationConvection, Stream
 from thermalfea.model.model import RegionAssignment
+from thermalfea.model.selections import Selection
 from thermalfea.model.settings import MeshSettings, SolutionSettings
 
 PLACEHOLDER_TEXT = "Select an object in the model tree to edit its properties."
@@ -153,8 +155,8 @@ class PropertyController:
         if not hasattr(obj, "__dataclass_fields__"):
             self._install(self._placeholder(), None, None)
             return
-        spec = form_for(type(obj))
-        panel = panel_factory(type(obj))(self, spec, address)
+        spec = None if isinstance(obj, Selection) else form_for(type(obj))  # no form: own panel
+        panel = panel_factory(type(obj))(self, spec, address)  # type: ignore[arg-type]
         for editor in panel.findChildren(SelectionEditor):
             editor.mode_sync = self._sync_toolbar
         scroll = QScrollArea()
@@ -236,6 +238,7 @@ register_panel(
     lambda c, spec, address: CorrelationPanel(spec, c.document, address, c.view),
 )
 register_panel(Stream, lambda c, spec, address: StreamPanel(spec, c.document, address, c.view))
+register_panel(Selection, lambda c, spec, address: SelectionPanel(c, address))  # type: ignore[arg-type,return-value]
 register_panel(Contact, lambda c, spec, address: ContactPanel(spec, c.document, address, c.view))
 
 

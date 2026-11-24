@@ -780,7 +780,7 @@ tasks come before the owner's M8.G session (D8).
     for every new load would cost the user much more.
   - **Tests:** a model that uses one selection in every possible place, refusals that
     leave the model and the undo stack untouched, and the node sets of the next solve.
-- [ ] **M11.54 [B] Selections section and panel.** Plan §4.3, §5.
+- [x] **M11.54 [B] Selections section and panel.** Plan §4.3, §5.
   - **Tree:** a Selections section, each entry with its role glyph, count and users.
     Selecting an entry highlights it in the current build, and a stale entry is shown as
     stale.

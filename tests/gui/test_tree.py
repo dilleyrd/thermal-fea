@@ -48,7 +48,7 @@ def test_top_level_nodes(tree) -> None:
     titles = [tree.topLevelItem(i).text(0) for i in range(tree.topLevelItemCount())]
     # an empty model folds Contacts, Flow and Enclosures into one node (M11.51)
     assert titles == [
-        "Geometry", "Materials", "Regions", "Mesh", "Initial Condition",
+        "Geometry", "Materials", "Regions", "Selections", "Mesh", "Initial Condition",
         "Loads & Boundary Conditions", "Contacts · Flow · Enclosures", "Analysis Settings",
         "Solution",
     ]  # fmt: skip
@@ -263,9 +263,7 @@ def test_renaming_a_stream_updates_the_network_branches_in_one_step(tree, doc) -
     )  # fmt: skip
     doc.edit("add", lambda m: m.streams.append(stream))
     branch = bcs.NetBranch(id="b1", node_from="a", node_to="b", stream="s1")
-    doc.edit(
-        "net", lambda m: setattr(m, "network", bcs.FlowNetwork(branches=[branch]))
-    )
+    doc.edit("net", lambda m: setattr(m, "network", bcs.FlowNetwork(branches=[branch])))
     assert tree.rename(("streams", 0), "s2")
     assert doc.model.streams[0].name == "s2"
     assert doc.model.network.branches[0].stream == "s2"

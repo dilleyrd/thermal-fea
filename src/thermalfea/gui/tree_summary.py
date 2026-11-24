@@ -26,6 +26,8 @@ from thermalfea.gui.overlay_labels import format_value
 from thermalfea.materials import library
 from thermalfea.model import geometry_ops as ops
 from thermalfea.model.model import Model
+from thermalfea.model.selections import StaleSelectionError, resolve, selection_users
+from thermalfea.model.vocabulary import entity_word
 
 if TYPE_CHECKING:
     from thermalfea.gui.document import Document
@@ -169,6 +171,25 @@ def region_summary(region: Any, model: Model) -> str:
     )
 
 
+def selection_summary(document: Document, name: str) -> str:
+    """``"2 boundaries · convection cooling"``, ``"... · unused"`` or ``"stale"``.
+
+    A selection that no longer resolves in the current build is ``stale``.
+    """
+    model = document.model
+    selection = model.selections[name]
+    built = document.built
+    if built is not None:
+        try:
+            resolve(selection, built)
+        except StaleSelectionError:
+            return "stale"
+    n = len(selection.tags)
+    word = entity_word(selection.dim, model, plural=n != 1)
+    users = ", ".join(use.label for use in selection_users(model, name)) or "unused"
+    return f"{n} {word}{_SEP}{users}"
+
+
 def summary_for(
     document: Document, section: str, address: tuple | None, providers: list[Any] | None = None
 ) -> str:
@@ -200,6 +221,7 @@ def _section_summary(document: Document, section: str, address: tuple | None) ->
     sizes = {
         "materials": len(model.materials),
         "regions": len(model.regions),
+        "selections": len(model.selections),
         "loads": len(model.bcs),
         "contacts": len(model.contacts),
         "streams": len(model.streams),
@@ -218,6 +240,8 @@ def _object_summary(document: Document, address: tuple) -> str:
         return material_summary(model.materials[key], units)
     if kind == "regions":
         return region_summary(model.regions[key], model)
+    if kind == "selections":
+        return selection_summary(document, key)
     if kind == "bcs":
         return load_summary(model.bcs[key], units)
     if kind == "contacts":

@@ -19,13 +19,14 @@ Issue kind to tree address
 ``material``    ``("materials", name)``
 ``region``      ``("regions", i)`` of the assignment whose selection is ``name``; with no
                 name (a surface without region) the *Regions* section node
+``selection``   ``("selections", name)`` when that selection exists (stale selection)
 ``mesh``        ``("mesh_settings",)``
 ``solution``    ``("solution",)``
 ``model``       ``("initial_condition",)`` when the name starts with "initial condition";
                 otherwise nothing
 =============== ==========================================================================
 
-Kinds the tree has no node for (``selection``, anything unknown) map to
+Kinds the tree has no node for (anything unknown) map to
 ``None``: activating such a row does nothing.
 """
 
@@ -89,6 +90,8 @@ def address_for_issue(model: Model, issue: Issue) -> Address | None:
             if region.selection == name:
                 return ("regions", i)
         return None
+    if kind == "selection":
+        return ("selections", name) if name in model.selections else None
     if kind == "mesh":
         return ("mesh_settings",)
     if kind == "solution":

@@ -29,6 +29,8 @@ from thermalfea.gui.document import Document
 from thermalfea.gui.main_window import MainWindow
 from thermalfea.gui.scene import LoadSymbol, SceneView, kind_color
 from thermalfea.model.bcs import BoundaryCondition, Contact
+from thermalfea.model.selections import StaleSelectionError
+from thermalfea.model.selections import resolve as resolve_selection
 
 ACTION_ID = "view.load_symbols"
 #: Symbol kind of the thermal contacts (their interface curves).
@@ -214,9 +216,26 @@ class LoadSymbolController(QObject):
         dim = max(int(d) for d, _ in owned)
         self.view.highlight(dim, sorted(int(t) for d, t in owned if int(d) == dim))
 
+    def _highlight_selection(self, name: str) -> None:
+        """Highlight a named selection in the current build; clear it when it is not found."""
+        selection = self.document.model.selections[name]
+        built = self.document.built
+        try:
+            if built is None:
+                raise StaleSelectionError(name)
+            tags = resolve_selection(selection, built)
+        except StaleSelectionError:
+            self.view.highlight(1, [])
+            self._status(f"{name}: not found in the current geometry")
+            return
+        self.view.highlight(selection.dim, sorted(int(t) for t in tags))
+
     def highlight_address(self, address: Address) -> None:
         """Highlight the entities of the load at ``address``; other objects clear it."""
         model = self.document.model
+        if address and address[0] == "selections" and exists(model, address):
+            self._highlight_selection(address[1])
+            return
         if address and address[0] == "geometry" and exists(model, address):
             self._highlight_operation(address)
             return

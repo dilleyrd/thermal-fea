@@ -248,7 +248,8 @@ def test_issue_kinds_map_to_tree_addresses() -> None:
         (Issue("error", "x", "m", "solution", ""), ("solution",)),
         (Issue("error", "x", "m", "model", "initial condition"), ("initial_condition",)),
         (Issue("error", "x", "m", "model", ""), None),
-        (Issue("error", "x", "m", "selection", "west"), None),
+        (Issue("error", "x", "m", "selection", "west"), ("selections", "west")),
+        (Issue("error", "x", "m", "selection", "nowhere"), None),
         (Issue("error", "x", "m", "contact", "c"), None),
         (Issue("error", "x", "m", "banana", "c"), None),
     ]

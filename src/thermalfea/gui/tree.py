@@ -1,6 +1,6 @@
 """The model tree (Plan M8.4): the objects of the model, with context-menu actions.
 
-Top-level nodes: Geometry, Materials, Regions, Mesh, Initial Condition, Loads & Boundary
+Top-level nodes: Geometry, Materials, Regions, Selections, Mesh, Initial Condition, Loads & Boundary
 Conditions, Flow (Streams, Network), Enclosures, Analysis Settings, Solution. While Contacts,
 Flow and Enclosures are all empty they fold into one dimmed node (M11.51). The tree is
 rebuilt from ``document.model`` on every ``model_changed``; expansion and the current item
@@ -25,7 +25,7 @@ from dataclasses import dataclass, replace
 from typing import Any
 
 from PySide6.QtCore import QPoint, Qt, Signal
-from PySide6.QtGui import QAction, QBrush, QColor, QPalette
+from PySide6.QtGui import QAction, QBrush, QColor, QIcon, QKeyEvent, QPainter, QPalette, QPixmap
 from PySide6.QtWidgets import (
     QAbstractItemView,
     QHeaderView,
@@ -47,12 +47,20 @@ from thermalfea.materials.material import Material
 from thermalfea.model.bcs import Contact, FlowNetwork, Stream
 from thermalfea.model.geometry_edit import dependents
 from thermalfea.model.model import Model, RegionAssignment
+from thermalfea.model.selections import (
+    ALL_SELECTION,
+    delete_selection,
+    rename_selection,
+    selection_users,
+)
+from thermalfea.model.vocabulary import entity_word
 
 #: ``(key, title)`` of the top-level nodes, in display order.
 SECTIONS: tuple[tuple[str, str], ...] = (
     ("geometry", "Geometry"),
     ("materials", "Materials"),
     ("regions", "Regions"),
+    ("selections", "Selections"),
     ("mesh", "Mesh"),
     ("initial", "Initial Condition"),
     ("loads", "Loads & Boundary Conditions"),
@@ -75,6 +83,29 @@ FOLDED_SECTIONS: tuple[str, ...] = ("contacts", "flow", "enclosures")
 FOLDED_TITLE = "Contacts · Flow · Enclosures"
 _SUPPRESSED_BRUSH = QBrush(QColor("#808080"))
 _ROLE = Qt.ItemDataRole.UserRole
+_ROLE_ICONS: dict[str, QIcon] = {}
+
+
+def role_icon(role: str) -> QIcon:
+    """A small glyph of an entity role: a square (part), a bar (boundary/edge), a dot (point)."""
+    icon = _ROLE_ICONS.get(role)
+    if icon is not None:
+        return icon
+    pixmap = QPixmap(16, 16)
+    pixmap.fill(Qt.GlobalColor.transparent)
+    painter = QPainter(pixmap)
+    painter.setPen(Qt.PenStyle.NoPen)
+    painter.setBrush(QColor("#4a78b0"))
+    if role == "part":
+        painter.drawRect(3, 3, 10, 10)
+    elif role in ("boundary", "edge"):
+        painter.drawRect(2, 6, 12, 4)
+    else:
+        painter.drawEllipse(5, 5, 6, 6)
+    painter.end()
+    icon = QIcon(pixmap)
+    _ROLE_ICONS[role] = icon
+    return icon
 
 
 @dataclass(frozen=True)
@@ -326,6 +357,17 @@ class ModelTree(QTreeWidget):
                 sections["regions"], f"{region.selection} -> {region.material}",
                 NodeRef("regions", ("regions", i)),
             )  # fmt: skip
+        names = [n for n in model.selections if n != ALL_SELECTION]
+        names += [n for n in model.selections if n == ALL_SELECTION]  # "all" last
+        for name in names:
+            item = self._make_item(
+                sections["selections"], name, NodeRef("selections", ("selections", name)),
+                renameable=name != ALL_SELECTION,
+            )  # fmt: skip
+            try:
+                item.setIcon(0, role_icon(entity_word(model.selections[name].dim, model)))
+            except ModelError:
+                pass
         for i, bc in enumerate(model.bcs):
             title = self._title_of(type(bc))
             self._make_item(
@@ -490,6 +532,13 @@ class ModelTree(QTreeWidget):
             add("Add stream", self.add_stream, ("add_stream", None))
         elif ref.address is None and ref.section == "contacts":
             add("Add contact", self.add_contact, ("add_contact", None))
+        elif ref.address is not None and ref.address[0] == "selections":
+            address = ref.address
+            if address[1] != ALL_SELECTION:
+                add("Rename", lambda: self.begin_rename(address), ("rename", address))
+            add("Delete", lambda: self.delete_selection_item(address), ("delete", address))
+            used = bool(selection_users(model, address[1]))
+            out[-1].setEnabled(address[1] != ALL_SELECTION and not used)
         elif ref.address is not None and ref.address[0] in _NAMED_LISTS + ("materials",):
             address = ref.address
             add("Rename", lambda: self.begin_rename(address), ("rename", address))
@@ -754,6 +803,15 @@ class ModelTree(QTreeWidget):
             If the name is empty or already used.
         """
         new_name = new_name.strip()
+        if address[0] == "selections":
+            old = address[1]
+            changed = self.document.edit(
+                f"Rename selection {new_name}",
+                lambda model: rename_selection(model, old, new_name),
+            )
+            if changed:
+                self.select_address(("selections", new_name))
+            return changed
         if not new_name:
             raise ModelError("a name cannot be empty")
 
@@ -837,6 +895,33 @@ class ModelTree(QTreeWidget):
         label = getattr(obj, "name", address[0])
         return self.document.edit(f"Delete {label}", mutate)
 
+    def delete_selection_item(self, address: Address) -> bool:
+        """Delete the unused selection at ``address`` (one undo step).
+
+        Raises
+        ------
+        ModelError
+            If it is ``all`` or still used (nothing changes).
+        """
+        name = address[1]
+        return self.document.edit(
+            f"Delete selection {name}", lambda model: delete_selection(model, name)
+        )
+
+    def keyPressEvent(self, event: QKeyEvent) -> None:  # noqa: N802 (Qt API)
+        """Page Down / Page Up step to the next / previous selection (Selections only)."""
+        step = {Qt.Key.Key_PageDown: 1, Qt.Key.Key_PageUp: -1}.get(event.key())
+        current = self.currentItem()
+        address = self.address_of(current)
+        if step is not None and address is not None and address[0] == "selections":
+            parent = current.parent()
+            target = parent.child(parent.indexOfChild(current) + step) if parent else None
+            if target is not None:
+                self.setCurrentItem(target)
+            event.accept()
+            return
+        super().keyPressEvent(event)
+
     def edit_operation(self, address: Address) -> None:
         """Show the parameters of a geometry operation for editing."""
         resolve(self.document.model, address)  # raises if it is gone
@@ -885,7 +970,7 @@ class ModelTree(QTreeWidget):
                 self.error_occurred.emit(str(exc))
             self.rebuild()
             return
-        if address is None or address[0] not in _NAMED_LISTS + ("materials",):
+        if address is None or address[0] not in _NAMED_LISTS + ("materials", "selections"):
             return
         try:
             self.rename(address, item.text(0))

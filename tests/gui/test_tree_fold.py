@@ -15,13 +15,13 @@ from thermalfea.model.bcs import Contact, FlowNetwork
 
 #: The top-level titles of a model with every section shown (order of SECTIONS).
 EXPANDED_TITLES = [
-    "Geometry", "Materials", "Regions", "Mesh", "Initial Condition",
+    "Geometry", "Materials", "Regions", "Selections", "Mesh", "Initial Condition",
     "Loads & Boundary Conditions", "Contacts", "Flow", "Enclosures", "Analysis Settings",
     "Solution",
 ]  # fmt: skip
 #: The top-level titles of an empty model.
 FOLDED_TITLES = [
-    "Geometry", "Materials", "Regions", "Mesh", "Initial Condition",
+    "Geometry", "Materials", "Regions", "Selections", "Mesh", "Initial Condition",
     "Loads & Boundary Conditions", FOLDED_TITLE, "Analysis Settings", "Solution",
 ]  # fmt: skip
 
@@ -71,7 +71,7 @@ def test_empty_model_folds_three_sections_into_one_dimmed_node(tree, doc) -> Non
     dim = tree.palette().brush(QPalette.ColorRole.PlaceholderText).color()
     assert item.foreground(0).color() == dim
     # the folded node sits where Contacts would be
-    assert tree.indexOfTopLevelItem(item) == 6
+    assert tree.indexOfTopLevelItem(item) == 7
     # the sections that are shown when unfolded do not exist in the tree
     assert tree._find_section("contacts") is None
     assert tree._find_section("flow") is None
@@ -151,5 +151,5 @@ def test_one_non_empty_section_unfolds_all_three(tree, doc) -> None:
 
 def test_folded_node_summary_is_none(tree) -> None:
     tree.refresh_summaries()
-    assert tree.topLevelItem(6).text(1) == "none"
+    assert tree.topLevelItem(7).text(1) == "none"
     assert folded_item(tree).text(1) == "none"
