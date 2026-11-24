@@ -417,7 +417,7 @@ Boundary Conditions, Flow (Streams, Network), Enclosures, Analysis Settings, Sol
   cold-plate tutorial. (f) A steady solution is reported as "steady state", not
   "t = 0 s", in plot titles, the summary and the status bar (read `/meta` `analysis`).
   Update the guide pages that describe these defects.
-- [ ] **M11.9 [B] Inputs for new loads.** Defect Q26.4(d); owner's choices in Q27. Adding
+- [x] **M11.9 [B] Inputs for new loads.** Defect Q26.4(d); owner's choices in Q27. Adding
   a correlation convection or a radiation condition in the GUI opens a dialog that asks
   for the correlation, the fluid, the ambient temperature and the emissivity (as New
   stream does); no value is filled in by the program. Validation also reports an error

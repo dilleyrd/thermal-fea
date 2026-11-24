@@ -81,18 +81,20 @@ wheel if you cannot hit the edges later. A middle-button drag pans.
 **Natural convection.**
 
 1. Right-click **Loads & Boundary Conditions** and choose **Add > Add Correlation
-   Convection**. The node "Correlation Convection 1" appears and its panel opens.
+   Convection**. A window "New correlation convection" opens; its fields are empty and
+   **OK** stays disabled until all are filled. Open the "Correlation" box and choose
+   **vplate_natural**, open the "Fluid" box and choose **Air**, type `300` in "Ambient
+   temperature" and press **OK**. (Cancel adds nothing.) The node "Correlation Convection
+   1" appears and its panel opens; the three values are already in it.
 2. In "Selection" press **Pick in viewport**, choose **Curve** in the toolbar, click the left
    long edge, **Ctrl**-click the right long edge ("2 curve(s) picked"), press **Apply** and
    switch picking off.
-3. Open the "Correlation" box and choose **vplate_natural**. A frame below the form now shows
-   what you chose: the title "Vertical plate (Churchill–Chu)", its formula, its validity
-   ("all Ra") and its characteristic length (the height).
-4. Open the "Fluid" box and choose **Air**.
-5. In "Fluid temperature" type `300` and press Enter.
-6. In "Characteristic length" type `0.1` and press Enter. For a vertical plate this is its
+3. A frame below the form shows the correlation you chose: the title "Vertical plate
+   (Churchill–Chu)", its formula, its validity ("all Ra") and its characteristic length
+   (the height).
+4. In "Characteristic length" type `0.1` and press Enter. For a vertical plate this is its
    height. If you leave the field empty the program takes a length from the geometry.
-7. Leave "Velocity" empty, "Wall temperature" at local (the film temperature is computed
+5. Leave "Velocity" empty, "Wall temperature" at local (the film temperature is computed
    at each point of the edge from the temperature there), "Multiplier" at 1 and "Extra
    inputs" empty.
 
@@ -123,10 +125,10 @@ temperature of `400` or `320`.
 **Radiation.**
 
 1. Right-click **Loads & Boundary Conditions** and choose **Add > Add Radiation to Ambient**.
+   In the window "New radiation" type `0.8` in "Emissivity" and `300` in "Ambient
+   temperature", then press **OK**.
 2. The two faces already have a selection, made for the convection. Do not pick them again.
    Open the box of the "Selection" field and choose **Correlation Convection 1 selection**.
-3. In "Emissivity" type `0.8` and press Enter.
-4. In "Ambient temperature" type `300` and press Enter.
 
 **Insulated ends.**
 

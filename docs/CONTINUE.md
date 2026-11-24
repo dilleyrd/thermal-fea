@@ -226,7 +226,11 @@ In order:
   - "steady state" replaces "t = 0 s".
   - Left over: annulus cross-sections in the HTC calculator need a diameter ratio, which it
     does not ask for. `guide/examples/img/pump-T-steady.png` still shows the old title.
-  - **Next, in the agreed order:** M11.9, M11.2, M11.3, M11.5, then M11.6.
+- **M11.9 (inputs for new loads)** followed. Adding a correlation convection or an ambient
+  radiation from the menu opens a dialog whose fields start empty (`gui/dialogs/new_load.py`).
+  The programmatic `add_bc` still adds a blank load. Validation has `empty-correlation`,
+  `empty-fluid`, `zero-ambient` and `zero-emissivity`.
+  - **Next, in the agreed order:** M11.2, M11.3, M11.5, then M11.6.
 
 ## 5. Next work: tasks M11.12–M11.16
 

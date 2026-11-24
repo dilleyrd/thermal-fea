@@ -16,7 +16,7 @@ import numpy as np
 
 from ..core.errors import ModelError
 from ..core.forms import form_for
-from ..core.functions import Function, Table
+from ..core.functions import Constant, Function, Table
 from ..core.mesh import Mesh
 from ..materials import library
 from ..materials.material import Material
@@ -292,7 +292,8 @@ class _Checker:
 
         for bc in model.bcs:
             needs_fluid = isinstance(bc, CorrelationConvection) and bc.correlation != NO_FLUID
-            if needs_fluid and bc.active and not _fluid_known(bc.fluid):
+            # an empty fluid is reported as "empty-fluid" (bc_values), not as unknown here
+            if needs_fluid and bc.active and bc.fluid and not _fluid_known(bc.fluid):
                 self.error("missing-fluid", f"boundary condition {bc.name!r} uses unknown "
                            f"fluid {bc.fluid!r}", "bc", bc.name)
         for stream in model.streams:
@@ -341,6 +342,8 @@ class _Checker:
                 self.error("position-dependent-total", f"boundary condition {bc.name!r}: a "
                            f"total {what} is spread uniformly, so it may depend on time only; "
                            f"use {instead} for a value that varies with position", "bc", bc.name)
+            if isinstance(bc, (CorrelationConvection, RadiationAmbient)):
+                self._unset_values(bc)
             if not isinstance(bc, CorrelationConvection):
                 continue
             if bc.correlation == INCLINED and "theta_deg" in bc.params:
@@ -360,6 +363,28 @@ class _Checker:
                     self.error("negative-velocity", f"boundary condition {bc.name!r}: the "
                                f"velocity must not be negative; got {values[0]:g} m/s",
                                "bc", bc.name)
+
+    def _unset_values(self, bc: CorrelationConvection | RadiationAmbient) -> None:
+        """Blank or zero inputs a new load can be left with (Q26.4(d), Q27.2).
+
+        Errors for an empty correlation or fluid (the fluid is not needed by the user power
+        law); warnings for an ambient temperature or an emissivity that is the constant 0.
+        """
+        who = f"boundary condition {bc.name!r}"
+        if isinstance(bc, CorrelationConvection):
+            if not bc.correlation:
+                self.error("empty-correlation", f"{who} has no correlation; choose one",
+                           "bc", bc.name)
+            if bc.correlation != NO_FLUID and not bc.fluid:
+                self.error("empty-fluid", f"{who} has no fluid; choose one", "bc", bc.name)
+        if isinstance(bc.T_inf, Constant) and bc.T_inf.value == 0.0:
+            self.warning("zero-ambient", f"{who} has an ambient temperature of 0 K; was it "
+                         "left unset?", "bc", bc.name)
+        if isinstance(bc, RadiationAmbient) and (
+            isinstance(bc.emissivity, Constant) and bc.emissivity.value == 0.0
+        ):
+            self.warning("zero-emissivity", f"{who} has an emissivity of 0, so it radiates "
+                         "nothing; was it left unset?", "bc", bc.name)
 
     def temperature_reference(self) -> None:
         """A steady analysis needs something that fixes the temperature level."""

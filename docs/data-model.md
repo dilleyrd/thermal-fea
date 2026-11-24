@@ -405,6 +405,15 @@ Errors block the solve; warnings do not. Minimum checks:
 - a total `HeatPower` / `HeatFlow` depends on time only (`position-dependent-total`)
 - `inclined_natural`: `theta_deg` finite and within -90..90 degrees (`bad-inclination`);
   `power_law`: `C`, `n` >= 0; correlation velocity >= 0
+- unset load values (M11.9, Q27.2), for active loads, in models from files and scripts
+  too:
+  - error `empty-correlation`: a correlation convection with an empty correlation;
+  - error `empty-fluid`: an empty fluid, except for `power_law`. `missing-fluid` is a
+    non-empty name that the library does not know;
+  - warning `zero-ambient`: `T_inf` is the constant 0 K on a correlation convection or an
+    ambient radiation condition;
+  - warning `zero-emissivity`: an ambient radiation condition's emissivity is the
+    constant 0.
 
 `validate_model(model, mesh=None) -> list[Issue]` runs the checks that need no built
 geometry (all above except stale and empty selections, region coverage of the surfaces,

@@ -103,6 +103,14 @@ shows load symbols.
 - A value may be a Constant, a Table against time, or an Expression of time, position and
   temperature. Expressions are always evaluated in SI units ([Units](units.md)).
 - Heat flows count as positive when they enter the body.
+- **Add Correlation Convection** and **Add Radiation to Ambient** first open a window
+  that asks for the values the load cannot do without: the correlation, the fluid and the
+  ambient temperature (convection), or the emissivity and the ambient temperature
+  (radiation). The fields start empty, the program fills in nothing, and **OK** is enabled
+  only when every field is valid; **Cancel** adds nothing. Temperatures are typed in the
+  display unit. The fluid may stay empty for the `power_law` correlation, which needs none.
+  A model from a file or a script that still has an empty correlation or fluid fails
+  validation, and an ambient temperature of 0 K or an emissivity of 0 gives a warning.
 - Correlation Convection takes its heat-transfer coefficient from a
   [correlation](correlations.md). A correlation used outside its validity range still
   gives a value and logs one warning.

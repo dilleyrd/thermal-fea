@@ -277,15 +277,19 @@ def test_fin_quench_in_the_gui(
 
     # step: correlation convection on the two long faces, with the h preview
     t, h = fin.THICKNESS, fin.HEIGHT
+    # (the dialog that opens asks for the correlation, the fluid and the ambient temperature)
     tree_action(ctx, "loads", ("add_bc", "correlation_convection"))
+    assert doc.model.bcs == []  # added when the dialog is accepted
+    dialog = ctx.tree.load_dialog
+    dialog.correlation_box.setCurrentText(fin.CORRELATION)
+    dialog.fluid_box.setCurrentText(fin.FLUID)
+    dialog.ambient_edit.setText(str(fin.T_AMBIENT))
+    dialog.ok_button.click()
     panel = ctx.properties.panel
     assert doc.model.bcs[0].name == fin.CONVECTION
     dim, tags = pick_in_viewport(ctx, qtbot, panel, [(0.0, h / 2), (t, h / 2)], "curve")
     assert dim == 1 and len(tags) == 2
     convection = ("bcs", 0)
-    choose(ctx, convection, "correlation", fin.CORRELATION)
-    choose(ctx, convection, "fluid", fin.FLUID)
-    set_function(ctx, convection, "T_inf", str(fin.T_AMBIENT))
     set_number(ctx, convection, "char_length", str(fin.HEIGHT))
     panel = open_panel(ctx, convection)
     assert panel.needed_inputs() == ["T_surface"]  # everything else the condition defines
@@ -301,14 +305,15 @@ def test_fin_quench_in_the_gui(
 
     # step: radiation on the same two curves (chosen from the list), emissivity, ambient
     tree_action(ctx, "loads", ("add_bc", "radiation_ambient"))
-    radiation = ("bcs", 1)
+    dialog = ctx.tree.load_dialog
+    dialog.emissivity_edit.setText(str(fin.EMISSIVITY))
+    dialog.ambient_edit.setText(str(fin.T_AMBIENT))
+    dialog.ok_button.click()
     assert doc.model.bcs[1].name == fin.RADIATION
     editor = ctx.properties.panel.editors["selection"]
     faces = doc.model.bcs[0].selection
     assert faces in editor.allowed_names()
     editor.choose(faces)
-    set_function(ctx, radiation, "emissivity", str(fin.EMISSIVITY))
-    set_function(ctx, radiation, "T_inf", str(fin.T_AMBIENT))
 
     # step: insulated ends
     tree_action(ctx, "loads", ("add_bc", "adiabatic"))

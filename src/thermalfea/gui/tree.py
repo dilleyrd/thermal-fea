@@ -31,6 +31,7 @@ from thermalfea.core import registry
 from thermalfea.core.errors import ModelError
 from thermalfea.core.forms import copy_name, default_instance, form_for, unique_name
 from thermalfea.gui.addressing import Address, exists, resolve
+from thermalfea.gui.dialogs.new_load import LOAD_DIALOGS
 from thermalfea.gui.dialogs.new_stream import NewStreamDialog
 from thermalfea.gui.document import Document
 from thermalfea.materials import library
@@ -390,7 +391,7 @@ class ModelTree(QTreeWidget):
         elif ref.address is None and ref.section == "loads":
             for tag in registry.bc_tags():
                 title = self._title_of(registry.bc_info(tag).cls)
-                add(f"Add {title}", lambda t=tag: self.add_bc(t), ("add_bc", tag))
+                add(f"Add {title}", lambda t=tag: self.request_bc(t), ("add_bc", tag))
         elif ref.address is None and ref.section == "materials":
             add("Add material", self.add_material, ("add_material", None))
         elif ref.address is None and ref.section == "regions":
@@ -475,6 +476,45 @@ class ModelTree(QTreeWidget):
         def mutate(model: Model) -> None:
             name = unique_name(title, [bc.name for bc in model.bcs])
             model.bcs.append(default_instance(cls, name=name, selection=selection))
+            holder.append(len(model.bcs) - 1)
+
+        self.document.edit(f"Add {title}", mutate)
+        address = ("bcs", holder[0])
+        self.select_address(address)
+        return address
+
+    def request_bc(self, tag: str) -> Address | None:
+        """What the "Add" menu entry of a load does (M11.9).
+
+        A correlation convection and a radiation condition open a non-modal dialog
+        (``self.load_dialog``) that asks for their values; the load is added when it is
+        accepted, as one undo step, holding exactly the values typed. Any other load is
+        added at once with :meth:`add_bc`.
+
+        Returns
+        -------
+        tuple or None
+            Address of the new load; ``None`` while a dialog is open.
+        """
+        dialog_class = LOAD_DIALOGS.get(tag)
+        if dialog_class is None:
+            return self.add_bc(tag)
+        dialog = dialog_class(self, self.document.model.display_units)
+        dialog.load_requested.connect(lambda load, t=tag: self._add_new_bc(t, load))
+        self.load_dialog = dialog
+        dialog.show()
+        dialog.raise_()
+        dialog.activateWindow()
+        return None
+
+    def _add_new_bc(self, tag: str, template: Any) -> Address:
+        """Add the load a :class:`NewLoadDialog` built (one undo step)."""
+        title = self._title_of(registry.bc_info(tag).cls)
+        holder: list[int] = []
+
+        def mutate(model: Model) -> None:
+            name = unique_name(title, [bc.name for bc in model.bcs])
+            model.bcs.append(replace(template, name=name))
             holder.append(len(model.bcs) - 1)
 
         self.document.edit(f"Add {title}", mutate)

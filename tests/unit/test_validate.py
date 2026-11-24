@@ -887,3 +887,63 @@ def test_validate_model_axis_check_uses_the_mesh_box() -> None:
     assert validate_model(model, mesh) == []
     mesh.nodes[:, 0] -= 0.5  # nodes left of the axis
     assert "negative-radius" in codes(validate_model(model, mesh))
+
+
+# ---------------------------------------------------- blank or zero inputs (M11.9)
+
+
+def test_empty_correlation_and_fluid_are_errors() -> None:
+    model, built, mesh = good()
+    model.bcs.append(bcs.CorrelationConvection("nat", "east", "", "", T_inf=300.0))
+    issues = validate(model, built, mesh)
+    assert codes(issues) == ["empty-correlation", "empty-fluid"]
+    assert {(i.severity, i.kind, i.name) for i in issues} == {("error", "bc", "nat")}
+    assert "'nat'" in issues[0].message and "'nat'" in issues[1].message
+    model.bcs[-1].correlation = "vplate_natural"
+    assert codes(validate(model, built, mesh)) == ["empty-fluid"]
+    model.bcs[-1].fluid = "Air"
+    assert validate(model, built, mesh) == []
+    # the user power law needs no fluid; an inactive load is not checked
+    model.bcs[-1] = bcs.CorrelationConvection(
+        "law", "east", "power_law", "", 300.0, params={"C": 2.0, "n": 0.25})
+    assert validate(model, built, mesh) == []
+    model.bcs[-1] = bcs.CorrelationConvection("off", "east", "", "", 300.0, active=False)
+    assert validate(model, built, mesh) == []
+    with pytest.raises(ModelError, match="no correlation"):
+        model.bcs[-1].active = True
+        raise_if_errors(validate_model(model))
+
+
+def test_zero_ambient_is_a_warning() -> None:
+    model, built, mesh = good()
+    model.bcs.append(bcs.CorrelationConvection("nat", "east", "vplate_natural", "Air", 0.0))
+    issue = only(validate(model, built, mesh), "zero-ambient")
+    assert (issue.severity, issue.kind, issue.name) == ("warning", "bc", "nat")
+    assert "0 K" in issue.message and "'nat'" in issue.message
+    model.bcs[-1].T_inf = Constant(300.0)
+    assert validate(model, built, mesh) == []
+    # a nonzero constant is not flagged
+    model.bcs[-1].T_inf = Constant(1.0)
+    assert "zero-ambient" not in codes(validate(model, built, mesh))
+    # radiation too (its 0 K is also not an absolute temperature)
+    model.bcs[-1] = bcs.RadiationAmbient("rad", "east", emissivity=0.8, T_inf=0.0)
+    found = validate(model, built, mesh)
+    assert "zero-ambient" in codes(found, "warning")
+    assert "non-absolute-temperature" in codes(found, "error")
+    # a plain convection is not covered
+    model.bcs[-1] = bcs.Convection("conv", "east", h=10.0, T_inf=0.0)
+    assert "zero-ambient" not in codes(validate(model, built, mesh))
+
+
+def test_zero_emissivity_is_a_warning() -> None:
+    model, built, mesh = good()
+    model.bcs.append(bcs.RadiationAmbient("rad", "east", emissivity=0.0, T_inf=300.0))
+    issues = validate(model, built, mesh)
+    assert codes(issues) == ["zero-emissivity"]
+    assert (issues[0].severity, issues[0].kind, issues[0].name) == ("warning", "bc", "rad")
+    assert "emissivity of 0" in issues[0].message
+    model.bcs[-1].emissivity = Constant(0.5)
+    assert validate(model, built, mesh) == []
+    model.bcs[-1].emissivity = Constant(0.0)
+    model.bcs[-1].active = False
+    assert validate(model, built, mesh) == []
