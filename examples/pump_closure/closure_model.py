@@ -11,7 +11,7 @@ Every number comes from ``closure.json``. The only arithmetic here is what the s
 prescribe: mm to m, degC to K, the ring widths from 2 pi R w = N pi d^2 / 4 (sheet 4),
 and the mixing rules of the stud band G (sheet 4).
 
-Use :func:`build_model` to get a model ready to mesh, and :func:`contact_heats` /
+Use :func:`build_model` to get a model ready to mesh, and :class:`ContactHeats` /
 :func:`metrics` to post-process its results.
 """
 
@@ -39,7 +39,6 @@ from thermalfea.model.settings import SolutionSettings
 from thermalfea.post.results import Results
 from thermalfea.solver.compile import compile as compile_problem
 from thermalfea.solver.problem import CompiledProblem
-from thermalfea.solver.terms import State
 
 HERE = Path(__file__).resolve().parent
 PARAMS = HERE / "closure.json"
@@ -375,8 +374,9 @@ def build_model(
 class ContactHeats:
     """Heat crossing each contact [W], signed by :data:`CONTACT_SIDES`.
 
-    The results do not store the heat across a contact, so it is evaluated here from the
-    stored temperatures with the solver's own contact terms.
+    The results file stores the heat across every contact (``contact_heat:<name>``, from
+    side A to side B, under ``/terms``). This class only finds which body is side A of
+    each contact and so the sign that gives the direction of :data:`CONTACT_SIDES`.
     """
 
     def __init__(self, model: Model, built: BuiltGeometry, mesh: Mesh) -> None:
@@ -398,12 +398,12 @@ class ContactHeats:
                 raise RuntimeError(f"contact {name!r}: side A is {side_a!r}")
             self.sign[name] = 1.0 if side_a == source else -1.0
 
-    def __call__(self, T: np.ndarray, t: float) -> dict[str, float]:
-        """Heat [W] from the first to the second body of each contact at one state."""
-        if T.size != self.problem.dofs.n_dofs:
-            raise RuntimeError("results and compiled problem have different DOF counts")
-        s = State(u=T, u_prev=T, t=t, dt=None, dofs=self.problem.dofs)
-        return {n: self.sign[n] * term.heat_across(s) for n, term in self.terms.items()}
+    def from_results(self, results: Results, step: int) -> dict[str, float]:
+        """Heat [W] from the first to the second body of each contact at one stored step."""
+        return {
+            name: sign * float(results.term_result(f"contact_heat:{name}")[step])
+            for name, sign in self.sign.items()
+        }
 
 
 def _mean_on(nodes: np.ndarray, T: np.ndarray, r: float | None = None,
@@ -445,7 +445,7 @@ def metrics(p: dict[str, Any], results: Results, step: int,
         "bore_to_rim_dT_K": bore - rim,
         "stud_mean_C": stud - KELVIN,
     }
-    for name, q in heats(T, t).items():
+    for name, q in heats.from_results(results, step).items():
         out[f"Q_{name}_W"] = q
     for name in FILMS:
         out[f"Q_film_{name}_W"] = float(results.heat_flow(name)[step])

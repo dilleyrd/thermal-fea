@@ -68,7 +68,7 @@ def test_file_layout(solved) -> None:
     model, mesh, _, _, path = solved
     with h5py.File(path, "r") as f:
         meta = f["meta"].attrs
-        assert meta["schema_version"] == 1
+        assert meta["schema_version"] == 2  # M11.28: schema 2 adds /terms
         assert meta["analysis"] == "planar, steady"
         assert len(meta["model_hash"]) == 64 and meta["created"]
         assert json.loads(meta["settings"])["kind"] == "steady"

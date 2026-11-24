@@ -200,8 +200,12 @@ In order:
   The review's ramp now takes 62 steps with 9 rejected, against 69 and 15 before. The
   remaining rejections are the restart limit at the start of the ramp, because of the
   consistent-capacitance response next to the wall. The suite passed with 2537 tests.
-  - **Next, in the agreed order:** M11.28, M11.31–M11.36, M10.5, M11.7–M11.10,
-    M11.2, M11.3, M11.5, then M11.6.
+- **M11.28 (term results in the results file)** followed. Results schema 2 adds `/terms`
+  (`contact_heat:<contact>` [W], `h_mean:<bc>`); schema-1 files still open, and continuing
+  one adds the group. Results > Contact-heat history and Mean-h history show them. The
+  pump example reads the stored heat and only applies its sign.
+  - **Next, in the agreed order:** M11.31–M11.36, M10.5, M11.7–M11.10, M11.2, M11.3,
+    M11.5, then M11.6.
 
 ## 5. Next work: tasks M11.12–M11.16
 
@@ -227,9 +231,8 @@ After all of them: M11.6, the release review, which depends on M11.7–M11.16.
   kept the printed oxygen row and declined the Q30.4 additions.
 - **Confirm the Theory §6.1 sentence in Q27.3** before M11.10 is built.
 - **Confirmations that block nothing:** Q11, Q14, Q17.2, Q18.2 and Q20–Q26.
-- **Known gap with no task yet:** the solver computes the heat across a contact
-  (`contact_heat`), but it is not written to the results file or shown in the program.
-  The pump showcase recovers it by post-processing. Ask the owner before adding a task.
+- **Contact heat in the results file:** done in M11.28 (`/terms`, schema 2); the program
+  shows it under Results > Contact-heat history.
 - **Not started and not on hold:** M11.2 (verification report), M11.3 (performance),
   M11.5 (Windows build).
 

@@ -409,10 +409,16 @@ points); `api.solve` runs it when `built` is not given.
 /steps/energy    (n_steps, k) columns named in attr `columns`
 /fluid/<stream>  node s-coordinates, dof indices; per step: mass_flow, h_mean, Re, dp
 /reactions/<bc>  (n_steps,) total heat flow per boundary condition [W]
+/terms/<i>  (n_steps,) per-step value of a term result (Term.results): contact_heat:<contact> [W], from side A to side B, and h_mean:<bc> [W/(m^2 K)]; attrs name, quantity, units (schema 2, M11.28)
 ```
 
+`schema_version` is 2 since M11.28. A schema-1 file has no `/terms` and stays readable
+(`term_result_names` is empty); continuing it with a restart adds `/terms` (earlier steps NaN)
+and sets `schema_version` to 2.
+
 `post/results.py: Results(path)` gives lazy access: `times`, `temperature(step)`,
-`nodal_history(node)`, `flux(step)`, `heat_flow(bc_name)`, `energy_balance()`, `mesh`.
+`nodal_history(node)`, `flux(step)`, `heat_flow(bc_name)`, `term_result_names`,
+`term_result(name)`, `energy_balance()`, `mesh`.
 Flux is computed on demand from T (not stored), which needs the materials: the model JSON
 is embedded in `/meta`.
 

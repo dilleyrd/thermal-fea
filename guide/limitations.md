@@ -88,9 +88,9 @@ message that says so; it is never solved with that part left out.
   contact when it solves. The original nodes keep their numbers and the new nodes are added
   at the end, so node numbers picked on the mesh stay valid.
 - **Heat crossing a contact is not in the energy balance,** because it is internal to the
-  body. The solver computes it (in watts, from the lower to the higher region number), but
-  it is not yet written to the results file or shown in the program. The pump-closure
-  example (`examples/pump_closure`) shows how to compute it from a script.
+  body. It is stored in the results file at every stored step, in watts, from the lower to
+  the higher region number. Results > Contact-heat history plots it, and from a script it
+  is `results.term_result("contact_heat:<contact>")`.
 - **The geometry factor (thickness or 2πr) is taken from the side with the lower region
   number.** Two regions of different thickness meeting at a contact are not treated
   specially.

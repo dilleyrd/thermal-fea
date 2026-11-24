@@ -214,6 +214,10 @@ class ChartWindow(QWidget):
         """Heat flow through boundary conditions against time (all of them by default)."""
         self.show_history(plots.heat_flow_history_data(results, bc_names), "heat_flow")
 
+    def show_term_results(self, results: Results, quantity: str) -> None:
+        """A kind of term result (``contact_heat`` or ``h_mean``) against time."""
+        self.show_history(plots.term_history_data(results, quantity), quantity)
+
     def show_energy_balance(self, results: Results) -> None:
         """The stored energy-balance columns against time."""
         self.show_history(energy_data(results), "energy")

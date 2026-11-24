@@ -1040,6 +1040,65 @@ def heat_flow_history_data(results: Results, bc_names: Sequence[str] | None = No
     )
 
 
+_TERM_TITLES = {
+    "contact_heat": (
+        "Heat across contacts", "Heat across contacts [{unit}], positive from side A to side B"
+    ),
+    "h_mean": ("Mean heat-transfer coefficient", "Mean heat-transfer coefficient [{unit}]"),
+}
+
+
+def term_history_data(
+    results: Results, quantity: str, names: Sequence[str] | None = None
+) -> HistoryData:
+    """Gather one kind of term result (``contact_heat`` or ``h_mean``) at every step.
+
+    Parameters
+    ----------
+    results : Results
+    quantity : str
+        The part of the stored key before ``":"``.
+    names : sequence of str, optional
+        The part after ``":"`` (contact or boundary-condition name); default all stored.
+
+    Returns
+    -------
+    HistoryData
+        One series per name, in display units (the stored values for a quantity with no
+        known unit quantity).
+
+    Raises
+    ------
+    ModelError
+        When the results store no such term result or a name is unknown.
+    """
+    keys = [k for k in results.term_result_names if k.partition(":")[0] == quantity]
+    if names is not None:
+        keys = [f"{quantity}:{n}" for n in names]
+    if not keys:
+        raise ModelError(f"the results store no {quantity} to plot")
+    units = _unit_settings(results)
+    series: dict[str, ndarray] = {}
+    unit = ""
+    for key in keys:
+        values = np.asarray(results.term_result(key), dtype=float)
+        unit_quantity, stored_units = results.term_result_units(key)
+        if unit_quantity:
+            values = np.asarray(from_si(values, unit_quantity, units), dtype=float)
+            unit = unit_label(unit_quantity, units)
+        else:
+            unit = stored_units
+        series[key.partition(":")[2]] = values
+    title, ylabel = _TERM_TITLES.get(quantity, (quantity, f"{quantity} [{{unit}}]"))
+    return HistoryData(
+        times=_display_times(results),
+        series=series,
+        ylabel=ylabel.format(unit=unit),
+        title=title,
+        xlabel=_time_label(units),
+    )
+
+
 def _draw_history(data: HistoryData, ax: Axes | None, path: str | Path | None, what: str) -> Figure:
     """Draw one line per series, with a legend, grid and labelled axes."""
     fig, ax = _figure(ax)

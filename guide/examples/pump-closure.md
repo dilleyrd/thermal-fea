@@ -305,9 +305,9 @@ gives this warning when the time step is below h²ρc/(6k) in more than 5 % of t
 and this model has none: H starts at the initial temperature of 40 °C and rises smoothly.
 
 !!! note "Heat across a contact"
-    The program does not yet write the heat across a contact to the results file (see
-    [Limitations](../limitations.md#thermal-contact)). The example evaluates it from the
-    stored temperatures with the solver's own contact terms (`closure_model.ContactHeats`).
+    The program writes the heat across a contact to the results file (`contact_heat:<name>`,
+    from side A to side B; Results > Contact-heat history shows it). The example reads it
+    and applies the sign of `closure_model.CONTACT_SIDES` (`closure_model.ContactHeats`).
     The heat-flux and contact-jump figures are post-processed by the showcase scripts from
     the stored nodal temperatures: a linear gradient in each element and the nodal jump
     across each contact.

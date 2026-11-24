@@ -60,7 +60,7 @@ To look at a case in the GUI:
   - M, Cw, J, A: per `closure.json`.
 - **Insulated:** the truncation planes X, the stud shank sides, and the nut sides and base.
 - **Contacts:** main seat, seal land, barrier foot, vertical fit, stud anchor, nut bearing. All other touching faces are bonded.
-- **Heat across a contact** isn't stored in the results file. `closure_model.ContactHeats` evaluates it from the stored temperatures with the solver's own contact terms. The sign is from the first to the second body named in `closure_model.CONTACT_SIDES`.
+- **Heat across a contact** is stored in the results file under `/terms` (`contact_heat:<contact>`, from side A to side B; read it with `results.term_result`). `closure_model.ContactHeats` only applies the sign: from the first to the second body named in `closure_model.CONTACT_SIDES`.
 - **Buried stud:** inside the flange, the stud is part of band G (sheet 4), so the stud path runs anchor → shank → G. The nut only exchanges heat while it warms up; at steady state its bearing heat is zero.
 
 ## Limits

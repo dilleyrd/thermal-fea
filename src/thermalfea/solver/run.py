@@ -89,6 +89,21 @@ def flow_results(
     return out
 
 
+def term_results(
+    problem: CompiledProblem, u: ndarray, t: float, u_prev: ndarray | None = None,
+    dt: float | None = None,
+) -> dict[str, ndarray]:
+    """Per-step results of every term (``Term.results``), keyed ``"<quantity>:<name>"``.
+
+    Parameters are those of :func:`flow_results`.
+    """
+    state = State(u=u, u_prev=u if u_prev is None else u_prev, t=t, dt=dt, dofs=problem.dofs)
+    out: dict[str, ndarray] = {}
+    for term in problem.terms:
+        out.update(term.results(state))
+    return out
+
+
 def run_steady(
     problem: CompiledProblem, path: str | Path, progress: ProgressCallback | None = None
 ) -> None:
@@ -115,6 +130,7 @@ def run_steady(
             STEADY_TIME, result.T, dt=0.0, iterations=result.iterations,
             converged=result.converged, balance=balance,
             extras=flow_results(problem, result.T, STEADY_TIME),
+            terms=term_results(problem, result.T, STEADY_TIME),
         )
     if progress is not None:
         progress(
@@ -319,13 +335,17 @@ def run_transient(
             writer.append_step(
                 t0, start, dt=0.0, iterations=0, converged=True,
                 extras=flow_results(problem, start, t0),
+                terms=term_results(problem, start, t0),
             )
             writer.flush()
 
-        def store(record: StepRecord, balance: EnergyBalance, extras: dict) -> None:
+        def store(
+            record: StepRecord, balance: EnergyBalance, extras: dict, terms: dict
+        ) -> None:
             writer.append_step(
                 record.t, record.T, dt=record.dt, iterations=record.iterations,
                 converged=record.converged, balance=balance, extras=extras, step=record.step,
+                terms=terms,
             )
             if writer.n_steps % FLUSH_EVERY == 0:
                 writer.flush()
@@ -339,9 +359,10 @@ def run_transient(
             stored = selector.wanted(record.step, record.t)
             # taken now: the flow solution moves on with the next step
             extras = flow_results(problem, record.T, record.t, record.T_prev, record.dt)
+            terms = term_results(problem, record.T, record.t, record.T_prev, record.dt)
             if stored:
-                store(record, balance, extras)
-            last.update(record=record, balance=balance, stored=stored, extras=extras)
+                store(record, balance, extras, terms)
+            last.update(record=record, balance=balance, stored=stored, extras=extras, terms=terms)
             if progress is None:
                 return True
             keep_going = progress(
@@ -358,7 +379,9 @@ def run_transient(
             first_step=resumed.steps if resumed is not None else 0,
         )
         if result.cancelled and not last.get("stored", True):
-            store(last["record"], last["balance"], last["extras"])  # type: ignore[arg-type]
+            store(
+                last["record"], last["balance"], last["extras"], last["terms"]  # type: ignore[arg-type]
+            )
 
     if last["balance"] is not None:
         log_balance(last["balance"])  # type: ignore[arg-type]

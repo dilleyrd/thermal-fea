@@ -7,6 +7,8 @@ Actions (all in ``window.actions``)
 ``results.path_finish``   Results > Finish path plot (enabled while picking)
 ``results.path_cancel``   Results > Cancel path plot (enabled while picking)
 ``results.heat_flows``    Results > Heat-flow history
+``results.contact_heat``  Results > Contact-heat history (enabled when the results store it)
+``results.h_mean``        Results > Mean-h history (enabled when the results store it)
 ``results.energy``        Results > Energy balance
 ``export.image``          File > Export > Viewport image...
 ``export.csv``            File > Export > Nodal results (CSV)...
@@ -92,6 +94,8 @@ PATH_ID = "results.path"
 PATH_FINISH_ID = "results.path_finish"
 PATH_CANCEL_ID = "results.path_cancel"
 HEAT_FLOWS_ID = "results.heat_flows"
+CONTACT_HEAT_ID = "results.contact_heat"
+H_MEAN_ID = "results.h_mean"
 ENERGY_ID = "results.energy"
 EXPORT_IMAGE_ID = "export.image"
 EXPORT_CSV_ID = "export.csv"
@@ -190,6 +194,8 @@ class ChartController(QObject):
             (PATH_FINISH_ID, "Finish path plot", self.finish_path, results_menu),
             (PATH_CANCEL_ID, "Cancel path plot", self.cancel_path, results_menu),
             (HEAT_FLOWS_ID, "Heat-flow histor&y", self.plot_heat_flows, results_menu),
+            (CONTACT_HEAT_ID, "Contact-he&at history", self.plot_contact_heat, results_menu),
+            (H_MEAN_ID, "&Mean-h history", self.plot_h_mean, results_menu),
             (ENERGY_ID, "&Energy balance", self.plot_energy_balance, results_menu),
         )
         for key, text, slot, menu in specs:
@@ -223,6 +229,8 @@ class ChartController(QObject):
         actions[PATH_FINISH_ID].setEnabled(self.path_active)
         actions[PATH_CANCEL_ID].setEnabled(self.path_active)
         actions[HEAT_FLOWS_ID].setEnabled(has and self._has_heat_flows())
+        actions[CONTACT_HEAT_ID].setEnabled(has and self._has_term_results("contact_heat"))
+        actions[H_MEAN_ID].setEnabled(has and self._has_term_results("h_mean"))
         actions[ENERGY_ID].setEnabled(has)
         actions[EXPORT_CSV_ID].setEnabled(has)
         actions[EXPORT_VTU_ID].setEnabled(has)
@@ -242,6 +250,15 @@ class ChartController(QObject):
         results = self.results_controller.results
         try:
             return results is not None and bool(results.heat_flow_names)
+        except (ThermalFEAError, OSError, KeyError):
+            return False
+
+    def _has_term_results(self, quantity: str) -> bool:
+        results = self.results_controller.results
+        try:
+            return results is not None and any(
+                k.partition(":")[0] == quantity for k in results.term_result_names
+            )
         except (ThermalFEAError, OSError, KeyError):
             return False
 
@@ -423,6 +440,20 @@ class ChartController(QObject):
         if results is None:
             return None
         return self._open(lambda w: w.show_heat_flows(results, bc_names))
+
+    def plot_contact_heat(self) -> ChartWindow | None:
+        """Open a window with the heat across every contact (side A to side B)."""
+        results = self.results_controller.results
+        if results is None:
+            return None
+        return self._open(lambda w: w.show_term_results(results, "contact_heat"))
+
+    def plot_h_mean(self) -> ChartWindow | None:
+        """Open a window with the mean heat-transfer coefficient of correlation loads."""
+        results = self.results_controller.results
+        if results is None:
+            return None
+        return self._open(lambda w: w.show_term_results(results, "h_mean"))
 
     def plot_energy_balance(self) -> ChartWindow | None:
         """Open a window with the stored energy-balance columns against time."""

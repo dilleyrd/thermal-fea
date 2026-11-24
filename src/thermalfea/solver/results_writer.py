@@ -21,6 +21,10 @@ Layout::
                      coordinate of the fluid nodes [m]) and ``dofs``. Per step, (n_steps,):
                      mass_flow, h_mean, Re, dp, T_in, T_out, heat
     /steps/fields/T_fluid:<stream>  (n_steps, n_fluid_nodes); location ``extra:<stream>``
+    /terms/<i>       (n_steps,) per-step value of a term result (``Term.results``, schema 2,
+                     M11.28), for example ``contact_heat:<contact>`` [W] and
+                     ``h_mean:<bc>`` [W/(m^2 K)]; attrs name, quantity, units. A schema-1
+                     file has no ``/terms``; continuing it adds the group (earlier steps NaN)
 
 Every per-step dataset is extendable and chunked by step, so steps can be appended one at
 a time and a file left by an interrupted run is still readable. A writer opened with
@@ -51,7 +55,12 @@ from .problem import TEMPERATURE, CompiledProblem
 
 log = logging.getLogger(__name__)
 
-RESULTS_SCHEMA_VERSION = 1
+RESULTS_SCHEMA_VERSION = 2
+#: Unit quantity and units of a term result, by the part of its key before ``":"``.
+TERM_RESULT_UNITS: dict[str, tuple[str, str]] = {
+    "contact_heat": ("power", "W"),
+    "h_mean": ("htc", "W/(m^2 K)"),
+}
 ENERGY_COLUMNS = ("heat_in", "heat_out", "net", "stored_rate", "imbalance", "relative_imbalance")
 _COMPRESSION = "gzip"
 #: Name of the per-stream fluid-temperature field, ``T_fluid:<stream>`` (Data §9).
@@ -260,6 +269,7 @@ class ResultsWriter:
         self.append = append
         self._file: h5py.File | None = None
         self._names: list[str] = []
+        self._terms: list[str] = []
         self._streams: list[str] = []
         self.n_steps = 0
         self._model_pending = False
@@ -309,6 +319,7 @@ class ResultsWriter:
         temperature.attrs["location"] = "node"
         temperature.attrs["units"] = "K"
         f.create_group("reactions")
+        f.create_group("terms")
         f.create_group("fluid")
         for provider in problem.providers:
             static = getattr(provider, "static", None)
@@ -348,6 +359,13 @@ class ResultsWriter:
         self._names = [str(reactions[str(k)].attrs["name"]) for k in range(len(reactions))]
         fluid = f["fluid"]
         self._streams = [str(fluid[str(k)].attrs["name"]) for k in range(len(fluid))]
+        if "terms" in f:
+            terms = f["terms"]
+            self._terms = [str(terms[str(k)].attrs["name"]) for k in range(len(terms))]
+        else:  # a schema-1 file: the group is added, earlier steps read NaN
+            f.create_group("terms")
+            f["meta"].attrs["schema_version"] = RESULTS_SCHEMA_VERSION
+            self._terms = []
         # /meta describes the new model only once a new step is stored: a restart that
         # fails on its first step leaves a file that still describes its old steps
         self._model_pending = True
@@ -396,6 +414,31 @@ class ResultsWriter:
                 if ds.maxshape == (None,) and name not in STATIC_FLUID and ds.shape[0] < i + 1:
                     ds.resize((i + 1,))
 
+    def _append_terms(self, i: int, terms: dict[str, ndarray]) -> None:
+        """Store the per-step term results, keyed ``"<quantity>:<name>"`` (``/terms``)."""
+        group = self._file["terms"]
+        values: dict[str, float] = {}
+        for key, value in terms.items():
+            array = np.asarray(value, dtype=float)
+            if array.size != 1:
+                log.warning("term result %r is not a single number; not stored", key)
+                continue
+            values[key] = float(array.reshape(-1)[0])
+            if key not in self._terms:
+                self._terms.append(key)
+                ds = group.create_dataset(
+                    str(len(self._terms) - 1), shape=(i,), maxshape=(None,), dtype="f8",
+                    chunks=(256,), fillvalue=np.nan,
+                )
+                quantity, units = TERM_RESULT_UNITS.get(key.partition(":")[0], ("", ""))
+                ds.attrs["name"] = key
+                ds.attrs["quantity"] = quantity
+                ds.attrs["units"] = units
+        for k, key in enumerate(self._terms):
+            ds = group[str(k)]
+            ds.resize((i + 1,))
+            ds[i] = values.get(key, np.nan)
+
     def close(self) -> None:
         """Flush and close the file."""
         if self._file is not None:
@@ -425,6 +468,7 @@ class ResultsWriter:
         balance: EnergyBalance | None = None,
         extras: dict[str, ndarray] | None = None,
         step: int | None = None,
+        terms: dict[str, ndarray] | None = None,
     ) -> None:
         """Append one step.
 
@@ -449,6 +493,9 @@ class ResultsWriter:
         step : int, optional
             Number of the time step (not every step is stored); by default the number
             of steps stored before it.
+        terms : dict of str to ndarray, optional
+            Term results of the step, keyed ``"<quantity>:<name>"`` (the output of
+            ``Term.results``); each must be a single number and is stored under ``/terms``.
         """
         f = self._file
         if f is None:
@@ -480,6 +527,7 @@ class ResultsWriter:
             ds.resize((i + 1,))
             ds[i] = balance.flows.get(name, np.nan) if balance is not None else np.nan
         self._append_extras(i, extras or {})
+        self._append_terms(i, terms or {})
         self.n_steps = i + 1
 
     def flush(self) -> None:

@@ -96,9 +96,9 @@ Since 2026-11-16:
 - **The pump main-closure example** (`examples/pump_closure/`) is in the repository: its
   results files (`out/*.h5`) and the post-processed figures (`showcase/`, which needs
   pandas). It is a page of the user guide.
-  Known gap: the solver computes the heat across a contact, but it is not written to the
-  results file. The showcase scripts recover it by post-processing. There is no task for
-  this yet.
+  The heat across a contact (`contact_heat:<name>`) and the mean coefficient of a
+  correlation load (`h_mean:<name>`) are stored in the results file under `/terms` (schema
+  2, M11.28) and read with `Results.term_result`; the example only applies the sign.
 - **The user guide is published on GitHub Pages** at https://dilleyrd.github.io/thermal-fea/
   (branch `gh-pages`). It is republished by hand after a change to `guide/`:
   `.venv\Scripts\python.exe -m mkdocs gh-deploy --strict --remote-name origin

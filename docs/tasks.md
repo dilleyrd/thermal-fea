@@ -519,7 +519,7 @@ Boundary Conditions, Flow (Streams, Network), Enclosures, Analysis Settings, Sol
   reproduction, offscreen.
 - [x] **M11.26 [B] Meshing.** `REVIEW-2.md` 2.1-12, 2.1-6, `curve_ends` after a Transform.
 - [x] **M11.27 [A] Inputs and outputs.** `REVIEW-2.md` items listed in the evaluation §3.
-- [ ] **M11.28 [B] Term results in the results file.** Q29.6 (owner's decision D6,
+- [x] **M11.28 [B] Term results in the results file.** Q29.6 (owner's decision D6,
   2026-11-22). `Term.results()` (contact heat per contact, h_mean per correlation load) is
   stored in new groups, with a schema-version step (Data §9). Older files stay readable.
   The window shows the values, and the pump example reads them instead of recomputing

@@ -27,7 +27,7 @@ from ..solver.dofs import DofMap
 from ..solver.problem import TEMPERATURE, CompiledProblem, RegionData
 from . import recovery
 
-SUPPORTED_SCHEMA = 1
+SUPPORTED_SCHEMA = 2
 
 
 def read_mesh(group: h5py.Group) -> Mesh:
@@ -258,6 +258,40 @@ class Results:
                 f"{', '.join(self.heat_flow_names) or 'none'})"
             )
         return self._read(f"reactions/{key}")
+
+    @cached_property
+    def _term_keys(self) -> dict[str, str]:
+        with h5py.File(self.path, "r") as f:
+            if "terms" not in f:  # a schema-1 file
+                return {}
+            return {str(ds.attrs["name"]): key for key, ds in f["terms"].items()}
+
+    @property
+    def term_result_names(self) -> list[str]:
+        """Keys of the stored term results, in stored order (empty for a schema-1 file)."""
+        return list(self._term_keys)
+
+    def _term_key(self, name: str) -> str:
+        key = self._term_keys.get(name)
+        if key is None:
+            raise ModelError(
+                f"no term result stored for {name!r} (available: "
+                f"{', '.join(self.term_result_names) or 'none'})"
+            )
+        return key
+
+    def term_result(self, name: str) -> ndarray:
+        """One term result at every step, e.g. ``contact_heat:<contact>`` [W] or ``h_mean:<bc>``.
+
+        NaN where a step has no value.
+        """
+        return self._read(f"terms/{self._term_key(name)}")
+
+    def term_result_units(self, name: str) -> tuple[str, str]:
+        """The (unit quantity, units) of a stored term result; ``("", "")`` if unknown."""
+        with h5py.File(self.path, "r") as f:
+            attrs = f["terms"][self._term_key(name)].attrs
+            return str(attrs.get("quantity", "")), str(attrs.get("units", ""))
 
     def energy_balance(self) -> dict[str, ndarray]:
         """Energy balance of every step: column name -> values [W] (last one relative)."""
