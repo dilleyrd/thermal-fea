@@ -656,7 +656,26 @@ Boundary Conditions, Flow (Streams, Network), Enclosures, Analysis Settings, Sol
   - **Tests:** the list (built-in, then user), type-to-search, use-values (properties,
     name and region kept, one undo step), and an unreadable user library shown as an error
     without losing the built-ins.
+- [ ] **M11.45 [B] Region highlight, region names and load values in the viewport.**
+  Owner's request, 2026-11-24. **Held: start only after the owner has finished the M8.G
+  V-10 review.**
+  - **Region highlight:** selecting a region in the model tree highlights its surfaces
+    (`LoadSymbolController.highlight_address`, which today handles only loads and
+    contacts); selecting a material highlights every region that uses it.
+  - **Region names:** a label with the region's name at each region's surfaces, shown or
+    hidden by a checkable View menu entry.
+  - **Load values:** a label at each active load's entities giving its name and values in
+    the display units, e.g. `cooling: h = 750 W/(m²·K), T_inf = 0 °C`. The values come from
+    the load's form fields, so a load registered later is labelled without GUI changes; a
+    table is shown as `table(T)` or `table(t)`, an expression as its text. Shown or hidden
+    by its own View menu entry.
+  - **Viewport:** adds `SceneView.set_labels(labels)` with a plain label record (position,
+    text, layer), approved by the owner on 2026-11-24 as an addition to Data §13; the
+    existing methods do not change.
+  - **Tests:** the region and material highlight, both toggles, the label text of a
+    constant, a table and an expression in SI and in degC, and the labels following
+    undo, suppress and rename.
 - [ ] **M11.6 [C] Release review.** Check every item of Plan §6; resolve or document every
   entry in `docs/OPEN_QUESTIONS.md`. Version 1 excludes the held features M9 and M10.2 and
   their cases V-22a–d, V-23, V-24 and V-36 (owner, 2026-11-22, Q29.15); the guide's
-  limitations say so. Depends on M11.7–M11.44, M8.G and M11.1.
+  limitations say so. Depends on M11.7–M11.45, M8.G and M11.1.
