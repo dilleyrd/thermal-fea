@@ -110,10 +110,11 @@ tree highlights its curves.
 
 ### 1.3 Material and region
 
-1. Right-click **Materials** > **Add material**. A material "Material 1" appears; it starts
-   as a copy of the first library material (aluminium), so every value must be set.
+1. Right-click **Materials** > **Add material**. A material "Material 1" appears; all its
+   properties start at 0, which means "not set yet".
 2. In its panel set "Thermal conductivity" (mode Constant) to `52` and press Enter. Density
-   and specific heat do not affect a steady answer; leave them.
+   and specific heat do not affect a steady answer; they may stay at 0. (A conductivity left
+   at 0 is refused by Validate: "has a conductivity that is not positive".)
 3. Right-click **Regions** > **Add region**. A region node appears and its panel
    ("Region") opens. Its "Material" box already holds "Material 1".
 4. In the "Selection" field: **Pick in viewport**, toolbar **Surface**, click inside the
@@ -290,7 +291,8 @@ Found by the scripted runs and by reading the code; none confirmed on a real scr
    "<load name> selection". No rename in the tree.
 5. File > New builds the empty geometry on the gmsh thread; harmless but visible as
    "Building geometry..." in the status bar.
-6. A new material is a copy of a library aluminium; all three properties have to be set.
+6. A new material starts with every property at 0 (owner's decision, 2026-11-24); a steady
+   solve needs the conductivity, a transient one all three.
 7. Results > Probe reads a pixel, not a coordinate.
 8. Opening a saved model attaches its results file only after a mesh exists, so the
    results appear only after you press "Generate mesh" again.

@@ -86,10 +86,10 @@ curves.
 ### 2. Enter the material
 
 1. Right-click **Materials** and choose **Add material**. A node "Material 1" appears and its
-   panel opens. A new material starts as a copy of the first library material (aluminium),
-   so every value must be set by you.
+   panel opens. A new material starts with every property at 0, which means "not set
+   yet".
 2. In "Thermal conductivity" (mode Constant) type `52` and press Enter. Density and specific
-   heat do not affect a steady answer; leave them.
+   heat do not affect a steady answer; they may stay at 0.
 
 ### 3. Assign it to the plate
 

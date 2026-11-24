@@ -34,7 +34,6 @@ from thermalfea.gui.addressing import Address, exists, resolve
 from thermalfea.gui.dialogs.new_load import LOAD_DIALOGS
 from thermalfea.gui.dialogs.new_stream import NewStreamDialog
 from thermalfea.gui.document import Document
-from thermalfea.materials import library
 from thermalfea.materials.material import Material
 from thermalfea.model.bcs import Contact, Stream
 from thermalfea.model.geometry_edit import dependents
@@ -523,9 +522,11 @@ class ModelTree(QTreeWidget):
         return address
 
     def add_material(self) -> Address:
-        """Add a material "Material <n>" with the properties of the first built-in solid.
+        """Add a material "Material <n>" whose properties are all zero.
 
-        The properties are a copy of a library entry (no numbers are invented here). One
+        Zero means "not set yet" (owner's decision, 2026-11-24): validation refuses a
+        conductivity that is not positive, and a transient analysis also refuses a zero
+        density or specific heat, so an unedited material cannot be solved by mistake. One
         undo step.
 
         Returns
@@ -533,12 +534,11 @@ class ModelTree(QTreeWidget):
         tuple
             Address of the new material.
         """
-        template = next(iter(library.solids().values()))
         holder: list[str] = []
 
         def mutate(model: Model) -> None:
             name = unique_name("Material", list(model.materials))
-            model.materials[name] = Material.from_json({**template.to_json(), "name": name})
+            model.materials[name] = Material(name, k=0.0, rho=0.0, cp=0.0)
             holder.append(name)
 
         self.document.edit("Add material", mutate)

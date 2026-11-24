@@ -12,6 +12,7 @@ from pathlib import Path
 import pytest
 
 from thermalfea import api
+from thermalfea.core.functions import Constant
 from thermalfea.core.units import UnitSettings
 from thermalfea.gui.dialogs.material_library import MaterialLibraryDialog, describe
 from thermalfea.gui.document import Document
@@ -21,6 +22,8 @@ from thermalfea.gui.property_panels.form import FormPanel
 from thermalfea.gui.property_panels.region import RegionPanel
 from thermalfea.gui.tree import ModelTree
 from thermalfea.materials import library
+from thermalfea.model.settings import SolutionSettings
+from thermalfea.model.validate import validate
 
 COPPER = "Copper (pure)"
 
@@ -68,11 +71,12 @@ def action_named(tree: ModelTree, section: str, text: str):
 
 def test_add_material_is_one_undo_step_with_unique_names(shell, doc) -> None:
     tree, _ = shell
-    template = next(iter(library.solids().values()))
     action_named(tree, "materials", "Add material").trigger()
     assert list(doc.model.materials) == [COPPER, "Material 1"]
     new = doc.model.materials["Material 1"]
-    assert new.k == template.k and new.rho == template.rho and new.cp == template.cp
+    # every property starts at zero, "not set yet" (owner's decision, 2026-11-24)
+    assert new.k == Constant(0.0) and new.rho == Constant(0.0) and new.cp == Constant(0.0)
+    assert new.k2 is None and new.phase_change is None
     assert new.name == "Material 1"
     assert doc.undo_stack.count() == 1 and doc.undo_stack.undoText() == "Add material"
     assert tree.address_of(tree.currentItem()) == ("materials", "Material 1")
@@ -83,6 +87,22 @@ def test_add_material_is_one_undo_step_with_unique_names(shell, doc) -> None:
     doc.undo_stack.undo()
     assert list(doc.model.materials) == [COPPER]
     assert tree.item_for(("materials", COPPER)) is not None
+
+
+def test_an_unedited_new_material_cannot_be_solved(shell, doc) -> None:
+    """A zero conductivity is refused, and a transient also refuses zero rho and cp."""
+    tree, _ = shell
+    action_named(tree, "materials", "Add material").trigger()
+    doc.model.regions[0].material = "Material 1"
+
+    def codes() -> list[str]:
+        issues = validate(doc.model, doc.built)
+        return [i.code for i in issues
+                if i.severity == "error" and (i.kind, i.name) == ("material", "Material 1")]
+
+    assert codes() == ["bad-conductivity"]  # steady: rho and cp are not used
+    doc.model.solution = SolutionSettings(kind="transient", end_time=1.0)
+    assert codes() == ["bad-conductivity", "bad-capacity", "bad-capacity"]
 
 
 def test_add_region_is_one_undo_step(shell, doc) -> None:

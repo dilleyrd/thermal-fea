@@ -76,8 +76,9 @@ every OK. Notes:
 
 ### 2. Materials and regions
 
-Right-click Materials and choose Add material. The new material starts as a copy of the
-first library material, so check every value. Each physical property has a mode box
+Right-click Materials and choose Add material. The new material starts with every property at
+0, which means "not set yet": Validate refuses a conductivity of 0, and a transient analysis
+also refuses a density or specific heat of 0. Each physical property has a mode box
 (Constant, Table or Expression) above its value; leave it on Constant for a constant.
 Tools > Material library... opens the built-in library ([Materials](materials.md)).
 
