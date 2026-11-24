@@ -852,7 +852,7 @@ tasks come before the owner's M8.G session (D8).
     same colours.
   - **Tests:** the colours of parts and materials, holes kept, fills hidden under a
     result contour, and the load legend kept. Depends on M11.56.
-- [ ] **M11.63 [C] Rename geometry steps.** Plan §4.4.
+- [x] **M11.63 [C] Rename geometry steps.** Plan §4.4.
   - `rename_operation` (Data §4) rewrites every reference through `REF_RULES`.
   - Inline rename in the tree, in one undo step.
   - **Tests:** references from a point, line, arc, spline, hole loop, boolean, transform

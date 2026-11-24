@@ -150,6 +150,53 @@ def dependents(ops: Sequence[g.GeometryOp], op_id: str) -> list[str]:
     return [op.id for op in ops if op.id != op_id and op_id in refs_of(op)]
 
 
+def _replace_ref(value: Any, old: str, new: str) -> Any:
+    """``value`` (an id, a list of ids or a list of id lists) with ``old`` replaced."""
+    if isinstance(value, str):
+        return new if value == old else value
+    return [_replace_ref(item, old, new) for item in value]
+
+
+def rename_operation(model: Any, old_id: str, new_id: str) -> bool:
+    """Rename a geometry operation and every reference to it (Data §4, M11.63).
+
+    Every reference field of :data:`REF_RULES` is rewritten in place, keeping repeats,
+    order and nested hole loops. Every check runs first, so a refusal changes nothing.
+
+    Parameters
+    ----------
+    model : Model
+    old_id, new_id : str
+
+    Returns
+    -------
+    bool
+        ``False`` when the new id equals the old one.
+
+    Raises
+    ------
+    ModelError
+        If ``old_id`` is not an operation, or ``new_id`` is blank or already used.
+    """
+    new_id = new_id.strip()
+    ids = [op.id for op in model.geometry]
+    if old_id not in ids:
+        raise ModelError(f"there is no geometry operation {old_id!r}")
+    if new_id == old_id:
+        return False
+    if not new_id:
+        raise ModelError("a geometry operation id cannot be empty")
+    if new_id in ids:
+        raise ModelError(f"the geometry operation id {new_id!r} is already used")
+    for op in model.geometry:
+        for (cls, name), _allowed in REF_RULES.items():
+            if isinstance(op, cls):
+                setattr(op, name, _replace_ref(getattr(op, name), old_id, new_id))
+        if op.id == old_id:
+            op.id = new_id
+    return True
+
+
 #: A representative class of each kind, used to match a transform against ``allowed`` classes.
 _KIND_CLASS: dict[str, type] = {"point": g.Point, "curve": g.Line, "surface": g.Rectangle}
 
