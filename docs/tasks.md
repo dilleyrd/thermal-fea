@@ -736,7 +736,7 @@ The design, the approved data changes and the independent review are in
 `docs/gui-identity-plan.md`; each task below names the section it implements. These
 tasks come before the owner's M8.G session (D8).
 
-- [ ] **M11.49 [B] Part · Boundary · Point vocabulary.** Plan §3.
+- [x] **M11.49 [B] Part · Boundary · Point vocabulary.** Plan §3.
   - `model/vocabulary.py` provides `domain_dim`, `role_dim`, `role_of` and `entity_word`.
   - It drives the selection toolbar's labels and tooltips, the selection editor's texts,
     the selection-field labels of the forms, and the validation and issue messages that
@@ -774,7 +774,10 @@ tasks come before the owner's M8.G session (D8).
   - `rename_selection`, with a preflight against every collision, and
     `delete_selection`, refused while the selection is used.
   - `all` is reserved.
-  - Changing a selection's key or members makes the mesh stale.
+  - The GUI solve finds the node sets again on the same mesh
+    (`meshing/node_sets.py: node_sets_of`), so a renamed or new selection reaches the
+    results without a remesh. This replaces "makes the mesh stale" (plan §4.3): a remesh
+    for every new load would cost the user much more.
   - **Tests:** a model that uses one selection in every possible place, refusals that
     leave the model and the undo stack untouched, and the node sets of the next solve.
 - [ ] **M11.54 [B] Selections section and panel.** Plan §4.3, §5.

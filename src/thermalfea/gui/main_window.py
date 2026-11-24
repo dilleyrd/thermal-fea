@@ -19,6 +19,9 @@ from PySide6.QtWidgets import (
 
 from thermalfea.gui.document import Document
 from thermalfea.gui.message_panel import MessagePanel, QtLogHandler
+from thermalfea.gui.scene import MODE_DIM
+from thermalfea.model.model import Model
+from thermalfea.model.vocabulary import entity_word, role_of
 
 SELECTION_MODES: tuple[str, ...] = ("none", "point", "curve", "surface", "node", "element")
 _MENU_TITLES: tuple[tuple[str, str], ...] = (
@@ -230,14 +233,37 @@ class MainWindow(QMainWindow):
             action = QAction(mode.capitalize(), self)
             action.setCheckable(True)
             action.setData(mode)
-            action.setToolTip(f"Selection mode: {mode}")
             self.selection_group.addAction(action)
             bar.addAction(action)
             self.actions[f"select.{mode}"] = action
+        self._relabel_selection_actions()
         self.actions["select.none"].setChecked(True)
         self.selection_group.triggered.connect(self._on_selection_triggered)
         bar.addSeparator()
         bar.addAction(self.actions["view.fit"])
+
+    def _relabel_selection_actions(self, *_args: object) -> None:
+        """Name the toolbar's geometric modes by role (Part, Boundary, Point) for the model.
+
+        Only the labels and tooltips change; the mode values stay ``point``/``curve``/
+        ``surface``.
+        """
+        document = getattr(self, "_document", None)
+        model = document.model if document is not None else Model()
+        for mode, dim in MODE_DIM.items():
+            action = self.actions.get(f"select.{mode}")
+            if action is None:
+                continue
+            if mode in ("node", "element"):
+                action.setText(mode.capitalize())
+                action.setToolTip(f"Selection mode: {mode}")
+                continue
+            role = role_of(dim, model)
+            action.setText(entity_word(dim, model).capitalize())
+            geometry = {"point": "", "curve": " (curves)", "surface": " (surfaces)"}[mode]
+            action.setToolTip(f"Pick {entity_word(dim, model, plural=True)}{geometry}")
+            action.setStatusTip(f"Selection mode: {role}")
+        self.actions["select.none"].setToolTip("Selection mode: none")
 
     def _on_selection_triggered(self, action: QAction) -> None:
         self.selection_mode_changed.emit(str(action.data()))
@@ -275,6 +301,7 @@ class MainWindow(QMainWindow):
                 (stack.redoTextChanged, self._update_undo_redo),
                 (stack.cleanChanged, self._update_title),
                 (old.model_changed, self._update_title),
+                (old.model_changed, self._relabel_selection_actions),
             ):
                 signal.disconnect(slot)
             self.actions["edit.undo"].triggered.disconnect(stack.undo)
@@ -289,12 +316,14 @@ class MainWindow(QMainWindow):
                 (stack.redoTextChanged, self._update_undo_redo),
                 (stack.cleanChanged, self._update_title),
                 (document.model_changed, self._update_title),
+                (document.model_changed, self._relabel_selection_actions),
             ):
                 signal.connect(slot)
             self.actions["edit.undo"].triggered.connect(stack.undo)
             self.actions["edit.redo"].triggered.connect(stack.redo)
         self._update_undo_redo()
         self._update_title()
+        self._relabel_selection_actions()
 
     def _update_undo_redo(self, *_args: object) -> None:
         stack = self._document.undo_stack if self._document is not None else None

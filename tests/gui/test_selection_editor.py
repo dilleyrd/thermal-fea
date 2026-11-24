@@ -78,7 +78,7 @@ def test_pick_then_apply_stores_a_selection_in_one_undo_step(qtbot, built_doc) -
     assert editor.picked() == (-1, [])
     view.pick(1, [tag])
     assert editor.picked() == (1, [tag]) and editor.apply_button.isEnabled()
-    assert "1 curve" in editor.status_label.text()
+    assert editor.status_label.text() == "1 boundary picked"
 
     editor.apply_button.click()
     sel = built_doc.model.selections["Top edge"]

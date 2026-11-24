@@ -140,7 +140,7 @@ def test_bc_with_unknown_or_wrong_selection() -> None:
     assert (issue.kind, issue.name) == ("boundary condition", "flux")
     model.bcs[-1] = bcs.FixedTemperature("fix", "L", T=300.0)  # a surface selection
     issue = only(validate(model, built, mesh), "wrong-selection")
-    assert "points or curves" in issue.message
+    assert "points or boundaries (curves)" in issue.message
     model.bcs[-1].active = False  # inactive conditions are not checked
     assert validate(model, built, mesh) == []
 

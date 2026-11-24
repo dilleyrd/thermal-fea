@@ -32,9 +32,10 @@ from thermalfea.geometry.builder import BuiltGeometry
 from thermalfea.gui.document import Document
 from thermalfea.gui.scene import SceneView
 from thermalfea.model.model import Model
+from thermalfea.model.vocabulary import entity_word
 
 _DIM_MODE = {0: "point", 1: "curve", 2: "surface"}
-_DIM_NAME = {0: "point", 1: "curve", 2: "surface"}
+_DIM_NAME = {0: "point", 1: "curve", 2: "surface"}  # the pickable dimensions (storage keys)
 NONE_TEXT = "(none)"
 
 
@@ -276,9 +277,11 @@ class SelectionEditor(QWidget):
     def _update_apply(self) -> None:
         dim, tags = self._picked
         self.apply_button.setEnabled(bool(tags) and self.document.built is not None)
-        self.status_label.setText(
-            f"{len(tags)} {_DIM_NAME[dim]}(s) picked" if tags else "Nothing picked"
-        )
+        if not tags:
+            self.status_label.setText("Nothing picked")
+            return
+        word = entity_word(dim, self.document.model, plural=len(tags) != 1)
+        self.status_label.setText(f"{len(tags)} {word} picked")
 
     # --------------------------------------------------------------------- apply
     def target_name(self) -> str:

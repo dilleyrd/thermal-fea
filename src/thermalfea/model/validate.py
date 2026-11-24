@@ -34,6 +34,7 @@ from .bcs import (
 )
 from .model import Model
 from .selections import StaleSelectionError, resolve
+from .vocabulary import entity_word
 
 if TYPE_CHECKING:  # the builder imports gmsh; this module must not (Plan §3)
     from ..geometry.builder import BuiltGeometry
@@ -250,7 +251,10 @@ class _Checker:
                        f"{name!r}", kind, owner)
             return None
         if selection.dim not in dims:
-            wanted = " or ".join({0: "points", 1: "curves", 2: "surfaces"}[d] for d in dims)
+            geometry = {0: "", 1: " (curves)", 2: " (surfaces)"}
+            wanted = " or ".join(
+                entity_word(d, self.model, plural=True) + geometry[d] for d in dims
+            )
             self.error("wrong-selection", f"{kind} {owner!r} needs a selection of {wanted}, "
                        f"but {name!r} is not", kind, owner)
             return None

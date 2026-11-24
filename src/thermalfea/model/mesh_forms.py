@@ -19,7 +19,7 @@ MESH_FORM = FormSpec(
     [
         FieldSpec(
             "global_size", "Global element size", "float", quantity="length", minimum=0.0,
-            tooltip="Target element size away from point, curve and refinement controls.",
+            tooltip="Target element size away from point, boundary and refinement controls.",
         ),  # fmt: skip
         FieldSpec(
             "order", "Element order", "choice", choices=(1, 2),
@@ -34,20 +34,20 @@ MESH_FORM = FormSpec(
             tooltip="Free-meshing algorithm.",
         ),  # fmt: skip
         FieldSpec(
-            "curve_sizes", "Curve sizes", "dict", quantity="length",
-            tooltip="Curve selection and element size, as 'name=size, name=size'.",
+            "curve_sizes", "Boundary sizes", "dict", quantity="length",
+            tooltip="Boundary selection and element size, as 'name=size, name=size'.",
         ),  # fmt: skip
         FieldSpec(
             "point_sizes", "Point sizes", "dict", quantity="length",
             tooltip="Point selection and element size, as 'name=size, name=size'.",
         ),  # fmt: skip
         FieldSpec(
-            "curve_divisions", "Curve divisions", "dict",
-            tooltip="Curve selection and number of elements, as 'name=count, name=count'.",
+            "curve_divisions", "Boundary divisions", "dict",
+            tooltip="Boundary selection and number of elements, as 'name=count, name=count'.",
         ),  # fmt: skip
         FieldSpec(
-            "structured_surfaces", "Structured surfaces", "selection_list", selection_dims=(2,),
-            tooltip="Surface selections meshed transfinite (3 or 4 sides).",
+            "structured_surfaces", "Structured parts", "selection_list", selection_dims=(2,),
+            tooltip="Part selections meshed transfinite (3 or 4 sides).",
         ),  # fmt: skip
         FieldSpec(
             "smoothing_passes", "Smoothing passes", "int", minimum=0.0,
