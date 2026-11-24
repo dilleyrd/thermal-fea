@@ -8,10 +8,12 @@ got stuck, guessed, or were surprised into the friction log at the end.
 Every menu name, button text, field label and tree node below was read from the source
 (tasks M11.49 to M11.63 changed many of them), and both procedures were run end to end by a
 script that drives the same widgets (the V-10 run is `tests/gui/test_end_to_end.py`). The
-tree blocks and the summary texts below were taken from such a run on 2026-11-24. A page
-with the steps, the screenshots of an earlier run and a friction log is at
-https://claude.ai/artifact/AVKWHDY1Pa6YZ22go6weAH (it predates the new names). No person
-has used the window yet, so ease of use is exactly what the gate is meant to find.
+tree blocks, the summary texts and the screenshots below come from such a run on
+2026-11-24, after tasks M11.49 to M11.64. The screenshots were rendered offscreen from the
+real widgets, so they have no window frame. The same steps, the same screenshots and a
+friction log that is saved as you type are on the session page
+https://claude.ai/artifact/AVKWHDY1Pa6YZ22go6weAH (private). No person has used the window
+yet, so ease of use is exactly what the gate is meant to find.
 
 ## 0. Starting the GUI
 
@@ -34,6 +36,9 @@ for a selection). View > **Summary column** hides and shows the second column. T
 the Model dock follows the model: "Model — Untitled · planar · K" for a new model, and
 "Model — Untitled · planar · t 1 m · K" once the parts have a thickness (the last item is the
 temperature unit).
+
+![A new model: the toolbar, the two-column tree with the folded line, the dock title.](img/gui-walkthrough/g01_start.png)
+*A new model: the toolbar, the two-column tree with the folded line, the dock title.*
 
 Things to know before you start:
 
@@ -75,6 +80,9 @@ a vertex, and so a node, at (0.6, 0.2). This is what the example script does too
 1. Geometry > **Rectangle...** opens a dialog titled "Rectangle".
 2. Type x = `0`, y = `0`, Width = `0.6`, Height = `0.2`. Leave "Corner radius" at 0 and "Id"
    empty (an id is generated). Press **OK**.
+
+![The Rectangle dialog with the first rectangle.](img/gui-walkthrough/g02_rectangle_dialog.png)
+*The Rectangle dialog with the first rectangle.*
 3. Geometry > **Rectangle...** again: x = `0`, y = `0.2`, Width = `0.6`, Height = `0.8`.
    Press **OK**.
 4. The geometry is rebuilt by itself after each OK (the status bar says "Building
@@ -83,6 +91,9 @@ a vertex, and so a node, at (0.6, 0.2). This is what the example script does too
    "rectangle 0.6 × 0.8 m".
 5. View > **Fit view** (or the key F). The viewport is fitted only when the first shape
    appears, so the second rectangle is partly out of view until you do this.
+
+![Both rectangles after Fit view; the summaries give their sizes.](img/gui-walkthrough/g03_v10_geometry.png)
+*Both rectangles after Fit view; the summaries give their sizes.*
 6. Click `rectangle1` in the tree: the surface it made is highlighted in the viewport. A
    step highlights what it owns.
 7. *Optional.* Rename the steps: right-click `rectangle1` > **Rename** (or edit the name in
@@ -90,6 +101,9 @@ a vertex, and so a node, at (0.6, 0.2). This is what the example script does too
    geometry is rebuilt, and any later step that refers to the renamed one (a boolean) follows
    the new name. The tree below uses these names; if you skip this step read `rectangle1`
    and `rectangle2`.
+
+![The steps renamed; clicking "lower strip" highlights the surface it owns.](img/gui-walkthrough/g04_v10_step_highlight.png)
+*The steps renamed; clicking "lower strip" highlights the surface it owns.*
 
 You should see a 0.6 by 1.0 plate with a line across it at y = 0.2 (two surfaces, seven
 curves). The tree also gets a "Selections" entry "all" ("2 parts · unused"), made by the
@@ -114,6 +128,9 @@ condition's own panel, and you give it a name.
 4. Press **Pick in viewport** again to switch picking off.
 5. In "Temperature" type `373.15` and press Enter (unit shown: K).
 
+![Picking the bottom edge: "1 boundary picked", the name typed over the suggestion, before Apply.](img/gui-walkthrough/g05_v10_pick_base.png)
+*Picking the bottom edge: "1 boundary picked", the name typed over the suggestion, before Apply.*
+
 **Convection (right and top edges, h = 750, 0 degC):**
 
 1. Right-click **Loads & Boundary Conditions** > **Add** > **Add Convection**.
@@ -123,6 +140,9 @@ condition's own panel, and you give it a name.
    in "New name", press **Apply**, then switch **Pick in viewport** off.
 3. "Heat-transfer coefficient": `750`, Enter (unit W/(m^2 K)).
 4. "Fluid temperature": `273.15`, Enter (K).
+
+![The convection after Apply and the two values.](img/gui-walkthrough/g06_v10_convection.png)
+*The convection after Apply and the two values.*
 
 **Adiabatic (left edge):**
 
@@ -134,12 +154,18 @@ condition's own panel, and you give it a name.
 The viewport now shows load symbols for the three conditions. Selecting a condition in the
 tree highlights its boundaries.
 
+![The three loads with their symbols, value labels and selections.](img/gui-walkthrough/g08_v10_loads.png)
+*The three loads with their symbols, value labels and selections.*
+
 **A name that is used is refused.** Try it once: add another Adiabatic, pick any edge, type
 `base` in "New name" and press **Apply**. A red message under the buttons says "the selection
 name 'base' is already used" and nothing is stored (no undo step). Then press Edit > Undo
 once to remove the extra Adiabatic condition (the "Add Adiabatic" step). To give a field a
 different set of entities later, pick again and type the field's own selection name in
 "New name": it is replaced as long as nothing else uses it.
+
+![A used name is refused in red; nothing is stored.](img/gui-walkthrough/g07_v10_name_refused.png)
+*A used name is refused in red; nothing is stored.*
 
 ### 1.3 Material and part
 
@@ -149,6 +175,9 @@ different set of entities later, pick again and type the field's own selection n
    and specific heat do not affect a steady answer; they may stay at 0. (A conductivity left
    at 0 is refused by Validate: "has a conductivity that is not positive".) The summary
    column of the tree now reads "k 52 W/(m K) · custom".
+
+![Material 1 with k = 52; the summary says "custom".](img/gui-walkthrough/g09_v10_material.png)
+*Material 1 with k = 52; the summary says "custom".*
 3. Right-click **Parts** > **Add part**. A part "Part 1" appears and its panel ("Part")
    opens. Its fields are "Name", "Selection", "Material", "Thickness" and "Material angle".
    "Material" already holds "Material 1". Replace "Name" with `Plate` and press Enter (or
@@ -160,12 +189,18 @@ different set of entities later, pick again and type the field's own selection n
 5. The part's swatch colour is the colour of its surfaces in the viewport. Switch View >
    **Colour by** to Material and back to Part to see the viewport follow.
 
+![The part "Plate": its panel, its swatch and its colour in the viewport.](img/gui-walkthrough/g10_v10_part.png)
+*The part "Plate": its panel, its swatch and its colour in the viewport.*
+
 ### 1.4 Mesh
 
 1. Click the **Mesh** node in the tree. The panel "Mesh" opens.
 2. "Global element size": `0.025`, Enter. Leave "Element order" 1, "Element shape" tri.
 3. Press **Generate mesh** (or Mesh > **Generate mesh**). The status bar reports about
    "Mesh generated: 1210 nodes, 2290 elements". The mesh is drawn in the viewport.
+
+![After Generate mesh: 1210 nodes, 2290 elements; the Mesh summary ends "current".](img/gui-walkthrough/g12_v10_mesh.png)
+*After Generate mesh: 1210 nodes, 2290 elements; the Mesh summary ends "current".*
 
 ### 1.5 Expected model tree (before the solve)
 
@@ -218,12 +253,18 @@ uses it.
    warnings; any error must be fixed first).
 2. Solve > **Solve**. A window titled "Solving" shows the progress and ends with a
    "Finished" state; it stays open until you close it. A linear steady case takes a moment.
+
+![The Solving window at the end of the steady solve.](img/gui-walkthrough/g13_v10_solving.png)
+*The Solving window at the end of the steady solve.*
 3. A node "Temperature 1" appears under **Results** in the tree, with the summary
    "contour · current", and the temperature contour is drawn in the viewport. (The contour
    starts banded with 12 levels. Click the node to see its panel. It starts with a header of
    four lines: "Analysis: steady", "Mesh: T3 · 1 210 nodes · 2 290 elements", "Results
    written <date and time>" and "Status: current". Then "Field", "Levels", "Banded
    (otherwise smooth)", "Colour scale" and "Mesh overlay".)
+
+![The result with its header: "Status: current".](img/gui-walkthrough/g14_v10_result.png)
+*The result with its header: "Status: current".*
 
 ### 1.7 Compare with the benchmark
 
@@ -242,6 +283,9 @@ uses it.
   Results > **Energy balance** plots the heat flows against time and lists every stored step
   in a table (with the imbalance; select cells and press Ctrl+C to copy them). A steady
   result shows the table only.
+
+![The Messages dock with the end of the energy balance.](img/gui-walkthrough/g17_v10_messages.png)
+*The Messages dock with the end of the energy balance.*
 
 ### 1.8 What to check in this review (V-10)
 
@@ -270,6 +314,9 @@ Do these after the solve; none of them changes the answer.
    is used; the tooltip names the users). Rename it to `cooled sides` in the panel: the
    load summary then reads "→ cooled sides" (users follow). Undo it. With the focus on the
    tree, Page Down and Page Up step to the next and previous selection.
+
+![The selection "cooled": its boundaries highlighted, its panel with Kind, Entities, Bounds parts and Used by.](img/gui-walkthrough/g11_v10_selection.png)
+*The selection "cooled": its boundaries highlighted, its panel with Kind, Entities, Bounds parts and Used by.*
 7. **Materials.** The summary is "k 52 W/(m K) · custom" and the source line in the panel
    reads "Custom values". Optional: add a second material, type part of a name in "From
    library", press **Use library values**: the summary reads "<entry> · library" and the
@@ -290,6 +337,9 @@ Do these after the solve; none of them changes the answer.
     Temperature 1) are shown in bold. Click empty space to clear it. In **Part** mode the
     tooltip names the part and its selection ("in: plate"); in **Point** mode the vertices.
     While a "Pick in viewport" button is on, a plain click picks and does not inspect.
+
+![Boundary mode, one click on the bottom edge: the report in the status bar, the load in bold in the tree.](img/gui-walkthrough/g16_v10_inspect.png)
+*Boundary mode, one click on the bottom edge: the report in the status bar, the load in bold in the tree.*
 11. **View menu.** "Region names" toggles labels with the part names ("Plate") in the
     viewport; "Load values" toggles the values next to the load symbols (on by default).
 
@@ -303,6 +353,9 @@ Do these after the solve; none of them changes the answer.
   Heat-transfer coefficient 750 W/(m^2 K) → 800 W/(m^2 K)". The mesh stays valid (its
   summary still ends "current"). Edit > **Undo** returns it to 750 and the results are
   "current" again.
+
+![h changed to 800: the result is out of date, the change is listed and the title says so.](img/gui-walkthrough/g15_v10_out_of_date.png)
+*h changed to 800: the result is out of date, the change is listed and the title says so.*
 - Change "Global element size" to `0.03`: now the mesh is out of date (its summary ends
   "out of date") and Solve is greyed out until you press **Generate mesh** again. Undo it.
 - File > **Save As...** `v10.tfea`; File > **New**; File > **Open...** `v10.tfea`. The
@@ -369,6 +422,9 @@ the name in "New name", **Apply**, switch picking off):
    ("1 part picked"), type the name `slab` in "New name", **Apply**, switch picking off.
    "Material" is "Material 1".
 
+![V-17 with its three loads, named selections and the part "Slab".](img/gui-walkthrough/g18_v17_model.png)
+*V-17 with its three loads, named selections and the part "Slab".*
+
 ### 2.5 Mesh: 40 elements along the slab, structured
 
 1. Click the **Mesh** node. "Global element size": `0.005`, Enter.
@@ -381,6 +437,9 @@ the name in "New name", **Apply**, switch picking off):
 4. **Generate mesh**. The status bar should report 82 nodes, 80 elements (a 40 by 1 grid of
    cells, each split into two triangles).
 
+![The structured mesh, with "Boundary divisions" and "Structured parts" in the mesh panel.](img/gui-walkthrough/g19_v17_mesh.png)
+*The structured mesh, with "Boundary divisions" and "Structured parts" in the mesh panel.*
+
 ### 2.6 Transient settings
 
 1. Click **Analysis Settings** in the tree. In "Analysis type" choose `transient`. More
@@ -392,6 +451,9 @@ the name in "New name", **Apply**, switch picking off):
 4. Click **Initial Condition**. "Kind" is `uniform`. "Temperature" `400` (K), Enter. (The
    other kind, `per_region`, shows the field "Temperature per part"; its keys are the
    selection names of the parts.)
+
+![Analysis Settings for the transient run; the tree summaries follow.](img/gui-walkthrough/g20_v17_settings.png)
+*Analysis Settings for the transient run; the tree summaries follow.*
 
 ### 2.7 Expected model tree (before the solve)
 
@@ -427,10 +489,16 @@ After the solve, "Results" holds "Temperature 1 | contour · current".
 
 1. Solve > **Validate** (no errors), then Solve > **Solve**. The progress window shows time
    and step size.
+
+![The Solving window of the transient run.](img/gui-walkthrough/g21_v17_solving.png)
+*The Solving window of the transient run.*
 2. The viewport shows the temperature at the last step (195 s). In the "Temperature 1" panel
    the "Step" slider and spin box, and the "Time" box (type `39`, Enter), move between the
    stored steps 0, 39 and 195 s. "Play" animates. The header at the top of the panel reads
    "Analysis: transient 0–195 s", the mesh line, "Results written ..." and "Status: current".
+
+![V-17 at 195 s with the result header.](img/gui-walkthrough/g22_v17_result.png)
+*V-17 at 195 s with the result header.*
 3. **The numbers.** File > Export > **Nodal results (CSV)...**. In the CSV (columns
    `step,time,node,x,y,T,qx,qy`) take the rows with y = 0 and x = 0 or x = 0.05 at time 39
    and time 195. Compare T [K] with the table above: the relative error
@@ -440,6 +508,12 @@ After the solve, "Results" holds "Temperature 1 | contour · current".
    temperature against time. Results > **Energy balance** shows the energy balance
    per step; the transient limit is 1e-3 (V-34). Results > **Heat-flow history** plots the
    heat entering through each condition.
+
+![Nodal history of the centre and surface nodes.](img/gui-walkthrough/g23_v17_history.png)
+*Nodal history of the centre and surface nodes.*
+
+![Energy balance of the transient run.](img/gui-walkthrough/g24_v17_energy.png)
+*Energy balance of the transient run.*
 
 ### 2.9 What to check in this review (V-17)
 
@@ -510,6 +584,17 @@ Found by the scripted runs and by reading the code; none confirmed on a real scr
 7. Results > Probe reads a pixel, not a coordinate.
 8. Opening a saved model attaches its results file only after a mesh exists, so the
    results appear only after you press "Generate mesh" again.
+
+Seen in the screenshot run of 2026-11-24 (offscreen, so check them on the screen):
+
+9. A refused selection name is shown twice in red: at the top of the panel and under
+   **Apply**.
+10. In the Mesh panel, the "Structured parts" field is too narrow for its picking row: the
+    "New name" box is squeezed and the **Clear** button is cut off.
+11. When you click an edge to inspect it, the highlight is drawn over that edge's load label
+    (for example "Fixed Temperature 1: T = 373.15 K").
+12. On the long V-17 strip, the label of the convection runs into the colour bar.
+13. At start the "Issues" tab is in front of "Messages" in the bottom dock.
 
 ## 5. Friction log (fill in)
 

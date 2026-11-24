@@ -14,41 +14,54 @@ N = 100 for D1. Two items remain. The interactive version is
 
 ## 1. M8.G human gate: build V-10 and V-17 in the window — 60–120 min
 
-No person has used the program on a real screen; every GUI test runs offscreen. On
-2026-11-23 a script followed the walkthrough in the real window and reproduced every
-number in it. The session guide with its screenshots and a friction log that is saved as
-you type is at https://claude.ai/artifact/AVKWHDY1Pa6YZ22go6weAH (private to you). The
-steps:
+You reviewed V-10 on 2026-11-24 and asked for the GUI identity changes (decisions D1–D8),
+tasks M11.49–M11.64. They are built. You will now review **V-10 and V-17 again** on the
+updated window.
+
+On 2026-11-24 a script followed the rewritten walkthrough with the real widgets and
+reproduced every number in it:
+- V-10: 18.206 °C at (0.6, 0.2) on 1210 nodes;
+- V-17: worst relative error 1.4e-3 on 82 nodes.
+
+The 24 screenshots of that run are in the walkthrough and on the session page
+https://claude.ai/artifact/AVKWHDY1Pa6YZ22go6weAH (private to you). The page also has a
+friction log that is saved as you type.
+
+The steps:
 1. Start the program with `.venv\Scripts\python.exe -m thermalfea.gui.app`.
+   `dist\ThermalFEA` predates these changes.
 2. Follow `docs/gui-walkthrough.md` to build V-10 and V-17 from an empty model, and
-   solve both.
-3. Fill in walkthrough §5:
+   solve both. Name every selection yourself in the "New name" box.
+3. Work through "What to check in this review" for each case (walkthrough §1.8 and §2.9).
+4. Fill in walkthrough §5 (or the page's log):
    - the friction log: step, what you did, what happened, severity (blocker / slows me
      down / cosmetic), and a suggested change;
    - minutes per case;
    - the answer for each case and whether it is inside tolerance: V-10 within 0.15 °C,
      V-17 within 2e-3.
-4. Confirm or dismiss the eight known frictions in walkthrough §4. Item 2 there is the
-   "Pick in viewport" start mode, which you asked to check here (Q29.12).
+5. Confirm or dismiss the 13 known frictions in walkthrough §4:
+   - item 2 is the "Pick in viewport" start mode, which you asked to check here (Q29.12);
+   - items 9–13 were seen in the screenshot run.
 
-Changed since the walkthrough was written:
-- M10: contacts, DXF, units and restart;
-- M11.24: the colour bar;
-- M11.25: New, Open, remesh, and closing the solve dialog;
-- built on 2026-11-23:
-  - M11.7: the Geometry type choice in Analysis Settings;
-  - M11.8: a None mass flow, the HTC calculator's cross-section, and "steady state";
-  - M11.9: a dialog when a correlation convection or radiation load is added. V-10 and
-    V-17 use neither, so the walkthrough steps are unchanged.
+**What changed for this review (M11.49–M11.64):**
+- **Toolbar:** it reads Point · Boundary · Part.
+- **Tree:**
+  - the sections are Parts and Selections, with summaries in a second column;
+  - the empty Contacts, Flow and Enclosures fold into one line;
+  - a material shows its library source.
+- **Selections:** you name each one at Apply and can rename it later; everything that
+  uses it follows.
+- **Results:** a result has a header and lists the changes since the solve.
+- **Viewport:** hover and click identify an entity.
 
-Every build task except the release review M11.6 is now done. M11.6 waits for this
-session.
+The decisions made while building, for you to confirm, are listed in `docs/CONTINUE.md` §6.
+
+The release review M11.6 waits for this session.
 
 **Files.**
-- `docs/gui-walkthrough.md`;
-- `docs/verification.md`;
-- `guide/getting-started.md`;
-- `guide/limitations.md`.
+- `docs/gui-walkthrough.md` and its screenshots in `docs/img/gui-walkthrough/`;
+- `docs/gui-identity-plan.md`;
+- `docs/verification.md`.
 
 ## 2. Visualisation testing, and the pump example — 30–60 min, optional
 
