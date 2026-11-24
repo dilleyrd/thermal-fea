@@ -809,7 +809,7 @@ tasks come before the owner's M8.G session (D8).
   - **Tests:** old files and scripts (empty name), uniqueness on add, rename and
     reassignment, a selection rename keeping the display name, and per-region keys.
   - Depends on M11.50 and M11.53.
-- [ ] **M11.57 [B] Material library source.** Plan §4.2.
+- [x] **M11.57 [B] Material library source.** Plan §4.2.
   - `Material.source` (`MaterialSource`, Data §6) is set by Use library values from the
     picked `(library, entry)`.
   - The summary and the panel show "‹entry› · library", "· edited" (and which

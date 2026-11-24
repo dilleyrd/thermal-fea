@@ -135,9 +135,13 @@ def test_expression_and_results_initial_summaries(doc) -> None:
 
 def test_material_summaries(doc) -> None:
     u = UnitSettings()
-    assert ts.material_summary(Material("m", k=52.0, rho=1.0, cp=1.0), u) == "k 52 W/(m K)"
+    assert ts.material_summary(Material("m", k=52.0, rho=1.0, cp=1.0), u) == (
+        "k 52 W/(m K) · custom"
+    )
     table = Table([300.0, 400.0], [50.0, 60.0], "T")
-    assert ts.material_summary(Material("m", k=table, rho=1.0, cp=1.0), u) == "k table(T)"
+    assert ts.material_summary(Material("m", k=table, rho=1.0, cp=1.0), u) == (
+        "k table(T) · custom"
+    )
 
 
 def test_regions_and_materials_nodes(tree, doc) -> None:

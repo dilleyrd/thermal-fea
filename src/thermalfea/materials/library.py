@@ -17,7 +17,7 @@ from pathlib import Path
 from typing import Any
 
 from ..core.errors import ModelError
-from .material import Fluid, Material
+from .material import Fluid, Material, differing_properties
 
 log = logging.getLogger(__name__)
 
@@ -211,6 +211,48 @@ def load_user_library(path: Path | None = None) -> tuple[dict[str, Material], di
     except (OSError, ValueError, AttributeError) as exc:
         raise ModelError(f"cannot read the user material library {path}: {exc}") from None
     return {m.name: m for m in solid_items}, {f.name: f for f in fluid_items}
+
+
+def source_entry(material: Material, path: Path | None = None) -> Material | None:
+    """The library entry a material's ``source`` names, or ``None`` (no source, not found).
+
+    An unreadable user library counts as not found. The entry is the library's own object
+    (not a copy); do not modify it.
+    """
+    src = material.source
+    if src is None:
+        return None
+    if src.library == "builtin":
+        return _builtin_solids().get(src.entry)
+    try:
+        user, _ = load_user_library(path)
+    except ModelError:
+        return None
+    return user.get(src.entry)
+
+
+def source_state(
+    material: Material, path: Path | None = None
+) -> tuple[str, Material | None, list[str]]:
+    """Where a material stands against the library entry it was copied from.
+
+    Returns
+    -------
+    state : {"custom", "library", "edited", "missing"}
+        No source; values equal the entry's; values differ from the entry's; or the entry
+        is not in that library.
+    entry : Material or None
+        The library entry (``None`` for "custom" and "missing").
+    differing : list of str
+        Names of the physical properties that differ (non-empty only for "edited").
+    """
+    if material.source is None:
+        return "custom", None, []
+    entry = source_entry(material, path)
+    if entry is None:
+        return "missing", None, []
+    diff = differing_properties(material, entry)
+    return ("edited" if diff else "library"), entry, diff
 
 
 def save_user_library(

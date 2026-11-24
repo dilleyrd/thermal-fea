@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Literal
 
 import numpy as np
 
@@ -40,6 +40,40 @@ class PhaseChange:
 
 
 @dataclass
+class MaterialSource:
+    """The library entry a material's values were copied from (provenance only).
+
+    Parameters
+    ----------
+    library : {"builtin", "user"}
+        Which library holds the entry.
+    entry : str
+        Entry name in that library.
+    """
+
+    library: Literal["builtin", "user"]
+    entry: str
+
+    def to_json(self) -> dict[str, str]:
+        """Return the JSON form."""
+        return {"library": self.library, "entry": self.entry}
+
+    @classmethod
+    def from_json(cls, obj: Any) -> MaterialSource | None:
+        """Build from JSON; anything that is not a valid record (e.g. a text note) is None."""
+        if (
+            isinstance(obj, dict)
+            and obj.get("library") in ("builtin", "user")
+            and isinstance(obj.get("entry"), str)
+        ):
+            return cls(obj["library"], obj["entry"])
+        return None
+
+
+PHYSICAL_PROPERTIES = ("k", "k2", "rho", "cp", "phase_change")
+
+
+@dataclass
 class Material:
     """Thermal properties of a solid.
 
@@ -59,6 +93,8 @@ class Material:
         material axis [W/(m K)].
     phase_change : PhaseChange, optional, keyword-only
         Melting range and latent heat.
+    source : MaterialSource, optional, keyword-only
+        Library entry the values were copied from; provenance only, never physics.
     """
 
     name: str
@@ -67,6 +103,7 @@ class Material:
     cp: Function
     k2: Function | None = field(default=None, kw_only=True)
     phase_change: PhaseChange | None = field(default=None, kw_only=True)
+    source: MaterialSource | None = field(default=None, kw_only=True)
 
     def __post_init__(self) -> None:
         if not isinstance(self.name, str) or not self.name:
@@ -105,6 +142,8 @@ class Material:
                 "T_liq": pc.T_liq,
                 "latent_heat": pc.latent_heat,
             }
+        if self.source is not None:
+            out["source"] = self.source.to_json()
         return out
 
     @classmethod
@@ -119,9 +158,34 @@ class Material:
                 cp=function_from_json(obj["cp"]),
                 k2=function_from_json(obj["k2"]) if obj.get("k2") is not None else None,
                 phase_change=PhaseChange(**pc) if pc is not None else None,
+                # the built-in data files carry a text "source" note, which is not provenance
+                source=MaterialSource.from_json(obj.get("source")),
             )
         except (KeyError, TypeError) as exc:
             raise ModelError(f"invalid material definition: {exc}") from None
+
+
+def physical_properties(material: Material) -> dict[str, Any]:
+    """The physical properties of a material as JSON forms (name and source left out).
+
+    Returns
+    -------
+    dict
+        Keys ``k``, ``k2``, ``rho``, ``cp`` and ``phase_change`` (``None`` when absent).
+    """
+    data = material.to_json()
+    return {key: data.get(key) for key in PHYSICAL_PROPERTIES}
+
+
+def differing_properties(a: Material, b: Material) -> list[str]:
+    """Names of the physical properties in which two materials differ (empty if none)."""
+    pa, pb = physical_properties(a), physical_properties(b)
+    return [key for key in PHYSICAL_PROPERTIES if pa[key] != pb[key]]
+
+
+def same_physics(a: Material, b: Material) -> bool:
+    """True when ``k``, ``k2``, ``rho``, ``cp`` and ``phase_change`` agree (not name, source)."""
+    return not differing_properties(a, b)
 
 
 @dataclass

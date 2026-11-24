@@ -49,6 +49,7 @@ from numpy import ndarray
 
 from ..core.errors import ModelError
 from ..core.mesh import Mesh
+from ..materials.material import PHYSICAL_PROPERTIES
 from ..model.serialize import to_json
 from ..post.energy import EnergyBalance
 from .problem import TEMPERATURE, CompiledProblem
@@ -122,6 +123,13 @@ def region_data(problem: CompiledProblem) -> dict[str, dict[str, Any]]:
 def _normal(value: Any) -> Any:
     """The JSON round trip of a value, so stored and fresh forms compare equal."""
     return json.loads(json.dumps(value, sort_keys=True))
+
+
+def _physics(material: Any) -> Any:
+    """A stored material dict reduced to its physical properties (provenance left out)."""
+    if not isinstance(material, dict):
+        return material
+    return {key: material.get(key) for key in PHYSICAL_PROPERTIES}
 
 
 def _mesh_difference(f: h5py.File, mesh: Mesh, width: int, n_nodes: int) -> str | None:
@@ -220,7 +228,10 @@ def check_restart_compatible(path: str | Path, problem: CompiledProblem) -> None
                 )
             for key, old in stored.items():
                 new = fresh[key]
-                if any(old.get(k) != new[k] for k in ("thickness", "material_angle", "material")):
+                if (
+                    any(old.get(k) != new[k] for k in ("thickness", "material_angle"))
+                    or _physics(old.get("material")) != _physics(new["material"])
+                ):
                     raise ModelError(
                         f"cannot continue {name}: the material, thickness or material angle "
                         f"of region {new['name']!r} differs from the results file. A run can "

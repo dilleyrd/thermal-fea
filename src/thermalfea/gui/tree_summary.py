@@ -23,6 +23,7 @@ from PySide6.QtGui import QAction
 from thermalfea.core.forms import FieldSpec, form_for
 from thermalfea.core.units import UnitSettings, from_si, unit_label
 from thermalfea.gui.overlay_labels import format_value
+from thermalfea.materials import library
 from thermalfea.model import geometry_ops as ops
 from thermalfea.model.model import Model
 
@@ -141,9 +142,22 @@ def analysis_summary(model: Model) -> str:
 
 
 def material_summary(material: Any, units: UnitSettings) -> str:
-    """The conductivity of a material, e.g. ``k 52 W/(m·K)`` or ``k table(T)``."""
-    text = format_value(_spec("conductivity"), material.k, units)
-    return f"k {text}" if text else ""
+    """The conductivity and library state of a material.
+
+    ``k 52 W/(m·K) · custom``, ``Copper (pure) · library``, ``... · edited`` or
+    ``... · library entry not found``.
+    """
+    state, _, _ = library.source_state(material)
+    if state == "custom":
+        text = format_value(_spec("conductivity"), material.k, units)
+        return f"k {text}{_SEP}custom" if text else "custom"
+    entry = material.source.entry
+    label = {
+        "library": "library",
+        "edited": "edited",
+        "missing": "library entry not found",
+    }[state]
+    return f"{entry}{_SEP}{label}"
 
 
 def region_summary(region: Any, model: Model) -> str:
