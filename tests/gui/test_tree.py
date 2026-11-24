@@ -13,7 +13,7 @@ from thermalfea.core.functions import Constant, Function
 from thermalfea.gui.document import Document
 from thermalfea.gui.panels import PropertyController, attach_tree
 from thermalfea.gui.property_panels.form import FormPanel
-from thermalfea.gui.tree import SECTIONS, ModelTree
+from thermalfea.gui.tree import ModelTree
 from thermalfea.model import bcs
 from thermalfea.model.bcs import Convection, HeatFlux
 from thermalfea.model.serialize import from_json, to_json
@@ -46,16 +46,14 @@ def by_data(actions, kind: str):
 
 def test_top_level_nodes(tree) -> None:
     titles = [tree.topLevelItem(i).text(0) for i in range(tree.topLevelItemCount())]
+    # an empty model folds Contacts, Flow and Enclosures into one node (M11.51)
     assert titles == [
         "Geometry", "Materials", "Regions", "Mesh", "Initial Condition",
-        "Loads & Boundary Conditions", "Contacts", "Flow", "Enclosures", "Analysis Settings",
+        "Loads & Boundary Conditions", "Contacts · Flow · Enclosures", "Analysis Settings",
         "Solution",
     ]  # fmt: skip
-    assert titles == [t for _, t in SECTIONS]
     assert texts(tree, "geometry") == ["plate"]
     assert texts(tree, "loads") == ["Flux 1", "Conv 1"]
-    flow = tree.section_item("flow")
-    assert [flow.child(i).text(0) for i in range(flow.childCount())] == ["Streams", "Network"]
 
 
 def test_add_actions_come_from_the_registry(tree) -> None:

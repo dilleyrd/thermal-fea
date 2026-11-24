@@ -754,7 +754,7 @@ tasks come before the owner's M8.G session (D8).
     initial condition, analysis and materials.
   - **Tests:** each summary, the refresh after each signal, column 1 not editable, and
     the existing tree tests still passing.
-- [ ] **M11.51 [A] Fold empty sections.** Plan §5.
+- [x] **M11.51 [A] Fold empty sections.** Plan §5.
   - While Contacts, Flow (no streams, no network) and Enclosures are all empty, they
     show as one dimmed line, "Contacts · Flow · Enclosures".
   - Its context menu offers Add contact, Add stream and Create network.

@@ -285,10 +285,14 @@ def test_contacts_node_actions_and_panel(window) -> None:
     from thermalfea.gui.property_panels.contact import ContactPanel
 
     tree, properties, document = _tree_and_document(window)
+    # an empty model folds Contacts, Flow and Enclosures into one line (M11.51), which
+    # offers Add contact; once a contact exists the Contacts section is back
+    node = tree.section_item("folded")
+    (add,) = [a for a in tree.actions_for(node) if a.data() == ("add_contact", None)]
+    add.trigger()
     node = tree.section_item("contacts")
     assert node.text(0) == "Contacts"
     (add,) = [a for a in tree.actions_for(node) if a.data() == ("add_contact", None)]
-    add.trigger()
     add.trigger()
     assert [c.name for c in document.model.contacts] == ["Contact 1", "Contact 2"]
     node = tree.section_item("contacts")  # the tree is rebuilt after every edit

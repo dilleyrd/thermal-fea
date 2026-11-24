@@ -1,7 +1,8 @@
 """The model tree (Plan M8.4): the objects of the model, with context-menu actions.
 
 Top-level nodes: Geometry, Materials, Regions, Mesh, Initial Condition, Loads & Boundary
-Conditions, Flow (Streams, Network), Enclosures, Analysis Settings, Solution. The tree is
+Conditions, Flow (Streams, Network), Enclosures, Analysis Settings, Solution. While Contacts,
+Flow and Enclosures are all empty they fold into one dimmed node (M11.51). The tree is
 rebuilt from ``document.model`` on every ``model_changed``; expansion and the current item
 survive a rebuild.
 
@@ -43,7 +44,7 @@ from thermalfea.gui.dialogs.new_stream import NewStreamDialog
 from thermalfea.gui.document import Document
 from thermalfea.gui.tree_summary import summary_for
 from thermalfea.materials.material import Material
-from thermalfea.model.bcs import Contact, Stream
+from thermalfea.model.bcs import Contact, FlowNetwork, Stream
 from thermalfea.model.geometry_edit import dependents
 from thermalfea.model.model import Model, RegionAssignment
 
@@ -69,6 +70,9 @@ SECTION_OBJECTS: dict[str, Address] = {
 }
 #: Model lists of objects that can be renamed, duplicated and deleted.
 _NAMED_LISTS = ("bcs", "streams", "enclosures", "contacts")
+#: Sections folded into one node while all of them are empty (M11.51), and its title.
+FOLDED_SECTIONS: tuple[str, ...] = ("contacts", "flow", "enclosures")
+FOLDED_TITLE = "Contacts · Flow · Enclosures"
 _SUPPRESSED_BRUSH = QBrush(QColor("#808080"))
 _ROLE = Qt.ItemDataRole.UserRole
 
@@ -286,9 +290,24 @@ class ModelTree(QTreeWidget):
         for i in range(item.childCount()):
             self._restore_expansion(item.child(i))
 
+    @staticmethod
+    def is_folded(model: Model) -> bool:
+        """``True`` while Contacts, Flow and Enclosures are all empty (M11.51)."""
+        return (
+            not model.contacts
+            and not model.streams
+            and model.network is None
+            and not model.enclosures
+        )
+
     def _populate(self, model: Model) -> None:
+        folded = self.is_folded(model)
         sections: dict[str, QTreeWidgetItem] = {}
         for key, title in SECTIONS:
+            if folded and key in FOLDED_SECTIONS:
+                if key == "contacts":  # one dimmed node takes the place of the three
+                    self._make_folded_item(self)
+                continue
             sections[key] = self._make_item(self, title, NodeRef(key, SECTION_OBJECTS.get(key)))
         for i, op in enumerate(model.geometry):
             self._make_item(
@@ -318,17 +337,18 @@ class ModelTree(QTreeWidget):
                 sections["contacts"], contact.name,
                 NodeRef("contacts", ("contacts", i)), renameable=True,
             )  # fmt: skip
-        streams = self._make_item(sections["flow"], "Streams", NodeRef("streams"))
-        for i, stream in enumerate(model.streams):
-            self._make_item(
-                streams, stream.name, NodeRef("streams", ("streams", i)), renameable=True
-            )
-        self._make_item(sections["flow"], "Network", NodeRef("network", ("network",)))
-        for i, enclosure in enumerate(model.enclosures):
-            self._make_item(
-                sections["enclosures"], enclosure.name,
-                NodeRef("enclosures", ("enclosures", i)), renameable=True,
-            )  # fmt: skip
+        if not folded:
+            streams = self._make_item(sections["flow"], "Streams", NodeRef("streams"))
+            for i, stream in enumerate(model.streams):
+                self._make_item(
+                    streams, stream.name, NodeRef("streams", ("streams", i)), renameable=True
+                )
+            self._make_item(sections["flow"], "Network", NodeRef("network", ("network",)))
+            for i, enclosure in enumerate(model.enclosures):
+                self._make_item(
+                    sections["enclosures"], enclosure.name,
+                    NodeRef("enclosures", ("enclosures", i)), renameable=True,
+                )  # fmt: skip
         for provider in self.providers:
             for text, address, renameable in provider.tree_items():
                 self._make_item(
@@ -337,6 +357,18 @@ class ModelTree(QTreeWidget):
                     NodeRef("solution", address),
                     renameable=renameable,
                 )
+
+    def _make_folded_item(self, parent: QTreeWidget) -> QTreeWidgetItem:
+        """The dimmed node standing for the folded sections (M11.51)."""
+        item = self._make_item(
+            parent, FOLDED_TITLE, NodeRef("folded"),
+            tooltip="No contacts, streams, network or enclosures yet",
+        )  # fmt: skip
+        font = item.font(0)
+        font.setItalic(True)
+        item.setFont(0, font)
+        item.setForeground(0, self.palette().brush(QPalette.ColorRole.PlaceholderText))
+        return item
 
     @staticmethod
     def _title_of(cls: type) -> str:
@@ -450,6 +482,10 @@ class ModelTree(QTreeWidget):
             add("Add material", self.add_material, ("add_material", None))
         elif ref.address is None and ref.section == "regions":
             add("Add region", self.add_region, ("add_region", None))
+        elif ref.address is None and ref.section == "folded":
+            add("Add contact", self.add_contact, ("add_contact", None))
+            add("Add stream", self.add_stream, ("add_stream", None))
+            add("Create network", self.create_network, ("create_network", None))
         elif ref.address is None and ref.section == "streams":
             add("Add stream", self.add_stream, ("add_stream", None))
         elif ref.address is None and ref.section == "contacts":
@@ -699,6 +735,15 @@ class ModelTree(QTreeWidget):
         address = ("streams", holder[0])
         self.select_address(address)
         return address
+
+    def create_network(self) -> bool:
+        """Set ``model.network`` to an empty :class:`FlowNetwork` (one undo step).
+
+        The same edit as the "Create network" button of the network panel.
+        """
+        return self.document.edit(
+            "Create network", lambda model: setattr(model, "network", FlowNetwork())
+        )
 
     def rename(self, address: Address, new_name: str) -> bool:
         """Rename an object (unique within its list); ``False`` if nothing changed.

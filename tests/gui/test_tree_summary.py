@@ -148,7 +148,8 @@ def test_regions_and_materials_nodes(tree, doc) -> None:
     assert summary(tree, section="materials") == str(len(doc.model.materials))
     assert summary(tree, section="regions") == "1"
     assert summary(tree, ("regions", 0)) == "Copper (pure) · t 1 m"
-    assert summary(tree, section="contacts") == "0"
+    # no contact, stream, network or enclosure: their sections fold into one line (M11.51)
+    assert summary(tree, section="folded") == "none"
     assert summary(tree, section="solution") == ""
 
 

@@ -451,7 +451,8 @@ def test_cold_plate_in_the_gui(
 
     # step: Flow > Streams > Add stream opens the New stream dialog
     assert doc.model.streams == []
-    tree_action(ctx, "streams", ("add_stream", None))
+    # no contact, stream or network yet: the folded line offers Add stream (M11.51)
+    tree_action(ctx, "folded", ("add_stream", None))
     dialog = ctx.tree.stream_dialog
     assert dialog is not None and dialog.isVisible()
     assert dialog.flow_area_edit.text() == "" and "Flow area [m^2]" in _row_labels(dialog)

@@ -193,6 +193,8 @@ def _section_summary(document: Document, section: str, address: tuple | None) ->
         return initial_summary(model)
     if address == ("solution",):
         return analysis_summary(model)
+    if section == "folded":  # Contacts · Flow · Enclosures, all empty (M11.51)
+        return "none"
     if section == "geometry":
         return f"{len(model.geometry)} steps"
     sizes = {
