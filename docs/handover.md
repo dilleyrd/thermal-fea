@@ -73,7 +73,7 @@ and reasons are in the open questions cited.
 | Four assembly channels | `solver/assembler.py` | `add_matrix` (K), `add_vector` (F), `add_tangent` (tangent only), `add_residual` (residual only), `add_sparse`. Q8. |
 | Constraints | `solver/terms.py`, `solver/problem.py` | `Constraint` protocol; `CompiledProblem.prescribed(t)`. Q8. |
 | Extra DOFs | `solver/dofs.py: DofMap.add_extra` | Used by streams (`stream:<name>`); results as `/steps/fields/<name>` with location `extra:<group>`. |
-| Flow providers | `flow/provider.py`, `flow/coupling.py` | `problem.providers`; `update` before every assembly. Q20. |
+| Flow providers | `flow/provider.py`, `flow/coupling.py` | `problem.providers`; `update` once per Newton iterate, never in line-search trials (M11.20). Q20. |
 | Facet integration | `physics/batches.py: facet_batches`, `FacetBatch` | Weights `∫ N g ds`; see `flow/stream.py: setup` for face weights w_j and areas. |
 | Sign convention | everywhere | A reported heat flow is positive **into** the body. Q11. |
 | Energy balance | `post/energy.py`, `post/reactions.py` | θ-weighted per step (Q16); `gross` scale (Q11); a constraint with `exchanges_heat = False` reports nothing. |

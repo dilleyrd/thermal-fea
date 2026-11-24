@@ -547,7 +547,7 @@ Boundary Conditions, Flow (Streams, Network), Enclosures, Analysis Settings, Sol
   (owner's decision D4). When the network iteration does not converge, the error names the
   worst branch, its Δp, both flow estimates and the largest continuity residual. Theory
   §9.2 is unchanged. Test: the nearly balanced bridge of the evaluation gives that message.
-- [ ] **M11.33 [A] Document corrections.** Q29.9, Q29.13 (owner's decisions D9, D13).
+- [x] **M11.33 [A] Document corrections.** Q29.9, Q29.13 (owner's decisions D9, D13).
   - Theory §7: a reported heat flow is positive into the body; reverse the sign of its four
     boundary formulas.
   - Data §8 and §9 brought up to date (numbered `/fluid/<i>` and `/reactions/<i>` with

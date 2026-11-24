@@ -227,7 +227,7 @@ kept across it. Jumps of an expression that has no breakpoint are looked for onl
 - Also limit the step so that the largest change of a free DOF ≤ `max_dT_per_step`, if the
   user set it.
 
-Suggested initial step (shown in the GUI): Δt₀ = h\_min² / (4 α\_max), α = k/(ρc),
+Suggested initial step (logged, shown in the Messages panel): Δt₀ = h\_min² / (4 α\_max), α = k/(ρc),
 h\_min = smallest element edge length.
 
 Oscillation warning: if consistent capacitance is used and Δt &lt; h² ρc /(6k) for more than
@@ -240,11 +240,11 @@ Oscillation warning: if consistent capacitance is used and Δt &lt; h² ρc /(6k
   then average the contributions of all elements sharing the node **that belong to the same
   region**. A node on a material interface therefore has one flux value per region.
 - Element flux: value at the element centroid.
-- Heat flow through a boundary set [W] (positive out of the body):
-    - convection set: Σ\_gp h (T − T∞) g |J\_s| w
-    - radiation set: Σ\_gp εσ(T⁴ − T∞⁴) g |J\_s| w
-    - flux set: −Σ\_gp q̄ g |J\_s| w
-    - fixed-temperature set: −Σ R\_p over its nodes (§4)
+- Heat flow through a boundary set [W] (positive into the body):
+    - convection set: Σ\_gp h (T∞ − T) g |J\_s| w
+    - radiation set: Σ\_gp εσ(T∞⁴ − T⁴) g |J\_s| w
+    - flux set: Σ\_gp q̄ g |J\_s| w
+    - fixed-temperature set: Σ R\_p over its nodes (§4)
 - Stored energy rate: Ė = Σ (C Ṫ), with Ṫ = (T\_{n+1} − T\_n)/Δt.
 - **Energy balance:** (generation + heat in through all boundaries) − Ė = imbalance.
   Report imbalance / max(|terms|).

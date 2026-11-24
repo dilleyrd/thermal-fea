@@ -348,6 +348,7 @@ None of these blocks the build; each is a choice the documents leave open. Pleas
    for each stored step. Two optional methods are used when a provider has them:
    `initialize(u, t0)` (start values of its extra DOFs) and `static()` (step-independent
    data for the results file).
+   **Corrected in M11.33 (2026-11-23), after M11.20:** the providers are updated once per Newton iterate (and once at the start), never inside line-search trials or the jump probes (Theory §9.2).
 2. **Initial fluid temperatures of a transient.** The fluid is quasi-steady and has no
    initial condition. **Done for now:** the fluid nodes start at the values that satisfy
    the fluid energy equation for the initial wall temperatures (marched from the inlet).

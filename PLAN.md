@@ -103,7 +103,7 @@ src/thermalfea/
                viewport_mpl.py (Matplotlib implementation) property_panels/ dialogs/
                commands.py worker.py
   api.py       the public scripting facade
-  cli.py       `thermalfea solve model.tfea`, `thermalfea info`, `thermalfea export`
+  cli.py       `thermalfea solve model.tfea`, `thermalfea info`
 tests/
   unit/  verification/  gui/
 examples/      one runnable script per verification case

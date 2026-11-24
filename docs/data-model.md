@@ -346,6 +346,7 @@ class Stream:
     n_cells: int | None = None           # default: one per wall edge along the path
     nu_option: Literal["auto", "dittus_boelter", "sieder_tate"] = "auto"
     h_multiplier: float = 1.0
+    h_override: Function | None = None   # h [W/(m^2 K)] of time used instead of the correlation
     diameter_ratio: float | None = None  # D_i/D_o, annulus cross-sections only (Theory §8.1)
 
 @dataclass
@@ -394,11 +395,14 @@ points); `api.solve` runs it when `built` is not given.
 ## §9 Results file (HDF5, `<model>.tfea.h5`)
 
 ```
-/meta            attrs: schema_version, model_hash, created, analysis, solver settings (JSON)
-/mesh            attr dim
+/meta            attrs: schema_version, model_hash, created, analysis, settings (JSON),
+                 model (JSON), regions (JSON)
+/mesh            attrs dim, axisymmetric
 /mesh/nodes      (n_nodes, dim)
 /mesh/blocks/<i> conn, region, elem_ids; attr etype
 /mesh/facets/<i> conn, entity, parent_elem; attr etype
+/mesh/point_nodes  (n, 2): geometry point tag, node index
+/mesh/node_sets/<i>  node indices; attr name
 /steps/time      (n_steps,) extendable
 /steps/fields/<name>   (n_steps, n_values[, n_components]) extendable, chunked by step, gzip;
                  attrs: location (node | element | facet | extra:<group>), units.
@@ -407,8 +411,10 @@ points); `api.solve` runs it when `built` is not given.
 /steps/dt, /steps/iterations, /steps/converged
 /steps           attr last_step: time-step number of the last stored step (M10.6, Q25)
 /steps/energy    (n_steps, k) columns named in attr `columns`
-/fluid/<stream>  node s-coordinates, dof indices; per step: mass_flow, h_mean, Re, dp
-/reactions/<bc>  (n_steps,) total heat flow per boundary condition [W]
+/reactions/<i>   (n_steps,) heat entering the body per boundary condition [W]; attr name
+/fluid/<i>       one group per stream; attrs name, mode. In-plane streams: s (path
+                 coordinate of the fluid nodes [m]) and dofs. Per step, (n_steps,):
+                 mass_flow, h_mean, Re, dp, T_in, T_out, heat
 /terms/<i>  (n_steps,) per-step value of a term result (Term.results): contact_heat:<contact> [W], from side A to side B, and h_mean:<bc> [W/(m^2 K)]; attrs name, quantity, units (schema 2, M11.28)
 ```
 
