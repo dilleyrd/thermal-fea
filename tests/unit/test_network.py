@@ -242,3 +242,27 @@ def test_network_problems_lists_every_problem_with_its_id() -> None:
     no_pressure = bad(nodes=[NetNode("a", inflow=1.0), NetNode("b")])
     assert any("prescribed pressure" in m for _, m in netmod.network_problems(
         no_pressure.nodes, no_pressure.branches, [stream()]))
+
+
+def test_a_nearly_balanced_bridge_names_the_worst_branch() -> None:
+    """M11.32, REVIEW-2 2.1-7, owner's decision D4: a clear error, Theory §9.2 unchanged."""
+    net = FlowNetwork(
+        [NetNode("in", pressure=1000.0), NetNode("out", pressure=0.0), NetNode("a"),
+         NetNode("b")],
+        [NetBranch("in_a", "in", "a", length=1.0, stream="s"),
+         NetBranch("in_b", "in", "b", length=1.0, stream="s"),
+         NetBranch("a_out", "a", "out", length=1.0, stream="s"),
+         NetBranch("b_out", "b", "out", length=1.0 + 1e-7, stream="s"),
+         NetBranch("bridge", "a", "b", kind="loss", K_minor=1.0, stream="s")],
+    )
+    with pytest.raises(ConvergenceError) as info:
+        solve_network_full(net, [stream()], T)
+    message = str(info.value)
+    assert "Worst branch 'bridge'" in message
+    assert "pressure drop" in message and " Pa" in message
+    assert "from the nodal solve" in message and "from its pressure-drop law" in message
+    assert "largest continuity residual" in message
+    assert "at node 'a'" in message or "at node 'b'" in message
+    # a less finely balanced bridge still converges
+    net.branches[3] = NetBranch("b_out", "b", "out", length=1.0 + 1e-3, stream="s")
+    assert solve_network_full(net, [stream()], T).converged

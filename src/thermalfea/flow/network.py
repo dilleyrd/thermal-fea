@@ -126,11 +126,16 @@ def _friction(Re: ndarray, rel_rough: ndarray) -> ndarray:
     return np.asarray(friction_churchill(Re_safe, rel_rough), dtype=float)
 
 
-def _rel_change(new: ndarray, old: ndarray) -> float:
-    """Largest relative difference, relative to the larger magnitude (0 for two zeros)."""
+def _rel_changes(new: ndarray, old: ndarray) -> ndarray:
+    """Relative difference per entry, relative to the larger magnitude (0 for two zeros)."""
     scale = np.maximum(np.abs(new), np.abs(old))
     safe = np.where(scale > 0.0, scale, 1.0)
-    return float(np.max(np.abs(new - old) / safe))
+    return np.abs(new - old) / safe
+
+
+def _rel_change(new: ndarray, old: ndarray) -> float:
+    """Largest relative difference, relative to the larger magnitude (0 for two zeros)."""
+    return float(np.max(_rel_changes(new, old)))
 
 
 def solve_network_full(
@@ -250,6 +255,8 @@ def solve_network_full(
         return p
 
     change = np.inf
+    per_branch = np.zeros(nb)
+    dp = m_lin = m_new = np.zeros(nb)
     for it in range(1, MAX_ITERATIONS + 1):
         p = solve_nodes(c)
         dp = p[ifrom] - p[ito]
@@ -263,7 +270,8 @@ def solve_network_full(
         # on c when the pressures are prescribed, so it alone could not show convergence).
         # Likewise m_lin alone cannot show convergence when the flow is prescribed, so the
         # branch law must also be met: the change is the larger of the two measures.
-        change = max(_rel_change(m_lin, m_prev), _rel_change(m_new, m_lin))
+        per_branch = np.maximum(_rel_changes(m_lin, m_prev), _rel_changes(m_new, m_lin))
+        change = float(per_branch.max())
         log.debug("network iteration %d: max relative change %.3e", it, change)
         c = RELAXATION * c_new + (1.0 - RELAXATION) * c
         m_prev = m_lin
@@ -279,9 +287,25 @@ def solve_network_full(
                 reynolds={bid: float(v) for bid, v in zip(branch_ids, Re, strict=True)},
                 pressure_drop={bid: float(v) for bid, v in zip(branch_ids, dp, strict=True)},
             )
+    # Diagnostics (owner's decision D4, Q29.4): the branch that changed most in the last
+    # iteration, its two flow estimates, and the worst continuity residual of the flows that
+    # obey the branch law (the flows of the nodal solve meet continuity exactly).
+    k = int(np.argmax(per_branch))
+    residual = inflow.copy()
+    np.add.at(residual, ifrom, -m_new)
+    np.add.at(residual, ito, m_new)
+    worst = int(free[np.argmax(np.abs(residual[free]))]) if free.size else -1
+    continuity = (
+        f"; largest continuity residual {residual[worst]:.3e} kg/s at node "
+        f"{node_ids[worst]!r}" if worst >= 0 else ""
+    )
     raise ConvergenceError(
         f"flow network did not converge in {MAX_ITERATIONS} iterations "
-        f"(last relative change {change:.3e})"
+        f"(last relative change {change:.3e}). Worst branch {branch_ids[k]!r}: pressure "
+        f"drop {dp[k]:.3e} Pa, mass flow {m_lin[k]:.3e} kg/s from the nodal solve and "
+        f"{m_new[k]:.3e} kg/s from its pressure-drop law{continuity}. A branch whose "
+        "pressure drop is close to zero (for example across a nearly balanced bridge) can "
+        "stop the iteration: remove it, or make the network less finely balanced"
     )
 
 

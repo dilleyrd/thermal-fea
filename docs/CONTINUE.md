@@ -206,7 +206,9 @@ In order:
   pump example reads the stored heat and only applies its sign.
 - **M11.31 (fluid rows fully implicit)** followed. Rows without capacitance take θ = 1, and a
   restart re-solves the fluid for the stored walls (Theory §6, §9.1; Q29.2).
-  - **Next, in the agreed order:** M11.32–M11.36, M10.5, M11.7–M11.10, M11.2, M11.3,
+- **M11.32 (network error near zero Δp)** followed: the non-convergence error names the
+  worst branch, its Δp, both flow estimates and the worst continuity residual.
+  - **Next, in the agreed order:** M11.33–M11.36, M10.5, M11.7–M11.10, M11.2, M11.3,
     M11.5, then M11.6.
 
 ## 5. Next work: tasks M11.12–M11.16

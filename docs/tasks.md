@@ -543,7 +543,7 @@ Boundary Conditions, Flow (Streams, Network), Enclosures, Analysis Settings, Sol
 
   Tests: a restart with a changed mass flow and θ = 0.5 shows no alternating outlet
   temperature; V-27 to V-29 still pass.
-- [ ] **M11.32 [B] Network error near zero pressure drop.** `REVIEW-2.md` 2.1-7; Q29.4
+- [x] **M11.32 [B] Network error near zero pressure drop.** `REVIEW-2.md` 2.1-7; Q29.4
   (owner's decision D4). When the network iteration does not converge, the error names the
   worst branch, its Δp, both flow estimates and the largest continuity residual. Theory
   §9.2 is unchanged. Test: the nearly balanced bridge of the evaluation gives that message.

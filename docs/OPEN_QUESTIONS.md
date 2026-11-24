@@ -734,6 +734,10 @@ commit 314093c) and in the evaluation, §4.
 4. **D4, network near Δp = 0 (M11.32): option (a).** Raise a clear error naming the worst
    branch, its Δp, both flow estimates and the largest continuity residual. No change to
    the iteration of Theory §9.2.
+   **Built in M11.32 (2026-11-23).** The worst branch is the one with the largest relative
+   change in the last iteration. The two estimates are the flow of the nodal solve and the
+   flow of the branch's pressure-drop law. The continuity residual is that of the
+   branch-law flows at the free nodes; the nodal-solve flows meet continuity exactly.
 5. **D5, inclined natural convection (M11.23).**
    - A non-finite angle or |θ| > 90° is refused before evaluation, pointing to the
      horizontal-plate correlations.
