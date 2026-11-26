@@ -865,6 +865,29 @@ tasks come before the owner's M8.G session (D8).
   - Give the expected tree of each case.
   - The owner's M8.G re-review of V-10 and V-17 depends on this task.
   - Depends on M11.49–M11.63.
+### Flow showcase (owner's choice, 2026-11-26)
+
+- [x] **M11.65 [C] Counterflow double-pipe oil cooler example.** The owner chose this case
+  from five candidates (Codex-reviewed) and wrote its spec in `examples/oil_cooler/spec/`
+  (an engineering brief PDF, a model-creation brief and an illustration). The decisions of
+  2026-11-26 are appended to the model-creation brief.
+  - **Model:** axisymmetric copper tube (ASTM B88 Type K 3/8 in) between an in-plane oil
+    stream in the bore (z = 0 to L) and an in-plane water stream in the annulus (z = L to
+    0, `annulus_inner`); adiabatic shell and tube ends; library copper, unused engine oil
+    and water.
+  - **Runs and checks** (`examples/oil_cooler/oil_cooler.py`):
+    - constant film coefficients against counterflow effectiveness-NTU on four axial
+      meshes (both outlets and both duties);
+    - the duct correlations, with Re, mean h and regime per stream, and an LMTD
+      cross-check;
+    - a start-up with the oil inlet rising 20 K over 1 s, checking the copper energy
+      storage against the integrated duty difference at two time steps, and the end state
+      against the steady solution at the new inlet.
+  - **Guide:** `examples/oil_cooler/README.md` with the window steps and screenshots
+    (zoomed), the engineering plots (counterflow profiles against z, local ΔT and q′,
+    verification, start-up, wall response), and the simplifications stated plainly
+    (fully developed duct correlations, quasi-steady streams with no transit delay,
+    constant solid properties).
 - [ ] **M11.6 [C] Release review.** Check every item of Plan §6; resolve or document every
   entry in `docs/OPEN_QUESTIONS.md`. Version 1 excludes the held features M9 and M10.2 and
   their cases V-22a–d, V-23, V-24 and V-36 (owner, 2026-11-22, Q29.15); the guide's

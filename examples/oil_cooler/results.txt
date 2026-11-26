@@ -1,0 +1,22 @@
+== Geometry
+D_i 10.21 mm, D_o 12.70 mm, wall 1.245 mm, D_s 20.0 mm, L 2.0 m, D_o/D_s 0.6350
+oil A 8.1886e-05 m2, P 3.2078e-02 m; water A 1.8748e-04 m2, P 1.0273e-01 m, D_h 7.300 mm
+== Reference (constant h): effectiveness-NTU
+h_oil 49.465, h_water 446.446 W/(m2 K); UA 2.9136 W/K; C_oil 4.2360, C_water 12.5598 W/K; Cr 0.3373; NTU 0.6878; eps 0.4656; Q 118.346 W; T_oil,out 322.062 K; T_water,out 299.423 K
+  n   50: T_oil,out 322.067 (+0.0046 K)  T_water,out 299.421 (-0.0016 K)  Q_oil 118.326 (-0.017 %)  Q_water 118.326 (-0.017 %)
+  n  100: T_oil,out 322.066 (+0.0042 K)  T_water,out 299.421 (-0.0014 K)  Q_oil 118.328 (-0.015 %)  Q_water 118.328 (-0.015 %)
+  n  200: T_oil,out 322.066 (+0.0041 K)  T_water,out 299.421 (-0.0014 K)  Q_oil 118.328 (-0.015 %)  Q_water 118.328 (-0.015 %)
+  n  400: T_oil,out 322.066 (+0.0040 K)  T_water,out 299.421 (-0.0014 K)  Q_oil 118.328 (-0.014 %)  Q_water 118.328 (-0.014 %)
+== Correlation run
+  Oil: Re 3.86 (laminar), h_mean 50.24 W/(m2 K), T_in 350.000, T_out 321.781 K, heat -119.537 W, dp 1122.93 Pa
+  Water: Re 120.08 (laminar), h_mean 452.28 W/(m2 K), T_in 290.000, T_out 299.517 K, heat 119.537 W, dp 18.73 Pa
+  e-NTU with the inlet-temperature h: Q 118.346 W, T_oil,out 322.062, T_water,out 299.423 K
+  imbalance (relative) -1.79e-11
+  LMTD 40.413 K; Q/LMTD 2.9579 W/K; UA from the mean h 2.9586 W/K
+  Oil: mean velocity 28.6 mm/s, transit time L/V 70 s (not modelled: the streams are quasi-steady)
+  Water: mean velocity 16.0 mm/s, transit time L/V 125 s (not modelled: the streams are quasi-steady)
+== Steady at the stepped oil inlet
+  Oil: T_out 333.764 K, heat -159.874 W
+  Water: T_out 302.729 K, heat 159.874 W
+== startup: 485 stored steps; final T_oil,out 333.763, T_water,out 302.728 K; integral(Q_oil - Q_water) dt 804.73 J vs copper Delta U 803.43 J (+0.162 %)
+== startup_fine: 1925 stored steps; final T_oil,out 333.763, T_water,out 302.728 K; integral(Q_oil - Q_water) dt 803.53 J vs copper Delta U 803.45 J (+0.010 %)

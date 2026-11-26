@@ -1,0 +1,314 @@
+{
+  "analysis": "axisymmetric",
+  "bcs": [],
+  "contacts": [],
+  "display_units": {
+    "angle": "rad",
+    "area": "m^2",
+    "conductivity": "W/(m K)",
+    "density": "kg/m^3",
+    "heat_flux": "W/m^2",
+    "heat_gen": "W/m^3",
+    "htc": "W/(m^2 K)",
+    "length": "m",
+    "mass_flow": "kg/s",
+    "power": "W",
+    "pressure": "Pa",
+    "specific_heat": "J/(kg K)",
+    "temperature": "K",
+    "time": "s",
+    "velocity": "m/s"
+  },
+  "enclosures": [],
+  "geometry": [
+    {
+      "corner_radius": 0.0,
+      "height": 2.0,
+      "id": "rectangle1",
+      "type": "rectangle",
+      "width": 0.0012446,
+      "x": 0.0051053999999999995,
+      "y": 0.0
+    }
+  ],
+  "initial_condition": {
+    "kind": "from_results",
+    "per_region": null,
+    "results_path": "oil-cooler.tfea.h5",
+    "value": null
+  },
+  "materials": {
+    "Copper (pure)": {
+      "cp": {
+        "type": "constant",
+        "value": 385.0
+      },
+      "k": {
+        "type": "constant",
+        "value": 401.0
+      },
+      "k2": null,
+      "name": "Copper (pure)",
+      "phase_change": null,
+      "rho": {
+        "type": "constant",
+        "value": 8933.0
+      },
+      "source": null
+    }
+  },
+  "mesh_settings": {
+    "algorithm": "frontal",
+    "curve_divisions": {
+      "oil wall": 200,
+      "tube ends": 4,
+      "water wall": 200
+    },
+    "curve_sizes": {},
+    "element_shape": "quad",
+    "global_size": 0.01,
+    "order": 1,
+    "point_sizes": {},
+    "refinements": [],
+    "smoothing_passes": 3,
+    "structured_surfaces": [
+      "all"
+    ]
+  },
+  "name": "Oil cooler (startup)",
+  "network": null,
+  "regions": [
+    {
+      "material": "Copper (pure)",
+      "material_angle": 0.0,
+      "name": "",
+      "selection": "all",
+      "thickness": 1.0
+    }
+  ],
+  "schema_version": 1,
+  "selections": {
+    "all": {
+      "dim": 2,
+      "fingerprints": [
+        {
+          "bbox": [
+            0.005105299999999999,
+            -1e-07,
+            -1e-07,
+            0.0063501,
+            2.0000001,
+            1e-07
+          ],
+          "center": [
+            0.0057277,
+            1.0,
+            0.0
+          ],
+          "dim": 2,
+          "measure": 0.0024892
+        }
+      ],
+      "name": "all",
+      "tags": [
+        1
+      ]
+    },
+    "oil wall": {
+      "dim": 1,
+      "fingerprints": [
+        {
+          "bbox": [
+            0.005105299999999999,
+            -1e-07,
+            -1e-07,
+            0.0051055,
+            2.0000001,
+            1e-07
+          ],
+          "center": [
+            0.0051053999999999995,
+            1.0,
+            0.0
+          ],
+          "dim": 1,
+          "measure": 2.0
+        }
+      ],
+      "name": "oil wall",
+      "tags": [
+        4
+      ]
+    },
+    "tube ends": {
+      "dim": 1,
+      "fingerprints": [
+        {
+          "bbox": [
+            0.005105299999999999,
+            -1e-07,
+            -1e-07,
+            0.0063501,
+            1e-07,
+            1e-07
+          ],
+          "center": [
+            0.0057277,
+            0.0,
+            0.0
+          ],
+          "dim": 1,
+          "measure": 0.0012446000000000002
+        },
+        {
+          "bbox": [
+            0.005105299999999999,
+            1.9999999,
+            -1e-07,
+            0.0063501,
+            2.0000001,
+            1e-07
+          ],
+          "center": [
+            0.0057277,
+            2.0,
+            0.0
+          ],
+          "dim": 1,
+          "measure": 0.0012446000000000002
+        }
+      ],
+      "name": "tube ends",
+      "tags": [
+        1,
+        3
+      ]
+    },
+    "water wall": {
+      "dim": 1,
+      "fingerprints": [
+        {
+          "bbox": [
+            0.0063498999999999995,
+            -1e-07,
+            -1e-07,
+            0.0063501,
+            2.0000001,
+            1e-07
+          ],
+          "center": [
+            0.00635,
+            1.0,
+            0.0
+          ],
+          "dim": 1,
+          "measure": 2.0
+        }
+      ],
+      "name": "water wall",
+      "tags": [
+        2
+      ]
+    }
+  },
+  "solution": {
+    "auto_timestep": true,
+    "dt_max": 0.25,
+    "dt_min": 1e-09,
+    "end_time": 120.0,
+    "initial_dt": 0.02,
+    "kind": "transient",
+    "line_search": true,
+    "lumped_capacitance": false,
+    "max_dT_per_step": null,
+    "max_iterations": 30,
+    "output": "every_n",
+    "output_every": 1,
+    "output_times": [],
+    "rtol": 1e-06,
+    "theta": 1.0,
+    "time_tol": 0.02,
+    "ttol": 0.0001
+  },
+  "streams": [
+    {
+      "T_inlet": {
+        "extrapolate": "hold",
+        "type": "table",
+        "variable": "t",
+        "xs": [
+          0.0,
+          1.0
+        ],
+        "ys": [
+          350.0,
+          370.0
+        ]
+      },
+      "cross_section": "circular",
+      "diameter_ratio": null,
+      "flow_area": 8.1885955452072e-05,
+      "fluid": "Engine Oil (Unused)",
+      "h_multiplier": 1.0,
+      "h_override": null,
+      "mass_flow": {
+        "type": "constant",
+        "value": 0.002
+      },
+      "mode": "in_plane",
+      "n_cells": null,
+      "name": "Oil",
+      "nu_option": "auto",
+      "path": [
+        [
+          0.0051053999999999995,
+          0.0
+        ],
+        [
+          0.0051053999999999995,
+          2.0
+        ]
+      ],
+      "roughness": 0.0,
+      "walls": [
+        "oil wall"
+      ],
+      "wetted_perimeter": 0.032078174267274655
+    },
+    {
+      "T_inlet": {
+        "type": "constant",
+        "value": 290.0
+      },
+      "cross_section": "annulus_inner",
+      "diameter_ratio": 0.635,
+      "flow_area": 0.0001874823955846049,
+      "fluid": "Water",
+      "h_multiplier": 1.0,
+      "h_override": null,
+      "mass_flow": {
+        "type": "constant",
+        "value": 0.003
+      },
+      "mode": "in_plane",
+      "n_cells": null,
+      "name": "Water",
+      "nu_option": "auto",
+      "path": [
+        [
+          0.00635,
+          2.0
+        ],
+        [
+          0.00635,
+          0.0
+        ]
+      ],
+      "roughness": 0.0,
+      "walls": [
+        "water wall"
+      ],
+      "wetted_perimeter": 0.10273007977238624
+    }
+  ]
+}
