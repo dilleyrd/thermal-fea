@@ -888,6 +888,50 @@ tasks come before the owner's M8.G session (D8).
     verification, start-up, wall response), and the simplifications stated plainly
     (fully developed duct correlations, quasi-steady streams with no transit delay,
     constant solid properties).
+### Held: window fixes from the second M8.G review (owner, 2026-11-25 to 2026-11-26)
+
+**Held until the owner has finished the M8.G re-review (V-10 done, V-17 in progress).**
+Then each item becomes a task, together with anything the V-17 review adds. Do not start
+before the owner releases them.
+
+From the owner's V-10 review. These are also entries 1–3 of the friction log on the session
+page https://claude.ai/artifact/AVKWHDY1Pa6YZ22go6weAH.
+1. **Load labels hidden by the boundary line.** The load symbol line and the yellow pick
+   highlight are drawn over the value label (e.g. "Fixed Temperature 1: T = 373.15 K"). The
+   owner asks for the label to be offset slightly from the line, or drawn in front of it.
+   This is the same problem as walkthrough §4 item 11 (the inspect highlight over a label).
+2. **Spelling "color", not "colour",** everywhere: menus (View > Colour by), panel groups
+   ("Colour scale"), messages and documentation. About 26 files say "colour". This is a
+   standing preference (owner, 2026-11-25).
+3. **No way to hide a result display.** Today the only way is to delete the plot item;
+   Results > Add contour then starts again with default settings. The owner asks for a
+   show/hide toggle that keeps the plot and its settings (a checkbox on the result item, or
+   Results > Show results).
+
+Found while building the oil-cooler example in the window (M11.65):
+
+4. **Stream mass flow starts at "None".** A number typed while the mode box is "None" is
+   ignored, and Validate then reports no mass flow. Default to Constant, or apply a typed
+   number by switching the mode.
+5. **Selecting a stream does not highlight its walls.** Selections, loads and parts
+   highlight their entities when selected in the tree; a stream should highlight its wall
+   selections (and could draw its path).
+6. **A transient that starts from a steady result can overwrite it.** A model's solve
+   writes to `<model file>.h5`, so a start-up solved under the same file name as the steady
+   run overwrites the results file its initial condition reads. Today the guide works
+   around this by saving the start-up as its own model. Refuse, or warn, when the initial
+   condition's results file is the one the solve will write.
+7. **No stretched view for slender models.** A 1.2 mm wall over 2 m cannot be seen at true
+   scale; the oil-cooler screenshots stretch the radial direction through code. Offer a
+   view option to scale one axis (stated in the view so the picture is not mistaken for
+   true scale).
+8. **Initial Condition panel with kind "from results".** It still shows the uniform
+   temperature fields, which are ignored, and the "Results file" box is a plain text field
+   with no Browse button, so a long path is clipped.
+9. **Stream panel too narrow at the default dock width.** The picking row ("Pick in
+   viewport", "New name", Apply, Clear) is cut off, and the mass-flow and path rows need
+   scrolling. Walkthrough §4 item 10 is the same problem in the Mesh panel.
+
 - [ ] **M11.6 [C] Release review.** Check every item of Plan §6; resolve or document every
   entry in `docs/OPEN_QUESTIONS.md`. Version 1 excludes the held features M9 and M10.2 and
   their cases V-22a–d, V-23, V-24 and V-36 (owner, 2026-11-22, Q29.15); the guide's

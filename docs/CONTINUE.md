@@ -281,6 +281,10 @@ After all of them: M11.6, the release review, which depends on M11.7–M11.16.
   region names, load values), M11.46 (probe markers), M11.47 (energy table) and M11.48
   (path drawing). The check passed with 2718 tests. `dist\ThermalFEA` predates them;
   rebuild with `scripts\build_exe.ps1` before using the built program.
+- **Held window fixes:** nine items are in `docs/tasks.md` under "Held: window fixes
+  from the second M8.G review": three from the owner's V-10 review and six found while
+  building the oil-cooler example (M11.65, done). Turn them into tasks only after the owner
+  finishes the V-17 review and releases them.
 - **GUI identity, M11.49–M11.64 (owner's decisions D1–D8, 2026-11-24): built.**
   - **What it is:** the owner decided on the proposal
     (https://claude.ai/artifact/RGQmdWAkgsREaaEwPiMgWq, private):
