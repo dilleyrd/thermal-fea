@@ -16,6 +16,7 @@ from pathlib import Path
 from typing import Any
 from xml.sax.saxutils import quoteattr
 
+import matplotlib
 import meshio
 import numpy as np
 from matplotlib.animation import FFMpegWriter
@@ -359,7 +360,8 @@ def animation(
     if "ax" in contour_options:
         raise ModelError("animation draws its own figures; do not pass ax=")
     indices = _resolve_steps(results, steps)
-    if suffix == ".mp4" and shutil.which("ffmpeg") is None:
+    ffmpeg = shutil.which("ffmpeg") if suffix == ".mp4" else None
+    if suffix == ".mp4" and ffmpeg is None:
         raise ModelError("ffmpeg was not found on this machine; write a .gif instead")
 
     options = dict(contour_options)
@@ -388,15 +390,18 @@ def animation(
         fig = Figure(figsize=(7.5, 5.5), layout="constrained")
         FigureCanvasAgg(fig)
         fig.set_dpi(dpi)
-        writer = FFMpegWriter(fps=fps)
-        writer.setup(fig, str(path), dpi)
-        try:
-            for step in indices:
-                fig.clear()
-                ax = fig.add_subplot(1, 1, 1)
-                plots.contour(results, step, field, ax=ax, **options)
-                writer.grab_frame()
-        finally:
-            writer.finish()
+        # the full path found above: started by its bare name, ffmpeg is looked up again by
+        # the operating system, which can fail where the lookup above succeeded
+        with matplotlib.rc_context({"animation.ffmpeg_path": ffmpeg}):
+            writer = FFMpegWriter(fps=fps)
+            writer.setup(fig, str(path), dpi)
+            try:
+                for step in indices:
+                    fig.clear()
+                    ax = fig.add_subplot(1, 1, 1)
+                    plots.contour(results, step, field, ax=ax, **options)
+                    writer.grab_frame()
+            finally:
+                writer.finish()
     log.info("wrote animation of %d frame(s) to %s", len(indices), path)
     return path
