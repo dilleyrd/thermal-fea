@@ -82,9 +82,11 @@ class InspectController(QObject):
         """
         # imported here: these modules import the viewport stack
         from thermalfea.gui.dialogs.geometry import GeometryOpDialog
+        from thermalfea.gui.pick import manager_for
         from thermalfea.gui.property_panels.selection_editor import SelectionEditor
-        from thermalfea.gui.property_panels.selection_panel import SelectionPanel
-        from thermalfea.gui.property_panels.stream import StreamPanel
+
+        if self.view is not None and manager_for(self.view).active is not None:
+            return True  # a pick of the one pick workflow (C2) runs
 
         # only this window's widgets: panels of another window (or left over from a closed
         # one) must not block inspecting here; geometry dialogs are parented to the window
@@ -96,12 +98,6 @@ class InspectController(QObject):
         for w in widgets:
             try:
                 if isinstance(w, SelectionEditor) and w.pick_button.isChecked():
-                    return True
-                if isinstance(w, SelectionPanel) and (
-                    w.add_button.isChecked() or w.remove_button.isChecked()
-                ):
-                    return True
-                if isinstance(w, StreamPanel) and w.pick_button.isChecked():
                     return True
                 if isinstance(w, GeometryOpDialog) and getattr(w, "_connected", False):
                     return True

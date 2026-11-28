@@ -31,6 +31,7 @@ from thermalfea.core.errors import ModelError
 from thermalfea.core.forms import FieldSpec, unique_name
 from thermalfea.geometry.builder import BuiltGeometry
 from thermalfea.gui.document import Document
+from thermalfea.gui.pick import manager_for
 from thermalfea.gui.scene import SceneView
 from thermalfea.model.model import Model
 from thermalfea.model.selections import (
@@ -310,16 +311,29 @@ class SelectionEditor(QWidget):
             return
         if self.view is None:
             return
+        manager = manager_for(self.view)
         if on and self.document.built is not None:
+            # one pick at a time (C2): end a pick of the manager, and end this one when
+            # the manager starts another
+            manager.cancel_active()
+            if self._stop_for_other not in manager.on_start:
+                manager.on_start.append(self._stop_for_other)
             self._set_mode(self._mode())
             if not self._connected:
                 self.view.selection_changed.connect(self.on_picked)
                 self._connected = True
         else:
+            if self._stop_for_other in manager.on_start:
+                manager.on_start.remove(self._stop_for_other)
             if self._connected:
                 self.view.selection_changed.disconnect(self.on_picked)
                 self._connected = False
             self._set_mode("none")
+
+    def _stop_for_other(self) -> None:
+        """Another pick starts: stop picking (the pick set is kept, nothing is applied)."""
+        if self.pick_button.isChecked():
+            self.set_picking(False)
 
     def _set_mode(self, mode: str) -> None:
         """Set the viewport's selection mode and, if given, the toolbar that shows it."""

@@ -3,10 +3,14 @@
 :class:`SelectionPanel` shows what a selection is and who uses it: its name (renamed on
 Enter through :func:`~thermalfea.model.selections.rename_selection`, one undo step), its
 kind and entities, the parts a boundary bounds, and its users as link-like buttons that
-select the user in the model tree. "Add from viewport" and "Remove from viewport" are
-checkable: switching one on starts picking entities of the selection's dimension in the
-viewport, switching it off confirms and rewrites the selection's tags and fingerprints in
-one undo step. "Delete" is disabled while the selection is used and for ``all``.
+select the user in the model tree. "Delete" is disabled while the selection is used and
+for ``all``.
+
+"Add from viewport" and "Remove from viewport" start a pick of the one pick workflow
+(convention C2, :mod:`thermalfea.gui.pick`): the toolbar switches to the selection's kind,
+a strip says what to click and counts the picked entities, and "Add"/"Remove" or Enter
+rewrites the selection's tags and fingerprints in one undo step; Cancel or Esc changes
+nothing. The toolbar mode is restored afterwards.
 """
 
 from __future__ import annotations
@@ -27,6 +31,7 @@ from thermalfea.core.errors import ModelError
 from thermalfea.core.units import from_si, unit_label
 from thermalfea.gui.addressing import Address
 from thermalfea.gui.document import Document
+from thermalfea.gui.pick import PickStrip, count_text, manager_for
 from thermalfea.model.model import Model
 from thermalfea.model.selections import (
     ALL_SELECTION,
@@ -63,7 +68,8 @@ class SelectionPanel(QWidget):
         self.address = address
         self.name = str(address[1])
         self._connected = False
-        self._mode_button: QPushButton | None = None
+        #: ``"add"`` or ``"remove"`` while picking, else ``None``.
+        self.picking: str | None = None
         self._picked: list[int] = []
 
         col = QVBoxLayout(self)
@@ -91,10 +97,13 @@ class SelectionPanel(QWidget):
         self.add_button = QPushButton("Add from viewport")
         self.remove_button = QPushButton("Remove from viewport")
         for button in (self.add_button, self.remove_button):
-            button.setCheckable(True)
             col.addWidget(button)
-        self.add_button.toggled.connect(lambda on: self._toggle(self.add_button, on, True))
-        self.remove_button.toggled.connect(lambda on: self._toggle(self.remove_button, on, False))
+        self.add_button.clicked.connect(lambda _c=False: self.start_picking(True))
+        self.remove_button.clicked.connect(lambda _c=False: self.start_picking(False))
+        self.strip = PickStrip("Add")
+        self.strip.confirmed.connect(self.confirm_picking)
+        self.strip.cancelled.connect(self.cancel_picking)
+        col.addWidget(self.strip)
         self.delete_button = QPushButton("Delete")
         self.delete_button.clicked.connect(self.delete)
         col.addWidget(self.delete_button)
@@ -160,8 +169,8 @@ class SelectionPanel(QWidget):
             else "Delete this selection"
         )
         can_edit = not fixed and self.view is not None and built is not None
-        for button in (self.add_button, self.remove_button):
-            button.setEnabled(can_edit or button.isChecked())
+        for button, verb in ((self.add_button, "add to"), (self.remove_button, "remove from")):
+            button.setEnabled(can_edit and self.picking is None)
             button.setToolTip(
                 "The selection all cannot be edited"
                 if fixed
@@ -169,7 +178,7 @@ class SelectionPanel(QWidget):
                 if self.view is None
                 else "Build the geometry first"
                 if built is None
-                else "Switch on, pick in the viewport, switch off to apply"
+                else f"Pick entities in the view to {verb} this selection"
             )
 
     def _bounded_parts(self, selection: Selection, current: list[int] | None) -> str:
@@ -238,53 +247,81 @@ class SelectionPanel(QWidget):
             return False
 
     # ------------------------------------------------------------------------ picking
-    def _toggle(self, button: QPushButton, on: bool, adding: bool) -> None:
-        other = self.remove_button if adding else self.add_button
-        if on:
-            if other.isChecked():
-                other.setChecked(False)  # applies what the other mode picked
-            self._mode_button = button
-            self._picked = []
-            self._start_picking()
-        elif self._mode_button is button:
-            self._stop_picking()
-            self._mode_button = None
-            self._apply(adding)
-
-    def _start_picking(self) -> None:
+    def start_picking(self, adding: bool) -> bool:
+        """Start picking entities to add (``True``) or remove; ``False`` if not possible."""
         selection = self._selection()
-        if self.view is None or selection is None:
-            return
-        self._set_mode(_DIM_MODE[selection.dim])
+        if self.view is None or selection is None or self.document.built is None:
+            return False
+        if self.name == ALL_SELECTION:
+            return False
+        manager = manager_for(self.view)
+        manager.start(
+            self,
+            _DIM_MODE[selection.dim],
+            cancel=self.cancel_picking,
+            confirm=self.confirm_picking,
+            strip=self.strip,
+        )
+        self.picking = "add" if adding else "remove"
+        self._picked = []
         if not self._connected:
             self.view.selection_changed.connect(self.on_picked)
             self._connected = True
-        self.show_message("Pick entities in the viewport, then switch the button off.", False)
+        model = self.document.model
+        many = entity_word(selection.dim, model, plural=True)
+        verb = "add to" if adding else "remove from"
+        self.strip.confirm_button.setText("Add" if adding else "Remove")
+        self.strip.show_pick(
+            f"Click the {many} to {verb} '{self.name}' in the view "
+            "(Ctrl+click adds or removes one).",
+            self._count(),
+        )
+        self.show_message("", False)
+        self.refresh()
+        return True
 
-    def _stop_picking(self) -> None:
-        if self.view is None:
+    def confirm_picking(self) -> bool:
+        """Apply the pick in one undo step and end it (the strip's Add/Remove, or Enter)."""
+        if self.picking is None:
+            return False
+        adding = self.picking == "add"
+        self._end_picking()
+        return self._apply(adding)
+
+    def cancel_picking(self) -> None:
+        """End the pick without changing anything (Cancel, Esc, or another pick starts)."""
+        if self.picking is None:
             return
-        if self._connected:
+        self._picked = []
+        self._end_picking()
+
+    def _end_picking(self) -> None:
+        self.picking = None
+        if self._connected and self.view is not None:
             self.view.selection_changed.disconnect(self.on_picked)
             self._connected = False
-        self._set_mode("none")
+        self.strip.hide_pick()
+        if self.view is not None:
+            manager_for(self.view).finish(self)
+        self.refresh()
 
-    def _set_mode(self, mode: str) -> None:
-        self.view.set_selection_mode(mode)  # type: ignore[union-attr, arg-type]
-        sync = getattr(self.controller, "_sync_toolbar", None)
-        if sync is not None:
-            try:
-                sync(mode)
-            except AttributeError:  # a controller without a window toolbar
-                pass
+    def _count(self) -> str:
+        selection = self._selection()
+        if selection is None:
+            return ""
+        model = self.document.model
+        n = len(self._picked)
+        return count_text(
+            n, entity_word(selection.dim, model), entity_word(selection.dim, model, plural=True)
+        )
 
     def on_picked(self, dim: int, tags: list[int]) -> None:
         """Slot of ``selection_changed``: remember the entities of the selection's dimension."""
         selection = self._selection()
-        if selection is None or dim != selection.dim:
+        if selection is None or dim != selection.dim or self.picking is None:
             return
         self._picked = [int(t) for t in tags]
-        self.show_message(f"{len(self._picked)} picked", False)
+        self.strip.set_count(self._count())
 
     def picked(self) -> list[int]:
         """The tags picked so far."""

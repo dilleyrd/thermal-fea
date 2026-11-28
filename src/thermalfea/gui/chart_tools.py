@@ -84,6 +84,7 @@ from thermalfea.gui.charts import (
 )
 from thermalfea.gui.document import Document
 from thermalfea.gui.main_window import MainWindow
+from thermalfea.gui.pick import manager_for
 from thermalfea.gui.results_tools import (
     PROBE_ID,
     VECTOR_PROBE_FIELD,
@@ -297,14 +298,32 @@ class ChartController(QObject):
             action.setChecked(True)
 
     def _enter_pick(self, mode: str) -> None:
+        # one pick at a time (C2): end a pick of the pick manager first (it restores its
+        # mode), and stop this pick when the manager starts another
+        manager = manager_for(self.view)
+        manager.cancel_active()
+        if self._stop_for_other not in manager.on_start:
+            manager.on_start.append(self._stop_for_other)
         if self._saved_mode is None:
             self._saved_mode = self.window.selection_mode
         self._set_mode(mode)
 
     def _leave_pick(self) -> None:
+        manager = manager_for(self.view)
+        if self._stop_for_other in manager.on_start:
+            manager.on_start.remove(self._stop_for_other)
         if self._saved_mode is not None:
             self._set_mode(self._saved_mode)
             self._saved_mode = None
+
+    def _stop_for_other(self) -> None:
+        """Another pick starts: end a running path pick or pending node pick (no chart)."""
+        if self.path_active:
+            self.cancel_path()
+        if self.history_pending:
+            self.history_pending = False
+            self._leave_pick()
+            self.update_actions()
 
     def _displayed(self) -> tuple[int, str]:
         """Step and field of the displayed result object (last step, ``T`` if none)."""

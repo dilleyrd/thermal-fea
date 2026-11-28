@@ -73,6 +73,7 @@ from thermalfea.core.units import from_si
 from thermalfea.gui.document import Document
 from thermalfea.gui.field_display import field_display_from_contour, field_display_from_vectors
 from thermalfea.gui.main_window import MainWindow
+from thermalfea.gui.pick import manager_for
 from thermalfea.gui.property_panels.results import RESULT_ADDRESS
 from thermalfea.gui.scene import FieldDisplay, OverlayMarker, SceneView
 from thermalfea.gui.tree_summary import analysis_summary
@@ -107,6 +108,10 @@ MAX_INTERVAL_MS = 10000
 ADD_CONTOUR_ID = "results.add_contour"
 ADD_VECTORS_ID = "results.add_vectors"
 PROBE_ID = "results.probe"
+#: Status-bar text while the probe is on (C2: the pick says how to stop).
+PROBE_ON_TEXT = "Probe: click in the view to read values · Esc to stop"
+#: Status-bar text when the probe stops.
+PROBE_OFF_TEXT = "Probe off"
 PLAY_ID = "results.play"
 
 OUT_OF_DATE_SUFFIX = " · out of date"
@@ -928,16 +933,28 @@ class ResultController(QObject):
         return self.window.actions[PROBE_ID].isChecked()
 
     def set_probe(self, on: bool) -> None:
-        """Turn the probe on or off (keeps the Results-menu action in step)."""
+        """Turn the probe on or off (keeps the Results-menu action in step).
+
+        The probe is a pick of the one pick workflow (C2, :mod:`thermalfea.gui.pick`): it
+        sets the toolbar to "None" while on and restores it afterwards, Esc stops it, and
+        starting another pick stops it.
+        """
         action = self.window.actions[PROBE_ID]
         if action.isChecked() != on:
             action.blockSignals(True)
             action.setChecked(on)
             action.blockSignals(False)
+        manager = manager_for(self.view) if self.view is not None else None
         if not on:
             self._clear_markers()
-        if on:
-            self._status("Probe: click in the viewport to read the displayed field", 5000)
+            if manager is not None and manager.is_active(self):
+                manager.finish(self)
+                self._status(PROBE_OFF_TEXT, 3000)
+        elif manager is not None and not manager.is_active(self):
+            manager.start(self, "none", cancel=lambda: self.set_probe(False))
+            self._status(PROBE_ON_TEXT, 0)
+        elif manager is None:
+            self._status(PROBE_ON_TEXT, 5000)
 
     @property
     def probe_text(self) -> str:

@@ -44,6 +44,7 @@ from thermalfea.core.forms import (
     unit_label,
 )
 from thermalfea.gui.geometry_defs import DEFAULTS, ToolDef, make_op
+from thermalfea.gui.pick import manager_for
 from thermalfea.gui.property_panels.form import NumberEdit
 from thermalfea.model import geometry_edit as edit
 
@@ -240,6 +241,9 @@ class GeometryOpDialog(QDialog):
         if tool.placement and view is not None:
             view.point_picked.connect(self._on_pick)
             self._connected = True
+            # a placing dialog is a pick of the one pick workflow (C2): toolbar "None" while
+            # open, Enter in the view adds (OK), Esc closes without adding (Cancel)
+            manager_for(view).start(self, "none", cancel=self.reject, confirm=self.accept)
 
     # ------------------------------------------------------------------ building
     def _add_field(self, spec: FieldSpec) -> None:
@@ -488,6 +492,7 @@ class GeometryOpDialog(QDialog):
             except (RuntimeError, TypeError):
                 pass
             self._connected = False
+            manager_for(view).finish(self)
         if self.tool.placement:
             try:
                 self.controller.snap_changed.disconnect(self._sync_snap)

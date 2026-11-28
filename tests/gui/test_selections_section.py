@@ -209,34 +209,48 @@ def test_add_and_remove_from_viewport(shell) -> None:
     p = panel(shell, "spare")
     assert p.add_button.isEnabled()
     count = doc.undo_stack.count()
-    p.add_button.setChecked(True)
-    assert view.mode == "curve"
+    p.add_button.click()  # M11.69 (C2): a pick with a strip, confirmed by "Add"
+    assert view.mode == "curve" and not p.strip.isHidden()
+    assert not p.add_button.isEnabled()  # one pick at a time
     view.pick(1, [shell.bottom])
     view.pick(2, [1])  # another dimension is ignored
     assert p.picked() == [shell.bottom]
-    p.add_button.setChecked(False)
-    assert view.mode == "none"
+    assert p.strip.count_label.text() == "1 boundary picked"
+    p.strip.confirm_button.click()
+    assert view.mode == "none" and p.strip.isHidden()
     assert doc.undo_stack.count() == count + 1
     sel = doc.model.selections["spare"]
     assert sorted(sel.tags) == sorted([shell.top, shell.bottom])
     assert len(sel.fingerprints) == 2
     p = shell.props.panel
-    p.remove_button.setChecked(True)
+    p.remove_button.click()
+    assert p.strip.confirm_button.text() == "Remove"
     view.pick(1, [shell.top])
-    p.remove_button.setChecked(False)
+    p.strip.confirm_button.click()
     assert doc.model.selections["spare"].tags == [shell.bottom]
     assert doc.undo_stack.count() == count + 2
     doc.undo_stack.undo()
     assert sorted(doc.model.selections["spare"].tags) == sorted([shell.top, shell.bottom])
 
 
+def test_cancel_leaves_the_selection_unchanged(shell) -> None:
+    doc, view = shell.doc, shell.view
+    p = panel(shell, "spare")
+    count = doc.undo_stack.count()
+    p.add_button.click()
+    view.pick(1, [shell.bottom])
+    p.strip.cancel_button.click()
+    assert doc.undo_stack.count() == count and doc.model.selections["spare"].tags == [shell.top]
+    assert view.mode == "none" and p.strip.isHidden() and p.add_button.isEnabled()
+
+
 def test_removing_everything_is_refused(shell) -> None:
     doc = shell.doc
     p = panel(shell, "spare")
     count = doc.undo_stack.count()
-    p.remove_button.setChecked(True)
+    p.remove_button.click()
     shell.view.pick(1, [shell.top])
-    p.remove_button.setChecked(False)
+    p.strip.confirm_button.click()
     assert doc.undo_stack.count() == count
     assert doc.model.selections["spare"].tags == [shell.top]
     assert p.message_label.text()

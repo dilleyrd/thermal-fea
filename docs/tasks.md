@@ -1117,7 +1117,7 @@ tests (offscreen) of the behavior it adds, plus the whole suite.
   and the panel-top line only for other errors (C11). Applied in this task to the
   Analysis Settings panel only (held item 11 with decisions C and G), as the reference.
   Depends on M11.66.
-- [ ] **M11.69 [C] One pick workflow.** C2 and held item 16: a shared pick strip
+- [x] **M11.69 [C] One pick workflow.** C2 and held item 16: a shared pick strip
   (instruction, count, confirm, Cancel), marks in the view, the toolbar switched and
   restored, Enter confirms and Esc cancels. Applied to the Selections panel's Add/Remove,
   the stream path, the probe and the geometry tool dialogs. Depends on M11.68.

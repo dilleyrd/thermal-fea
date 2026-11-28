@@ -20,6 +20,7 @@ from thermalfea.core.forms import FormSpec, form_for
 from thermalfea.gui.addressing import Address, exists, resolve
 from thermalfea.gui.document import Document
 from thermalfea.gui.main_window import MainWindow
+from thermalfea.gui.pick import manager_for
 from thermalfea.gui.property_panels.contact import ContactPanel
 from thermalfea.gui.property_panels.correlation import CorrelationPanel
 from thermalfea.gui.property_panels.form import FormPanel
@@ -198,6 +199,13 @@ class PropertyController:
             for editor in previous.findChildren(SelectionEditor):
                 if editor.pick_button.isChecked():
                     editor.set_picking(False)
+            if self.view is not None:  # nor keep a pick of the pick manager (C2)
+                manager = manager_for(self.view)
+                owner = manager.active.owner if manager.active is not None else None
+                if isinstance(owner, QWidget) and (
+                    owner is previous or previous.isAncestorOf(owner)
+                ):
+                    manager.cancel_active()
             # the quality coloring belongs to the mesh panel; a new panel starts unchecked
             for mesh_panel in previous.findChildren(MeshPanel):
                 mesh_panel.color_box.setChecked(False)

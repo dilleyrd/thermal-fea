@@ -156,29 +156,39 @@ def test_unset_mass_flow_is_shown_unset_after_a_fresh_load(shell) -> None:
     assert shell.document.model.streams[0].mass_flow is None
 
 
-def test_path_picking_appends_one_point_per_click(shell) -> None:
+def test_a_picked_path_is_stored_in_one_step_on_confirm(shell) -> None:
+    """M11.69 (C2): the clicks build a pending path; "Use path" stores it in one step."""
     panel = StreamPanel(form_for(Stream), shell.document, ("streams", 0), shell.view)
     panel.clear_path()
     assert shell.document.model.streams[0].path == []
     before = shell.undo.count()
-    panel.pick_button.setChecked(True)
-    assert shell.view.modes[-1] == "none"
+    panel.pick_button.click()
+    assert shell.view.modes[-1] == "none" and not panel.strip.isHidden()
+    assert not panel.strip.confirm_button.isEnabled()  # two points are needed
     shell.view.point_picked.emit(0.1, 0.0, 0.0)
     shell.view.point_picked.emit(0.2, 0.05, 0.0)
+    assert panel.pending == [(0.1, 0.0), (0.2, 0.05)]
+    assert shell.document.model.streams[0].path == [] and shell.undo.count() == before
+    assert "2 path points" in panel.strip.count_label.text()
+    panel.strip.confirm_button.click()
     assert shell.document.model.streams[0].path == [(0.1, 0.0), (0.2, 0.05)]
-    assert shell.undo.count() == before + 2
+    assert shell.undo.count() == before + 1
+    assert panel.strip.isHidden() and not panel.picking
 
 
-def test_clicks_are_ignored_while_the_toggle_is_off(shell) -> None:
+def test_clicks_are_ignored_unless_picking_and_cancel_changes_nothing(shell) -> None:
     panel = StreamPanel(form_for(Stream), shell.document, ("streams", 0), shell.view)
     before = shell.undo.count()
     shell.view.point_picked.emit(0.5, 0.0, 0.0)
     assert shell.document.model.streams[0].path == [(0.0, 0.0), (LENGTH, 0.0)]
     assert shell.undo.count() == before
-    panel.pick_button.setChecked(True)
-    panel.pick_button.setChecked(False)
+    panel.pick_button.click()
     shell.view.point_picked.emit(0.5, 0.0, 0.0)
-    assert len(shell.document.model.streams[0].path) == 2  # noqa: PLR2004
+    shell.view.point_picked.emit(0.6, 0.0, 0.0)
+    panel.strip.cancel_button.click()
+    shell.view.point_picked.emit(0.7, 0.0, 0.0)
+    assert shell.document.model.streams[0].path == [(0.0, 0.0), (LENGTH, 0.0)]
+    assert shell.undo.count() == before and panel.pending == []
 
 
 def test_clear_path_empties_the_path(shell) -> None:
