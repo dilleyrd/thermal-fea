@@ -141,7 +141,9 @@ def test_temperature_dependent_conductance_is_refused(controller, tree, doc) -> 
     assert doc.undo_stack.count() == count
     assert doc.model.contacts[0].conductance == before
     assert panel.error_text("conductance") == TEMPERATURE_MESSAGE
-    assert TEMPERATURE_MESSAGE in panel.error_label.text()
+    # shown once, under its field (convention C11), not at the top of the panel
+    assert panel.field_errors["conductance"].text() == TEMPERATURE_MESSAGE
+    assert TEMPERATURE_MESSAGE not in panel.error_label.text()
 
 
 def test_time_dependent_conductance_is_accepted(controller, tree, doc) -> None:

@@ -156,6 +156,9 @@ class FunctionEditor(QWidget):
         Inclusive limits of a constant's SI value.
     optional : bool
         Add a "None" mode that emits ``None``.
+    none_text : str
+        Text of the "None" mode, saying what an empty value means ("Isotropic",
+        "From network"; convention C7). Empty: "None".
     variables : tuple of str, optional
         The variables of ``t, x, y, T`` the function may use (``None``: all). The table's
         variable box offers those of ``t`` and ``T`` among them, and an expression that uses
@@ -180,6 +183,7 @@ class FunctionEditor(QWidget):
         optional: bool = False,
         parent: QWidget | None = None,
         variables: tuple[str, ...] | None = None,
+        none_text: str = "",
     ) -> None:
         super().__init__(parent)
         self.variables = variables
@@ -206,7 +210,8 @@ class FunctionEditor(QWidget):
         for mode in MODES if optional else MODES[:3]:
             if mode == "table" and not self._table_variables:
                 continue  # no variable a table could be a function of
-            self.mode_combo.addItem(_MODE_LABELS[mode], mode)
+            label = none_text if mode == "none" and none_text else _MODE_LABELS[mode]
+            self.mode_combo.addItem(label, mode)
         layout.addWidget(self.mode_combo)
         self.stack = QStackedWidget()
         layout.addWidget(self.stack)

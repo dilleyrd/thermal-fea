@@ -1,19 +1,34 @@
-"""Property panel of the analysis settings (Plan M8.9).
+"""Property panel of the analysis settings (Plan M8.9; layout of M11.68).
 
 :class:`SolutionPanel` is a :class:`~thermalfea.gui.property_panels.form.FormPanel` for
-:class:`~thermalfea.model.settings.SolutionSettings`. It shows only the fields that matter
-for the chosen analysis kind:
+:class:`~thermalfea.model.settings.SolutionSettings`, laid out in framed boxes by purpose
+(held item 11 with conventions C5 and C12 and the owner's decisions C and G):
 
-* steady: the kind and the nonlinear controls (tolerances, iterations, line search);
-* transient: also end time, time stepping, integration and output; "store every n-th step"
-  only when the output is ``every_n`` and the output times only when it is ``times``.
+=================  ==============================================================
+box                fields
+=================  ==============================================================
+Analysis           Geometry type, Analysis type
+Time               End time
+Time stepping      Adaptive time step, Largest time step; under "More": Initial
+                   time step, Smallest time step, Time-step tolerance, Largest
+                   temperature change per step
+Integration        (advanced, collapsed; the title names the method) Time
+                   integration, Lumped capacitance
+Results to store   Output steps, Store every n-th step, Output times
+Convergence        (advanced, collapsed) Residual tolerance, Temperature tolerance,
+                   Maximum iterations, Line search
+=================  ==============================================================
+
+Only the fields that matter are shown: a steady analysis shows the Analysis and Convergence
+boxes; "Time-step tolerance" only with an adaptive time step; "Store every n-th step" only
+when the output is ``every_n`` and the output times only when it is ``times``.
 
 "Time integration" is a choice of the named methods of :data:`THETA_METHODS` (Theory §6),
 not a number box; the model still stores the number ``theta``. A stored value that is none
 of them (a script may set any 0 < theta <= 1) is shown as a fourth entry "Custom (θ = …)"
 and kept unchanged until another method is chosen.
 
-Below the form are the "Validate" and "Solve" buttons. They call the solve controller
+Below the boxes are the "Validate" and "Solve" buttons. They call the solve controller
 (``validate()`` and ``solve()``), so the panel needs no solver knowledge. "Solve" is enabled
 when the controller says a solve can start.
 """
@@ -24,12 +39,13 @@ import math
 from typing import Any
 
 from PySide6.QtCore import Qt
-from PySide6.QtWidgets import QComboBox, QFormLayout, QHBoxLayout, QLabel, QPushButton, QWidget
+from PySide6.QtWidgets import QComboBox, QHBoxLayout, QLabel, QPushButton, QWidget
 
 from thermalfea.core.forms import FieldSpec, FormSpec
 from thermalfea.gui.addressing import Address
 from thermalfea.gui.document import Document
 from thermalfea.gui.property_panels.form import FormPanel
+from thermalfea.gui.property_panels.sections import Box
 from thermalfea.gui.scene import SceneView
 from thermalfea.model.solution_forms import (
     OUTPUT_EVERY_FIELD,
@@ -49,7 +65,39 @@ THETA_METHODS = (
     ("Crank-Nicolson (θ = 1/2)", 0.5,
      "Second-order accurate in time; may oscillate after a sudden change (a thermal shock)."),
 )  # fmt: skip
+#: Short names of :data:`THETA_METHODS` for the title of the collapsed Integration box.
+THETA_SHORT = ("Backward Euler", "Galerkin", "Crank-Nicolson")
 _THETA = "theta"
+_ADAPTIVE = "auto_timestep"
+_TIME_TOL = "time_tol"
+
+ANALYSIS_BOX = "Analysis"
+INTEGRATION_BOX = "Integration"
+CONVERGENCE_BOX = "Convergence"
+
+#: The boxes of the panel, in order (held item 11, C12, decision G).
+SOLUTION_BOXES: tuple[Box, ...] = (
+    Box(ANALYSIS_BOX, "Geometry and the kind of analysis.", ("kind",)),
+    Box("Time", "How long the analysis runs.", ("end_time",)),
+    Box(
+        "Time stepping",
+        "The solver sizes each step to keep its error estimate within the tolerance.",
+        (_ADAPTIVE, "dt_max"),
+        more=("initial_dt", "dt_min", _TIME_TOL, "max_dT_per_step"),
+    ),
+    Box(
+        INTEGRATION_BOX, "How each step is calculated.", (_THETA, "lumped_capacitance"),
+        advanced=True,
+    ),
+    Box(
+        "Results to store", "Which time steps are kept for viewing.",
+        ("output", OUTPUT_EVERY_FIELD, OUTPUT_TIMES_FIELD),
+    ),
+    Box(
+        CONVERGENCE_BOX, "Iteration within each step; the defaults suit most models.",
+        ("rtol", "ttol", "max_iterations", "line_search"), advanced=True,
+    ),
+)  # fmt: skip
 
 
 def theta_method_index(theta: float) -> int | None:
@@ -60,8 +108,14 @@ def theta_method_index(theta: float) -> int | None:
     return None
 
 
+def theta_method_name(theta: float) -> str:
+    """Short name of the method of ``theta`` ("Backward Euler", ..., or "Custom θ = 0.6")."""
+    index = theta_method_index(theta)
+    return THETA_SHORT[index] if index is not None else f"Custom θ = {float(theta):g}"
+
+
 class SolutionPanel(FormPanel):
-    """Form of the analysis settings with the Validate and Solve buttons.
+    """Form of the analysis settings in boxes, with the Validate and Solve buttons.
 
     Parameters
     ----------
@@ -78,9 +132,12 @@ class SolutionPanel(FormPanel):
 
     Attributes
     ----------
+    analysis_combo : QComboBox
+        "Geometry type", the first row of the Analysis box.
     validate_button, solve_button : QPushButton
     """
 
+    boxes = SOLUTION_BOXES
     _extras_built = False
 
     def __init__(
@@ -94,9 +151,8 @@ class SolutionPanel(FormPanel):
     ) -> None:
         super().__init__(spec, document, address, view, parent)
         self._controller = controller
-        self._row = {field.name: i for i, field in enumerate(spec.fields)}
-        # "Geometry type" belongs to the model, not to SolutionSettings: its own form row
-        # above the settings, written through one undoable edit of ``Model.analysis``
+        # "Geometry type" belongs to the model, not to SolutionSettings: the first row of
+        # the Analysis box, written through one undoable edit of ``Model.analysis``
         self.analysis_combo = QComboBox()
         for label, value in GEOMETRY_TYPES:
             self.analysis_combo.addItem(label, value)
@@ -105,10 +161,11 @@ class SolutionPanel(FormPanel):
             "x = 0 is the axis of symmetry."
         )
         self.analysis_combo.activated.connect(lambda _i: self._on_geometry_type())
-        geometry_form = QFormLayout()
-        geometry_form.addRow(QLabel("Geometry type"), self.analysis_combo)
+        self.sections[ANALYSIS_BOX].form.insertRow(
+            0, QLabel("Geometry type"), self.analysis_combo
+        )
+        self.sections[ANALYSIS_BOX].align_labels()
         outer = self.layout()
-        outer.insertLayout(outer.indexOf(self.form_layout), geometry_form)
         row = QHBoxLayout()
         self.validate_button = QPushButton("Validate")
         self.validate_button.clicked.connect(lambda _checked=False: self._on_validate())
@@ -159,6 +216,7 @@ class SolutionPanel(FormPanel):
             index = combo.count() - 1
         combo.setCurrentIndex(index)
         combo.blockSignals(False)
+        self.sections[INTEGRATION_BOX].set_summary(theta_method_name(float(value)))
 
     def _on_theta(self, index: int) -> None:
         combo = self.editors[_THETA]
@@ -183,23 +241,23 @@ class SolutionPanel(FormPanel):
         value = self.analysis_combo.currentData()
         self.document.edit("Edit Geometry type", lambda m: setattr(m, "analysis", value))
 
-    def is_field_shown(self, name: str) -> bool:
-        """``True`` if the field's row is shown (independent of the window being visible)."""
-        return self.form_layout.isRowVisible(self._row[name])
-
     def _update_visibility(self) -> None:
         try:
             settings = self.current_object()
         except Exception:  # the object is gone; the panel is disabled by refresh()
             return
         transient = settings.kind == "transient"
-        for name, row in self._row.items():
+        for field in self.spec.fields:
+            name = field.name
             shown = transient or name not in TRANSIENT_ONLY_FIELDS
             if name == OUTPUT_EVERY_FIELD:
                 shown = shown and settings.output == "every_n"
             elif name == OUTPUT_TIMES_FIELD:
                 shown = shown and settings.output == "times"
-            self.form_layout.setRowVisible(row, shown)
+            elif name == _TIME_TOL:
+                shown = shown and settings.auto_timestep
+            self.set_field_visible(name, shown)
+        self.update_sections()
 
     # ------------------------------------------------------------------ buttons
     def _refresh_buttons(self) -> None:

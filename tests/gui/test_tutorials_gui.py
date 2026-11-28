@@ -331,7 +331,7 @@ def test_fin_quench_in_the_gui(
 
     # step: initial condition and transient settings
     set_function(ctx, ("initial_condition",), "value", str(fin.T_INIT))
-    choose(ctx, ("solution",), "kind", "transient")
+    choose(ctx, ("solution",), "kind", "Transient")  # readable text (convention C8)
     set_number(ctx, ("solution",), "end_time", str(fin.END_TIME))
     solution_panel = open_panel(ctx, ("solution",))
     assert solution_panel.is_field_shown("initial_dt") and solution_panel.is_field_shown("theta")

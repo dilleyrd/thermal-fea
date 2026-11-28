@@ -1108,7 +1108,7 @@ tests (offscreen) of the behavior it adds, plus the whole suite.
   issue and Solve) a transient whose initial condition reads the results file the solve
   will write, with a message naming the file and the fix (save the model under another
   name). Acceptance: a test of the refusal and of an allowed different file.
-- [ ] **M11.68 [C] Shared controls.** The mechanisms of C5–C8, C11 and C12, with tests, used
+- [x] **M11.68 [C] Shared controls.** The mechanisms of C5–C8, C11 and C12, with tests, used
   by later tasks: the icon set with tooltips and accessible names (C6); a framed box with
   title and description, a collapsible "More" line and a collapsible box whose title
   counts non-default values (C5, C12); grey hint text for empty number and text boxes and

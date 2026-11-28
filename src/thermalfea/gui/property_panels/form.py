@@ -9,6 +9,22 @@ Input is validated before it is applied: a number that cannot be parsed or is ou
 field's limits is marked (red background, tooltip) and not applied. After an undo/redo (or
 any ``model_changed``) the panel reloads its editors from the model without applying
 anything.
+
+Conventions of ``docs/gui-conventions.md`` built in here (M11.68):
+
+* **C11, errors.** An error appears once, in a red line directly under its field (a
+  rejected number, a refused value, a text that does not parse). The line at the top of the
+  panel is only for errors that belong to no field. A selection field shows its errors in
+  its own editor.
+* **C5 and C12, boxes.** A subclass that sets :attr:`FormPanel.boxes` shows those fields in
+  framed boxes (:mod:`~thermalfea.gui.property_panels.sections`), with "More" lines and
+  collapsed advanced boxes that count changed values. Fields in no box stay in the plain
+  form above the boxes. :meth:`FormPanel.set_field_visible` hides a row that does not apply
+  and a box with no row left; :meth:`FormPanel.is_field_shown` reports whether a row
+  applies, whether or not its box is collapsed.
+* **C7 and C8, texts.** Optional boxes show the meaning of empty as hint text, an optional
+  formula field names its empty mode, and dropdowns show readable texts
+  (:mod:`thermalfea.gui.field_texts`).
 """
 
 from __future__ import annotations
@@ -46,11 +62,13 @@ from thermalfea.core.forms import (
 from thermalfea.core.units import UnitSettings, from_si, to_si
 from thermalfea.gui.addressing import Address, resolve
 from thermalfea.gui.document import Document
+from thermalfea.gui.field_texts import choice_text, empty_text
 from thermalfea.gui.property_panels.function_editor import (
     FunctionEditor,
     parse_number,
     same_function,
 )
+from thermalfea.gui.property_panels.sections import Box, SectionBox, changed_count
 from thermalfea.gui.property_panels.selection_editor import (
     SelectionEditor,
     SelectionRequest,
@@ -60,6 +78,7 @@ from thermalfea.gui.property_panels.selection_editor import (
 from thermalfea.gui.scene import SceneView
 
 _BAD_STYLE = "background-color: #ffd0d0;"
+_ERROR_STYLE = "color: #b00020;"
 NONE_TEXT = "(none)"
 
 
@@ -84,6 +103,8 @@ class NumberEdit(QLineEdit):
     """
 
     committed = Signal(object)
+    #: The current input error ("" when the text is valid again); shown under the field.
+    error_changed = Signal(str)
 
     def __init__(
         self, spec: FieldSpec, settings: UnitSettings, parent: QWidget | None = None
@@ -117,9 +138,12 @@ class NumberEdit(QLineEdit):
         return self._error
 
     def _mark(self, message: str) -> None:
+        changed = message != self._error
         self._error = message
         self.setStyleSheet(_BAD_STYLE if message else "")
         self.setToolTip(message or self.spec.tooltip)
+        if changed:
+            self.error_changed.emit(message)
 
     def parse(self) -> float | int | None:
         """Parse the text into an SI value.
@@ -231,9 +255,17 @@ class FormPanel(QWidget):
     ----------
     editors : dict of str to QWidget
         The editor widget of each field.
+    field_errors : dict of str to QLabel
+        The red line under each field (not for selection fields, whose editor shows its
+        own errors).
+    sections : dict of str to SectionBox
+        The framed boxes by title (empty without :attr:`boxes`).
+    boxes : tuple of Box
+        Class attribute: the boxes a subclass groups its fields in (C5, C12).
     """
 
     value_changed = Signal(str, object)
+    boxes: tuple[Box, ...] = ()
 
     def __init__(
         self,
@@ -253,8 +285,12 @@ class FormPanel(QWidget):
         self._open_lists: set[str] = set()
         self._unit_labels: dict[str, QLabel] = {}
         self._errors: dict[str, str] = {}
+        self._input_errors: dict[str, str] = {}
         self._refreshing = False
         self._units = document.model.display_units
+        self.field_errors: dict[str, QLabel] = {}
+        self._rows: dict[str, tuple[QFormLayout, QWidget]] = {}
+        self._shown: dict[str, bool] = {}
 
         outer = QVBoxLayout(self)
         self.title_label = QLabel()
@@ -265,15 +301,32 @@ class FormPanel(QWidget):
             description.setWordWrap(True)
             outer.addWidget(description)
         self.error_label = QLabel("")
-        self.error_label.setStyleSheet("color: #b00020;")
+        self.error_label.setStyleSheet(_ERROR_STYLE)
         self.error_label.setWordWrap(True)
         outer.addWidget(self.error_label)
         self.form_layout = QFormLayout()
         outer.addLayout(self.form_layout)
+        self.sections: dict[str, SectionBox] = {}
+        self._place: dict[str, QFormLayout] = {}
+        for box in self.boxes:
+            section = SectionBox(box, spec.title)
+            self.sections[box.title] = section
+            outer.addWidget(section)
+            for name in box.fields:
+                self._place[name] = section.form
+            if section.more is not None:
+                for name in box.more:
+                    self._place[name] = section.more.form
         outer.addStretch(1)
 
-        for field in spec.fields:
-            self._add_field(field)
+        # rows in the order of their box (fields in no box first, in the spec's order)
+        names = [f.name for f in spec.fields]
+        order = [n for n in names if n not in self._place]
+        order += [n for box in self.boxes for n in box.names if n in names]
+        for name in order:
+            self._add_field(spec.field(name))
+        for section in self.sections.values():
+            section.align_labels()
         document.model_changed.connect(self.refresh)
         self.refresh()
 
@@ -287,19 +340,41 @@ class FormPanel(QWidget):
             editor.setToolTip(field.tooltip)
         if unit is not None:
             self._unit_labels[field.name] = unit
-            row = QWidget()
-            lay = QHBoxLayout(row)
+            line = QWidget()
+            lay = QHBoxLayout(line)
             lay.setContentsMargins(0, 0, 0, 0)
             lay.addWidget(editor)
             lay.addWidget(unit)
-            self.form_layout.addRow(label, row)
         else:
-            self.form_layout.addRow(label, editor)
+            line = editor
+        cell: QWidget = line
+        if not isinstance(editor, SelectionEditor):  # a selection editor shows its own errors
+            cell = QWidget()
+            column = QVBoxLayout(cell)
+            column.setContentsMargins(0, 0, 0, 0)
+            column.setSpacing(2)
+            column.addWidget(line)
+            error = QLabel("")
+            error.setStyleSheet(_ERROR_STYLE)
+            error.setWordWrap(True)
+            error.setVisible(False)
+            column.addWidget(error)
+            self.field_errors[field.name] = error
+        if isinstance(editor, NumberEdit):
+            editor.error_changed.connect(
+                lambda message, n=field.name: self._on_input_error(n, message)
+            )
+        form = self._place.get(field.name, self.form_layout)
+        form.addRow(label, cell)
+        self._rows[field.name] = (form, cell)
+        self._shown[field.name] = True
 
     def _make_editor(self, f: FieldSpec) -> tuple[QWidget, QLabel | None]:
         name = f.name
+        hint = empty_text(self.spec.title, name) if f.optional else ""
         if f.kind in ("float", "int"):
             number = NumberEdit(f, self._units)
+            number.setPlaceholderText(hint)
             number.committed.connect(lambda v, n=name: self._apply(n, v))
             return number, QLabel(unit_label(f.quantity, self._units))
         if f.kind == "bool":
@@ -312,10 +387,11 @@ class FormPanel(QWidget):
                 self._choices[name] = tuple(listed)
                 self._open_lists.add(name)
                 pick = QComboBox()
-                pick.addItems([str(c) for c in listed])
+                pick.addItems([self.choice_label(name, c) for c in listed])
                 pick.activated.connect(lambda i, n=name: self._apply(n, self._choices[n][i]))
                 return pick, None
             line = QLineEdit()
+            line.setPlaceholderText(hint)
             line.editingFinished.connect(lambda n=name, w=line: self._on_text(n, w.text()))
             return line, None
         if f.kind == "choice":
@@ -323,13 +399,13 @@ class FormPanel(QWidget):
             self._choices[name] = tuple(f.choices)
             combo = QComboBox()
             for choice in f.choices:
-                combo.addItem(NONE_TEXT if choice is None else str(choice))
+                combo.addItem(self.choice_label(name, choice))
             combo.activated.connect(lambda i, n=name: self._apply(n, self._choices[n][i]))
             return combo, None
         if f.kind == "function":
             func = FunctionEditor(
                 f.quantity, self._units, f.minimum, f.maximum, optional=f.optional,
-                variables=f.variables,
+                variables=f.variables, none_text=hint[:1].upper() + hint[1:],
             )
             func.function_changed.connect(lambda v, n=name: self._apply(n, v))
             return func, None
@@ -340,13 +416,53 @@ class FormPanel(QWidget):
             return sel, None
         if f.kind == "dict":
             line = QLineEdit()
+            line.setPlaceholderText(hint)
             line.editingFinished.connect(lambda n=name, w=line: self._on_dict(n, w))
             return line, self._unit_label_for(f)
         if f.kind in _TEXT_LISTS:
             line = QLineEdit()
+            line.setPlaceholderText(hint)
             line.editingFinished.connect(lambda n=name, w=line: self._on_text_list(n, w))
             return line, self._unit_label_for(f)
         raise ModelError(f"unsupported form kind {f.kind!r}")  # pragma: no cover
+
+    def choice_label(self, name: str, value: Any) -> str:
+        """The readable text of a stored choice of field ``name`` (convention C8)."""
+        return choice_text(self.spec.title, name, value)
+
+    # ------------------------------------------------------------- rows and boxes
+    def set_field_visible(self, name: str, shown: bool) -> None:
+        """Show or hide the row of a field that does (not) apply; see :meth:`update_sections`."""
+        form, cell = self._rows[name]
+        self._shown[name] = shown
+        form.setRowVisible(cell, shown)
+
+    def is_field_shown(self, name: str) -> bool:
+        """``True`` if the field's row applies (shown even while its box is collapsed)."""
+        return self._shown.get(name, False)
+
+    def update_sections(self) -> None:
+        """Hide the boxes with no row shown and count the changed values of collapsed parts.
+
+        A "More" line counts its shown fields that differ from their defaults; an advanced
+        box counts all its shown fields (owner's decision C).
+        """
+        if not self.sections:
+            return
+        try:
+            obj = self.current_object()
+        except ModelError:
+            return
+        for box in self.boxes:
+            section = self.sections[box.title]
+            shown = [n for n in box.names if self._shown.get(n, False)]
+            section.setVisible(bool(shown))
+            if section.more is not None:
+                more = [n for n in box.more if self._shown.get(n, False)]
+                section.more.setVisible(bool(more))
+                section.more.set_changed(changed_count(obj, more))
+            if box.advanced:
+                section.set_changed(changed_count(obj, shown))
 
     def _unit_label_for(self, f: FieldSpec) -> QLabel | None:
         """Unit label beside a list or mapping field of a quantity (``None`` otherwise)."""
@@ -402,6 +518,7 @@ class FormPanel(QWidget):
             self.title_label.setText(f"{self.spec.title}: {name}" if name else self.spec.title)
             for field in self.spec.fields:
                 self._load(field, getattr(obj, field.name, None))
+            self.update_sections()
         finally:
             self._refreshing = False
 
@@ -422,7 +539,7 @@ class FormPanel(QWidget):
                 # a value that is not in the offered list stays visible, not replaced
                 choices = (*choices, value if value is not None else "")
                 self._choices[f.name] = choices
-                editor.addItem(str(choices[-1]))
+                editor.addItem(self.choice_label(f.name, choices[-1]))
             editor.setCurrentIndex(choices.index(value) if value in choices else 0)
             editor.blockSignals(False)
         elif isinstance(editor, FunctionEditor):
@@ -454,8 +571,22 @@ class FormPanel(QWidget):
         return "; ".join(f"{n}: {m}" for n, m in self._errors.items())
 
     def _show_error(self) -> None:
-        self.error_label.setText(self.error_text())
-        self.error_label.setVisible(bool(self._errors))
+        """Each field's error under the field; the top line only for the other errors."""
+        for name, line in self.field_errors.items():
+            message = self._errors.get(name) or self._input_errors.get(name, "")
+            line.setText(message)
+            line.setVisible(bool(message))
+        other = {n: m for n, m in self._errors.items() if n not in self._rows}
+        self.error_label.setText("; ".join(other.values()))
+        self.error_label.setVisible(bool(other))
+
+    def _on_input_error(self, name: str, message: str) -> None:
+        """A number box's own input error (unparsable or out of limits), shown under it."""
+        if message:
+            self._input_errors[name] = message
+        else:
+            self._input_errors.pop(name, None)
+        self._show_error()
 
     def _set_error(self, name: str, message: str) -> None:
         if message:

@@ -77,14 +77,11 @@ class RegionPanel(FormPanel):
 
     def is_thickness_shown(self) -> bool:
         """``True`` if the Thickness row is shown (hidden for an axisymmetric model)."""
-        names = [f.name for f in self.spec.fields]
-        return self.form_layout.isRowVisible(names.index(_THICKNESS))
+        return self.is_field_shown(_THICKNESS)
 
     def _update_thickness_row(self) -> None:
-        names = [f.name for f in self.spec.fields]
-        if _THICKNESS in names:
-            shown = not self.document.model.axisymmetric
-            self.form_layout.setRowVisible(names.index(_THICKNESS), shown)
+        if _THICKNESS in self.editors:
+            self.set_field_visible(_THICKNESS, not self.document.model.axisymmetric)
 
     def material_names(self) -> tuple[str, ...]:
         """The names offered by the material combo box."""
