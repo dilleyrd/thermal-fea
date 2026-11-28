@@ -161,7 +161,9 @@ def test_negative_x_is_reported_when_validating(app: AppContext, qtbot) -> None:
     draw_rectangle_at(ctx, qtbot, -0.05, 0.0, 0.1, 0.01)
     ctx.tree.add_material()
     ctx.tree.add_region()
-    open_panel(ctx, ("regions", 0)).editors["selection"].choose("all")
+    all_field = open_panel(ctx, ("regions", 0)).editors["selection"]
+    all_field.choose("all")
+    assert all_field.update()  # choosing waits for Update
     set_geometry_type(ctx, "Axisymmetric")
     open_panel(ctx, ("mesh_settings",))
     enter(ctx.properties.panel.editors["global_size"], "0.02")
@@ -193,7 +195,9 @@ def test_v05_built_from_scratch_in_the_window(app: AppContext, qtbot) -> None:
     for name, value in (("k", K), ("rho", 7800.0), ("cp", 500.0)):
         set_function(ctx, address, name, str(value))
     region = ctx.tree.add_region()
-    open_panel(ctx, region).editors["selection"].choose("all")
+    all_field = open_panel(ctx, region).editors["selection"]
+    all_field.choose("all")
+    assert all_field.update()  # choosing waits for Update
     choose(ctx, region, "material", address[1])
     assert not open_panel(ctx, region).is_thickness_shown()
 

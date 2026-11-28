@@ -73,6 +73,7 @@ from thermalfea.gui.property_panels.selection_editor import (
     SelectionEditor,
     SelectionRequest,
     check_request_name,
+    role_label,
     store_selection,
 )
 from thermalfea.gui.scene import SceneView
@@ -266,6 +267,9 @@ class FormPanel(QWidget):
 
     value_changed = Signal(str, object)
     boxes: tuple[Box, ...] = ()
+    #: Label a field called "Selection" by its role ("Boundary", "Part"); a part's own
+    #: panel keeps "Selection", since there the selection *is* the part.
+    label_by_role = True
 
     def __init__(
         self,
@@ -334,7 +338,11 @@ class FormPanel(QWidget):
     def _add_field(self, field: FieldSpec) -> None:
         editor, unit = self._make_editor(field)
         self.editors[field.name] = editor
-        label = QLabel(field.label)
+        text = field.label
+        if isinstance(editor, SelectionEditor) and text == "Selection" and self.label_by_role:
+            # the field's role as its label: "Boundary", "Part", "Boundary or point" (item 12)
+            text = role_label(self.document.model, field.selection_dims)
+        label = QLabel(text)
         if field.tooltip:
             label.setToolTip(field.tooltip)
             editor.setToolTip(field.tooltip)
@@ -411,6 +419,7 @@ class FormPanel(QWidget):
             return func, None
         if f.kind in ("selection", "selection_list"):
             sel = SelectionEditor(self.document, self.view, f)
+            sel.owner_address = tuple(self.address)
             sel.value_changed.connect(lambda v, n=name: self._apply(n, v))
             sel.apply_handler = lambda request, n=name, s=sel: self._apply_request(n, request, s)
             return sel, None
@@ -642,7 +651,12 @@ class FormPanel(QWidget):
             store_selection(model, self.document.built, request)
             current = getattr(resolve(model, self.address), name)
             if field.kind == "selection_list":
-                value = list(current) if request.name in current else [*current, request.name]
+                if request.swap and request.swap in current:  # "Save as new" from an entry
+                    value = [request.name if n == request.swap else n for n in current]
+                elif request.name in current:
+                    value = list(current)
+                else:
+                    value = [*current, request.name]
             else:
                 value = request.name
             self._set_attribute(model, name, value)

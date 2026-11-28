@@ -19,6 +19,7 @@ meaning (a number box applies its value).
 
 from __future__ import annotations
 
+import weakref
 from collections.abc import Callable
 from dataclasses import dataclass, field
 from typing import Any
@@ -71,7 +72,9 @@ class PickStrip(QFrame):
         column.addWidget(self.instruction_label)
         self.count_label = QLabel("")
         column.addWidget(self.count_label)
+        self._column = column
         row = QHBoxLayout()
+        self._buttons = row
         row.addStretch(1)
         self.confirm_button = QPushButton(confirm_text or "Done")
         self.confirm_button.setVisible(bool(confirm_text))
@@ -84,6 +87,16 @@ class PickStrip(QFrame):
         self.confirm_button.clicked.connect(lambda _c=False: self.confirmed.emit())
         self.cancel_button.clicked.connect(lambda _c=False: self.cancelled.emit())
         self.setVisible(False)
+
+    def insert_widget(self, widget: QWidget) -> None:
+        """Add ``widget`` (e.g. a name box) between the count and the buttons."""
+        self._column.insertWidget(self._column.count() - 1, widget)
+
+    def add_button(self, text: str) -> QPushButton:
+        """Add a second action button before the confirm button (e.g. "Save as new")."""
+        button = QPushButton(text)
+        self._buttons.insertWidget(1, button)
+        return button
 
     def show_pick(self, instruction: str, count: str = "") -> None:
         """Show the strip with an instruction and the first count."""
@@ -139,11 +152,16 @@ class PickManager(QObject):
         self.view = view
         self.active: PickSession | None = None
         self.on_start: list[Callable[[], Any]] = []
+        #: The window with the selection toolbar; set by the controllers that know it (else
+        #: found as the view's own window).
+        self.window: Any = None
         self._filtering = False
 
     # ----------------------------------------------------------------- toolbar
     def _window(self) -> Any:
-        window = self.view.window() if isinstance(self.view, QWidget) else None
+        window = self.window
+        if window is None and isinstance(self.view, QWidget):
+            window = self.view.window()
         return window if hasattr(window, "actions") else None
 
     def current_mode(self) -> str:
@@ -263,13 +281,33 @@ class PickManager(QObject):
         return False
 
 
+#: Every manager made, so a test harness can end what a test left running.
+_MANAGERS: weakref.WeakSet[PickManager] = weakref.WeakSet()
+
+
 def manager_for(view: Any) -> PickManager:
     """The one :class:`PickManager` of ``view`` (made on first use)."""
     manager = getattr(view, "_pick_manager", None)
     if manager is None:
         manager = PickManager(view)
         view._pick_manager = manager
+        _MANAGERS.add(manager)
     return manager
+
+
+def end_all_picks() -> None:
+    """Cancel every running pick and remove the key filters (for test teardown).
+
+    A pick left running keeps its application-wide Esc/Enter filter; ending them all keeps
+    one test's pick from reaching into the next.
+    """
+    for manager in list(_MANAGERS):
+        try:
+            manager.cancel_active()
+        except RuntimeError:  # the owner's widgets are already deleted
+            manager.active = None
+        manager._filter(False)
+        manager.on_start.clear()
 
 
 def count_text(n: int, word: str, plural: str | None = None) -> str:

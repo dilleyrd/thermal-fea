@@ -35,10 +35,10 @@ def test_editor_status_text_names_boundaries(qtbot, built_doc) -> None:  # noqa:
     view = FakeView()
     editor = SelectionEditor(built_doc, view, SPEC)
     qtbot.addWidget(editor)
-    editor.pick_button.setChecked(True)
+    editor.new_button.click()
     ents = built_doc.built.entities(1)
     tags = sorted(ents)[:2]
     view.pick(1, tags)
-    assert editor.status_label.text() == "2 boundaries picked"
+    assert editor.strip.count_label.text() == "2 boundaries picked"
     view.pick(1, tags[:1])
-    assert editor.status_label.text() == "1 boundary picked"
+    assert editor.strip.count_label.text() == "1 boundary picked"

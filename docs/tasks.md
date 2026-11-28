@@ -1121,7 +1121,7 @@ tests (offscreen) of the behavior it adds, plus the whole suite.
   (instruction, count, confirm, Cancel), marks in the view, the toolbar switched and
   restored, Enter confirms and Esc cancels. Applied to the Selections panel's Add/Remove,
   the stream path, the probe and the geometry tool dialogs. Depends on M11.68.
-- [ ] **M11.70 [C] Selection fields.** Held item 12 with C1 (Update and Revert, the pending
+- [x] **M11.70 [C] Selection fields.** Held item 12 with C1 (Update and Revert, the pending
   mark, decision A) and the list fields (stream walls, structured parts); held item 9 and
   walkthrough frictions 2, 4, 9 and 10. Depends on M11.69.
 - [ ] **M11.71 [C] Value-per-selection tables.** Held item 13: boundary and point sizes,

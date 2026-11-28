@@ -29,7 +29,7 @@ from thermalfea.gui.property_panels.mesh import MeshPanel
 from thermalfea.gui.property_panels.network import NETWORK_ADDRESS, NetworkPanel
 from thermalfea.gui.property_panels.region import RegionPanel
 from thermalfea.gui.property_panels.results import RESULT_ADDRESS, ResultPanel
-from thermalfea.gui.property_panels.selection_editor import SelectionEditor
+from thermalfea.gui.property_panels.selection_editor import DISCARDED_TEXT, SelectionEditor
 from thermalfea.gui.property_panels.selection_panel import SelectionPanel
 from thermalfea.gui.property_panels.solution import SolutionPanel
 from thermalfea.gui.property_panels.stream import StreamPanel
@@ -117,6 +117,8 @@ class PropertyController:
         self.document = document
         self.tree = tree
         self.view = view
+        if view is not None and hasattr(window, "actions"):
+            manager_for(view).window = window  # picks switch this window's toolbar (C2)
         self.panel: FormPanel | None = None
         self.current_address: Address | None = None
         #: ``generate() -> bool`` of the mesh controller, given to the mesh panel (set by
@@ -195,10 +197,16 @@ class PropertyController:
     def _install(self, widget: QWidget, panel: FormPanel | None, address: Address | None) -> None:
         previous = self._installed
         if previous is not None and previous is not widget:
-            # a panel that is being replaced must not keep picking into the viewport
+            # a panel that is being replaced must not keep picking into the viewport, and an
+            # unapplied selection change is dropped with a note (C1, decision A)
+            dropped = False
             for editor in previous.findChildren(SelectionEditor):
-                if editor.pick_button.isChecked():
-                    editor.set_picking(False)
+                if editor.picking is not None:
+                    editor.stop_picking()
+                dropped = dropped or editor.has_pending()
+            status = getattr(self.window, "statusBar", None)
+            if dropped and status is not None:
+                status().showMessage(DISCARDED_TEXT, 8000)
             if self.view is not None:  # nor keep a pick of the pick manager (C2)
                 manager = manager_for(self.view)
                 owner = manager.active.owner if manager.active is not None else None

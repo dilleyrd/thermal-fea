@@ -70,50 +70,72 @@ def test_pick_then_apply_stores_a_selection_in_one_undo_step(qtbot, built_doc) -
     assert isinstance(view, SceneView)
     editor = SelectionEditor(built_doc, view, SPEC)
     qtbot.addWidget(editor)
-    editor.name_hint = "Top edge"
-    assert editor.pick_button.isEnabled() and not editor.apply_button.isEnabled()
+    assert editor.new_button.isEnabled()
 
-    editor.pick_button.setChecked(True)
-    assert view.mode == "curve"
+    editor.new_button.click()
+    assert editor.picking == "new" and view.mode == "curve"
+    confirm = editor.strip.confirm_button
+    assert editor.name_edit.text() == "" and not confirm.isEnabled()  # no default name
     tag = top_curve(built_doc)
     view.pick(0, [1])  # wrong dimension: ignored
-    assert editor.picked() == (-1, [])
+    assert editor.picked() == (1, [])
     view.pick(1, [tag])
-    assert editor.picked() == (1, [tag]) and editor.apply_button.isEnabled()
-    assert editor.status_label.text() == "1 boundary picked"
+    assert editor.picked() == (1, [tag])
+    assert not confirm.isEnabled()  # a name is still needed
+    assert editor.strip.count_label.text() == "1 boundary picked"
+    editor.name_edit.setText("Top edge")
+    assert confirm.isEnabled()
 
-    editor.apply_button.click()
+    confirm.click()
     sel = built_doc.model.selections["Top edge"]
     assert sel.dim == 1 and sel.tags == [tag]
     assert len(sel.fingerprints) == 1 and sel.fingerprints[0].center[1] == pytest.approx(2.0)
     assert built_doc.undo_stack.count() == 1
-    assert editor.value() == "Top edge"
+    assert editor.picking is None
+    assert "Top edge" in [editor.combo.itemData(i) for i in range(editor.combo.count())]
     built_doc.undo_stack.undo()
     assert "Top edge" not in built_doc.model.selections
-    assert "Top edge" not in [editor.combo.itemText(i) for i in range(editor.combo.count())]
+    assert "Top edge" not in [editor.combo.itemData(i) for i in range(editor.combo.count())]
 
-    editor.pick_button.setChecked(False)
+    editor.new_button.click()
+    editor.cancel_pick()
     assert view.mode == "none"
     view.pick(1, [tag])  # no longer listening
-    assert editor.picked() == (1, [tag])  # unchanged from before
+    assert editor.picked() == (1, [])  # unchanged from before
 
 
-def test_second_apply_with_a_taken_name_gets_a_unique_one(qtbot, built_doc) -> None:
+def test_a_taken_name_is_refused_and_edit_replaces_the_entities(qtbot, built_doc) -> None:
     view = FakeView()
     editor = SelectionEditor(built_doc, view, SPEC)
     qtbot.addWidget(editor)
-    editor.name_hint = "Edge"
-    editor.pick_button.setChecked(True)
-    view.pick(1, [top_curve(built_doc)])
-    assert editor.apply() == "Edge"
-    assert editor.name_edit.text() == "Edge 2"  # the suggestion is always unused
-    editor.name_edit.setText("Edge")  # typing the field's own name replaces its selection
-    assert editor.apply() == "Edge"
-    other = SelectionEditor(built_doc, view, SPEC)
-    qtbot.addWidget(other)
-    other.name_hint = "Edge"
-    other._picked = editor._picked
-    assert other.apply() == "Edge 2"
+    tag = top_curve(built_doc)
+    editor.new_button.click()
+    view.pick(1, [tag])
+    editor.name_edit.setText("Edge")
+    editor.strip.confirm_button.click()
+    assert "Edge" in built_doc.model.selections
+    # a taken name is refused (no suggested "Edge 2" any more); nothing is created
+    count = built_doc.undo_stack.count()
+    editor.new_button.click()
+    assert editor.name_edit.text() == ""  # no default name
+    view.pick(1, [tag])
+    editor.name_edit.setText("Edge")
+    assert not editor.strip.confirm_button.isEnabled() and editor.name_error.text()
+    assert not editor.confirm_pick()
+    assert built_doc.undo_stack.count() == count
+    editor.name_edit.setText("Edge 2")
+    assert editor.strip.confirm_button.isEnabled() and editor.name_error.text() == ""
+    editor.strip.confirm_button.click()
+    assert "Edge 2" in built_doc.model.selections
+    # replacing the entities of the field's own selection is Edit, not retyping its name
+    ents = built_doc.built.entities(1)
+    bottom = min(ents, key=lambda t: ents[t].center[1])
+    editor.set_value("Edge")
+    editor.edit_button.click()
+    assert editor.picking == "edit" and editor.picked() == (1, [tag])
+    view.pick(1, [bottom])
+    editor.strip.confirm_button.click()
+    assert built_doc.model.selections["Edge"].tags == [bottom]
 
 
 def test_choose_existing_selection_emits(qtbot, built_doc) -> None:
@@ -122,13 +144,18 @@ def test_choose_existing_selection_emits(qtbot, built_doc) -> None:
     qtbot.addWidget(editor)
     got = []
     editor.value_changed.connect(got.append)
-    names = [editor.combo.itemText(i) for i in range(editor.combo.count())]
+    names = [editor.combo.itemData(i) for i in range(editor.combo.count())]
     assert "all" not in names  # "all" holds a surface; the field wants curves
-    editor.pick_button.setChecked(True)
+    editor.new_button.click()
     view.pick(1, [top_curve(built_doc)])
-    editor.apply()
+    editor.name_edit.setText("Top edge")
+    editor.strip.confirm_button.click()
+    editor.set_value("Top edge")  # a form would store the new selection and reload
     got.clear()
     editor.choose("")
+    assert got == []  # choosing waits for Update
+    assert editor.has_pending()
+    editor.update()
     assert got == [""]
 
 
@@ -136,11 +163,11 @@ def test_picking_is_disabled_without_a_build(qtbot) -> None:
     doc = Document(api.new_model())
     editor = SelectionEditor(doc, FakeView(), SPEC)
     qtbot.addWidget(editor)
-    assert not editor.pick_button.isEnabled()
-    assert "Build the geometry" in editor.pick_button.toolTip()
+    assert not editor.new_button.isEnabled()
+    assert "Build the geometry" in editor.new_button.toolTip()
     none_view = SelectionEditor(doc, None, SPEC)
     qtbot.addWidget(none_view)
-    assert "No viewport" in none_view.pick_button.toolTip()
+    assert "No viewport" in none_view.new_button.toolTip()
 
 
 def test_form_panel_apply_creates_selection_and_sets_field_in_one_step(qtbot, built_doc) -> None:
@@ -149,22 +176,23 @@ def test_form_panel_apply_creates_selection_and_sets_field_in_one_step(qtbot, bu
     qtbot.addWidget(p)
     editor = p.editors["selection"]
     assert isinstance(editor, SelectionEditor) and editor.spec.selection_dims == (1,)
-    editor.pick_button.setChecked(True)
+    editor.new_button.click()
     assert view.mode == "curve"
     tag = top_curve(built_doc)
     view.pick(1, [tag])
-    editor.apply_button.click()
+    editor.name_edit.setText("Conv selection")
+    editor.strip.confirm_button.click()
     assert built_doc.model.bcs[0].selection == "Conv selection"
     assert built_doc.model.selections["Conv selection"].tags == [tag]
     assert built_doc.undo_stack.count() == 1
-    assert editor.current_label.text() == "Conv selection"
+    assert editor.value() == "Conv selection" and editor.combo.currentData() == "Conv selection"
     built_doc.undo_stack.undo()
     assert built_doc.model.bcs[0].selection == ""
     assert "Conv selection" not in built_doc.model.selections
-    assert editor.current_label.text() == "(none)"
+    assert editor.value() == "" and editor.combo.currentData() == ""
     built_doc.undo_stack.redo()
     assert built_doc.model.bcs[0].selection == "Conv selection"
-    assert editor.current_label.text() == "Conv selection"
+    assert editor.value() == "Conv selection" and editor.combo.currentData() == "Conv selection"
 
 
 def test_selection_list_field_appends_and_clears(qtbot, built_doc) -> None:
@@ -184,30 +212,37 @@ def test_selection_list_field_appends_and_clears(qtbot, built_doc) -> None:
     qtbot.addWidget(p)
     walls = p.editors["walls"]
     assert isinstance(walls, SelectionEditor)
-    walls.pick_button.setChecked(True)
+    walls.new_button.click()
     view.pick(1, [top_curve(built_doc)])
-    walls.apply()
+    walls.name_edit.setText("S walls")
+    walls.strip.confirm_button.click()
     assert built_doc.model.streams[0].walls == ["S walls"]
     ents = built_doc.built.entities(1)
     bottom = min(ents, key=lambda t: ents[t].center[1])
+    walls.new_button.click()
     view.pick(1, [bottom])
-    walls.apply()
+    walls.name_edit.setText("S walls 2")
+    walls.strip.confirm_button.click()
     assert built_doc.model.streams[0].walls == ["S walls", "S walls 2"]
     walls.clear()
+    assert built_doc.model.streams[0].walls == ["S walls", "S walls 2"]  # waits for Update
+    walls.update()
     assert built_doc.model.streams[0].walls == []
 
 
 def test_failed_apply_leaves_the_label_unchanged(qtbot, built_doc) -> None:
     view = FakeView()
     p = FormPanel(form_for(Convection), built_doc, ("bcs", 0), view)
-    qtbot.addWidget(p)
     editor = p.editors["selection"]
-    assert editor.current_label.text() == "(none)"
-    editor.pick_button.setChecked(True)
+    qtbot.addWidget(p, before_close_func=lambda _w: editor.cancel_pick())  # frees the pick
+    assert editor.combo.currentData() == ""
+    editor.new_button.click()
     view.pick(1, [987654])  # no such curve: the store fails
-    assert editor.apply_button.isEnabled()
-    editor.apply_button.click()
-    assert editor.current_label.text() == "(none)" and editor.value() == ""
+    editor.name_edit.setText("Ghost")
+    assert editor.strip.confirm_button.isEnabled()
+    editor.strip.confirm_button.click()
+    assert editor.combo.currentData() == "" and editor.value() == ""
+    assert editor.name_error.text()  # the refusal is shown
     assert built_doc.model.bcs[0].selection == "" and built_doc.undo_stack.count() == 0
 
 
@@ -217,10 +252,10 @@ def test_toolbar_shows_the_picking_mode(qtbot, window, built_doc) -> None:
     controller.show_object(("bcs", 0))
     editor = controller.panel.editors["selection"]
     assert isinstance(editor, SelectionEditor)
-    editor.pick_button.setChecked(True)
+    editor.new_button.click()
     assert view.mode == "curve"
     assert window.actions["select.curve"].isChecked()
-    editor.pick_button.setChecked(False)
+    editor.cancel_pick()
     assert view.mode == "none"
     assert window.actions["select.none"].isChecked()
 
@@ -230,11 +265,11 @@ def test_changing_the_panel_ends_picking(qtbot, window, built_doc) -> None:
     tree, controller = attach_tree(window, built_doc, view)
     controller.show_object(("bcs", 0))
     editor = controller.panel.editors["selection"]
-    editor.pick_button.setChecked(True)
+    editor.new_button.click()
     assert view.mode == "curve"
     controller.show_object(("section", "none"))  # another tree item: the panel is replaced
     assert view.mode == "none"
     assert window.actions["select.none"].isChecked()
-    assert not editor.pick_button.isChecked()
+    assert editor.picking is None
     view.pick(1, [top_curve(built_doc)])  # the dead editor gets no pick
-    assert editor.picked() == (-1, [])
+    assert editor.picked() == (1, [])

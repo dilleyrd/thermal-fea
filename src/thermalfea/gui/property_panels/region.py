@@ -40,6 +40,8 @@ class RegionPanel(FormPanel):
     parent : QWidget, optional
     """
 
+    label_by_role = False  # in a part's own panel the selection *is* the part
+
     def __init__(
         self,
         spec: FormSpec,

@@ -181,11 +181,15 @@ def test_busy_sees_a_picking_selection_editor(setup, doc, qtbot) -> None:
 
     window, fake, _tree, ctrl = setup
     spec = FieldSpec("selection", "Selection", "selection", selection_dims=(1,))
-    editor = SelectionEditor(doc, None, spec)
+    from tests.gui.test_selection_editor import FakeView as PickView
+
+    editor = SelectionEditor(doc, PickView(), spec)  # its own viewport, not the controller's
     editor.setParent(window)  # only the controller's own window counts
     assert not ctrl.busy()
-    editor.pick_button.setEnabled(True)
-    editor.pick_button.setChecked(True)
+    editor.new_button.click()
+    assert editor.picking is not None
     assert ctrl.busy()
     fake.entity_clicked.emit(1, right_tag(doc))
     assert ctrl.report is None
+    editor.cancel_pick()  # leave no pick (and no application key filter) behind
+    assert not ctrl.busy()

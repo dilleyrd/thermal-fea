@@ -97,7 +97,7 @@ class InspectController(QObject):
             widgets = app.allWidgets() if app is not None else []
         for w in widgets:
             try:
-                if isinstance(w, SelectionEditor) and w.pick_button.isChecked():
+                if isinstance(w, SelectionEditor) and w.picking is not None:
                     return True
                 if isinstance(w, GeometryOpDialog) and getattr(w, "_connected", False):
                     return True

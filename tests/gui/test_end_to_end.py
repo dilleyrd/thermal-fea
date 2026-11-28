@@ -144,27 +144,32 @@ def click(view: Any, x: float, y: float, ctrl: bool = False) -> None:
 
 
 def pick_in_viewport(
-    ctx: AppContext, qtbot: Any, panel: Any, points: list[tuple[float, float]], mode: str
+    ctx: AppContext, qtbot: Any, panel: Any, points: list[tuple[float, float]], mode: str,
+    name: str | None = None,
 ) -> tuple[int, list[int]]:
-    """"Pick in viewport", choose the toolbar mode, click the points, "Apply".
+    """"+ New", choose the toolbar mode, click the points, type the name, "Create and use".
 
     Every click after the first one holds Ctrl (adds to the selection). The toolbar mode
-    ("Curve", "Surface") is chosen explicitly because "Pick in viewport" starts in the first
-    dimension its field allows (a fixed temperature starts in point mode).
+    ("Curve", "Surface") is chosen explicitly because "+ New" starts in the first
+    dimension its field allows (a fixed temperature starts in point mode). The name box
+    starts empty, so the name is typed (default: one that is unused).
 
     Returns ``(dim, tags)`` as the selection editor collected them.
     """
     editor = panel.editors["selection"]
     ctx.view.canvas.draw()  # the equal-aspect limits are final before the data are mapped
-    editor.pick_button.setChecked(True)
+    editor.new_button.click()
+    assert editor.picking == "new" and editor.name_edit.text() == ""
     trigger(ctx, f"select.{mode}")
     for index, (x, y) in enumerate(points):
         with qtbot.waitSignal(ctx.view.selection_changed, timeout=WAIT):
             click(ctx.view, x, y, ctrl=index > 0)
     dim, tags = editor.picked()
-    assert editor.apply_button.isEnabled(), (dim, tags)
-    editor.apply_button.click()
-    editor.pick_button.setChecked(False)
+    assert not editor.strip.confirm_button.isEnabled()  # a name is still needed
+    editor.name_edit.setText(name or f"picked {len(ctx.document.model.selections)}")
+    assert editor.strip.confirm_button.isEnabled(), (dim, tags)
+    editor.strip.confirm_button.click()
+    assert editor.picking is None
     return dim, tags
 
 

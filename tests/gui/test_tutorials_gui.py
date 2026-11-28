@@ -159,20 +159,24 @@ def click(view: Any, x: float, y: float, ctrl: bool = False) -> None:
 
 def pick_in_viewport(
     ctx: AppContext, qtbot: Any, panel: Any, points: list[tuple[float, float]], mode: str,
-    field: str = "selection",
+    field: str = "selection", name: str | None = None,
 ) -> tuple[int, list[int]]:
-    """"Pick in viewport", toolbar mode, click the points (Ctrl after the first), "Apply"."""
+    """"+ New", toolbar mode, click the points (Ctrl after the first), type the name,
+    "Create and use" ("Create and add" for a list field)."""
     editor = panel.editors[field]
     ctx.view.canvas.draw()  # the equal-aspect limits are final before the data are mapped
-    editor.pick_button.setChecked(True)
+    editor.new_button.click()
+    assert editor.picking == "new" and editor.name_edit.text() == ""
     trigger(ctx, f"select.{mode}")
     for index, (x, y) in enumerate(points):
         with qtbot.waitSignal(ctx.view.selection_changed, timeout=WAIT):
             click(ctx.view, x, y, ctrl=index > 0)
     dim, tags = editor.picked()
-    assert editor.apply_button.isEnabled(), (dim, tags)
-    editor.apply_button.click()
-    editor.pick_button.setChecked(False)
+    assert not editor.strip.confirm_button.isEnabled()  # a name is still needed
+    editor.name_edit.setText(name or f"picked {len(ctx.document.model.selections)}")
+    assert editor.strip.confirm_button.isEnabled(), (dim, tags)
+    editor.strip.confirm_button.click()
+    assert editor.picking is None
     return dim, tags
 
 
@@ -218,6 +222,7 @@ def add_region(ctx: AppContext, material: str, thickness: float) -> None:
     panel = ctx.properties.panel
     assert "all" in panel.editors["selection"].allowed_names()
     panel.editors["selection"].choose("all")
+    assert panel.editors["selection"].update()  # choosing waits for Update
     choose(ctx, ("regions", 0), "material", material)
     set_number(ctx, ("regions", 0), "thickness", str(thickness))
     region = ctx.document.model.regions[0]
@@ -314,6 +319,7 @@ def test_fin_quench_in_the_gui(
     faces = doc.model.bcs[0].selection
     assert faces in editor.allowed_names()
     editor.choose(faces)
+    assert editor.update()  # choosing waits for Update
 
     # step: insulated ends
     tree_action(ctx, "loads", ("add_bc", "adiabatic"))
@@ -473,7 +479,8 @@ def test_cold_plate_in_the_gui(
     # step: the stream panel: walls, path, mass flow
     address = ("streams", 0)
     panel = open_panel(ctx, address)
-    pick_in_viewport(ctx, qtbot, panel, [(length / 2, 0.0)], "curve", field="walls")
+    pick_in_viewport(ctx, qtbot, panel, [(length / 2, 0.0)], "curve", field="walls",
+                    name="Stream 1 walls")
     assert len(doc.model.streams[0].walls) == 1
     assert doc.model.streams[0].walls == ["Stream 1 walls"]
     path_edit = open_panel(ctx, address).editors["path"]

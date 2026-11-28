@@ -12,6 +12,18 @@ import pytest  # noqa: E402
 from PySide6.QtCore import QSettings  # noqa: E402
 
 from thermalfea.gui.main_window import MainWindow  # noqa: E402
+from thermalfea.gui.pick import end_all_picks  # noqa: E402
+
+
+@pytest.fixture(autouse=True)
+def _end_picks(qtbot):
+    """End every pick a test left running (M11.69), before its widgets are closed.
+
+    A running pick keeps an application-wide Esc/Enter filter; without this a test's pick
+    could reach into the next test and make the suite depend on the order of the tests.
+    """
+    yield
+    end_all_picks()
 
 
 class DialogRecorder:
