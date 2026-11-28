@@ -239,10 +239,10 @@ def results(tmp_path: Path) -> Results:
 def test_contour_returns_a_figure_with_title_colorbar_and_markers(results: Results) -> None:
     fig = contour(results, field="T", levels=8)
     assert isinstance(fig, Figure)
-    assert len(fig.axes) == 2  # plot and colour bar
+    assert len(fig.axes) == 2  # plot and color bar
     ax = fig.axes[0]
     assert "steady state" in ax.get_title()  # a steady file has no time (M11.8)
-    # the colour bar is vertical for tall models and horizontal for flat ones
+    # the color bar is vertical for tall models and horizontal for flat ones
     bar = fig.axes[1]
     assert "Temperature [K]" in (bar.get_ylabel(), bar.get_xlabel())
     assert len(ax.collections) >= 1 and len(ax.texts) == 2

@@ -242,11 +242,11 @@ def test_switching_the_measure_redraws_the_histogram(shell) -> None:
     assert panel.histogram.counts.sum() == shell.doc.mesh.n_elements
 
 
-def test_colour_by_quality_calls_set_mesh_and_unchecking_clears(shell) -> None:
+def test_color_by_quality_calls_set_mesh_and_unchecking_clears(shell) -> None:
     panel = open_panel(shell)
     shell.mesh.generate()
     mesh = shell.doc.mesh
-    panel.colour_box.setChecked(True)
+    panel.color_box.setChecked(True)
     _, color_by = shell.view.calls[-1]
     assert isinstance(color_by, np.ndarray)
     assert color_by.shape == (mesh.n_elements,)
@@ -256,21 +256,21 @@ def test_colour_by_quality_calls_set_mesh_and_unchecking_clears(shell) -> None:
     block_ids = [int(i) for b in mesh.blocks for i in b.elem_ids]
     assert np.allclose(color_by, [by_id[i] for i in block_ids])
 
-    panel.colour_box.setChecked(False)
+    panel.color_box.setChecked(False)
     assert shell.view.calls[-1] == (mesh, None)
 
 
-def test_leaving_the_panel_ends_the_quality_colouring(shell) -> None:
+def test_leaving_the_panel_ends_the_quality_coloring(shell) -> None:
     """The check box and the viewport stay in step when the panel is shown again."""
     panel = open_panel(shell)
     shell.mesh.generate()
     mesh = shell.doc.mesh
-    panel.colour_box.setChecked(True)
+    panel.color_box.setChecked(True)
     assert isinstance(shell.view.calls[-1][1], np.ndarray)
     shell.props.show_object(("solution",))  # another tree item replaces the panel
     assert shell.view.calls[-1] == (mesh, None)
     again = open_panel(shell)
-    assert not again.colour_box.isChecked()
+    assert not again.color_box.isChecked()
 
 
 def test_generate_button_and_action_follow_the_geometry_state(window, qtbot) -> None:

@@ -278,7 +278,7 @@ def test_tree_selection_highlights_the_load(qtbot, window, built_doc) -> None:
     assert view.highlights[-1] == (1, tags_of(built_doc, "top"))
 
 
-def test_distinct_stable_colours_and_a_legend_in_the_real_view(qtbot, window, built_doc) -> None:
+def test_distinct_stable_colors_and_a_legend_in_the_real_view(qtbot, window, built_doc) -> None:
     view = MplSceneView()
     qtbot.addWidget(view.widget())
     view.set_geometry(built_doc.built)
@@ -300,7 +300,7 @@ def test_distinct_stable_colours_and_a_legend_in_the_real_view(qtbot, window, bu
     assert [t.get_text() for t in legend.get_texts()] == ["heat_flux", "convection", "adiabatic"]
     colors = [h.get_color() for h in legend.legend_handles]
     assert len(set(colors)) == 3
-    # the colour of a kind does not depend on which other kinds are present
+    # the color of a kind does not depend on which other kinds are present
     built_doc.edit("drop", lambda m: m.bcs.pop(0))
     legend = view.layer_artists("symbols")[-1]
     pairs = zip(legend.get_texts(), legend.legend_handles, strict=True)
@@ -308,7 +308,7 @@ def test_distinct_stable_colours_and_a_legend_in_the_real_view(qtbot, window, bu
     assert again["convection"] == colors[1] and again["adiabatic"] == colors[2]
 
 
-def test_a_new_load_class_gets_panel_symbol_colour_and_legend(qtbot, window, built_doc) -> None:
+def test_a_new_load_class_gets_panel_symbol_color_and_legend(qtbot, window, built_doc) -> None:
     @dataclass
     class WallPower(bcs.BoundaryCondition):
         power: Function
@@ -336,7 +336,7 @@ def test_a_new_load_class_gets_panel_symbol_colour_and_legend(qtbot, window, bui
         registry._BCS.pop("test_wall_power_sym")
 
 
-def test_every_kind_gets_a_distinct_colour() -> None:
+def test_every_kind_gets_a_distinct_color() -> None:
     from thermalfea.gui.load_symbols import color_of
 
     tags = registry.bc_tags()
@@ -492,10 +492,10 @@ def test_selecting_another_object_clears_the_load_highlight(qtbot, window, built
     assert view.highlights[-1] == (1, [])
 
 
-def test_overlay_colours_are_not_load_colours() -> None:
+def test_overlay_colors_are_not_load_colors() -> None:
     """An orange selection on a convection edge looked like an adiabatic edge."""
     from thermalfea.gui import viewport_mpl
     from thermalfea.gui.scene import KIND_COLORS
 
-    for colour in (viewport_mpl._SELECT_COLOR, viewport_mpl._HOVER_COLOR):
-        assert colour.lower() not in {c.lower() for c in KIND_COLORS}
+    for color in (viewport_mpl._SELECT_COLOR, viewport_mpl._HOVER_COLOR):
+        assert color.lower() not in {c.lower() for c in KIND_COLORS}

@@ -135,7 +135,7 @@ def test_vectors_returns_a_figure_with_one_quiver(results: Results) -> None:
     found = quivers(ax)
     assert len(found) == 1
     assert len(found[0].get_offsets()) == len(vector_data(results, -1, density=10).xy)
-    assert len(fig.axes) == 2  # plot and colour bar
+    assert len(fig.axes) == 2  # plot and color bar
     assert fig.axes[1].get_ylabel() == "Heat flux [W/m²]"
     assert ax.get_aspect() == 1.0
 

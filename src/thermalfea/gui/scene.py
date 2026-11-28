@@ -64,11 +64,11 @@ class FieldDisplay:
     values : ndarray, shape (n,)
         Field values at the vertices, in display units.
     vmin, vmax : float
-        Colour range in display units.
+        Color range in display units.
     levels : int or None
-        Number of colour bands; ``None`` means smooth shading.
+        Number of color bands; ``None`` means smooth shading.
     label : str
-        Colour-bar label (name and unit).
+        Color-bar label (name and unit).
     title : str
         Title of the plot.
     vector_xy : ndarray, shape (k, 2), optional
@@ -76,15 +76,15 @@ class FieldDisplay:
     vector_uv : ndarray, shape (k, 2), optional
         Arrow components (any consistent unit; only direction and relative length matter).
     vector_values : ndarray, shape (k,), optional
-        Values that colour the arrows (e.g. magnitude), in the units of ``vector_label``.
+        Values that color the arrows (e.g. magnitude), in the units of ``vector_label``.
     vector_label : str
-        Colour-bar label of the arrows, used when there are no triangles.
+        Color-bar label of the arrows, used when there are no triangles.
     markers : list of (x, y, text)
         Annotated points, e.g. the minimum and maximum.
     show_mesh : bool
         Draw the element edges over the field.
     cmap : str
-        Matplotlib colour-map name.
+        Matplotlib color-map name.
     """
 
     xy: ndarray
@@ -109,9 +109,9 @@ class FieldDisplay:
         self.values = np.asarray(self.values, dtype=float)
 
 
-#: The colours of load-symbol kinds; the one table of the GUI. A kind takes the colour at
+#: The colors of load-symbol kinds; the one table of the GUI. A kind takes the color at
 #: its position in the registry (modulo the length), the viewport falls back to the order of
-#: first appearance for a symbol without a colour.
+#: first appearance for a symbol without a color.
 KIND_COLORS: tuple[str, ...] = (
     "#d6336c", "#1c7ed6", "#2f9e44", "#f08c00", "#7048e8", "#0c8599", "#e03131",
     "#868e96", "#74b816", "#e8590c", "#364fc7", "#a61e4d",
@@ -119,7 +119,7 @@ KIND_COLORS: tuple[str, ...] = (
 
 
 def kind_color(index: int) -> str:
-    """Return the colour of the ``index``-th kind (cycles through :data:`KIND_COLORS`)."""
+    """Return the color of the ``index``-th kind (cycles through :data:`KIND_COLORS`)."""
     return KIND_COLORS[index % len(KIND_COLORS)]
 
 
@@ -131,7 +131,7 @@ class LoadSymbol:
     ----------
     kind : str
         Type of the condition (e.g. ``"temperature"``, ``"convection"``); symbols of the
-        same kind share a colour and a legend entry.
+        same kind share a color and a legend entry.
     label : str
         Name of the condition, shown to the user.
     dim : int
@@ -139,7 +139,7 @@ class LoadSymbol:
     tags : list of int
         Entity tags in the built geometry.
     color : str or None
-        Matplotlib-style colour; ``None`` lets the renderer choose by ``kind``.
+        Matplotlib-style color; ``None`` lets the renderer choose by ``kind``.
     """
 
     kind: str
@@ -215,7 +215,7 @@ class SceneView(Protocol):
         ...
 
     def set_mesh(self, mesh: Mesh | None, color_by: ndarray | None = None) -> None:
-        """Show (or clear) a mesh, optionally coloured by one value per element."""
+        """Show (or clear) a mesh, optionally colored by one value per element."""
         ...
 
     def set_field(self, spec: FieldDisplay | None) -> None:
@@ -233,8 +233,8 @@ class SceneView(Protocol):
     def set_entity_colors(
         self, dim: int, colors: dict[int, str], legend: list[tuple[str, str]]
     ) -> None:
-        """Fill the geometry entities ``colors`` (tag -> colour) of dimension ``dim`` and show
-        ``legend`` as ``(label, colour)`` entries; empty arguments clear both. The fills are
+        """Fill the geometry entities ``colors`` (tag -> color) of dimension ``dim`` and show
+        ``legend`` as ``(label, color)`` entries; empty arguments clear both. The fills are
         hidden while a result field is shown.
         """
         ...

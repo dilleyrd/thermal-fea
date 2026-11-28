@@ -150,7 +150,7 @@ In order:
   checks each claim and proposes tasks M11.17–M11.30; the open decisions D1–D13 are Q29.
 - At the owner's request ("fix the clear-cut bugs where no decision is needed") these
   were built and pushed, one commit each: M11.20 (hydraulics once per iteration), M11.21
-  (stream heating flag), M11.22 (DXF arcs and loops), M11.24 (viewport colour bar),
+  (stream heating flag), M11.22 (DXF arcs and loops), M11.24 (viewport color bar),
   M11.18 (restart, second part, without 2.1-3) and M11.25 (GUI state on New, Open and
   remesh). The suite then passed with 2045 tests.
 - M11.25 changed one M8.10 test assertion: result objects no longer survive a new model,
@@ -185,7 +185,7 @@ In order:
   - One M8.8 test assertion changed: the correlation list of a convection load no longer
     offers `duct_internal`, which was the defect the review reported (as in M11.25).
   - The stream chart's CSV button is disabled (its two curves have different s values);
-    leaving the mesh panel ends the quality colouring; an empty refinement row stays
+    leaving the mesh panel ends the quality coloring; an empty refinement row stays
     possible (add, then type the selection, as M8.7 tests) and meshing says it has no
     selection; the unit mixing between file and document units stays a documented
     limitation.

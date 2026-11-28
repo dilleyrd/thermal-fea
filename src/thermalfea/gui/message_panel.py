@@ -11,23 +11,23 @@ from PySide6.QtWidgets import QPlainTextEdit, QWidget
 _FORMAT = "%(asctime)s %(levelname)-7s %(name)s: %(message)s"
 _DATE_FORMAT = "%H:%M:%S"
 
-_COLOURS: dict[int, str] = {
+_COLORS: dict[int, str] = {
     logging.WARNING: "#a65e00",
     logging.ERROR: "#c00000",
     logging.CRITICAL: "#c00000",
 }
 
 
-def _colour_for(levelno: int) -> str | None:
-    """Return the text colour for a logging level, or ``None`` for the default."""
-    for level in sorted(_COLOURS, reverse=True):
+def _color_for(levelno: int) -> str | None:
+    """Return the text color for a logging level, or ``None`` for the default."""
+    for level in sorted(_COLORS, reverse=True):
         if levelno >= level:
-            return _COLOURS[level]
+            return _COLORS[level]
     return None
 
 
 class MessagePanel(QPlainTextEdit):
-    """Read-only message log; warnings and errors are coloured.
+    """Read-only message log; warnings and errors are colored.
 
     Parameters
     ----------
@@ -43,7 +43,7 @@ class MessagePanel(QPlainTextEdit):
 
     @Slot(str, int)
     def append_message(self, text: str, levelno: int = logging.INFO) -> None:
-        """Append one line, coloured according to ``levelno``.
+        """Append one line, colored according to ``levelno``.
 
         Parameters
         ----------
@@ -53,9 +53,9 @@ class MessagePanel(QPlainTextEdit):
             ``logging`` level number of the record.
         """
         fmt = QTextCharFormat()
-        colour = _colour_for(levelno)
-        if colour is not None:
-            fmt.setForeground(QColor(colour))
+        color = _color_for(levelno)
+        if color is not None:
+            fmt.setForeground(QColor(color))
         cursor = self.textCursor()
         cursor.movePosition(cursor.MoveOperation.End)
         if not self.document().isEmpty():

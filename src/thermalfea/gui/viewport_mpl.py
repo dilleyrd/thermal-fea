@@ -8,7 +8,7 @@ rule 8). One axes with equal aspect carries separate layers, each a few artists 
 layer     contents                                    zorder
 ========  ==========================================  =====================
 geometry  surface fills, curves, points               1.0 .. 1.3
-mesh      per-element colours, element outlines       1.9, 2.0
+mesh      per-element colors, element outlines       1.9, 2.0
 results   field, arrows, extrema markers              3.0 .. 3.3
 symbols   load / boundary-condition symbols, legend   4.0
 overlay   named layers of text, markers, polylines    4.5
@@ -100,7 +100,7 @@ Z_AXIS = 4.2
 Z_OVERLAY = 4.5
 Z_HIGHLIGHT = 5.0
 Z_MESH_OVER_FIELD = Z_RESULTS + 0.5
-#: Colour-by-part fills: above the plain surface fill, below curves and mesh lines.
+#: Color-by-part fills: above the plain surface fill, below curves and mesh lines.
 Z_ENTITY_COLORS = Z_GEOMETRY + 0.1
 _ENTITY_ALPHA = 0.35
 
@@ -115,14 +115,14 @@ FIT_MARGIN = 0.05
 #: Axes rectangle in figure coordinates (left, bottom, width, height).
 AXES_RECT = (0.01, 0.01, 0.98, 0.93)
 
-#: Selection and hover overlays use colours that no load kind uses (scene.KIND_COLORS):
+#: Selection and hover overlays use colors that no load kind uses (scene.KIND_COLORS):
 #: an orange selection on a convection edge looked like an adiabatic one (2026-11-23).
 _SELECT_COLOR = "#fcc419"
 _HOVER_COLOR = "#000000"
 _BAND_COLOR = "#1c7ed6"
 #: The axis of symmetry of an axisymmetric model; not one of scene.KIND_COLORS.
 _AXIS_COLOR = "#087f5b"
-#: Default colour of overlay markers and polylines.
+#: Default color of overlay markers and polylines.
 _OVERLAY_COLOR = "#c2255c"
 _SURFACE_FILL = "#adb5bd"
 _CURVE_COLOR = "#343a40"
@@ -160,7 +160,7 @@ def _surface_path(loops: list[ndarray]) -> Path:
 
 
 class _Overlay:
-    """Four animated artists (polygons, compound paths, lines, markers) in one colour."""
+    """Four animated artists (polygons, compound paths, lines, markers) in one color."""
 
     def __init__(self, ax: object, color: str, zorder: float, alpha: float) -> None:
         self.polys = PolyCollection(
@@ -365,7 +365,7 @@ class MplSceneView(QObject):
         mesh : Mesh or None
         color_by : ndarray, shape (n_elements,), optional
             One value per element, in the order of the concatenated element blocks, drawn
-            as a colour map under the element outlines (e.g. the region id).
+            as a color map under the element outlines (e.g. the region id).
         """
         had_content = self._has_content()
         self._clear_layer("mesh")
@@ -393,7 +393,7 @@ class MplSceneView(QObject):
         self._invalidate()
 
     def set_symbols(self, symbols: list[LoadSymbol]) -> None:
-        """Show load symbols (coloured by ``kind``, with a legend); an empty list clears."""
+        """Show load symbols (colored by ``kind``, with a legend); an empty list clears."""
         self._clear_layer("symbols")
         if symbols and self._built is not None:
             self._draw_symbols(symbols, self._built)
@@ -402,7 +402,7 @@ class MplSceneView(QObject):
     def set_entity_colors(
         self, dim: int, colors: dict[int, str], legend: list[tuple[str, str]]
     ) -> None:
-        """Fill geometry entities of dimension ``dim`` with colours and show a legend.
+        """Fill geometry entities of dimension ``dim`` with colors and show a legend.
 
         Only surfaces can be filled; holes stay empty. The fills sit above the plain surface
         fill and below the curves, mesh, symbols and highlights; they and their legend are
@@ -613,7 +613,7 @@ class MplSceneView(QObject):
             try:
                 self._colorbar.remove()  # type: ignore[attr-defined]
             except (AttributeError, ValueError, KeyError):  # pragma: no cover - defensive
-                log.debug("colour bar already gone")
+                log.debug("color bar already gone")
             self._colorbar = None
             self._ax.set_title("")
             # ``fig.colorbar(ax=...)`` shrinks the model axes and removing it does not give

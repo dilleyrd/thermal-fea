@@ -320,7 +320,7 @@ def animation(
 ) -> Path:
     """Animate a contour plot over the stored steps, as a GIF or an MP4.
 
-    The colour range is fixed over all frames (the extrema of the chosen steps), unless
+    The color range is fixed over all frames (the extrema of the chosen steps), unless
     ``vmin`` / ``vmax`` are given.
 
     Parameters

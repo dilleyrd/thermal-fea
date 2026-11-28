@@ -20,8 +20,8 @@ Start the program as described in [Installation](installation.md#start-the-progr
 - **Messages** dock (bottom): the solver log. An **Issues** dock is tabbed with it and lists
   the findings of validation. The View menu shows and hides the docks, and switches the
   load symbols on and off ("Load symbols"), the part names on and off ("Region names"), the
-  load values on and off ("Load values"), and chooses how the viewport is coloured
-  ("Colour by": Part, Material or None).
+  load values on and off ("Load values"), and chooses how the viewport is colored
+  ("Color by": Part, Material or None).
 - **Toolbar**: the selection modes None, Point, Boundary, Part, Node and Element, and
   "Fit view" (the key F). In a 2D model a boundary is a curve and a part is a surface.
 
@@ -116,8 +116,8 @@ the "New name" box (it is pre-filled with an unused suggestion), press Apply, th
 "Pick in viewport" again to switch picking off. A name that is already used is refused with
 a red message. To replace the entities of a field's own selection, pick again and type its
 name. Choose the Material, and set the Thickness (planar models) and the Material angle if
-needed. Parts and materials have a colour swatch; the viewport fills use the same colours
-(View > Colour by).
+needed. Parts and materials have a color swatch; the viewport fills use the same colors
+(View > Color by).
 
 The Selections section lists every named selection with its users. Click one to highlight
 it. Its panel shows Name (renaming it renames it wherever it is used), Kind, Entities,
@@ -204,7 +204,7 @@ relative imbalance of the energy balance.
 After a solve the Results node holds a temperature contour (for example "Temperature 1").
 Its summary in the tree reads "contour · current", or "contour · out of date" when the model
 changed since the solve. Its panel starts with a header (Analysis, Mesh, Results written,
-Status) and has "Levels", "Banded (otherwise smooth)", "Colour scale" and "Mesh overlay",
+Status) and has "Levels", "Banded (otherwise smooth)", "Color scale" and "Mesh overlay",
 and, for a transient run, a "Step" slider and spin box, a "Time" box and "Play".
 
 The Results menu has: Add contour, Add vector plot, Probe, Play animation, Nodal

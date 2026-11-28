@@ -1,4 +1,4 @@
-"""M11.62: colour by part / material (``SceneView.set_entity_colors``)."""
+"""M11.62: color by part / material (``SceneView.set_entity_colors``)."""
 
 from __future__ import annotations
 
@@ -74,7 +74,7 @@ def test_actions_and_default_mode(setup) -> None:
     assert isinstance(view, SceneView) is False  # a partial fake; only the call matters
 
 
-def test_part_mode_colours_each_region(setup) -> None:
+def test_part_mode_colors_each_region(setup) -> None:
     _, document, view, _ = setup
     dim, colors, legend = view.last
     lower, upper = tags_of(document, "lower"), tags_of(document, "upper")

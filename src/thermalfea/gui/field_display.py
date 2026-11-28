@@ -26,9 +26,9 @@ def field_display_from_contour(
     data : ContourData
         From :func:`thermalfea.post.plots.contour_data` (values in display units).
     levels : int or None
-        Colour bands; ``None`` for smooth shading.
+        Color bands; ``None`` for smooth shading.
     vmin, vmax : float, optional
-        Colour range; default the field's extrema.
+        Color range; default the field's extrema.
     show_mesh : bool
         Draw element edges over the field.
     vectors : VectorData, optional

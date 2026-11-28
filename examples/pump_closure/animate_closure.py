@@ -8,7 +8,7 @@ Solves the heat-up of ``closure.json`` again with denser output than ``run_closu
 every ``--early-interval`` seconds (default 60) up to ``--early-until`` (default 3600 s,
 covering the 30-minute ramp of H and the peak of the joint heat), then every
 ``run.output_interval`` up to the end time. The animation is written to
-``out/closure_heatup.gif`` in degC, mm and minutes, with one colour scale for all frames.
+``out/closure_heatup.gif`` in degC, mm and minutes, with one color scale for all frames.
 """
 
 from __future__ import annotations

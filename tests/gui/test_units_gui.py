@@ -1,4 +1,4 @@
-"""M10.4: unit systems in the GUI: dialog, forms, stale flags, colour bar, charts.
+"""M10.4: unit systems in the GUI: dialog, forms, stale flags, color bar, charts.
 
 A small transient plate is solved once per module. Everything is offscreen; the dialog is
 never executed modally (``apply`` / ``accept`` are called directly).
@@ -314,8 +314,8 @@ def test_changing_units_changes_nothing_stored_and_nothing_goes_stale(shell) -> 
     json.dumps(to_json(doc.model))  # the file stays plain JSON
 
 
-# --------------------------------------------------------- colour bar, probe and charts
-def test_colour_bar_label_and_values_follow_the_units(shell) -> None:
+# --------------------------------------------------------- color bar, probe and charts
+def test_color_bar_label_and_values_follow_the_units(shell) -> None:
     ctrl = shell.results
     first = shell.view.fields[-1]
     assert first.label == "Temperature [K]"
@@ -334,7 +334,7 @@ def test_colour_bar_label_and_values_follow_the_units(shell) -> None:
     assert shell.view.fields[-1].values == pytest.approx(kelvin)
 
 
-def test_manual_colour_range_keeps_its_meaning_when_units_change(shell) -> None:
+def test_manual_color_range_keeps_its_meaning_when_units_change(shell) -> None:
     ctrl = shell.results
     name = ctrl.shown
     ctrl.update(name, range_mode="manual", vmin=300.0, vmax=400.0)

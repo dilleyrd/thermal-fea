@@ -154,8 +154,8 @@ class ResultPanel(QWidget):
         form.addRow(self.mesh_check)
         layout.addWidget(self.show_group)
 
-        # --- colour scale (contours only)
-        self.scale_group = QGroupBox("Colour scale")
+        # --- color scale (contours only)
+        self.scale_group = QGroupBox("Color scale")
         scale = QFormLayout(self.scale_group)
         self.range_combo = QComboBox()
         for key, title in _RANGE_TITLES:

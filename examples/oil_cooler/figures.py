@@ -237,8 +237,8 @@ def startup(result: dict) -> Path:
     a1.plot(t, s["T_oil_out"] - K0, color=OIL_C, lw=2, label="oil outlet")
     a1.plot(t, s["T_mid"] - K0, color=COPPER_C, lw=2, ls="--", label="copper, mid-length")
     a1.plot(t, s["T_water_out"] - K0, color=WATER_C, lw=2, label="water outlet")
-    for name, colour in ((oc.OIL_STREAM, OIL_C), (oc.WATER_STREAM, WATER_C)):
-        a1.axhline(after[name].T_out - K0, color=colour, lw=0.8, ls=":")
+    for name, color in ((oc.OIL_STREAM, OIL_C), (oc.WATER_STREAM, WATER_C)):
+        a1.axhline(after[name].T_out - K0, color=color, lw=0.8, ls=":")
     a1.text(t[-1], after[oc.OIL_STREAM].T_out - K0 + 1.2, "dotted: steady after the step",
             ha="right", fontsize=8.5, color="#444")  # fmt: skip
     a1.set_ylabel("temperature [°C]")

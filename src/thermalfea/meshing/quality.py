@@ -159,7 +159,7 @@ def values_in_block_order(mesh: Mesh, quality: QualityReport, measure: str) -> n
 
     :meth:`thermalfea.gui.scene.SceneView.set_mesh` takes ``color_by`` in this order, while
     the report is ordered by global element id. Non-finite values (an invalid or degenerate
-    element) become NaN, which a colour map draws as "no value".
+    element) become NaN, which a color map draws as "no value".
 
     Parameters
     ----------

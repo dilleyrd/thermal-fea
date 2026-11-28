@@ -113,7 +113,7 @@ _SWATCHES: dict[str, QIcon] = {}
 
 
 def swatch_icon(color: str) -> QIcon:
-    """A small square of ``color``: the colour a part or material has in the viewport."""
+    """A small square of ``color``: the color a part or material has in the viewport."""
     icon = _SWATCHES.get(color)
     if icon is None:
         pixmap = QPixmap(16, 16)

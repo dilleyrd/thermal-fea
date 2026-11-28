@@ -9,7 +9,7 @@ Solve menu actions, and the Results menu and Flow results windows. The numbers r
 those the example scripts (and so the pages) give; the model is never edited directly.
 
 Nothing modal runs and every wait is bounded. Steps that need a real screen (what the
-widgets look like, where to click, the colours) stay unverified here.
+widgets look like, where to click, the colors) stay unverified here.
 """
 
 from __future__ import annotations

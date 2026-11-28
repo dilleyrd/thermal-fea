@@ -42,7 +42,7 @@ class MeshController(QObject):
         Its Mesh menu receives the action; errors are shown through its error dialog.
     document : Document
     view : SceneView, optional
-        The viewport; kept for the panels that colour the mesh (not used for meshing).
+        The viewport; kept for the panels that color the mesh (not used for meshing).
 
     Attributes
     ----------

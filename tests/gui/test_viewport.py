@@ -145,7 +145,7 @@ def test_layers_and_zorder(loaded, small_mesh) -> None:
     assert z["geometry"] < z["mesh_lo"] < z["results"] < z["symbols"] < z["highlight"]
     assert vm.Z_GEOMETRY < vm.Z_MESH < vm.Z_RESULTS < vm.Z_SYMBOLS < vm.Z_HIGHLIGHT
     assert all(a.get_animated() for a in v._animated())
-    assert len(v.canvas.figure.axes) == 2  # model axes + colour bar
+    assert len(v.canvas.figure.axes) == 2  # model axes + color bar
     # without show_mesh the mesh is hidden under a field; with it, lifted above the field
     assert not any(a.get_visible() for a in mesh)
     spec.show_mesh = True
@@ -168,7 +168,7 @@ def test_layers_and_zorder(loaded, small_mesh) -> None:
 def test_color_by_and_vector_only_field(loaded, small_mesh) -> None:
     n = small_mesh.n_elements
     loaded.set_mesh(small_mesh, color_by=np.arange(n) % 3)
-    assert len(loaded.layer_artists("mesh")) == 2  # colour fill + outlines
+    assert len(loaded.layer_artists("mesh")) == 2  # color fill + outlines
     loaded.set_field(
         FieldDisplay(
             xy=np.zeros((0, 2)), triangles=np.zeros((0, 3), int), values=np.zeros(0),
@@ -189,8 +189,8 @@ def _contour_spec(mesh, lo: float, hi: float, values=None) -> FieldDisplay:
     )
 
 
-def test_axes_position_is_unchanged_by_colour_bar_redraws(loaded, small_mesh) -> None:
-    # each redraw adds and removes the colour bar; the model axes must not move
+def test_axes_position_is_unchanged_by_color_bar_redraws(loaded, small_mesh) -> None:
+    # each redraw adds and removes the color bar; the model axes must not move
     ax = loaded.axes
     loaded.set_field(_contour_spec(small_mesh, 0.0, 6.0))
     bounds = ax.get_position().bounds

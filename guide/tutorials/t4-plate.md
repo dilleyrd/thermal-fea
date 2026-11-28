@@ -167,7 +167,7 @@ Convection 1".
 3. A node "Temperature 1" appears under **Results** in the tree, with the summary "contour ·
    current", and the temperature contour is drawn in the viewport. Click the node to see its
    panel: a header ("Analysis", "Mesh", "Results written", "Status"), then "Field", "Levels",
-   "Banded (otherwise smooth)", "Colour scale", "Mesh overlay".
+   "Banded (otherwise smooth)", "Color scale", "Mesh overlay".
 
 The analysis type was never changed: a new model is steady, which is what this problem is.
 

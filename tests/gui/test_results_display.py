@@ -415,7 +415,7 @@ def test_vector_object(transient) -> None:
     assert spec.title == expected.title and spec.triangles.shape[0] == 0
     panel.mesh_check.setChecked(True)
     assert view.last.show_mesh
-    # a contour panel shows the colour-scale group
+    # a contour panel shows the color-scale group
     contour = ctrl.add_contour("gradmag")
     other = open_panel(transient, contour)
     assert not other.scale_group.isHidden() and other.density_spin.isHidden()

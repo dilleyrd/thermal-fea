@@ -202,7 +202,7 @@ outlet 299.517 K, 119.537 W). Start the program from the project folder with
 right edge): the stream panel is long and its picking row needs the width.
 
 **About the screenshots of the tube.** The wall is 1.245 mm thick and 2 m long. Zoomed to
-true scale it is either invisible (the whole length) or a few elements of one colour (a few
+true scale it is either invisible (the whole length) or a few elements of one color (a few
 centimetres). The views of the whole tube below were therefore taken with the radial
 direction stretched, which the window cannot do; in the window, zoom with the mouse wheel
 and pan with the middle button.

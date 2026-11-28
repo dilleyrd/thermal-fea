@@ -55,8 +55,8 @@ Things to know before you start:
   selection". Type a meaningful name over it before you press Apply. A name that is already
   used is refused with a red message under the buttons.
 - The View menu has: Fit view, the docks, Summary column, Load symbols, Region names, Load
-  values and a "Colour by" submenu (Part, Material, None). The default is Part: each part is
-  filled with its own colour in the viewport, and the same colour is the swatch beside the
+  values and a "Color by" submenu (Part, Material, None). The default is Part: each part is
+  filled with its own color in the viewport, and the same color is the swatch beside the
   part in the tree.
 - The example models are also under File > Examples ("V-10 - NAFEMS T4 ..." and
   "V-17 - slab cooled by convection ..."). Open them after your own build to compare.
@@ -170,7 +170,7 @@ different set of entities later, pick again and type the field's own selection n
 ### 1.3 Material and part
 
 1. Right-click **Materials** > **Add material**. A material "Material 1" appears; all its
-   properties start at 0, which means "not set yet". It has a colour swatch beside it.
+   properties start at 0, which means "not set yet". It has a color swatch beside it.
 2. In its panel set "Thermal conductivity" (mode Constant) to `52` and press Enter. Density
    and specific heat do not affect a steady answer; they may stay at 0. (A conductivity left
    at 0 is refused by Validate: "has a conductivity that is not positive".) The summary
@@ -186,11 +186,11 @@ different set of entities later, pick again and type the field's own selection n
    rectangle, Ctrl-click inside the upper one ("2 parts picked"). The "New name" box holds
    "Plate selection"; type `plate` and press **Apply**, then switch picking off.
    "Thickness" stays 1 and "Material angle" 0.
-5. The part's swatch colour is the colour of its surfaces in the viewport. Switch View >
-   **Colour by** to Material and back to Part to see the viewport follow.
+5. The part's swatch color is the color of its surfaces in the viewport. Switch View >
+   **Color by** to Material and back to Part to see the viewport follow.
 
-![The part "Plate": its panel, its swatch and its colour in the viewport.](img/gui-walkthrough/g10_v10_part.png)
-*The part "Plate": its panel, its swatch and its colour in the viewport.*
+![The part "Plate": its panel, its swatch and its color in the viewport.](img/gui-walkthrough/g10_v10_part.png)
+*The part "Plate": its panel, its swatch and its color in the viewport.*
 
 ### 1.4 Mesh
 
@@ -261,7 +261,7 @@ uses it.
    starts banded with 12 levels. Click the node to see its panel. It starts with a header of
    four lines: "Analysis: steady", "Mesh: T3 · 1 210 nodes · 2 290 elements", "Results
    written <date and time>" and "Status: current". Then "Field", "Levels", "Banded
-   (otherwise smooth)", "Colour scale" and "Mesh overlay".)
+   (otherwise smooth)", "Color scale" and "Mesh overlay".)
 
 ![The result with its header: "Status: current".](img/gui-walkthrough/g14_v10_result.png)
 *The result with its header: "Status: current".*
@@ -300,8 +300,8 @@ Do these after the solve; none of them changes the answer.
 3. **Geometry.** Clicking a step highlights what it owns. Renaming a step (right-click >
    **Rename**, or in place) keeps the model valid. Undo restores the old name.
 4. **Parts.** The part is called "Plate"; the panel fields are Name, Selection, Material,
-   Thickness, Material angle. The part and the material have colour swatches. View >
-   **Colour by** Part, Material and None change the viewport fills.
+   Thickness, Material angle. The part and the material have color swatches. View >
+   **Color by** Part, Material and None change the viewport fills.
 5. **Selection field.** After picking, the status line reads "1 boundary picked" or
    "3 boundaries picked" (and "2 parts picked" for the part). The "New name" box is
    pre-filled with a suggestion. A used name is refused in red. Repeating the field's own
@@ -526,7 +526,7 @@ After the solve, "Results" holds "Temperature 1 | contour · current".
 3. **Geometry.** Click `rectangle1`: the strip is highlighted. Rename it (for example
    `strip`) and undo.
 4. **Parts.** "Slab" with a swatch; summary "Material 1 · 1 surface · t 1 m". Try View >
-   **Colour by** > Material and None.
+   **Color by** > Material and None.
 5. **Selection field.** "1 boundary picked", "2 boundaries picked", "1 part picked". The
    suggested names are "Convection 1 selection", "Symmetry 1 selection", "Adiabatic 1
    selection" and "Slab selection"; you replaced them by typing.
@@ -549,7 +549,7 @@ After the solve, "Results" holds "Temperature 1 | contour · current".
     "in: long sides" and "adiabatic Adiabatic 1". The right edge reads "in: cooled end" and
     "convection Convection 1". A single click shows the report in the status bar and
     puts the related tree items in bold.
-11. **View menu.** Summary column, Colour by, Region names (the label is "Slab") and Load
+11. **View menu.** Summary column, Color by, Region names (the label is "Slab") and Load
     values.
 
 ## 3. What the GUI cannot do that the example scripts do
@@ -593,7 +593,7 @@ Seen in the screenshot run of 2026-11-24 (offscreen, so check them on the screen
     "New name" box is squeezed and the **Clear** button is cut off.
 11. When you click an edge to inspect it, the highlight is drawn over that edge's load label
     (for example "Fixed Temperature 1: T = 373.15 K").
-12. On the long V-17 strip, the label of the convection runs into the colour bar.
+12. On the long V-17 strip, the label of the convection runs into the color bar.
 13. At start the "Issues" tab is in front of "Messages" in the bottom dock.
 
 ## 5. Friction log (fill in)

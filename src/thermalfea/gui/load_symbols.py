@@ -7,9 +7,9 @@ is generic over the registry: it finds a condition's selection fields through th
 ``selection`` / ``selection_list`` fields of its form and names no condition class, so a
 condition registered later is drawn without any change here.
 
-``kind`` of a symbol is the registered tag of the condition class, its colour the entry of
+``kind`` of a symbol is the registered tag of the condition class, its color the entry of
 :data:`thermalfea.gui.scene.KIND_COLORS` at the tag's position in the registry (so a kind
-keeps its colour; the table cycles when there are more kinds than colours). The View menu
+keeps its color; the table cycles when there are more kinds than colors). The View menu
 action ``view.load_symbols`` shows or hides the symbols. Selecting a load in the model tree
 highlights its entities in the viewport.
 """
@@ -72,7 +72,7 @@ def kind_of(bc: BoundaryCondition) -> str:
 
 
 def color_of(kind: str) -> str:
-    """The colour of a kind: its position in the registry picks the table entry."""
+    """The color of a kind: its position in the registry picks the table entry."""
     tags = registry.bc_tags()
     return kind_color(tags.index(kind) if kind in tags else len(tags))
 
@@ -81,7 +81,7 @@ def symbols_of(document: Document) -> list[LoadSymbol]:
     """The symbols of the document's active conditions and contacts.
 
     Empty without a built geometry. Each contact whose interface curves resolve gets one
-    symbol of kind ``"contact"`` (its colour is the next free entry after the condition
+    symbol of kind ``"contact"`` (its color is the next free entry after the condition
     kinds).
     """
     if document.built is None:

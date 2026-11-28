@@ -3,7 +3,7 @@
 Result objects are *view state*, not model data
 -----------------------------------------------
 A :class:`ContourObject` or :class:`VectorObject` says how some results are shown (which
-field, which step, the colour range, ...). The model file format has no place for them and
+field, which step, the color range, ...). The model file format has no place for them and
 they describe a view of a solve, not the model, so they live only here, in the
 :class:`ResultController` that the application owns:
 
@@ -27,7 +27,7 @@ Range modes of a contour
     the extrema of the displayed step (the default);
 ``"auto_all"``
     the extrema over every stored step (``post.plots.field_range``; computed once per
-    field and results file, so an animation keeps one colour scale);
+    field and results file, so an animation keeps one color scale);
 ``"manual"``
     ``vmin`` / ``vmax`` in display units; the minimum must be below the maximum.
 
@@ -96,7 +96,7 @@ _log = logging.getLogger(__name__)
 RANGE_MODES: tuple[str, ...] = ("auto_step", "auto_all", "manual")
 #: Field a vector object is probed for.
 VECTOR_PROBE_FIELD = "qmag"
-#: Largest number of colour bands.
+#: Largest number of color bands.
 MAX_LEVELS = 256
 #: Longest list of probe readings kept.
 MAX_PROBES = 50
@@ -260,9 +260,9 @@ class ContourObject:
         Stored step shown (0-based).
     range_mode : {"auto_step", "auto_all", "manual"}
     vmin, vmax : float or None
-        Manual colour range in display units (used when ``range_mode == "manual"``).
+        Manual color range in display units (used when ``range_mode == "manual"``).
     banded : bool
-        Colour bands (``True``) or smooth shading.
+        Color bands (``True``) or smooth shading.
     levels : int
         Number of bands when ``banded``.
     show_mesh : bool
@@ -553,7 +553,7 @@ class ResultController(QObject):
     def _apply_units(self) -> None:
         """Show the results again when the display units changed.
 
-        Manual colour ranges are typed in display units, so they are converted to the new
+        Manual color ranges are typed in display units, so they are converted to the new
         units (the same SI values); the cached ranges over all steps are dropped.
         """
         new = self.document.model.display_units
@@ -840,7 +840,7 @@ class ResultController(QObject):
 
     @property
     def displayed_range(self) -> tuple[float, float] | None:
-        """The colour range of the display (display units), or ``None`` if nothing is shown."""
+        """The color range of the display (display units), or ``None`` if nothing is shown."""
         if self.display is None:
             return None
         return float(self.display.vmin), float(self.display.vmax)

@@ -185,7 +185,7 @@ class ContourData:
     unit : str
         Display-unit label, e.g. ``"degC"`` is shown as ``"°C"``.
     label : str
-        Colour-bar label: name and unit.
+        Color-bar label: name and unit.
     title : str
         Plot title, including the time of the step.
     time : float
@@ -500,7 +500,7 @@ def display_value(results: Results, field: str, value: float) -> tuple[float, st
 # ------------------------------------------------------------------------------- helpers
 
 
-#: A model whose height is below this fraction of its width gets a horizontal colour bar.
+#: A model whose height is below this fraction of its width gets a horizontal color bar.
 _WIDE_MODEL = 0.4
 #: Margin around the model in a model view, as a fraction of its larger dimension.
 _VIEW_MARGIN = 0.04
@@ -534,11 +534,11 @@ def _figure(
     size = _CHART_SIZE
     if bounds is not None:
         ratio = _ratio(bounds)
-        if ratio >= 1.0:  # tall model: colour bar at the side
+        if ratio >= 1.0:  # tall model: color bar at the side
             size = (float(np.clip(_VIEW_LONG_SIDE / ratio + 2.4, 4.5, 9.0)), _VIEW_LONG_SIDE)
         elif ratio >= _WIDE_MODEL:
             size = (_VIEW_LONG_SIDE + 2.0, float(np.clip(_VIEW_LONG_SIDE * ratio + 1.2, 3.5, 7.0)))
-        else:  # wide, flat model: colour bar underneath
+        else:  # wide, flat model: color bar underneath
             size = (_VIEW_LONG_SIDE + 1.5, float(np.clip(_VIEW_LONG_SIDE * ratio + 2.6, 3.0, 6.0)))
     fig = Figure(figsize=size, layout="constrained")
     FigureCanvasAgg(fig)
@@ -554,7 +554,7 @@ def _frame(
     bounds: tuple[float, float, float, float] | None = None,
     units: UnitSettings | None = None,
 ) -> None:
-    """Colour bar, equal aspect, view limits, axis labels and title of a model view.
+    """Color bar, equal aspect, view limits, axis labels and title of a model view.
 
     ``units`` gives the length unit of the axis labels and ticks (the data are in m).
     """
@@ -612,15 +612,15 @@ def contour(
         is shown in the model's display unit. Flux and gradient fields are drawn region by
         region so the jump at an interface is kept.
     levels : int
-        Number of colour bands (ignored when ``smooth``).
+        Number of color bands (ignored when ``smooth``).
     vmin, vmax : float, optional
-        Colour range in display units; default is the field's minimum and maximum.
+        Color range in display units; default is the field's minimum and maximum.
     smooth : bool
         Continuous shading instead of bands.
     show_mesh : bool
         Overlay the element edges.
     ax : Axes, optional
-        Draw into these axes (the colour bar is added to their figure); otherwise a new
+        Draw into these axes (the color bar is added to their figure); otherwise a new
         figure is made.
     path : str or Path, optional
         Also save the figure here (PNG, 200 dpi).
@@ -639,7 +639,7 @@ def contour(
     fig, ax = _figure(ax, bounds)
     lo = data.vmin if vmin is None else float(vmin)
     hi = data.vmax if vmax is None else float(vmax)
-    if not hi > lo:  # uniform field or inverted limits: keep the colour scale valid
+    if not hi > lo:  # uniform field or inverted limits: keep the color scale valid
         pad = max(abs(lo), 1.0) * 1e-6
         lo, hi = lo - pad, lo + pad
     norm = Normalize(vmin=lo, vmax=hi)
@@ -698,7 +698,7 @@ class VectorData:
     q : ndarray, shape (n, 2)
         Heat flux at the arrows, in the display unit of heat flux (W/m^2 by default).
     magnitude : ndarray, shape (n,)
-        Heat-flux magnitude in the same unit; colours the arrows.
+        Heat-flux magnitude in the same unit; colors the arrows.
     elements : ndarray of int, shape (n,)
         Global element ids of the kept elements.
     time : float
@@ -706,7 +706,7 @@ class VectorData:
     title : str
         Plot title, including the time of the step.
     label : str
-        Colour-bar label of the arrows: name and display unit.
+        Color-bar label of the arrows: name and display unit.
     """
 
     xy: ndarray
@@ -794,7 +794,7 @@ def vectors(
     ax: Axes | None = None,
     path: str | Path | None = None,
 ) -> Figure:
-    """Heat-flux arrows at element centroids, coloured by magnitude.
+    """Heat-flux arrows at element centroids, colored by magnitude.
 
     Parameters
     ----------
@@ -807,7 +807,7 @@ def vectors(
         Arrow length in units of the plotted flux (display unit) per axis unit, as Matplotlib's
         ``quiver``; ``None`` lets Matplotlib choose.
     ax : Axes, optional
-        Draw into these axes (the colour bar is added to their figure); otherwise a new
+        Draw into these axes (the color bar is added to their figure); otherwise a new
         figure is made.
     path : str or Path, optional
         Also save the figure here (PNG, 200 dpi).

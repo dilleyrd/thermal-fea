@@ -198,9 +198,9 @@ class PropertyController:
             for editor in previous.findChildren(SelectionEditor):
                 if editor.pick_button.isChecked():
                     editor.set_picking(False)
-            # the quality colouring belongs to the mesh panel; a new panel starts unchecked
+            # the quality coloring belongs to the mesh panel; a new panel starts unchecked
             for mesh_panel in previous.findChildren(MeshPanel):
-                mesh_panel.colour_box.setChecked(False)
+                mesh_panel.color_box.setChecked(False)
         self.window.set_property_panel(widget)
         self._installed = widget
         self.result_panel = None

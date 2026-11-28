@@ -1,13 +1,13 @@
-"""Colour the parts of the viewport by part or by material (M11.62).
+"""Color the parts of the viewport by part or by material (M11.62).
 
-:class:`PartColorController` adds the View-menu submenu "Colour by" with three exclusive
+:class:`PartColorController` adds the View-menu submenu "Color by" with three exclusive
 checkable actions (``view.color_by.part`` default, ``view.color_by.material``,
 ``view.color_by.none``) and keeps :meth:`~thermalfea.gui.scene.SceneView.set_entity_colors`
 equal to the model: every region (part) that resolves in the current build fills its surfaces
-with the colour of its part or of its material. Without a build, or in mode "None", the view's
-colours and legend are cleared.
+with the color of its part or of its material. Without a build, or in mode "None", the view's
+colors and legend are cleared.
 
-:func:`color_of_part` and :func:`color_of_material` give the same colours to other widgets
+:func:`color_of_part` and :func:`color_of_material` give the same colors to other widgets
 (the model tree swatches).
 """
 
@@ -31,14 +31,14 @@ MODES = ("part", "material", "none")
 
 
 def color_of_part(index: int) -> str:
-    """The colour of the ``index``-th region (part); cycles through the categorical palette."""
+    """The color of the ``index``-th region (part); cycles through the categorical palette."""
     return kind_color(index)
 
 
 def color_of_material(name: str, model: Model) -> str:
-    """The colour of material ``name``: its position in ``model.materials`` picks it.
+    """The color of material ``name``: its position in ``model.materials`` picks it.
 
-    A name that is not in the model takes the colour after the last material.
+    A name that is not in the model takes the color after the last material.
     """
     names = list(model.materials)
     index = names.index(name) if name in names else len(names)
@@ -53,7 +53,7 @@ def region_label(region: object) -> str:
 def part_colors(
     document: Document, mode: str
 ) -> tuple[int, dict[int, str], list[tuple[str, str]]]:
-    """``(dim, {tag: colour}, [(label, colour)])`` for ``mode``; empty for "none" / no build."""
+    """``(dim, {tag: color}, [(label, color)])`` for ``mode``; empty for "none" / no build."""
     model = document.model
     dim = role_dim("part", model)
     built = document.built
@@ -69,7 +69,7 @@ def part_colors(
         try:
             tags = resolve(sel, built)
         except ThermalFEAError:
-            continue  # a stale selection has nothing to colour
+            continue  # a stale selection has nothing to color
         if not tags:
             continue
         if mode == "material":
@@ -85,7 +85,7 @@ def part_colors(
 
 
 class PartColorController(QObject):
-    """The "Colour by" submenu and the entity colours of the viewport.
+    """The "Color by" submenu and the entity colors of the viewport.
 
     Parameters
     ----------
@@ -100,7 +100,7 @@ class PartColorController(QObject):
         super().__init__(window)
         self.document = document
         self.view = view
-        self.menu = window.menus["view"].addMenu("&Colour by")
+        self.menu = window.menus["view"].addMenu("&Color by")
         group = QActionGroup(window)
         group.setExclusive(True)
         self.actions: dict[str, QAction] = {}
@@ -131,7 +131,7 @@ class PartColorController(QObject):
         return "none"  # pragma: no cover - the group is exclusive
 
     def update(self) -> None:
-        """Send the colours and the legend of the current mode to the view."""
+        """Send the colors and the legend of the current mode to the view."""
         dim, colors, legend = part_colors(self.document, self.mode)
         self.view.set_entity_colors(dim, colors, legend)
 
@@ -139,5 +139,5 @@ class PartColorController(QObject):
 def attach_part_colors(
     window: MainWindow, document: Document, view: SceneView
 ) -> PartColorController:
-    """Install the "Colour by" submenu and the part colours."""
+    """Install the "Color by" submenu and the part colors."""
     return PartColorController(window, document, view)

@@ -35,7 +35,7 @@ this one is built by script.
 
 ![The axisymmetric model with its bodies, films and contacts](img/pump-model.png)
 
-*The model (6-node triangles drawn in grey). Coloured edges carry convection films, dotted
+*The model (6-node triangles drawn in grey). Colored edges carry convection films, dotted
 edges are thermal contacts. Edges with neither are insulated or bonded.*
 
 | Body | Extent (mm) | Material |
@@ -145,7 +145,7 @@ still to come is 4.4 K, in the outer flange.
 ![Animation of the heat-up](img/pump-heatup.gif)
 
 *The heat-up as an animation, written by `api.export_animation`. A frame every minute for
-the first hour, then every 5 minutes. All frames use one colour scale.*
+the first hour, then every 5 minutes. All frames use one color scale.*
 
 ![Temperature at the end of the heat-up](img/pump-T-6h.png)
 
@@ -201,7 +201,7 @@ The studs carry 13 % of the heat that enters the flange: 479 W of 3.65 kW.
 
 ![Heat flux in the steady hot case](img/pump-flux.png)
 
-*Heat-flux magnitude (logarithmic colour scale) with heat-flow lines in white and isotherms
+*Heat-flux magnitude (logarithmic color scale) with heat-flow lines in white and isotherms
 every 20 K in cyan. The right panel zooms in on the joint and the stud ring.*
 
 The cooling passage is a strong sink. The highest flux, about 88 kW/m², is in the barrier

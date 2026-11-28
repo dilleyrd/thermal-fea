@@ -134,7 +134,7 @@ As of 2026-11-16:
   (scripted session, screenshots; the script drives `build_application` with the real
   platform): fixed the first-start dock layout, forms wider than the dock, the empty gap
   of a constant function, contours and the quality histogram of values equal up to
-  round-off (they raised), the orange selection highlight (the same colour as adiabatic
+  round-off (they raised), the orange selection highlight (the same color as adiabatic
   loads) and its staying after another object was selected, stale solve dialogs and
   stream plots after New/Open, the HTC calculator's early message, and the flow table's
   cut headers. Seen and left: a steady solve still says "t = 0 s" and plots its residual

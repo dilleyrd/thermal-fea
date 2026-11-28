@@ -10,7 +10,7 @@
   controller's ``generate``); it is enabled only when a current built geometry exists;
 * the statistics (node and element counts per element type, quality summary) and a
   histogram of one quality measure, both read from :func:`thermalfea.meshing.quality.report`;
-* the "Colour elements by quality" check box, which colours the mesh in the viewport by the
+* the "Color elements by quality" check box, which colors the mesh in the viewport by the
   chosen measure.
 """
 
@@ -135,7 +135,7 @@ class MeshPanel(FormPanel):
     address : tuple
         Address ``("mesh_settings",)``.
     view : SceneView, optional
-        Viewport that is coloured by quality; without one colouring is disabled.
+        Viewport that is colored by quality; without one coloring is disabled.
     parent : QWidget, optional
     generate : callable, optional
         ``generate() -> bool``, called by the "Generate mesh" button.
@@ -184,9 +184,9 @@ class MeshPanel(FormPanel):
         section.addWidget(self.measure_combo)
         self.histogram = QualityHistogram()
         section.addWidget(self.histogram)
-        self.colour_box = QCheckBox("Colour elements by quality")
-        self.colour_box.toggled.connect(lambda _on: self._apply_colour())
-        section.addWidget(self.colour_box)
+        self.color_box = QCheckBox("Color elements by quality")
+        self.color_box.toggled.connect(lambda _on: self._apply_color())
+        section.addWidget(self.color_box)
 
         section.addWidget(self._heading("Refinements"))
         self.table = QTableWidget(0, len(REFINEMENT_COLUMNS))
@@ -244,7 +244,7 @@ class MeshPanel(FormPanel):
     def _refresh_results(self) -> None:
         report = self._quality()
         measure = self._measure()
-        self.colour_box.setEnabled(report is not None)
+        self.color_box.setEnabled(report is not None)
         if report is None:
             self.stats_label.setText(NO_MESH_TEXT)
             self.histogram.set_values(None, MEASURE_LABELS[measure])
@@ -278,23 +278,23 @@ class MeshPanel(FormPanel):
         if self._generate is not None:
             self._generate()
 
-    # ------------------------------------------------------------------ colouring
+    # ------------------------------------------------------------------ coloring
     def _on_mesh_changed(self) -> None:
         self._refresh_results()
-        if self.colour_box.isChecked():
-            self._apply_colour()
+        if self.color_box.isChecked():
+            self._apply_color()
 
     def _on_measure_changed(self) -> None:
         self._refresh_results()
-        if self.colour_box.isChecked():
-            self._apply_colour()
+        if self.color_box.isChecked():
+            self._apply_color()
 
-    def _apply_colour(self) -> None:
-        """Show the mesh coloured by the chosen measure, or plainly when unchecked."""
+    def _apply_color(self) -> None:
+        """Show the mesh colored by the chosen measure, or plainly when unchecked."""
         mesh = self.document.mesh
         if self.view is None or mesh is None:
             return
-        if not self.colour_box.isChecked():
+        if not self.color_box.isChecked():
             self.view.set_mesh(mesh, color_by=None)
             return
         values = quality.values_in_block_order(mesh, self._quality(), self._measure())
@@ -357,7 +357,7 @@ class MeshPanel(FormPanel):
         self.document.edit(text, mutate)
 
     def _mark(self, item: QTableWidgetItem, bad: bool) -> None:
-        """Mark a cell as rejected (no signal: setting the colour must not re-validate)."""
+        """Mark a cell as rejected (no signal: setting the color must not re-validate)."""
         self.table.blockSignals(True)
         item.setBackground(QBrush(_BAD_BRUSH) if bad else QBrush())
         self.table.blockSignals(False)

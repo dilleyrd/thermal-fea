@@ -1100,7 +1100,7 @@ the screenshots show the final window. Do not update documents, walkthroughs or
 screenshots before M11.79 unless a task says so. Each task's acceptance tests are GUI
 tests (offscreen) of the behavior it adds, plus the whole suite.
 
-- [ ] **M11.66 [A] Spelling "color".** Held item 2: every user-visible "colour" (menus,
+- [x] **M11.66 [A] Spelling "color".** Held item 2: every user-visible "colour" (menus,
   panel groups, checkboxes, messages, tooltips) and the documentation become "color".
   Code identifiers may follow; saved model keys do not change. Acceptance: a test that no
   user-visible string in `src/thermalfea/gui` contains "colour"; the suite passes.

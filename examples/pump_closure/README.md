@@ -17,7 +17,7 @@ Changing the main-seat conductance shifts heat between the two paths.
 | `closure.json` | Every input from sheets 2–5: vertices and dimensions (mm), film coefficients and fluid temperatures (W/(m² K), °C), contact conductances, materials, initial temperature. It also holds the run controls and element sizes chosen for the exercise. Edit this file to change the case. |
 | `closure_model.py` | Builds the model from `closure.json`: geometry, named selections, materials (including the composite band G), films, contacts, mesh and solution settings. Also post-processes the results. |
 | `run_closure.py` | Builds, saves, meshes and solves the heat-up (default) or the steady hot case (`--steady`). Writes the model, results, a per-step CSV and plots. |
-| `animate_closure.py` | Solves the heat-up again with a frame every 60 s for the first hour and every 300 s after that, and writes `out/closure_heatup.gif` (°C, mm, minutes, one colour scale for all frames). |
+| `animate_closure.py` | Solves the heat-up again with a frame every 60 s for the first hour and every 300 s after that, and writes `out/closure_heatup.gif` (°C, mm, minutes, one color scale for all frames). |
 | `seat_study.py` | Runs the steady hot case for each main-seat factor in `closure.json` and writes `seat_study.csv` and `seat_study.png`. With `--mesh-check`, it runs the hot case with element sizes as given and halved, and checks the changes against sheet 5's criteria (< 1 K, < 2 % duty). |
 
 ## Running

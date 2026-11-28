@@ -188,7 +188,7 @@ fail the test in most elements even when nothing jumps.
 
    There were 217 steps. The 218 "stored steps" count the initial state as well.
 4. A node "Temperature 1" appears under **Results**, and the viewport shows the last step.
-   The plate is almost uniform: the colour scale spans less than a thousandth of a kelvin.
+   The plate is almost uniform: the color scale spans less than a thousandth of a kelvin.
    The "Step" and "Time" boxes of its panel move between stored steps.
 
 ### 9. Look at the results

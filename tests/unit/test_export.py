@@ -255,7 +255,7 @@ def test_gif_has_one_frame_per_step(results: Results, tmp_path: Path) -> None:
         assert img.n_frames == 3
 
 
-def test_all_frames_share_the_colour_range(
+def test_all_frames_share_the_color_range(
     results: Results, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     original = plots.contour
@@ -276,7 +276,7 @@ def test_all_frames_share_the_colour_range(
     assert seen[0]["vmax"] == pytest.approx(expected_hi)
 
 
-def test_given_colour_limits_are_kept(results: Results, tmp_path: Path) -> None:
+def test_given_color_limits_are_kept(results: Results, tmp_path: Path) -> None:
     out = export.animation(results, tmp_path / "fixed.gif", steps=[0, 1], dpi=40, vmin=300.0,
                            vmax=420.0)
     with Image.open(out) as img:
