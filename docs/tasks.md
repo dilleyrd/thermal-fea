@@ -1011,6 +1011,21 @@ From the owner's V-17 review:
     in the view while the row is focused. The model keeps its mappings; panel-only.
     Consider grouping "Boundary divisions" with "Structured parts" under one heading
     ("Structured mesh"), since a structured part's opposite sides need matching divisions.
+14. **Nodal history picked in a panel, with node labels in the view** (owner, 2026-11-27).
+    Today Results > Nodal history… with no nodes selected switches to node picking and
+    asks, in the status bar only, to "choose the action again"; nothing on screen says how
+    to finish, and the plotted nodes are not marked on the model. Instead:
+    - the action opens a non-modal picking panel (in the property dock or a small tool
+      window) that stays while picking: an instruction ("Click nodes in the view;
+      Ctrl+click adds or removes"), the list of picked nodes (node number, coordinates and
+      the displayed value, each with ✕), and the buttons "Plot history" (enabled from one
+      node) and Cancel; nodes already selected when the action starts fill the list;
+    - each picked node is marked in the view with a marker and its node number, through the
+      viewport overlay that the path plot uses (`SceneView.set_overlay`); the labels stay
+      while the chart window is open, as the path drawing does, and the chart's legend uses
+      the same node numbers;
+    - Results > Path plot… gets the same panel (vertices, "Plot path", Cancel) in place of
+      Results > Finish / Cancel path plot, so the two picks work alike.
 
 - [ ] **M11.6 [C] Release review.** Check every item of Plan §6; resolve or document every
   entry in `docs/OPEN_QUESTIONS.md`. Version 1 excludes the held features M9 and M10.2 and
