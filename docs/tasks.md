@@ -890,9 +890,16 @@ tasks come before the owner's M8.G session (D8).
     constant solid properties).
 ### Held: window fixes from the second M8.G review (owner, 2026-11-25 to 2026-11-26)
 
-**Held until the owner has finished the M8.G re-review (V-10 done, V-17 in progress).**
-Then each item becomes a task, together with anything the V-17 review adds. Do not start
-before the owner releases them.
+**The owner finished the M8.G re-review on 2026-11-27. The items stay held until the owner
+releases them** (the open decisions of `docs/gui-conventions.md` first).
+
+**Every item follows `docs/gui-conventions.md`** (owner, 2026-11-27); where an item's text
+and a convention disagree, the convention wins. The conventions widen these items:
+item 3 → C4 (an eye toggle on every result item); item 4 → C7 (a required formula field
+starts in Constant); item 5 → C10; item 8 → C6 (the browse icon) and C7; item 9 → C5 and
+C12; item 11 → C12; items 12 and 13 → C1 (the Update rule also covers the Mesh panel's
+Refinements table and contacts), C2 and C6; item 14 → C3 (the picking panel is the panel
+of a saved "Nodal history" result item, not a separate window); item 15 → C2 and C3.
 
 From the owner's V-10 review. These are also entries 1–3 of the friction log on the session
 page https://claude.ai/artifact/AVKWHDY1Pa6YZ22go6weAH.
@@ -1051,6 +1058,38 @@ From the owner's V-17 review:
     data-model entry when the item is released. Uses item 12's selection dropdown and
     Update rule and item 14's view labels. Phasing if needed: (1) two points and along
     boundaries; (2) the point table and several times on one chart.
+
+From the consistency pass after the review (owner, 2026-11-27); each applies one
+convention of `docs/gui-conventions.md` to the parts no earlier item touches:
+
+16. **One pick workflow (C2)** for the stream path (today: no marker in the view, no
+    toolbar sync, each click an edit), the Selections panel's Add/Remove from viewport
+    toggles, the probe, and Enter/Esc in the geometry tool dialogs. No pick mode handles
+    Esc today.
+17. **Saved result items (C3, C4).** Contours and vector plots are saved in the model file
+    (today they are view state, lost on reopening); heat-flow history and energy balance
+    redraw after a new solve; eye toggles. Together with items 3, 14 and 15. Data-model
+    entries for the owner's approval.
+18. **Framed boxes and advanced fields (C5, C12)** in the Mesh, Correlation convection,
+    Stream and network panels; Material angle hidden unless the material is directional.
+19. **Icons (C6)** for the one-row actions of the Refinements, network and function-editor
+    tables.
+20. **The meaning of empty boxes (C7)** in every panel; optional formula fields name their
+    empty mode.
+21. **Readable dropdown texts (C8)**: analysis type, output steps, initial condition kind,
+    element order and shape, algorithm, stream mode, cross-section and Nusselt option, the
+    22 correlations, face direction, wall temperature, boolean and transform kinds, import
+    format, network branch kind.
+22. **Words for geometry (C9)**: "surfaces"/"curves" in summaries and tooltips, "region"
+    in the View menu, the Initial Condition kind, the contact panel, the 31 validation
+    messages and the Issues panel; symbols in view labels and summaries.
+23. **Highlighting (C10)** for streams, enclosures, the Mesh panel's rows and result
+    items' geometry (with items 5, 13, 14 and 15).
+24. **Errors once, under their field (C11)**, including walkthrough friction 9.
+25. **Problems marked in the tree (C13)**, updated as the model is edited.
+
+Known gap, not a task until the owner asks: enclosures cannot be added or edited in the
+window (no form, no Add action, no editor for their surfaces).
 
 - [ ] **M11.6 [C] Release review.** Check every item of Plan §6; resolve or document every
   entry in `docs/OPEN_QUESTIONS.md`. Version 1 excludes the held features M9 and M10.2 and
