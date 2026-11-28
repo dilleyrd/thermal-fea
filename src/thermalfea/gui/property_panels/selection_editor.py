@@ -3,17 +3,17 @@
 A load, part, contact, stream or mesh setting applies to geometry through named
 selections. The field shows that on one row:
 
-    Boundary   [ cooled · 1 boundary        ▾ ]   ✓ ↶   +  ✎
+    Boundary   [ cooled · 1 boundary        ▾ ]   ✓ ↶   ⌖  ✎
 
 * **The dropdown** lists the model's selections the field accepts, with their sizes.
   Choosing another one does **not** change the object (C1): the dropdown is marked, a
   note says the change is not applied, and ✓ **Update** applies it (one undo step) while ↶
   **Revert** goes back. The chosen selection is highlighted in the view.
-* **+ New** picks a new selection (C2): a strip under the row says what to click and
-  counts the picked entities; the **Name** box starts empty (owner's decision) and
-  "Create and use" (Enter) stays disabled until something is picked and the name is
-  valid and unused. It creates the selection and uses it in one undo step. Cancel or Esc
-  changes nothing.
+* **New** (the pick icon, a crosshair) picks a new selection (C2): a strip under the row
+  says what to click and counts the picked entities; the **Name** box starts empty
+  (owner's decision) and "Create and use" (Enter) stays disabled until something is
+  picked and the name is valid and unused. It creates the selection and uses it in one
+  undo step. Cancel or Esc changes nothing.
 * **✎ Edit** changes the entities of the current selection, starting from them; the strip
   says which other objects use it. "Save" rewrites the selection; "Save as new" stores
   the picked entities under a new name and uses that instead, leaving the others alone.
@@ -241,7 +241,8 @@ class SelectionEditor(QWidget):
         row.addWidget(self.combo, 1)
         self.update_button = icon_button("update", "Update: use this selection")
         self.revert_button = icon_button("revert", "Revert: keep the current selection")
-        self.new_button = icon_button("add", "New selection: pick it in the view")
+        # the pick icon: "+" adds without picking (table rows), the crosshair starts a pick
+        self.new_button = icon_button("pick", "New selection: pick it in the view")
         self.edit_button = icon_button("edit", "Edit the entities of this selection")
         for button in (self.update_button, self.revert_button, self.new_button):
             row.addWidget(button)

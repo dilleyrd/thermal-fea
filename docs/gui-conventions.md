@@ -76,6 +76,10 @@ description. Today's bold-label headings (Mesh, network) become boxes.
   Use library values, Plot.
 - This covers the Refinements, network and function-editor tables as well as the selection
   fields and value tables.
+- Each icon has one meaning everywhere: "+" adds a row or item without picking; the
+  crosshair starts a pick in the view (a new selection, a point). A table's own commands
+  show an icon and a word ("+ Add", "⌖ New…"), since they act on the whole table
+  (M11.71).
 
 ## C7. What an empty box means
 

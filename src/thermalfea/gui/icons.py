@@ -4,18 +4,19 @@ An action on one field or one table row is an icon button: :func:`icon_button` g
 tool button with the icon, a tooltip and an accessible name that say what it does. A
 command on a whole object or panel keeps words (Generate mesh, Validate, Solve).
 
-The icons are drawn here with ``QPainter`` in the palette's text color, so they need no
+Each icon has one meaning everywhere: "+" adds without picking, the crosshair starts a pick
+in the view. The icons are drawn here with ``QPainter`` in the palette's text color, so they need no
 image files and follow the window's palette, like the tree's role and swatch icons.
 
 ======== =============================================
 name     drawing and use
 ======== =============================================
-add      plus: add a row, a selection, an item
+add      plus: add a row or an item, without picking
 remove   cross: remove this row or entry
 edit     pencil: change the entities of a selection
 update   check mark: apply a pending change (C1)
 revert   curved arrow back: drop a pending change (C1)
-pick     crosshair: pick in the view (C2)
+pick     crosshair: start a pick in the view (C2), e.g. a new selection
 browse   folder: choose a file
 ======== =============================================
 """

@@ -21,30 +21,27 @@ from collections.abc import Callable
 from typing import Any
 
 from PySide6.QtCore import Qt
-from PySide6.QtGui import QBrush, QColor
+from PySide6.QtGui import QColor
 from PySide6.QtWidgets import (
-    QAbstractItemView,
     QCheckBox,
     QComboBox,
-    QHBoxLayout,
-    QHeaderView,
     QLabel,
     QPushButton,
-    QTableWidget,
-    QTableWidgetItem,
     QVBoxLayout,
     QWidget,
 )
 
 from thermalfea.core.errors import ModelError
-from thermalfea.core.forms import FormSpec, unit_label
-from thermalfea.core.units import UnitSettings, from_si, to_si
+from thermalfea.core.forms import FormSpec
+from thermalfea.core.units import UnitSettings, to_si
 from thermalfea.gui.addressing import Address, resolve
 from thermalfea.gui.document import Document
 from thermalfea.gui.mesh_tools import can_generate
 from thermalfea.gui.property_panels.form import FormPanel
 from thermalfea.gui.property_panels.function_editor import parse_number
 from thermalfea.gui.property_panels.quality_histogram import QualityHistogram
+from thermalfea.gui.property_panels.sections import Box
+from thermalfea.gui.property_panels.selection_table import Column, SelectionTable
 from thermalfea.gui.scene import SceneView
 from thermalfea.meshing import quality
 from thermalfea.model.settings import MeshSettings, Refinement
@@ -98,7 +95,7 @@ def parse_refinement(cells: list[str], units: UnitSettings | None = None) -> Ref
     """
     selection = cells[0].strip()
     if not selection:
-        raise ValueError("enter the name of a curve or point selection")
+        raise ValueError("enter the name of a boundary or point selection")
     numbers: list[float] = []
     for text in cells[1:]:
         try:
@@ -108,12 +105,24 @@ def parse_refinement(cells: list[str], units: UnitSettings | None = None) -> Ref
         if not math.isfinite(value):
             raise ValueError(f"{text.strip()!r} is not a finite number")
         numbers.append(float(to_si(value, "length", units)) if units else float(value))
+    check_refinement(tuple(numbers))
     size_min, size_max, dist_min, dist_max = numbers
+    return Refinement(selection, size_min, size_max, dist_min, dist_max)
+
+
+def check_refinement(values: tuple[float, ...]) -> None:
+    """Check the four lengths of a refinement row (the rules the mesher applies).
+
+    Raises
+    ------
+    ValueError
+        If the sizes or the distances are out of order.
+    """
+    size_min, size_max, dist_min, dist_max = values
     if not 0.0 < size_min <= size_max:
         raise ValueError("sizes need 0 < size min <= size max")
     if not 0.0 <= dist_min < dist_max:
         raise ValueError("distances need 0 <= dist min < dist max")
-    return Refinement(selection, size_min, size_max, dist_min, dist_max)
 
 
 def _default_selection(model: Any) -> str:
@@ -142,6 +151,17 @@ class MeshPanel(FormPanel):
     """
 
     _extras_built = False
+    #: Held item 13: the structured parts and the divisions along boundaries belong
+    #: together (a structured part needs matching divisions on opposite sides). The other
+    #: boxes of the panel follow in M11.72.
+    boxes = (
+        Box(
+            "Structured mesh",
+            "Parts meshed as regular grids (3 or 4 sides), and the number of elements "
+            "along boundaries.",
+            ("structured_surfaces", "curve_divisions"),
+        ),
+    )
 
     def __init__(
         self,
@@ -189,27 +209,14 @@ class MeshPanel(FormPanel):
         section.addWidget(self.color_box)
 
         section.addWidget(self._heading("Refinements"))
-        self.table = QTableWidget(0, len(REFINEMENT_COLUMNS))
-        self._set_table_headers()
-        self.table.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
-        self.table.setSelectionMode(QAbstractItemView.SelectionMode.SingleSelection)
-        self.table.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Stretch)
-        self.table.itemChanged.connect(self._on_item_changed)
+        self.table = SelectionTable(
+            self.document, self.view, (0, 1),
+            [Column(name, label, "length", minimum=0.0) for name, label in
+             REFINEMENT_COLUMNS[1:]],
+            self._units, unique=False, row_check=check_refinement,
+        )  # fmt: skip
+        self.table.rows_changed.connect(self._on_refinements_changed)
         section.addWidget(self.table)
-        buttons = QHBoxLayout()
-        add = QPushButton("Add")
-        add.clicked.connect(lambda _checked=False: self._add_refinement())
-        remove = QPushButton("Remove")
-        remove.clicked.connect(lambda _checked=False: self._remove_refinement())
-        buttons.addWidget(add)
-        buttons.addWidget(remove)
-        buttons.addStretch(1)
-        section.addLayout(buttons)
-        self.refinement_error = QLabel()
-        self.refinement_error.setWordWrap(True)
-        self.refinement_error.setStyleSheet(_ERROR_STYLE)
-        self.refinement_error.setVisible(False)
-        section.addWidget(self.refinement_error)
 
         outer = self.layout()
         outer.insertLayout(outer.count() - 1, section)  # before the trailing stretch
@@ -306,88 +313,25 @@ class MeshPanel(FormPanel):
         assert isinstance(settings, MeshSettings)
         return settings
 
-    def _set_table_headers(self) -> None:
-        unit = unit_label("length", self._units)
-        self.table.setHorizontalHeaderLabels(
-            [header if i == 0 else f"{header} [{unit}]" for i, (_, header) in
-             enumerate(REFINEMENT_COLUMNS)]
-        )
-
     def _load_table(self) -> None:
-        self._set_table_headers()
         try:
             refinements = list(self._settings(self.document.model).refinements)
         except ModelError:
             refinements = []
-        self.table.blockSignals(True)
-        self.table.setRowCount(0)
-        self.table.setRowCount(len(refinements))
-        for row, refinement in enumerate(refinements):
-            cells = [
-                refinement.selection,
-                *(
-                    f"{float(from_si(getattr(refinement, name), 'length', self._units)):.10g}"
-                    for name, _ in REFINEMENT_COLUMNS[1:]
-                ),
-            ]
-            for col, text in enumerate(cells):
-                self.table.setItem(row, col, QTableWidgetItem(text))
-        self.table.blockSignals(False)
-        self._show_refinement_error("")
-
-    def _show_refinement_error(self, message: str) -> None:
-        self.refinement_error.setText(message)
-        self.refinement_error.setVisible(bool(message))
-
-    def _cells(self, row: int) -> list[str]:
-        return [
-            item.text() if (item := self.table.item(row, col)) is not None else ""
-            for col in range(len(REFINEMENT_COLUMNS))
+        rows = [
+            (r.selection, tuple(float(getattr(r, name)) for name, _ in REFINEMENT_COLUMNS[1:]))
+            for r in refinements
         ]
+        if self.table.units != self._units:
+            self.table.set_units(self._units)
+        if rows != self.table.rows():  # an unrelated edit keeps a pending row
+            self.table.set_rows(rows)
 
-    def _edit_refinements(self, text: str, change: Callable[[list[Refinement]], None]) -> None:
-        """Replace the refinement list of the settings through one ``Document.edit``."""
+    def _on_refinements_changed(self, rows: list) -> None:
+        """Store the table's rows as the refinement list (one undo step)."""
+        refinements = [Refinement(name, *values) for name, values in rows]
 
         def mutate(model: Any) -> None:
-            settings = self._settings(model)
-            refinements = list(settings.refinements)
-            change(refinements)
-            settings.refinements = refinements
+            self._settings(model).refinements = refinements
 
-        self.document.edit(text, mutate)
-
-    def _mark(self, item: QTableWidgetItem, bad: bool) -> None:
-        """Mark a cell as rejected (no signal: setting the color must not re-validate)."""
-        self.table.blockSignals(True)
-        item.setBackground(QBrush(_BAD_BRUSH) if bad else QBrush())
-        self.table.blockSignals(False)
-
-    def _on_item_changed(self, item: QTableWidgetItem) -> None:
-        row = item.row()
-        try:
-            refinement = parse_refinement(self._cells(row), self._units)
-        except ValueError as exc:
-            self._mark(item, bad=True)
-            self._show_refinement_error(str(exc))
-            return
-        self._mark(item, bad=False)
-        self._show_refinement_error("")
-        self._edit_refinements(
-            "Edit refinement", lambda refs: refs.__setitem__(row, refinement)
-        )
-
-    def _add_refinement(self) -> None:
-        settings = self._settings(self.document.model)
-        size = settings.global_size
-        refinement = Refinement(
-            _default_selection(self.document.model), size, size, 0.0, size
-        )
-        self._show_refinement_error("")
-        self._edit_refinements("Add refinement", lambda refs: refs.append(refinement))
-
-    def _remove_refinement(self) -> None:
-        row = self.table.currentRow()
-        if row < 0:
-            return
-        self._show_refinement_error("")
-        self._edit_refinements("Remove refinement", lambda refs: refs.__delitem__(row))
+        self.document.edit("Edit refinements", mutate)

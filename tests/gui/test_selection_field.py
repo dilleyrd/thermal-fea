@@ -1,10 +1,10 @@
 """M11.70: the selection field (held item 12; conventions C1, C2, C6; decisions A and 12).
 
 One row: the role as label, one dropdown with sizes, icon buttons. Choosing another
-selection waits for Update (✓) and can be reverted (↶); + picks a new selection with an
-empty Name box and "Create and use"; ✎ edits the current selection's entities ("Save",
-"Save as new"). A list field lists its entries with ✎ and ✕. Leaving a panel with an
-unapplied change drops it with a status-bar note.
+selection waits for Update (✓) and can be reverted (↶); New (the pick icon) picks a new
+selection with an empty Name box and "Create and use"; ✎ edits the current selection's
+entities ("Save", "Save as new"). A list field lists its entries with ✎ and ✕. Leaving
+a panel with an unapplied change drops it with a status-bar note.
 """
 
 # ruff: noqa: F811  (the fixture `built_doc` is imported from test_selection_editor)

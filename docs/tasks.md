@@ -1124,7 +1124,7 @@ tests (offscreen) of the behavior it adds, plus the whole suite.
 - [x] **M11.70 [C] Selection fields.** Held item 12 with C1 (Update and Revert, the pending
   mark, decision A) and the list fields (stream walls, structured parts); held item 9 and
   walkthrough frictions 2, 4, 9 and 10. Depends on M11.69.
-- [ ] **M11.71 [C] Value-per-selection tables.** Held item 13: boundary and point sizes,
+- [x] **M11.71 [C] Value-per-selection tables.** Held item 13: boundary and point sizes,
   boundary divisions, temperature per part, and the Mesh panel's Refinements table as one
   table component (C1, C6, C10); the "Structured mesh" box. Depends on M11.70.
 - [ ] **M11.72 [B] Panel layouts.** Held items 18, 20, 4 and 8 with C5, C7 and C12: boxes

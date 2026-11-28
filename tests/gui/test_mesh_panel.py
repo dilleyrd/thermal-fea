@@ -26,9 +26,13 @@ class FakeView:
 
     def __init__(self) -> None:
         self.calls: list[tuple[object, object]] = []
+        self.highlighted: list[tuple[int, object]] = []
 
     def set_mesh(self, mesh, color_by=None) -> None:
         self.calls.append((mesh, color_by))
+
+    def highlight(self, dim, tags) -> None:
+        self.highlighted.append((dim, tags))
 
 
 def make_document(built: bool = True) -> Document:
@@ -70,6 +74,32 @@ def refinements(shell: SimpleNamespace) -> list[Refinement]:
     return list(shell.doc.model.mesh_settings.refinements)
 
 
+def add_edge(shell: SimpleNamespace, *names: str) -> None:
+    """Create curve selections (default: ``edge``) on the rectangle's west side."""
+    for name in names or ("edge",):
+        shell.doc.edit(
+            f"Select {name}",
+            lambda m, n=name: api.select_curves(
+                m, shell.doc.built, n, where=lambda c: abs(c.center[0]) < 1e-9
+            ),
+        )
+
+
+def choose(table, r: int, name: str) -> None:
+    """Pick a selection in row ``r`` of a selection table, as the user does."""
+    w = table.row_widgets(r)
+    w.combo.setCurrentIndex(w.combo.findData(name))
+    w.combo.activated.emit(w.combo.currentIndex())
+
+
+def enter(table, r: int, texts: list[str]) -> None:
+    """Type the values of row ``r`` and press Enter in the first box."""
+    w = table.row_widgets(r)
+    for edit, text in zip(w.edits, texts, strict=True):
+        edit.setText(text)
+    w.edits[0].returnPressed.emit()
+
+
 # ----------------------------------------------------------------- settings form
 def test_global_size_edit_is_one_undo_step_and_marks_mesh_stale(shell) -> None:
     shell.mesh.generate()
@@ -88,20 +118,27 @@ def test_global_size_edit_is_one_undo_step_and_marks_mesh_stale(shell) -> None:
 
 def test_divisions_are_whole_numbers_kept_as_int(shell) -> None:
     panel = open_panel(shell)
-    line = panel.editors["curve_divisions"]
-    line.setText("edge=4")
-    line.editingFinished.emit()
+    add_edge(shell)
+    table = panel.editors["curve_divisions"]
+    r = table.add_row()
+    choose(table, r, "edge")
+    enter(table, r, ["4"])
     divisions = shell.doc.model.mesh_settings.curve_divisions
     assert divisions == {"edge": 4} and type(divisions["edge"]) is int
-    line.setText("edge=4.5")
-    line.editingFinished.emit()
+    steps = shell.doc.undo_stack.count()
+    w = table.row_widgets(0)
+    w.edits[0].setText("4.5")
+    w.edits[0].returnPressed.emit()
     assert shell.doc.model.mesh_settings.curve_divisions == {"edge": 4}
-    assert panel.error_text("curve_divisions")
+    assert shell.doc.undo_stack.count() == steps
+    assert table.row_error(0) == "enter a whole number"
     # sizes stay real numbers
     sizes = panel.editors["curve_sizes"]
-    sizes.setText("edge=0.025")
-    sizes.editingFinished.emit()
+    r = sizes.add_row()
+    choose(sizes, r, "edge")
+    enter(sizes, r, ["0.025"])
     assert shell.doc.model.mesh_settings.curve_sizes == {"edge": 0.025}
+    assert type(shell.doc.model.mesh_settings.curve_sizes["edge"]) is float
 
 
 def test_element_shape_edit_is_one_undo_step(shell) -> None:
@@ -120,48 +157,87 @@ def test_element_shape_edit_is_one_undo_step(shell) -> None:
 # -------------------------------------------------------------- refinements table
 def test_refinement_add_edit_remove_are_one_undo_step_each(shell) -> None:
     panel = open_panel(shell)
+    add_edge(shell, "edge", "other")
     steps = shell.doc.undo_stack.count()
 
-    button(panel, "Add").click()
-    assert len(refinements(shell)) == 1
+    r = panel.table.add_row()  # a draft: nothing is stored yet
+    assert refinements(shell) == []
+    assert shell.doc.undo_stack.count() == steps
+    choose(panel.table, r, "edge")
+    enter(panel.table, r, ["0.05", "0.1", "0", "0.2"])  # added: one step
+    assert refinements(shell) == [Refinement("edge", 0.05, 0.1, 0.0, 0.2)]
     assert shell.doc.undo_stack.count() == steps + 1
-    assert panel.table.rowCount() == 1
+    assert panel.table.rows() == [("edge", (0.05, 0.1, 0.0, 0.2))]
 
-    panel.table.item(0, 0).setText("edge")  # the default selection is empty
+    w = panel.table.row_widgets(0)  # a value edit: one step
+    w.edits[0].setText("0.02")
+    w.edits[0].returnPressed.emit()
+    assert refinements(shell)[0].size_min == pytest.approx(0.02)
+    assert shell.doc.undo_stack.count() == steps + 2
+
+    choose(panel.table, 0, "other")  # a selection change waits for Update
     assert refinements(shell)[0].selection == "edge"
-    panel.table.item(0, 1).setText("0.02")
+    assert shell.doc.undo_stack.count() == steps + 2
+    panel.table.row_widgets(0).update_button.click()
+    assert refinements(shell)[0].selection == "other"
     assert refinements(shell)[0].size_min == pytest.approx(0.02)
     assert shell.doc.undo_stack.count() == steps + 3
 
-    panel.table.setCurrentCell(0, 0)
-    button(panel, "Remove").click()
+    panel.table.row_widgets(0).remove_button.click()  # removed: one step
     assert refinements(shell) == []
     assert shell.doc.undo_stack.count() == steps + 4
 
     shell.doc.undo_stack.undo()
+    assert refinements(shell)[0].selection == "other"
     assert refinements(shell)[0].size_min == pytest.approx(0.02)
 
 
 def test_non_numeric_refinement_entry_is_rejected(shell) -> None:
     panel = open_panel(shell)
-    button(panel, "Add").click()
+    add_edge(shell)
+    r = panel.table.add_row()
+    choose(panel.table, r, "edge")
     steps = shell.doc.undo_stack.count()
     before = refinements(shell)
-    panel.table.item(0, 2).setText("abc")
+    w = panel.table.row_widgets(r)
+    for edit, text in zip(w.edits, ["0.05", "abc", "0", "0.2"], strict=True):
+        edit.setText(text)
+    assert panel.table.apply_row(r) is False
     assert refinements(shell) == before
     assert shell.doc.undo_stack.count() == steps
-    assert panel.refinement_error.text() != ""
-    assert panel.table.item(0, 2).background().color().name() == "#ffd0d0"
+    assert "abc" in panel.table.row_error(r)
+    assert panel.table.rows() == []
+    # a stored row rejects a bad value too and keeps its stored value
+    w.edits[1].setText("0.1")
+    assert panel.table.apply_row(r) is True
+    steps = shell.doc.undo_stack.count()
+    w = panel.table.row_widgets(0)
+    w.edits[1].setText("abc")
+    w.edits[1].returnPressed.emit()
+    assert refinements(shell) == [Refinement("edge", 0.05, 0.1, 0.0, 0.2)]
+    assert shell.doc.undo_stack.count() == steps
+    assert "abc" in panel.table.row_error(0)
 
 
 def test_refinement_order_is_checked_like_the_mesher(shell) -> None:
     panel = open_panel(shell)
-    button(panel, "Add").click()
-    panel.table.item(0, 0).setText("edge")
+    add_edge(shell)
+    r = panel.table.add_row()
+    choose(panel.table, r, "edge")
+    enter(panel.table, r, ["0.05", "0.1", "0", "0.2"])
     steps = shell.doc.undo_stack.count()
-    panel.table.item(0, 1).setText("0.5")  # size min above size max (0.1)
+    w = panel.table.row_widgets(0)
+    w.edits[0].setText("0.5")  # size min above size max (0.1)
+    w.edits[0].returnPressed.emit()
     assert shell.doc.undo_stack.count() == steps
     assert refinements(shell)[0].size_min != 0.5
+    assert panel.table.row_error(0) == "sizes need 0 < size min <= size max"
+    w.edits[0].setText("0.05")
+    w.edits[2].setText("0.3")  # dist min above dist max (0.2)
+    w.edits[2].returnPressed.emit()
+    assert shell.doc.undo_stack.count() == steps
+    assert refinements(shell)[0].dist_min != 0.3
+    assert panel.table.row_error(0) == "distances need 0 <= dist min < dist max"
 
 
 def test_parse_refinement_rules() -> None:

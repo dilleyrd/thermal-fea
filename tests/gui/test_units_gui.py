@@ -221,18 +221,45 @@ def test_form_shows_25_mm_and_stores_0_025_m(qtbot) -> None:
 
 
 def test_mapping_field_converts_and_shows_its_unit(qtbot) -> None:
-    doc = Document(Model())
+    model = Model()
+    api.Geometry(model).rectangle(0.0, 0.0, 1.0, 0.5)
+    built = api.build(model)
+    api.select_curves(model, built, "west", where=lambda c: abs(c.center[0]) < 1e-9)
+    api.select_curves(model, built, "east", where=lambda c: abs(c.center[0] - 1.0) < 1e-9)
+    doc = Document(model)
+    doc.set_built(built)
     choose_units(SimpleNamespace(doc=doc), "SI (mm)")
     panel = FormPanel(form_for(MeshSettings), doc, ("mesh_settings",))
     qtbot.addWidget(panel)
-    line = panel.editors["curve_sizes"]
-    assert panel._unit_labels["curve_sizes"].text() == "mm"
-    line.setText("west=10, east=5")
-    line.editingFinished.emit()
+    table = panel.editors["curve_sizes"]
+    for name, text in (("west", "10"), ("east", "5")):
+        r = table.add_row()
+        w = table.row_widgets(r)
+        w.combo.setCurrentIndex(w.combo.findData(name))
+        w.combo.activated.emit(w.combo.currentIndex())
+        w.edits[0].setText(text)
+        w.edits[0].returnPressed.emit()
+    # the unit is shown in the column header, in the display unit
+    assert table.grid.itemAtPosition(0, 1).widget().text() == "Element size [mm]"
     assert doc.model.mesh_settings.curve_sizes == pytest.approx({"west": 0.01, "east": 0.005})
+    assert [n for n, _v in table.rows()] == ["east", "west"]  # the mapping is sorted
+    assert [v[0] for _n, v in table.rows()] == pytest.approx([0.005, 0.01])
+    assert [table.row_widgets(r).edits[0].text() for r in (0, 1)] == ["5", "10"]
     choose_units(SimpleNamespace(doc=doc), length="in")
-    assert line.text() == f"east={0.005 / INCH:.10g}, west={0.01 / INCH:.10g}"
-    assert panel.editors["curve_divisions"].text() == ""  # no unit label without a quantity
+    assert table.grid.itemAtPosition(0, 1).widget().text() == "Element size [in]"
+    shown = [table.row_widgets(r).edits[0].text() for r in (0, 1)]
+    assert shown == [f"{0.005 / INCH:.10g}", f"{0.01 / INCH:.10g}"]
+    # the stored values stay in SI
+    assert doc.model.mesh_settings.curve_sizes == pytest.approx({"west": 0.01, "east": 0.005})
+    # a value typed in inches is stored in metres
+    w = table.row_widgets(0)  # east
+    w.edits[0].setText("1")
+    w.edits[0].returnPressed.emit()
+    assert doc.model.mesh_settings.curve_sizes["east"] == pytest.approx(INCH)
+    # a count has no unit: no unit in its header
+    counts = panel.editors["curve_divisions"]
+    counts.add_row()
+    assert counts.grid.itemAtPosition(0, 1).widget().text() == "Elements"
     assert "curve_divisions" not in panel._unit_labels
 
 

@@ -76,6 +76,11 @@ from thermalfea.gui.property_panels.selection_editor import (
     role_label,
     store_selection,
 )
+from thermalfea.gui.property_panels.selection_table import (
+    SELECTION_TABLES,
+    Column,
+    SelectionTable,
+)
 from thermalfea.gui.scene import SceneView
 
 _BAD_STYLE = "background-color: #ffd0d0;"
@@ -423,6 +428,15 @@ class FormPanel(QWidget):
             sel.value_changed.connect(lambda v, n=name: self._apply(n, v))
             sel.apply_handler = lambda request, n=name, s=sel: self._apply_request(n, request, s)
             return sel, None
+        if f.kind == "dict" and (self.spec.title, name) in SELECTION_TABLES:
+            table_spec = SELECTION_TABLES[(self.spec.title, name)]
+            table = SelectionTable(
+                self.document, self.view, table_spec.dims, [table_spec.column], self._units
+            )
+            table.rows_changed.connect(
+                lambda rows, n=name, c=table_spec.column: self._apply_table(n, rows, c)
+            )
+            return table, None
         if f.kind == "dict":
             line = QLineEdit()
             line.setPlaceholderText(hint)
@@ -434,6 +448,14 @@ class FormPanel(QWidget):
             line.editingFinished.connect(lambda n=name, w=line: self._on_text_list(n, w))
             return line, self._unit_label_for(f)
         raise ModelError(f"unsupported form kind {f.kind!r}")  # pragma: no cover
+
+    def _apply_table(self, name: str, rows: list, column: Column) -> bool:
+        """Store a value-per-selection table as the field's mapping (one undo step)."""
+        value = {
+            key: int(values[0]) if column.kind == "int" else float(values[0])
+            for key, values in rows
+        }
+        return self._apply(name, value)
 
     def choice_label(self, name: str, value: Any) -> str:
         """The readable text of a stored choice of field ``name`` (convention C8)."""
@@ -520,6 +542,8 @@ class FormPanel(QWidget):
                         editor.set_settings(units)
                     elif isinstance(editor, FunctionEditor):
                         editor.set_units(units)
+                    elif isinstance(editor, SelectionTable):
+                        editor.set_units(units)
                     unit = self._unit_labels.get(field.name)
                     if unit is not None:
                         unit.setText(unit_label(field.quantity, units))
@@ -557,6 +581,10 @@ class FormPanel(QWidget):
             unset_shown = value is None and editor.mode != "none"
             if editor.error_text() or unset_shown or not same_function(editor.function(), value):
                 editor.set_function(value)
+        elif isinstance(editor, SelectionTable):
+            rows = [(str(k), (float(v),)) for k, v in (value or {}).items()]
+            if rows != editor.rows():  # an unrelated edit keeps a pending row
+                editor.set_rows(rows)
         elif isinstance(editor, SelectionEditor):
             # an object without a name (a region) lends the title of its form instead
             owner = getattr(self.current_object(), "name", None) or self.spec.title
