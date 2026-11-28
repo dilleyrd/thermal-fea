@@ -26,9 +26,13 @@ MATERIAL_FORM = FormSpec(
     "Material",
     [
         FieldSpec(
-            "k", "Thermal conductivity", "function", quantity="conductivity", minimum=0.0,
-            variables=("T",),
-            tooltip="Conductivity along the material axis (for orthotropic materials).",
+            "k", "Conductivity (along axis)", "function", quantity="conductivity",
+            minimum=0.0, variables=("T",),
+            tooltip=(
+                "Conductivity in every direction of an isotropic material, or along the "
+                "material axis of a directional one. Each part sets the axis by its "
+                "Material angle."
+            ),
         ),  # fmt: skip
         FieldSpec(
             "rho", "Density", "function", quantity="density", minimum=0.0,
@@ -41,13 +45,20 @@ MATERIAL_FORM = FormSpec(
             tooltip="Specific heat capacity of the solid.",
         ),  # fmt: skip
         FieldSpec(
-            "k2", "Conductivity across axis", "function", quantity="conductivity",
-            minimum=0.0, optional=True, variables=("T",),
-            tooltip="Empty: isotropic. Otherwise the conductivity across the material axis.",
+            "k2", "Conductivity (across axis, empty = isotropic)", "function",
+            quantity="conductivity", minimum=0.0, optional=True, variables=("T",),
+            tooltip=(
+                "Conductivity at right angles to the material axis, in the model plane. "
+                "Leave empty for an isotropic material."
+            ),
         ),  # fmt: skip
     ],
     category="material",
-    description="Thermal properties of a solid.",
+    description=(
+        "Thermal properties of a solid. For a directional material (laminations, fibers, "
+        "layered boards) fill in both conductivities; the axis direction is the Material "
+        "angle of each part that uses the material."
+    ),
 )
 
 REGION_FORM = FormSpec(
@@ -71,7 +82,10 @@ REGION_FORM = FormSpec(
         ),  # fmt: skip
         FieldSpec(
             "material_angle", "Material angle", "float", quantity="angle",
-            tooltip="Angle of the material axis, counter-clockwise from x; orthotropic only.",
+            tooltip=(
+                "Angle of the material axis, counter-clockwise from x (r in axisymmetric "
+                "models). Used only when the material has a conductivity across the axis."
+            ),
         ),  # fmt: skip
     ],
     category="region",

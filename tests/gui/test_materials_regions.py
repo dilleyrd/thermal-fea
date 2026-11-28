@@ -141,7 +141,8 @@ def test_editing_conductivity_changes_the_model_in_one_step(shell, doc) -> None:
     panel = controller.panel
     enter(panel.editors["k"].value_edit, "200")
     assert doc.model.materials[COPPER].k.value == pytest.approx(200.0)
-    assert doc.undo_stack.count() == 1 and doc.undo_stack.undoText() == "Edit Thermal conductivity"
+    assert doc.undo_stack.count() == 1
+    assert doc.undo_stack.undoText() == "Edit Conductivity (along axis)"
     doc.undo_stack.undo()
     assert doc.model.materials[COPPER].k.value == pytest.approx(401.0)
 

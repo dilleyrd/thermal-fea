@@ -932,6 +932,14 @@ Found while building the oil-cooler example in the window (M11.65):
    viewport", "New name", Apply, Clear) is cut off, and the mass-flow and path rows need
    scrolling. Walkthrough §4 item 10 is the same problem in the Mesh panel.
 
+From the owner's V-17 review:
+
+10. **Documents still name the old conductivity labels.** The material fields were renamed
+    "Conductivity (along axis)" and "Conductivity (across axis, empty = isotropic)" during
+    the review (owner, 2026-11-27), and the panel now says that each part's Material angle
+    sets the axis. `docs/gui-walkthrough.md` (§2 step 2, §3), `guide/tutorials/t4-plate.md`
+    and any screenshot of the Material panel still show "Thermal conductivity".
+
 - [ ] **M11.6 [C] Release review.** Check every item of Plan §6; resolve or document every
   entry in `docs/OPEN_QUESTIONS.md`. Version 1 excludes the held features M9 and M10.2 and
   their cases V-22a–d, V-23, V-24 and V-36 (owner, 2026-11-22, Q29.15); the guide's
