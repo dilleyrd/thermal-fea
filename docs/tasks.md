@@ -1092,6 +1092,36 @@ convention of `docs/gui-conventions.md` to the parts no earlier item touches:
 Known gap, not a task until the owner asks: enclosures cannot be added or edited in the
 window (no form, no Add action, no editor for their surfaces).
 
+### Held: from the third M8.G review (owner, 2026-11-28)
+
+26. **A to-do checklist in the tree instead of warning marks (replaces C13).** Found: the
+    marks follow whatever Validate can check at the moment, so a new model marks only
+    "Loads & Boundary Conditions" (no temperature reference) while Validate itself first
+    says "Build the geometry before validating", and once there is geometry "Parts" is
+    marked as well. Geometry and Mesh are never marked although they are needed too. A
+    yellow triangle also reads as "you did something wrong", not "still to do". Wanted: a
+    column of dots after the steps that must be done before a solve. A step's dot is
+    yellow while it is still to do and turns green when it is done, so the dots work as a
+    checklist tied to the user's actions rather than to validation messages. Proposal,
+    for the owner's decisions:
+    - Steps with a dot: Geometry (built and current), Parts (every part has a material),
+      Mesh (generated and current), Loads & Boundary Conditions (something fixes the
+      temperature level: a fixed temperature, convection, radiation or a stream). Initial
+      Condition gets a dot only for a transient analysis, and it is green from the start
+      (its default is valid). Materials, Analysis Settings and the optional sections get
+      no dot.
+    - Yellow is a hollow dot and green a filled dot, so the two differ in shape as well as
+      color; the tooltip says what is still to do ("2 parts have no material").
+    - Real mistakes on the user's own items (a load with an empty selection, a material
+      with a property not set) keep a mark, but on that item only, never on a section.
+      Owner to choose the mark: the triangle, or a red dot in the same column.
+    - Validate lists every unfinished step at once instead of stopping at the first
+      ("To do: build the geometry; generate the mesh; ...").
+    - Results: owner to say whether it gets a dot too (green when the results match the
+      model, yellow when they are out of date).
+    - Rewrite C13 and every page that describes the warning marks (walkthrough, getting
+      started, session page).
+
 ### Window fixes released after the second M8.G review (owner, 2026-11-27)
 
 Each task implements the held items it names, following `docs/gui-conventions.md` (Cn
