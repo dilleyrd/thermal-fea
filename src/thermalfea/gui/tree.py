@@ -159,6 +159,8 @@ class ModelTree(QTreeWidget):
     -------
     object_selected(object)
         The current item changed by user action; see the module docstring.
+    rebuilt()
+        :meth:`rebuild` finished (the items are new objects).
     error_occurred(str)
         An action was refused (the message says why).
     edit_requested(object)
@@ -174,6 +176,7 @@ class ModelTree(QTreeWidget):
     object_selected = Signal(object)
     error_occurred = Signal(str)
     edit_requested = Signal(object)
+    rebuilt = Signal()  # all items were created anew (marks on items must be applied again)
 
     def __init__(self, document: Document, parent: QWidget | None = None) -> None:
         super().__init__(parent)
@@ -334,6 +337,7 @@ class ModelTree(QTreeWidget):
             self.blockSignals(False)
             self._rebuilding = False
         self.refresh_summaries()
+        self.rebuilt.emit()
 
     def _restore_expansion(self, item: QTreeWidgetItem) -> None:
         item.setExpanded(self._expanded.get(self._key(item), item.parent() is None))

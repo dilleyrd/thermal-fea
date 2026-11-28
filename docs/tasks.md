@@ -1152,12 +1152,14 @@ tests (offscreen) of the behavior it adds, plus the whole suite.
   then phase 2 (point table, several times on one chart); Results > Finish / Cancel path
   plot removed. **Stop for the owner's approval of the data-model entry first.** Depends
   on M11.76.
-- [ ] **M11.78 [B] Problems marked in the tree.** Held item 25 with C13, updated as the
+- [x] **M11.78 [B] Problems marked in the tree.** Held item 25 with C13, updated as the
   model is edited. Depends on M11.77.
 - [ ] **M11.79 [B] Documents and screenshots.** Held item 10 and every page and image the
   tasks above changed: `docs/gui-walkthrough.md` with its screenshots, `guide/` (getting
   started, tutorials, units), `examples/oil_cooler/README.md` and its window screenshots,
-  `docs/data-model.md` §13. Then the owner's third look at the walkthrough (M8.G).
+  `docs/data-model.md` §13. After every other task: update the walkthrough's HTML session
+  page (claude.ai artifact AVKWHDY1Pa6YZ22go6weAH) to the new window (owner,
+  2026-11-28). Then the owner's third look at the walkthrough (M8.G).
   Depends on M11.78.
 
 - [ ] **M11.6 [C] Release review.** Check every item of Plan §6; resolve or document every

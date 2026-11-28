@@ -69,7 +69,9 @@ def placement(panel: FormPanel, name: str):
 
 # --------------------------------------------------------------------------- C6 icons
 def test_every_icon_is_drawn_and_buttons_say_what_they_do(qtbot) -> None:
-    assert ICON_NAMES == ("add", "remove", "edit", "update", "revert", "pick", "browse")
+    assert ICON_NAMES == (
+        "add", "remove", "edit", "update", "revert", "pick", "browse", "warning",
+    )
     for name in ICON_NAMES:
         assert not icon(name).isNull()
         button = icon_button(name, f"Do {name}")

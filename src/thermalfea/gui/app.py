@@ -32,6 +32,7 @@ from thermalfea.gui.path_tools import attach_paths
 from thermalfea.gui.results_tools import ResultController, attach_results
 from thermalfea.gui.solve_tools import SolveController, attach_solve
 from thermalfea.gui.tree import ModelTree
+from thermalfea.gui.tree_issues import attach_tree_issues
 from thermalfea.gui.units_tools import UnitsController, attach_units
 from thermalfea.gui.viewport_mpl import MplSceneView, attach_viewport
 from thermalfea.gui.worker import JOIN_TIMEOUT_MS, SerialWorker
@@ -227,6 +228,7 @@ def build_application(
     attach_part_colors(window, document, view)
     solve = attach_solve(window, document, view)
     properties.solve_controller = solve
+    attach_tree_issues(window, document, tree)
     results_controller = attach_results(window, document, view)
     charts = attach_charts(window, document, view, results_controller)
     attach_history(window, document, view, results_controller, charts)

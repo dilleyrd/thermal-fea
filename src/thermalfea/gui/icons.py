@@ -18,17 +18,29 @@ update   check mark: apply a pending change (C1)
 revert   curved arrow back: drop a pending change (C1)
 pick     crosshair: start a pick in the view (C2), e.g. a new selection
 browse   folder: choose a file
-======== =============================================
+warning  amber triangle with "!": a tree item that Validate complains about (C13)
+=====================================================
 """
 
 from __future__ import annotations
 
 from PySide6.QtCore import QPointF, QRectF, Qt
-from PySide6.QtGui import QColor, QIcon, QPainter, QPainterPath, QPalette, QPen, QPixmap
+from PySide6.QtGui import (
+    QColor,
+    QIcon,
+    QPainter,
+    QPainterPath,
+    QPalette,
+    QPen,
+    QPixmap,
+    QPolygonF,
+)
 from PySide6.QtWidgets import QApplication, QToolButton, QWidget
 
 #: The names of the icon set, in the order of the table above.
-ICON_NAMES: tuple[str, ...] = ("add", "remove", "edit", "update", "revert", "pick", "browse")
+ICON_NAMES: tuple[str, ...] = (
+    "add", "remove", "edit", "update", "revert", "pick", "browse", "warning",
+)
 
 _SIZE = 16  # logical pixels
 _SCALE = 2  # drawn at twice the size, so the icons stay sharp on high-DPI screens
@@ -81,6 +93,14 @@ def _draw(name: str, p: QPainter) -> None:
         path.closeSubpath()
         p.drawPath(path)
         p.drawLine(QPointF(2, 7.5), QPointF(s - 2, 7.5))
+    elif name == "warning":
+        p.setPen(QPen(QColor("#8a5200"), 1.0))
+        p.setBrush(QColor("#f5a623"))
+        p.drawPolygon(QPolygonF([QPointF(s / 2, 1.5), QPointF(s - 1.5, s - 2.5),
+                                 QPointF(1.5, s - 2.5)]))
+        p.setPen(QPen(QColor("#3a2200"), 1.6, Qt.PenStyle.SolidLine, Qt.PenCapStyle.RoundCap))
+        p.drawLine(QPointF(s / 2, 6), QPointF(s / 2, 9.5))
+        p.drawPoint(QPointF(s / 2, 11.8))
     else:  # pragma: no cover - guarded by icon()
         raise KeyError(name)
 
