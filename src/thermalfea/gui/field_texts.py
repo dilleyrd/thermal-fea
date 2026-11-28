@@ -34,6 +34,14 @@ EMPTY_TEXTS: dict[tuple[str, str], str] = {
     ("Analysis settings", "initial_dt"): "suggested from the mesh",
     ("Analysis settings", "dt_max"): "no limit",
     ("Analysis settings", "max_dT_per_step"): "no limit",
+    ("Correlation Convection", "char_length"): "from the geometry",
+    ("Correlation Convection", "velocity"): "not used",
+    ("Stream", "n_cells"): "one per wall edge",
+    ("Stream", "diameter_ratio"): "required for an annulus",
+    ("Stream", "mass_flow"): "from network",
+    ("Stream", "h_override"): "use the correlation",
+    ("Material", "k2"): "isotropic",
+    ("Initial condition", "results_path"): "results file (.h5)",
 }
 
 #: Text of an empty choice (``None``) that has no meaning of its own.

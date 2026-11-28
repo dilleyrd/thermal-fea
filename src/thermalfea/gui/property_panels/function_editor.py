@@ -441,6 +441,10 @@ class FunctionEditor(QWidget):
             policy = preferred if index == page else ignored
             self.stack.widget(index).setSizePolicy(policy, policy)
         self.stack.setCurrentIndex(page)
+        # nothing can be typed while the value is empty: a number typed there would be lost
+        typing = mode != "none"
+        self.value_edit.setEnabled(typing)
+        self.expr_edit.setEnabled(typing)
         self.stack.adjustSize()
         self.stack.updateGeometry()
 

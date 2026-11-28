@@ -24,6 +24,7 @@ from thermalfea.gui.pick import manager_for
 from thermalfea.gui.property_panels.contact import ContactPanel
 from thermalfea.gui.property_panels.correlation import CorrelationPanel
 from thermalfea.gui.property_panels.form import FormPanel
+from thermalfea.gui.property_panels.initial_condition import InitialConditionPanel
 from thermalfea.gui.property_panels.material import MaterialPanel
 from thermalfea.gui.property_panels.mesh import MeshPanel
 from thermalfea.gui.property_panels.network import NETWORK_ADDRESS, NetworkPanel
@@ -38,7 +39,7 @@ from thermalfea.gui.tree import ModelTree
 from thermalfea.gui.tree_summary import TreeSummaryController
 from thermalfea.materials.material import Material
 from thermalfea.model.bcs import Contact, CorrelationConvection, Stream
-from thermalfea.model.model import RegionAssignment
+from thermalfea.model.model import InitialCondition, RegionAssignment
 from thermalfea.model.selections import Selection
 from thermalfea.model.settings import MeshSettings, SolutionSettings
 
@@ -246,7 +247,11 @@ register_panel(
     ),
 )
 register_panel(
-    RegionAssignment, lambda c, spec, address: RegionPanel(spec, c.document, address, c.view)
+    InitialCondition,
+    lambda c, spec, address: InitialConditionPanel(spec, c.document, address, c.view),
+)
+register_panel(
+    RegionAssignment,lambda c, spec, address: RegionPanel(spec, c.document, address, c.view)
 )
 register_panel(Material, lambda c, spec, address: MaterialPanel(spec, c.document, address, c.view))
 register_panel(

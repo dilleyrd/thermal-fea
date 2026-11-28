@@ -1,17 +1,22 @@
 """Property panel of the mesh settings (Plan M8.7).
 
 :class:`MeshPanel` is a :class:`~thermalfea.gui.property_panels.form.FormPanel` for
-:class:`~thermalfea.model.settings.MeshSettings`. Below the generated settings form it shows
+:class:`~thermalfea.model.settings.MeshSettings`, in framed boxes (C5, C12; M11.71-M11.72):
 
-* the refinements editor: a table of :class:`~thermalfea.model.settings.Refinement` rows
-  (Add, Remove, and editing of each cell); every change is one ``Document.edit`` that
-  replaces the whole list, and an invalid entry is marked and not applied;
+* **Element size**: global size, boundary sizes and point sizes (value-per-selection
+  tables);
+* **Element type**: order and shape; under "More" the algorithm and smoothing passes;
+* **Structured mesh**: the structured parts and the boundary divisions;
+* **Refinements**: a value-per-selection table of
+  :class:`~thermalfea.model.settings.Refinement` rows (selection, size min/max, distance
+  min/max); every change is one ``Document.edit`` that replaces the whole list, and a row
+  that breaks the size or distance order is refused with a message under it;
 * the "Generate mesh" button, which calls the callable given to the panel (the mesh
   controller's ``generate``); it is enabled only when a current built geometry exists;
-* the statistics (node and element counts per element type, quality summary) and a
-  histogram of one quality measure, both read from :func:`thermalfea.meshing.quality.report`;
-* the "Color elements by quality" check box, which colors the mesh in the viewport by the
-  chosen measure.
+* **Statistics and quality**: node and element counts per element type, the quality
+  summary, a histogram of one quality measure (from
+  :func:`thermalfea.meshing.quality.report`) and the "Color elements by quality" check box,
+  which colors the mesh in the viewport by the chosen measure.
 """
 
 from __future__ import annotations
@@ -40,7 +45,7 @@ from thermalfea.gui.mesh_tools import can_generate
 from thermalfea.gui.property_panels.form import FormPanel
 from thermalfea.gui.property_panels.function_editor import parse_number
 from thermalfea.gui.property_panels.quality_histogram import QualityHistogram
-from thermalfea.gui.property_panels.sections import Box
+from thermalfea.gui.property_panels.sections import Box, SectionBox
 from thermalfea.gui.property_panels.selection_table import Column, SelectionTable
 from thermalfea.gui.scene import SceneView
 from thermalfea.meshing import quality
@@ -151,10 +156,21 @@ class MeshPanel(FormPanel):
     """
 
     _extras_built = False
-    #: Held item 13: the structured parts and the divisions along boundaries belong
-    #: together (a structured part needs matching divisions on opposite sides). The other
-    #: boxes of the panel follow in M11.72.
+    #: Held items 13 and 18 (C5, C12): the structured parts and the divisions along
+    #: boundaries belong together (a structured part needs matching divisions on opposite
+    #: sides).
     boxes = (
+        Box(
+            "Element size",
+            "Target size of the elements, and local sizes along boundaries and at points.",
+            ("global_size", "curve_sizes", "point_sizes"),
+        ),
+        Box(
+            "Element type",
+            "Order and shape of the elements.",
+            ("order", "element_shape"),
+            more=("algorithm", "smoothing_passes"),
+        ),
         Box(
             "Structured mesh",
             "Parts meshed as regular grids (3 or 4 sides), and the number of elements "
@@ -185,30 +201,16 @@ class MeshPanel(FormPanel):
 
     # ------------------------------------------------------------------ building
     def _build_extras(self) -> None:
-        section = QVBoxLayout()
-        self.generate_button = QPushButton("Generate mesh")
-        self.generate_button.clicked.connect(lambda _checked=False: self._on_generate())
-        section.addWidget(self.generate_button)
+        column = QVBoxLayout()
+        title = self.spec.title
 
-        section.addWidget(self._heading("Statistics"))
-        self.stats_label = QLabel()
-        self.stats_label.setWordWrap(True)
-        self.stats_label.setTextInteractionFlags(Qt.TextInteractionFlag.TextSelectableByMouse)
-        section.addWidget(self.stats_label)
-
-        section.addWidget(self._heading("Quality"))
-        self.measure_combo = QComboBox()
-        for measure in quality.MEASURES:
-            self.measure_combo.addItem(MEASURE_LABELS[measure], measure)
-        self.measure_combo.currentIndexChanged.connect(lambda _i: self._on_measure_changed())
-        section.addWidget(self.measure_combo)
-        self.histogram = QualityHistogram()
-        section.addWidget(self.histogram)
-        self.color_box = QCheckBox("Color elements by quality")
-        self.color_box.toggled.connect(lambda _on: self._apply_color())
-        section.addWidget(self.color_box)
-
-        section.addWidget(self._heading("Refinements"))
+        refinements = SectionBox(
+            Box(
+                "Refinements",
+                "Smaller elements near a boundary or point, growing with distance.",
+            ),
+            title,
+        )
         self.table = SelectionTable(
             self.document, self.view, (0, 1),
             [Column(name, label, "length", minimum=0.0) for name, label in
@@ -216,16 +218,40 @@ class MeshPanel(FormPanel):
             self._units, unique=False, row_check=check_refinement,
         )  # fmt: skip
         self.table.rows_changed.connect(self._on_refinements_changed)
-        section.addWidget(self.table)
+        refinements.form.addRow(self.table)
+        self.sections[refinements.box.title] = refinements
+        column.addWidget(refinements)
+
+        self.generate_button = QPushButton("Generate mesh")
+        self.generate_button.clicked.connect(lambda _checked=False: self._on_generate())
+        column.addWidget(self.generate_button)
+
+        stats = SectionBox(
+            Box(
+                "Statistics and quality",
+                "Size of the mesh and how well its elements are shaped.",
+            ),
+            title,
+        )
+        self.stats_label = QLabel()
+        self.stats_label.setWordWrap(True)
+        self.stats_label.setTextInteractionFlags(Qt.TextInteractionFlag.TextSelectableByMouse)
+        stats.form.addRow(self.stats_label)
+        self.measure_combo = QComboBox()
+        for measure in quality.MEASURES:
+            self.measure_combo.addItem(MEASURE_LABELS[measure], measure)
+        self.measure_combo.currentIndexChanged.connect(lambda _i: self._on_measure_changed())
+        stats.form.addRow(self.measure_combo)
+        self.histogram = QualityHistogram()
+        stats.form.addRow(self.histogram)
+        self.color_box = QCheckBox("Color elements by quality")
+        self.color_box.toggled.connect(lambda _on: self._apply_color())
+        stats.form.addRow(self.color_box)
+        self.sections[stats.box.title] = stats
+        column.addWidget(stats)
 
         outer = self.layout()
-        outer.insertLayout(outer.count() - 1, section)  # before the trailing stretch
-
-    @staticmethod
-    def _heading(text: str) -> QLabel:
-        label = QLabel(text)
-        label.setStyleSheet("font-weight: bold; margin-top: 6px;")
-        return label
+        outer.insertLayout(outer.count() - 1, column)  # before the trailing stretch
 
     # ------------------------------------------------------------------- refresh
     def refresh(self) -> None:

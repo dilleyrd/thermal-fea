@@ -36,6 +36,7 @@ from thermalfea.core.forms import unit_label
 from thermalfea.core.units import UnitSettings, from_si, to_si
 from thermalfea.gui.addressing import Address
 from thermalfea.gui.document import Document
+from thermalfea.gui.property_panels.sections import Box, SectionBox
 from thermalfea.model.bcs import FlowNetwork, NetBranch, NetNode
 
 #: Address of the flow network object (``Model.network``).
@@ -164,24 +165,34 @@ class NetworkPanel(QWidget):
         self.editor_widget = QWidget()
         editor = QVBoxLayout(self.editor_widget)
         editor.setContentsMargins(0, 0, 0, 0)
-        editor.addWidget(QLabel("Nodes"))
+        self.nodes_section = SectionBox(
+            Box("Nodes", "Junctions with a fixed pressure or an inflow."), "Flow network"
+        )
         self.node_table = self._make_table(NODE_COLUMNS)
-        editor.addWidget(self.node_table)
+        self.nodes_section.form.addRow(self.node_table)
         node_row = QHBoxLayout()
         self.add_node_button = QPushButton("Add node")
         self.remove_node_button = QPushButton("Remove node")
         node_row.addWidget(self.add_node_button)
         node_row.addWidget(self.remove_node_button)
-        editor.addLayout(node_row)
-        editor.addWidget(QLabel("Branches"))
+        self.nodes_section.form.addRow(node_row)
+        editor.addWidget(self.nodes_section)
+        self.branches_section = SectionBox(
+            Box(
+                "Branches",
+                "Ducts or losses between two nodes, optionally carrying a stream.",
+            ),
+            "Flow network",
+        )
         self.branch_table = self._make_table(BRANCH_COLUMNS)
-        editor.addWidget(self.branch_table)
+        self.branches_section.form.addRow(self.branch_table)
         branch_row = QHBoxLayout()
         self.add_branch_button = QPushButton("Add branch")
         self.remove_branch_button = QPushButton("Remove branch")
         branch_row.addWidget(self.add_branch_button)
         branch_row.addWidget(self.remove_branch_button)
-        editor.addLayout(branch_row)
+        self.branches_section.form.addRow(branch_row)
+        editor.addWidget(self.branches_section)
         self.remove_network_button = QPushButton("Remove network")
         editor.addWidget(self.remove_network_button)
         outer.addWidget(self.editor_widget)

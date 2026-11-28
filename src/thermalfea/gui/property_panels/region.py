@@ -23,6 +23,7 @@ from thermalfea.model.model import check_part_name, part_name
 
 _MATERIAL = "material"
 _THICKNESS = "thickness"
+_ANGLE = "material_angle"
 
 
 class RegionPanel(FormPanel):
@@ -76,6 +77,7 @@ class RegionPanel(FormPanel):
         self._fill_materials()
         super().refresh()
         self._update_thickness_row()
+        self._update_angle_row()
 
     def is_thickness_shown(self) -> bool:
         """``True`` if the Thickness row is shown (hidden for an axisymmetric model)."""
@@ -84,6 +86,18 @@ class RegionPanel(FormPanel):
     def _update_thickness_row(self) -> None:
         if _THICKNESS in self.editors:
             self.set_field_visible(_THICKNESS, not self.document.model.axisymmetric)
+
+    def _update_angle_row(self) -> None:
+        """Show "Material angle" only for a material with a conductivity across the axis
+        (C12); the material may change, so this runs on every refresh."""
+        if _ANGLE not in self.editors:
+            return
+        try:
+            name = self.current_object().material
+        except ModelError:
+            return
+        material = self.document.model.materials.get(name)
+        self.set_field_visible(_ANGLE, material is not None and material.k2 is not None)
 
     def material_names(self) -> tuple[str, ...]:
         """The names offered by the material combo box."""

@@ -19,7 +19,7 @@ from __future__ import annotations
 from typing import Any
 
 from PySide6.QtCore import Qt
-from PySide6.QtWidgets import QFormLayout, QGroupBox, QLabel, QVBoxLayout, QWidget
+from PySide6.QtWidgets import QLabel, QVBoxLayout, QWidget
 
 from thermalfea import api
 from thermalfea.convection.calculator import HtcResult
@@ -37,6 +37,7 @@ from thermalfea.core.units import from_si
 from thermalfea.gui.addressing import Address
 from thermalfea.gui.document import Document
 from thermalfea.gui.property_panels.form import FormPanel, NumberEdit
+from thermalfea.gui.property_panels.sections import Box, SectionBox
 from thermalfea.gui.scene import SceneView
 from thermalfea.materials import library
 
@@ -140,6 +141,14 @@ class CorrelationPanel(FormPanel):
     """
 
     _ready = False
+    boxes = (
+        Box(
+            "Convection",
+            "The correlation, the fluid and the conditions far from the wall.",
+            ("selection", "correlation", "fluid", "T_inf", "velocity", "params"),
+            more=("char_length", "face_direction", "wall_T_mode", "multiplier"),
+        ),
+    )
 
     def __init__(
         self,
@@ -154,8 +163,10 @@ class CorrelationPanel(FormPanel):
         self.preview_result: HtcResult | None = None
         self.preview_edits: dict[str, NumberEdit] = {}
 
-        box = QGroupBox("Correlation")
-        info = QVBoxLayout(box)
+        box = SectionBox(
+            Box("Correlation", "Formula and range of validity of the chosen correlation."),
+            spec.title,
+        )
         self.title_label_info = QLabel()
         self.title_label_info.setStyleSheet("font-weight: bold;")
         self.formula_label = self._text_label()
@@ -164,19 +175,25 @@ class CorrelationPanel(FormPanel):
         for label in (
             self.title_label_info, self.formula_label, self.validity_label, self.length_label
         ):
-            info.addWidget(label)
+            box.form.addRow(label)
+        self.sections[box.box.title] = box
 
-        preview = QGroupBox("Preview of h")
-        outer = QVBoxLayout(preview)
-        self.preview_form = QFormLayout()
-        outer.addLayout(self.preview_form)
+        preview = SectionBox(
+            Box(
+                "Preview of h",
+                "Try the coefficient for a surface temperature; nothing is stored.",
+            ),
+            spec.title,
+        )
+        self.sections[preview.box.title] = preview
+        self.preview_form = preview.form
         for key, field in _PREVIEW_FIELDS.items():
             edit = NumberEdit(field, document.model.display_units)
             edit.committed.connect(lambda _value: self.update_preview())
             self.preview_edits[key] = edit
             self.preview_form.addRow(QLabel(field.label), edit)
         self.result_label = self._text_label()
-        outer.addWidget(self.result_label)
+        preview.form.addRow(self.result_label)
 
         layout = self.layout()
         assert isinstance(layout, QVBoxLayout)

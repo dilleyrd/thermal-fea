@@ -45,7 +45,7 @@ MATERIAL_FORM = FormSpec(
             tooltip="Specific heat capacity of the solid.",
         ),  # fmt: skip
         FieldSpec(
-            "k2", "Conductivity (across axis, empty = isotropic)", "function",
+            "k2", "Conductivity (across axis)", "function",
             quantity="conductivity", minimum=0.0, optional=True, variables=("T",),
             tooltip=(
                 "Conductivity at right angles to the material axis, in the model plane. "

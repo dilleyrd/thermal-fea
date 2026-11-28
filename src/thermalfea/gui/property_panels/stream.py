@@ -19,7 +19,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from PySide6.QtWidgets import QGroupBox, QHBoxLayout, QLabel, QPushButton, QVBoxLayout, QWidget
+from PySide6.QtWidgets import QHBoxLayout, QLabel, QPushButton, QWidget
 
 from thermalfea.core.errors import ModelError
 from thermalfea.core.forms import FieldSpec, FormSpec
@@ -27,6 +27,7 @@ from thermalfea.gui.addressing import Address, resolve
 from thermalfea.gui.document import Document
 from thermalfea.gui.pick import PickStrip, manager_for
 from thermalfea.gui.property_panels.form import FormPanel
+from thermalfea.gui.property_panels.sections import Box
 from thermalfea.gui.scene import OverlayMarker, OverlayPolyline, SceneView
 from thermalfea.materials import library
 
@@ -63,6 +64,26 @@ class StreamPanel(FormPanel):
     """
 
     _ready = False
+    #: Held items 18 and 20 (C5, C12). The "Path" box also holds the pick buttons.
+    boxes = (
+        Box(
+            "Fluid and flow",
+            "The fluid, how it flows and which walls it wets.",
+            ("fluid", "mode", "walls", "T_inlet", "mass_flow"),
+        ),
+        Box(
+            "Cross-section",
+            "Shape and size of the flow passage.",
+            ("cross_section", "flow_area", "wetted_perimeter", "diameter_ratio"),
+        ),
+        Box("Path", "From the inlet to the outlet, for in-plane streams.", ("path",)),
+        Box(
+            "Heat-transfer coefficient",
+            "From the duct correlation unless overridden.",
+            (),
+            more=("roughness", "n_cells", "nu_option", "h_multiplier", "h_override"),
+        ),
+    )
 
     def __init__(
         self,
@@ -77,28 +98,25 @@ class StreamPanel(FormPanel):
         self.picking = False
         self.pending: list[tuple[float, float]] = []
 
-        box = QGroupBox("Path")
-        outer = QVBoxLayout(box)
+        section = self.sections["Path"]
         self.pick_button = QPushButton("Pick path")
         self.pick_button.setEnabled(view is not None)
         self.pick_button.setToolTip("Click the points of a new path in the view, inlet first.")
         self.clear_button = QPushButton("Clear path")
         self.path_label = QLabel()
-        row = QHBoxLayout()
+        buttons = QWidget()
+        row = QHBoxLayout(buttons)
+        row.setContentsMargins(0, 0, 0, 0)
         row.addWidget(self.pick_button)
         row.addWidget(self.clear_button)
-        outer.addLayout(row)
-        outer.addWidget(self.path_label)
         self.strip = PickStrip("Use path")
         self.strip.confirmed.connect(self.confirm_path)
         self.strip.cancelled.connect(self.cancel_path)
-        outer.addWidget(self.strip)
+        # the whole "Path" box is hidden for a through-plane stream, extras included
+        for widget in (buttons, self.path_label, self.strip):
+            section.form.addRow(widget)
         self.pick_button.clicked.connect(lambda _checked=False: self.start_path())
         self.clear_button.clicked.connect(lambda _checked=False: self.clear_path())
-
-        layout = self.layout()
-        assert isinstance(layout, QVBoxLayout)
-        layout.insertWidget(layout.count() - 1, box)  # before the stretch
         self._ready = True
         self.refresh()
 
@@ -110,14 +128,21 @@ class StreamPanel(FormPanel):
         return None
 
     def refresh(self) -> None:
-        """Reload the form and the path count."""
+        """Reload the form, show the rows that apply and update the path count."""
         super().refresh()
-        if not self._ready:
-            return
         try:
             stream = self.current_object()
         except ModelError:
             return
+        annulus = stream.cross_section in ("annulus_inner", "annulus_outer")
+        self.set_field_visible("diameter_ratio", annulus)
+        in_plane = stream.mode == "in_plane"
+        self.set_field_visible("path", in_plane)
+        self.update_sections()
+        if not self._ready:
+            return
+        if not in_plane and self.picking:
+            self.cancel_path()
         count = len(stream.path or [])
         self.path_label.setText(f"{count} path point{'s' if count != 1 else ''}")
 
