@@ -1024,8 +1024,33 @@ From the owner's V-17 review:
       viewport overlay that the path plot uses (`SceneView.set_overlay`); the labels stay
       while the chart window is open, as the path drawing does, and the chart's legend uses
       the same node numbers;
-    - Results > Path plot… gets the same panel (vertices, "Plot path", Cancel) in place of
-      Results > Finish / Cancel path plot, so the two picks work alike.
+    - the path plot is replaced by item 15.
+15. **Path plots as saved, editable result items** (owner, 2026-11-27). Today a path is a
+    polyline clicked out once, finished through Results > Finish path plot, plotted for the
+    displayed step only, and lost when its chart closes. Instead, after Ansys Mechanical
+    (Path by two points, edge or axis; sampling points; snap to nodes), Abaqus/CAE (point,
+    node and edge list paths; x-value choice) and COMSOL (Cut Line 2D; line graph along a
+    boundary selection):
+    - Results > Add path plot adds a tree item ("Path 1 · along boundary 'oil wall' ·
+      2 times") with a panel in two boxes, **Path** and **Plot**;
+    - **Path, defined by:** *Two points* (start and end typed, or picked with a pick icon
+      beside each; "snap to nearest node"; number of samples), *Along boundaries* (a
+      boundary selection whose curves join end to end; samples are the mesh nodes on them;
+      refused with a message when they do not form one chain), or *Points* (an editable
+      table of typed or picked points with + and ✕); a direction A → B with a reverse
+      button;
+    - **Plot:** quantity; times (the displayed step, or several result times overlaid on
+      one chart); horizontal axis distance along the path, r or z (x or y in planar
+      models); "Plot" and "Export CSV";
+    - in the view, a selected path item is drawn with its ends labelled A and B and an
+      arrow for the direction;
+    - the path is saved with the model; a new solve redraws its chart instead of marking it
+      "(out of date)"; Results > Finish / Cancel path plot are removed.
+
+    This adds a saved model type, so `docs/data-model.md` gains it: the owner approves the
+    data-model entry when the item is released. Uses item 12's selection dropdown and
+    Update rule and item 14's view labels. Phasing if needed: (1) two points and along
+    boundaries; (2) the point table and several times on one chart.
 
 - [ ] **M11.6 [C] Release review.** Check every item of Plan §6; resolve or document every
   entry in `docs/OPEN_QUESTIONS.md`. Version 1 excludes the held features M9 and M10.2 and
