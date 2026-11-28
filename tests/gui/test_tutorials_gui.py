@@ -27,6 +27,7 @@ from matplotlib.backend_bases import MouseEvent
 from conftest import DialogRecorder, make_settings
 from thermalfea.core.functions import Constant
 from thermalfea.gui.app import AppContext, build_application
+from thermalfea.gui.history_tools import HistoryPanel
 from thermalfea.gui.property_panels.form import NumberEdit
 from thermalfea.gui.solve_tools import CONTINUE_ID, RUN_ID, VALIDATE_ID
 from thermalfea.model.bcs import Adiabatic, CorrelationConvection, HeatFlux, RadiationAmbient
@@ -373,13 +374,19 @@ def test_fin_quench_in_the_gui(
     assert reading.value == pytest.approx(ref["T_end"], abs=0.01)  # the nodal spread is 1 mK
     assert ctx.charts.plot_heat_flows() is not None
     assert ctx.charts.plot_energy_balance() is not None
-    # Results > Nodal history...: the first choice asks for nodes, the second one plots them
-    assert ctx.charts.request_history() is None and ctx.charts.history_pending
+    # Results > Nodal history...: a saved item whose panel picks the nodes (M11.76)
+    assert ctx.charts.request_history() is None  # no node selected yet: nothing to plot
+    items = ctx.charts.history_items
+    (item,) = items.items()
+    (panel,) = [p for p in ctx.window.findChildren(HistoryPanel) if p.name == item.name]
+    assert panel.picking  # the pick starts by itself
     x, y = (float(v) for v in results.mesh.nodes[node, :2])
     with qtbot.waitSignal(ctx.view.selection_changed, timeout=WAIT):
         click(ctx.view, x, y)
-    assert ctx.charts.selected_nodes == [node]
-    chart = ctx.charts.request_history()
+    assert panel._picked == [node]
+    assert panel.confirm_pick() and not panel.picking
+    assert items.nodes_of(items.get(item.name)) == [node]
+    chart = items.plot(item.name)
     assert chart is not None and not ctx.charts.history_pending
     heat = {name: float(results.heat_flow(name)[1]) for name in results.heat_flow_names}
     assert -heat[fin.CONVECTION] == pytest.approx(ref["split_first"]["conv"], rel=1e-6)

@@ -132,6 +132,8 @@ class PropertyController:
         #: The result-display controller (set by ``attach_results``); the objects under the
         #: Solution node have addresses ``("result", name)`` and get a ``ResultPanel``.
         self.results_controller: Any = None
+        #: The nodal history items (set by :func:`~thermalfea.gui.history_tools.attach_history`).
+        self.history_controller: Any = None
         #: The result panel currently shown, if any.
         self.result_panel: QWidget | None = None
         self._installed: QWidget | None = None
@@ -145,6 +147,18 @@ class PropertyController:
         results = self.results_controller
         if address and address[0] == RESULT_ADDRESS and results is not None:
             self._show_result(address)
+            return
+        history = self.history_controller
+        if address and address[0] == "history" and history is not None:
+            from thermalfea.gui.history_tools import HistoryPanel  # imports the chart stack
+
+            if len(address) < 2 or history.get(address[1]) is None:  # noqa: PLR2004
+                self._install(self._placeholder(), None, None)
+                return
+            scroll = QScrollArea()
+            scroll.setWidgetResizable(True)
+            scroll.setWidget(HistoryPanel(history, str(address[1])))
+            self._install(scroll, None, address)
             return
         if address == NETWORK_ADDRESS:  # shown also without a network ("Create network")
             scroll = QScrollArea()

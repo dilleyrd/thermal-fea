@@ -397,6 +397,11 @@ class ChartController(QObject):
         """
         if self.results_controller.results is None:
             return None
+        items = getattr(self, "history_items", None)
+        if items is not None:  # M11.76: a saved nodal history item with its own panel
+            self.cancel_path()
+            name = items.request(list(self.selected_nodes))
+            return items.plot(name) if self.selected_nodes else None
         if self.selected_nodes:
             return self.plot_history(self.selected_nodes)
         self.cancel_path()

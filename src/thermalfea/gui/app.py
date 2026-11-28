@@ -19,6 +19,7 @@ from thermalfea.gui.document import Document
 from thermalfea.gui.file_tools import FileController, attach_files
 from thermalfea.gui.flow_results import FlowController, attach_flow
 from thermalfea.gui.geometry_tools import GeometryController, attach_geometry_tools
+from thermalfea.gui.history_tools import attach_history
 from thermalfea.gui.inspect_tools import attach_inspect
 from thermalfea.gui.load_symbols import LoadSymbolController, attach_loads
 from thermalfea.gui.main_window import MainWindow
@@ -227,6 +228,7 @@ def build_application(
     properties.solve_controller = solve
     results_controller = attach_results(window, document, view)
     charts = attach_charts(window, document, view, results_controller)
+    attach_history(window, document, view, results_controller, charts)
     flow = attach_flow(window, document, view, results_controller)
     attach_inspect(
         window, document, view, tree,

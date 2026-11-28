@@ -1145,7 +1145,7 @@ tests (offscreen) of the behavior it adds, plus the whole suite.
   result item; heat-flow and energy charts redrawn after a new solve. **Stop for the
   owner's approval of the `docs/data-model.md` entries before writing code.** Depends on
   M11.74.
-- [ ] **M11.76 [C] Nodal history item.** Held item 14 with C2, C3 and C10: a saved result
+- [x] **M11.76 [C] Nodal history item.** Held item 14 with C2, C3 and C10: a saved result
   item whose panel holds the node list with its pick strip, the quantity and Plot; node
   numbers marked in the view and used in the legend. Depends on M11.75.
 - [ ] **M11.77 [C] Path plot item.** Held item 15, phase 1 (two points, along boundaries)
