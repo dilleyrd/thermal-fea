@@ -27,12 +27,21 @@ from thermalfea.core.forms import form_for
 from thermalfea.gui.addressing import Address, exists, resolve
 from thermalfea.gui.document import Document
 from thermalfea.gui.main_window import MainWindow
-from thermalfea.gui.scene import LoadSymbol, SceneView, kind_color
+from thermalfea.gui.scene import (
+    LoadSymbol,
+    OverlayItem,
+    OverlayMarker,
+    OverlayPolyline,
+    SceneView,
+    kind_color,
+)
 from thermalfea.model.bcs import BoundaryCondition, Contact
 from thermalfea.model.selections import StaleSelectionError
 from thermalfea.model.selections import resolve as resolve_selection
 
 ACTION_ID = "view.load_symbols"
+#: Overlay layer with the path of the stream selected in the tree (C10).
+SELECTED_PATH_LAYER = "selected_stream_path"
 #: Symbol kind of the thermal contacts (their interface curves).
 CONTACT_KIND = "contact"
 CURVE_DIM = 1
@@ -230,9 +239,54 @@ class LoadSymbolController(QObject):
             return
         self.view.highlight(selection.dim, sorted(int(t) for t in tags))
 
+    def _highlight_names(self, names: list[str]) -> None:
+        """Highlight the entities of several selections (the highest dimension among them)."""
+        built = self.document.built
+        groups: dict[int, set[int]] = {}
+        for name in names:
+            selection = self.document.model.selections.get(name)
+            if selection is None or built is None:
+                continue
+            try:
+                groups.setdefault(selection.dim, set()).update(
+                    int(t) for t in resolve_selection(selection, built)
+                )
+            except StaleSelectionError:
+                continue
+        if groups:
+            dim = max(groups)
+            self.view.highlight(dim, sorted(groups[dim]))
+        else:
+            self.view.highlight(1, [])
+
+    def _show_stream_path(self, path: list[tuple[float, float]] | None) -> None:
+        """Draw a selected stream's path (inlet and outlet marked); ``None`` clears it."""
+        items: list[OverlayItem] = []
+        if path and len(path) >= 2:  # noqa: PLR2004 (a path needs two points)
+            items.append(OverlayPolyline([(float(x), float(y)) for x, y in path]))
+            items.append(OverlayMarker(float(path[0][0]), float(path[0][1]), "inlet"))
+            items.append(OverlayMarker(float(path[-1][0]), float(path[-1][1]), "outlet"))
+        self.view.set_overlay(SELECTED_PATH_LAYER, items)
+
     def highlight_address(self, address: Address) -> None:
-        """Highlight the entities of the load at ``address``; other objects clear it."""
+        """Highlight what the object at ``address`` uses; other objects clear it (C10).
+
+        Selections, parts, materials, loads and contacts highlight their entities; a
+        stream highlights its walls and draws its path; an enclosure highlights its
+        surfaces.
+        """
         model = self.document.model
+        if not (address and address[0] == "streams" and exists(model, address)):
+            self._show_stream_path(None)
+        if address and address[0] == "streams" and exists(model, address):
+            stream = resolve(model, address)
+            self._highlight_names(list(getattr(stream, "walls", []) or []))
+            self._show_stream_path(getattr(stream, "path", None))
+            return
+        if address and address[0] == "enclosures" and exists(model, address):
+            enclosure = resolve(model, address)
+            self._highlight_names([s.selection for s in getattr(enclosure, "surfaces", [])])
+            return
         if address and address[0] == "selections" and exists(model, address):
             self._highlight_selection(address[1])
             return

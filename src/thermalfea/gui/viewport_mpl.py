@@ -15,6 +15,10 @@ overlay   named layers of text, markers, polylines    4.5
 highlight selection and hover overlays, rubber band   5.0, 5.5
 ========  ==========================================  =====================
 
+Labels stay readable (held item 1): their boxes are nearly opaque, so a label sits in front
+of its boundary's symbol line, and the text labels of the overlay layers are drawn again
+after the animated selection and hover artists, so a highlighted boundary never hides them.
+
 The overlay layers (:meth:`MplSceneView.set_overlay`) are replaced one named layer at a
 time and survive ``set_field``, ``set_mesh``, ``set_symbols`` and ``fit``; they are not part of
 the fit bounds, and ``set_geometry(None)`` (a new model) clears them all.
@@ -46,9 +50,11 @@ from matplotlib.legend import Legend
 from matplotlib.lines import Line2D
 from matplotlib.patches import Patch, Rectangle
 from matplotlib.path import Path
+from matplotlib.text import Annotation
 from matplotlib.tri import Triangulation
 from numpy import ndarray
 from PySide6.QtCore import QObject, Signal
+from PySide6.QtGui import QAction, QActionGroup
 from PySide6.QtWidgets import QWidget
 from scipy.spatial import cKDTree
 
@@ -253,6 +259,13 @@ class MplSceneView(QObject):
         self._ax.set_ylim(0.0, 1.0)
         #: view centre x, y [m] and data units [m] per pixel; the axes limits follow it
         self._view = (0.5, 0.5, 1.0 / 640.0)
+        #: display stretch of x and y (held item 7); (1, 1) is true scale
+        self._stretch = (1.0, 1.0)
+        self._stretch_note = self._ax.text(
+            0.01, 0.99, "", transform=self._ax.transAxes, ha="left", va="top", fontsize=9,
+            color="#8a5a00", zorder=Z_OVERLAY + 0.2, visible=False,
+            bbox={"boxstyle": "round,pad=0.3", "fc": "#fff8d6", "ec": "#e0b000", "lw": 0.8},
+        )
 
         # model state
         self._built: BuiltGeometry | None = None
@@ -468,7 +481,8 @@ class MplSceneView(QObject):
     def _draw_overlay_item(self, item: OverlayItem) -> list[Artist]:
         ax = self._ax
         out: list[Artist] = []
-        bbox = {"boxstyle": "round,pad=0.2", "fc": "white", "alpha": 0.75, "lw": 0.3}
+        # nearly opaque: a label sits in front of its boundary's symbol line (held item 1)
+        bbox = {"boxstyle": "round,pad=0.2", "fc": "white", "alpha": 0.92, "lw": 0.3}
         if isinstance(item, OverlayPolyline):
             if len(item.points) >= _PLANE:
                 pts = np.asarray(item.points, float).reshape(-1, _PLANE)
@@ -569,18 +583,57 @@ class MplSceneView(QObject):
         self._update_overlay(self._selection, self._sel_dim, sorted(self._sel_tags))
         self._blit()
 
+    # -------------------------------------------------------------------- stretch
+    @property
+    def stretch(self) -> tuple[float, float]:
+        """The display stretch ``(sx, sy)`` of x and y; ``(1, 1)`` is true scale."""
+        return self._stretch
+
+    def set_stretch(self, axis: str | None, factor: float = 1.0, name: str = "") -> None:
+        """Stretch the display along ``axis`` ("x" or "y") by ``factor``; ``None``: true scale.
+
+        For slender models (a thin wall over a long length, held item 7). The view keeps its
+        centre and refits; a note in the corner says the picture is not at true scale, naming
+        the axis by ``name`` (e.g. "r" in an axisymmetric model; default the axis itself).
+        Picking measures distances as they appear on the screen.
+        """
+        if axis not in (None, "x", "y") or factor <= 0.0:
+            raise ValueError(f"cannot stretch {axis!r} by {factor!r}")
+        self._stretch = (
+            (float(factor), 1.0) if axis == "x" else (1.0, float(factor)) if axis == "y"
+            else (1.0, 1.0)
+        )
+        sx, sy = self._stretch
+        self._ax.set_aspect(sy / sx, adjustable="datalim")
+        self._node_tree = None  # built in stretched coordinates
+        stretched = (sx, sy) != (1.0, 1.0)
+        if stretched:
+            shown = name or (axis if axis is not None else "")
+            self._stretch_note.set_text(f"Stretched {shown} × {factor:g}: not true scale")
+        self._stretch_note.set_visible(stretched)
+        self.fit()
+
+    def _stretch_xy(self) -> ndarray:
+        return np.asarray(self._stretch, dtype=float)
+
+    def stretch_note(self) -> str:
+        """The note shown in the view ("" at true scale)."""
+        return self._stretch_note.get_text() if self._stretch_note.get_visible() else ""
+
     def fit(self) -> None:
         """Zoom to show the geometry and the mesh."""
         bounds = self._content_bounds()
         if bounds is None:
             bounds = (0.0, 0.0, 1.0, 1.0)
         x0, y0, x1, y1 = bounds
-        span = max(x1 - x0, y1 - y0)
+        sx, sy = self._stretch
+        span = max(sx * (x1 - x0), sy * (y1 - y0))  # as it appears on the screen
         if span <= 0.0:
             span = 1.0
         pad = FIT_MARGIN * span
         cx, cy = 0.5 * (x0 + x1), 0.5 * (y0 + y1)
-        half_x, half_y = 0.5 * max(x1 - x0, 0.0) + pad, 0.5 * max(y1 - y0, 0.0) + pad
+        half_x = 0.5 * max(x1 - x0, 0.0) + pad / sx
+        half_y = 0.5 * max(y1 - y0, 0.0) + pad / sy
         self._set_limits((cx - half_x, cx + half_x), (cy - half_y, cy + half_y))
 
     def save_image(self, path: str, dpi: int = 200) -> None:
@@ -853,18 +906,20 @@ class MplSceneView(QObject):
         """
         bbox = self._ax.bbox
         width, height = max(float(bbox.width), 1.0), max(float(bbox.height), 1.0)
-        scale = max((xlim[1] - xlim[0]) / width, (ylim[1] - ylim[0]) / height)
+        sx, sy = self._stretch
+        scale = max(sx * (xlim[1] - xlim[0]) / width, sy * (ylim[1] - ylim[0]) / height)
         if scale <= 0.0:
             scale = 1.0 / width
         self._view = (0.5 * (xlim[0] + xlim[1]), 0.5 * (ylim[0] + ylim[1]), scale)
         self._renormalize()
 
     def _renormalize(self) -> None:
-        """Apply the stored view (centre and data units per pixel) to the axes."""
+        """Apply the stored view (centre and stretched units per pixel) to the axes."""
         cx, cy, scale = self._view
+        sx, sy = self._stretch
         bbox = self._ax.bbox
-        half_x = 0.5 * scale * max(float(bbox.width), 1.0)
-        half_y = 0.5 * scale * max(float(bbox.height), 1.0)
+        half_x = 0.5 * scale / sx * max(float(bbox.width), 1.0)
+        half_y = 0.5 * scale / sy * max(float(bbox.height), 1.0)
         self._ax.set_xlim(cx - half_x, cx + half_x)
         self._ax.set_ylim(cy - half_y, cy + half_y)
         self._invalidate()
@@ -892,6 +947,24 @@ class MplSceneView(QObject):
         for artist in self._animated():
             if artist.get_visible():
                 self._ax.draw_artist(artist)
+        shown = bool(self._sel_tags) or self._hover is not None or self._band.get_visible()
+        if shown:  # labels stay in front of the selection and hover lines (held item 1)
+            for artist in self.label_artists():
+                if artist.get_visible():
+                    self._ax.draw_artist(artist)
+
+    def label_artists(self) -> list[Artist]:
+        """The text labels of the overlay layers (load values, part names, marker notes).
+
+        They are drawn again after the animated selection and hover artists, so a
+        highlighted boundary never hides its label.
+        """
+        return [
+            artist
+            for artists in self._overlays.values()
+            for artist in artists
+            if isinstance(artist, Annotation)
+        ]
 
     def _blit(self) -> None:
         """Redraw only the overlay artists over the cached background."""
@@ -1055,7 +1128,9 @@ class MplSceneView(QObject):
         if self._mesh is None:
             return None
         if self._node_tree is None:
-            self._node_tree = cKDTree(self._mesh.nodes[:, :_PLANE])
+            # in screen-proportional coordinates, so a stretched view picks what is nearest
+            # on the screen
+            self._node_tree = cKDTree(self._mesh.nodes[:, :_PLANE] * self._stretch_xy())
         return self._node_tree
 
     def _finder(self) -> Callable[[float, float], int] | None:
@@ -1071,12 +1146,18 @@ class MplSceneView(QObject):
         """The tag of the entity under ``(x, y)`` in the current mode, or ``None``."""
         mode = self._mode
         p = (x, y)
-        tol = self._tolerance()
+        # distances are measured in screen-proportional coordinates (x, y times the
+        # stretch), so a stretched view picks what is nearest on the screen
+        s = self._stretch_xy()
+        q = (x * float(s[0]), y * float(s[1]))
+        tol = PICK_TOL_PX * self._view[2]
         if mode == "point":
-            k = picking.nearest_point(self._pt_xy, p, tol)
+            k = picking.nearest_point(self._pt_xy * s, q, tol)
             return None if k is None else self._pt_tags[k]
         if mode == "curve":
-            k = picking.nearest_segment_owner(self._seg_a, self._seg_b, self._seg_owner, p, tol)
+            k = picking.nearest_segment_owner(
+                self._seg_a * s, self._seg_b * s, self._seg_owner, q, tol
+            )
             return None if k is None else self._curve_tags[k]
         if mode == "surface":
             return self._pick_surface(p)
@@ -1084,7 +1165,7 @@ class MplSceneView(QObject):
             tree = self._node_kdtree()
             if tree is None:
                 return None
-            dist, k = tree.query(p, distance_upper_bound=tol)
+            dist, k = tree.query(q, distance_upper_bound=tol)
             return None if not np.isfinite(dist) else int(k)
         if mode == "element":
             finder, display = self._finder(), self._display
@@ -1232,6 +1313,55 @@ class MplSceneView(QObject):
         return self._mesh.nodes[:, :_PLANE][tri]
 
 
+#: Stretch factors offered in View > Stretch (held item 7).
+STRETCH_FACTORS = (2, 5, 10, 20, 50, 100)
+
+
+def attach_stretch_menu(window: MainWindow, document: Document, view: MplSceneView) -> None:
+    """Add View > Stretch: true scale, or one axis stretched by a factor (held item 7).
+
+    The actions are exclusive; their ids are ``view.stretch.none`` and
+    ``view.stretch.<x|y><factor>``. In an axisymmetric model the axes are named r and z.
+    """
+    menu = window.menus["view"].addMenu("&Stretch")
+    group = QActionGroup(menu)
+    group.setExclusive(True)
+
+    def names() -> dict[str, str]:
+        axisym = document.model.axisymmetric
+        return {"x": "r" if axisym else "x", "y": "z" if axisym else "y"}
+
+    def choose(axis: str | None, factor: float) -> None:
+        view.set_stretch(axis, factor, names().get(axis or "", ""))
+
+    true_scale = QAction("True scale", menu)
+    true_scale.setCheckable(True)
+    true_scale.setChecked(True)
+    true_scale.triggered.connect(lambda _c=False: choose(None, 1.0))
+    group.addAction(true_scale)
+    menu.addAction(true_scale)
+    window.actions["view.stretch.none"] = true_scale
+    stretch_actions: list[tuple[QAction, str, int]] = []
+    for axis in ("x", "y"):
+        menu.addSeparator()
+        for factor in STRETCH_FACTORS:
+            action = QAction(menu)
+            action.setCheckable(True)
+            action.triggered.connect(lambda _c=False, a=axis, f=factor: choose(a, f))
+            group.addAction(action)
+            menu.addAction(action)
+            window.actions[f"view.stretch.{axis}{factor}"] = action
+            stretch_actions.append((action, axis, factor))
+
+    def relabel() -> None:
+        shown = names()
+        for action, axis, factor in stretch_actions:
+            action.setText(f"Stretch {shown[axis]} × {factor}")
+
+    relabel()
+    document.model_changed.connect(relabel)
+
+
 def attach_viewport(window: MainWindow, document: Document) -> MplSceneView:
     """Install a viewport in the main window and connect it to the document.
 
@@ -1264,6 +1394,7 @@ def attach_viewport(window: MainWindow, document: Document) -> MplSceneView:
         )
 
     view.coordinates_changed.connect(show_coordinates)
+    attach_stretch_menu(window, document, view)
     document.geometry_built.connect(lambda: view.set_geometry(document.built))
     document.mesh_changed.connect(lambda: view.set_mesh(document.mesh))
     document.model_changed.connect(lambda: view.set_axis_visible(document.model.axisymmetric))

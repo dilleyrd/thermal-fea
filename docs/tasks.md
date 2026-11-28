@@ -1137,7 +1137,7 @@ tests (offscreen) of the behavior it adds, plus the whole suite.
   lines, validation messages, the Issues panel and the View menu; field symbols in panel
   labels, view labels and summaries. Then the owner checks the window on screen before
   M11.75. Depends on M11.72.
-- [ ] **M11.74 [C] View.** Held items 1, 5, 23 and 7 with C10: labels drawn in front of
+- [x] **M11.74 [C] View.** Held items 1, 5, 23 and 7 with C10: labels drawn in front of
   lines; highlights for streams (walls and path), enclosures and the Mesh panel's rows;
   a stretched view for slender models, stated in the view. Depends on M11.73.
 - [ ] **M11.75 [C] Saved result items.** Held items 17 and 3 with C3 and C4 (decision B):
