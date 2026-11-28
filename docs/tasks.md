@@ -1104,7 +1104,7 @@ tests (offscreen) of the behavior it adds, plus the whole suite.
   panel groups, checkboxes, messages, tooltips) and the documentation become "color".
   Code identifiers may follow; saved model keys do not change. Acceptance: a test that no
   user-visible string in `src/thermalfea/gui` contains "colour"; the suite passes.
-- [ ] **M11.67 [B] Guard the initial-condition results file.** Held item 6: refuse (Validate
+- [x] **M11.67 [B] Guard the initial-condition results file.** Held item 6: refuse (Validate
   issue and Solve) a transient whose initial condition reads the results file the solve
   will write, with a message naming the file and the fix (save the model under another
   name). Acceptance: a test of the refusal and of an allowed different file.

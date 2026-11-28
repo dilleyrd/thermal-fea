@@ -51,7 +51,9 @@ from __future__ import annotations
 
 import dataclasses
 import logging
+import os
 from collections.abc import Callable
+from pathlib import Path
 from typing import Any
 
 from PySide6.QtCore import QEvent, QObject, Qt, Signal
@@ -92,6 +94,41 @@ def can_solve(document: Document) -> bool:
         and document.mesh is not None
         and not document.geometry_stale
         and not document.mesh_stale
+    )
+
+
+def initial_condition_conflict(document: Document) -> str | None:
+    """Message if the solve would overwrite the results file its initial condition reads.
+
+    Parameters
+    ----------
+    document : Document
+
+    Returns
+    -------
+    str or None
+        The error message, or ``None`` when there is no conflict. A conflict is a
+        transient analysis whose initial condition is read from the very file the solve
+        writes (``api.results_path`` of the model file).
+    """
+    model = document.model
+    ic = model.initial_condition
+    if (
+        model.solution.kind != "transient"
+        or ic.kind != "from_results"
+        or not ic.results_path
+        or document.path is None
+    ):
+        return None
+    written = api.results_path(document.path)
+    if os.path.normcase(str(Path(ic.results_path).resolve())) != os.path.normcase(
+        str(Path(written).resolve())
+    ):
+        return None
+    return (
+        f"The initial condition reads '{Path(ic.results_path).name}', the results file "
+        "this solve writes; save the model under another name (File > Save As) before "
+        "solving."
     )
 
 
@@ -251,6 +288,12 @@ class SolveController(QObject):
             _log.error("Validation failed: %s", exc)
             self.window.show_error("Validation failed", str(exc))
             return None
+        conflict = initial_condition_conflict(document)
+        if conflict is not None:
+            found = [
+                *found,
+                Issue("error", "ic_results_overwrite", conflict, "model", "initial condition"),
+            ]
         self.last_issues = found
         if self.issues is not None:
             self.issues.set_issues(found)

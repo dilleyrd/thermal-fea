@@ -28,11 +28,17 @@ from thermalfea.gui.issues import IssuePanel, address_for_issue
 from thermalfea.gui.mesh_tools import attach_mesh_tools
 from thermalfea.gui.panels import attach_tree
 from thermalfea.gui.property_panels.solution import SolutionPanel
-from thermalfea.gui.solve_tools import CANCEL_ID, RUN_ID, VALIDATE_ID, attach_solve
+from thermalfea.gui.solve_tools import (
+    CANCEL_ID,
+    RUN_ID,
+    VALIDATE_ID,
+    attach_solve,
+    initial_condition_conflict,
+)
 from thermalfea.gui.worker import BackgroundTask, SerialWorker, TaskCancelled
 from thermalfea.materials.material import Material
 from thermalfea.model import bcs
-from thermalfea.model.model import Model
+from thermalfea.model.model import InitialCondition, Model
 from thermalfea.model.settings import SolutionSettings
 from thermalfea.model.validate import Issue
 from thermalfea.post.results import Results
@@ -864,3 +870,44 @@ def test_selections_changed_after_meshing_reach_the_results(window, qtbot) -> No
     sets = Results(doc.results_path).mesh.node_sets
     assert {"cooled", "south", "west"} <= set(sets) and "east" not in sets
     assert set(meshed.node_sets) == {"all", "west", "east"}  # the document's mesh is untouched
+
+
+# ------------------------------------------------- M11.67: initial condition vs results file
+def from_results_document(tmp_path, results: str, kind: str = "transient") -> Document:
+    document = make_document(kind)
+    document.path = tmp_path / "plate.tfea"
+    document.model.initial_condition = InitialCondition("from_results", results_path=results)
+    return document
+
+
+def test_ic_reading_the_results_file_of_the_solve_is_an_error(window, tmp_path) -> None:
+    written = api.results_path(tmp_path / "plate.tfea")
+    shell = make_shell(window, from_results_document(tmp_path, str(written)))
+    found = shell.solve.validate()
+    hits = [i for i in found if i.code == "ic_results_overwrite"]
+    assert len(hits) == 1 and hits[0].severity == "error"
+    assert written.name in hits[0].message
+    assert address_for_issue(shell.doc.model, hits[0]) == ("initial_condition",)
+    assert not shell.solve.solve()
+    assert not shell.solve.running
+
+
+def test_ic_reading_another_file_is_no_conflict(window, tmp_path) -> None:
+    other = tmp_path / "steady.tfea.h5"
+    shell = make_shell(window, from_results_document(tmp_path, str(other)))
+    found = shell.solve.validate()
+    assert "ic_results_overwrite" not in {i.code for i in found}
+
+
+def test_initial_condition_conflict_cases(tmp_path, monkeypatch) -> None:
+    written = str(api.results_path(tmp_path / "plate.tfea"))
+    steady_doc = from_results_document(tmp_path, written, kind="steady")
+    assert initial_condition_conflict(steady_doc) is None
+    no_path = from_results_document(tmp_path, written)
+    no_path.path = None
+    assert initial_condition_conflict(no_path) is None
+    monkeypatch.chdir(tmp_path)
+    relative = from_results_document(tmp_path, "plate.tfea.h5")
+    message = initial_condition_conflict(relative)
+    assert message is not None and "'plate.tfea.h5'" in message
+    assert "File > Save As" in message
