@@ -33,6 +33,7 @@ from PySide6.QtWidgets import (
 from thermalfea.core.errors import ModelError
 from thermalfea.core.forms import unit_label
 from thermalfea.core.units import from_si, to_si
+from thermalfea.gui.pick import PickStrip
 from thermalfea.post.plots import FIELDS, is_steady
 
 if TYPE_CHECKING:
@@ -213,6 +214,10 @@ class ResultPanel(QWidget):
         self.probe_check.toggled.connect(self._on_probe_toggled)
         self.controller.window.actions["results.probe"].toggled.connect(self._sync)
         probe_layout.addWidget(self.probe_check)
+        # the pick strip of the probe (C2): shown while it runs, Stop ends it like Esc
+        self.probe_strip = PickStrip("")
+        self.probe_strip.cancelled.connect(lambda: self.controller.set_probe(False))
+        probe_layout.addWidget(self.probe_strip)
         self.probe_label = QLabel(self.controller.probe_text)
         self.probe_label.setWordWrap(True)
         self.probe_label.setTextInteractionFlags(Qt.TextInteractionFlag.TextSelectableByMouse)
@@ -366,5 +371,9 @@ class ResultPanel(QWidget):
             self.loop_check.setChecked(controller.loop)
             self.probe_check.setChecked(controller.probe_active)
             self.probe_check.setEnabled(controller.results is not None)
+            if controller.probe_active:
+                self.probe_strip.show_pick("Click in the view to read values · Esc to stop.")
+            else:
+                self.probe_strip.hide_pick()
         finally:
             self._syncing = False

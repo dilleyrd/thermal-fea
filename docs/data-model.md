@@ -699,6 +699,20 @@ coordinates [m]: `OverlayText(x, y, text, color=None)`, `OverlayMarker(x, y, tex
 drawn above the symbols and below the selection highlight, are not part of the fit bounds, and
 are cleared by `set_geometry(None)`.
 
+What the window gained that other code may use (M11.66-M11.79; none of it changes the
+`SceneView` protocol above):
+
+- `thermalfea.gui.pick.PickManager`, reached as `manager_for(view)`: one pick at a time per
+  view. `start(owner, mode, cancel=..., confirm=..., strip=...)` cancels a running pick, sets
+  the toolbar's selection mode, and makes Esc cancel and Enter confirm; `finish(owner)` ends
+  the pick and restores the toolbar. `PickStrip` is the strip every pick shows (convention
+  C2 of `docs/gui-conventions.md`).
+- `MplSceneView.set_stretch(axis, factor, name)` stretches one axis of the display (`axis`
+  `"x"`, `"y"` or `None` for true scale) and says so in the view. It is a method of the
+  Matplotlib view only, not part of the `SceneView` protocol; View > Stretch calls it.
+- The result items (contours, vector plots, nodal histories, path plots) are saved model
+  data, specified in §3a.
+
 ```python
 # solver/linear.py
 class LinearSolver(Protocol):

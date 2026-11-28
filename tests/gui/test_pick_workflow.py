@@ -181,7 +181,14 @@ def test_the_probe_is_a_pick_that_esc_stops(steady_o) -> None:  # noqa: F811
     ctrl, view, window = steady_o.ctrl, steady_o.view, steady_o.window
     manager = manager_for(view)
     assert ctrl.probe_active and manager.is_active(ctrl)
+    from thermalfea.gui.property_panels.results import ResultPanel
+
+    panel = ResultPanel(ctrl, ctrl.shown)  # the probe's strip, like every pick (C2)
+    assert not panel.probe_strip.isHidden() and "Esc to stop" in (
+        panel.probe_strip.instruction_label.text()
+    )
     QTest.keyClick(window, Qt.Key.Key_Escape)
+    assert panel.probe_strip.isHidden()
     assert not ctrl.probe_active and not window.actions["results.probe"].isChecked()
     assert manager.active is None
 

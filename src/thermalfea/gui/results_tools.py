@@ -1086,6 +1086,7 @@ class ResultController(QObject):
             self._status(PROBE_ON_TEXT, 0)
         elif manager is None:
             self._status(PROBE_ON_TEXT, 5000)
+        self.status_changed.emit()  # the panel shows or hides the probe's strip
 
     @property
     def probe_text(self) -> str:

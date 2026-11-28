@@ -13,7 +13,8 @@ time; and how to check the result by hand.
 
 The finished model is in [models/fin-quench.tfea](models/fin-quench.tfea); open it with
 **File > Open...** to compare with your own. If you have not used the program before, do
-[Tutorial 1](t4-plate.md) first: it explains the selection procedure used below in detail.
+[Tutorial 1](t4-plate.md) first: it explains the selection fields (the crosshair icon, the
+Name box, Create and use, and the Update check mark) used below in detail.
 
 ## The problem
 
@@ -72,8 +73,9 @@ wheel if you cannot hit the edges later. A middle-button drag pans.
 
 1. Right-click **Parts** and choose **Add part**. A part "Part 1" appears and the panel
    "Part" opens. Type `Plate` in "Name" and press Enter.
-2. Open the box of the "Selection" field and choose **all**. ("all" is made by the program: it
-   is every surface of the model, here the one plate.)
+2. Open the box of the "Selection" field and choose **all · 1 part**. ("all" is made by the
+   program: it is every part of the model, here the one plate.) The box gets a colored
+   border and a check mark appears: press the check mark (**Update**) to apply the choice.
 3. "Material" already reads "Aluminum, Alloy 2024-T6", because it is the only material.
 4. In "Thickness" type `0.1` and press Enter.
 
@@ -84,20 +86,24 @@ wheel if you cannot hit the edges later. A middle-button drag pans.
 1. Right-click **Loads & Boundary Conditions** and choose **Add > Add Correlation
    Convection**. A window "New correlation convection" opens; its fields are empty and
    **OK** stays disabled until all are filled. Open the "Correlation" box and choose
-   **vplate_natural**, open the "Fluid" box and choose **Air**, type `300` in "Ambient
+   **Vertical plate (Churchill–Chu)** (the correlation `vplate_natural`), open the "Fluid" box and choose **Air**, type `300` in "Ambient
    temperature" and press **OK**. (Cancel adds nothing.) The node "Correlation Convection
    1" appears and its panel opens; the three values are already in it.
-2. In "Selection" press **Pick in viewport**, choose **Boundary** in the toolbar, click the
-   left long edge, **Ctrl**-click the right long edge ("2 boundaries picked"), type `faces`
-   in "New name", press **Apply** and switch picking off.
+2. In the "Boundary" field press the crosshair icon (**New selection**). The toolbar goes to
+   **Boundary** by itself. Click the left long edge, **Ctrl**-click the right long edge
+   ("2 boundaries picked"), type `faces` in the **Name** box and press **Create and use**.
 3. A frame below the form shows the correlation you chose: the title "Vertical plate
    (Churchill–Chu)", its formula, its validity ("all Ra") and its characteristic length
    (the height).
-4. In "Characteristic length" type `0.1` and press Enter. For a vertical plate this is its
-   height. If you leave the field empty the program takes a length from the geometry.
-5. Leave "Velocity" empty, "Wall temperature" at local (the film temperature is computed
-   at each point of the edge from the temperature there), "Multiplier" at 1 and "Extra
-   inputs" empty.
+4. Open the collapsed line **More** at the bottom of the "Convection" box. In
+   "Characteristic length" type `0.1` and press Enter. For a vertical plate this is its
+   height. If you leave the field empty (its hint reads "from the geometry") the program
+   takes a length from the geometry.
+5. Leave "Velocity" empty (its hint reads "not used"), "Extra inputs" empty, and under More
+   "Wall temperature" at "Local wall temperature" (the film temperature is computed at each
+   point of the edge from the temperature there), "Face direction" at "(automatic)" and
+   "Multiplier" at 1. The title of More counts the values you changed, for example
+   "More · 1 changed".
 
 **Preview the coefficient.** Below the form is a frame "Preview of h". It asks for the inputs
 that the condition does not already hold. Here that is only the "Surface temperature".
@@ -129,13 +135,14 @@ temperature of `400` or `320`.
    In the window "New radiation" type `0.8` in "Emissivity" and `300` in "Ambient
    temperature", then press **OK**.
 2. The two faces already have a selection, made for the convection. Do not pick them again.
-   Open the box of the "Selection" field and choose **faces**.
+   Open the box of the "Boundary" field and choose **faces · 2 boundaries**, then press the
+   check mark (**Update**) that appears.
 
 **Insulated ends.**
 
 1. Right-click **Loads & Boundary Conditions** and choose **Add > Add Adiabatic**.
-2. In "Selection" pick the bottom edge, **Ctrl**-click the top edge ("2 boundaries
-   picked"), type `ends` in "New name", press **Apply** and switch picking off.
+2. In "Boundary" press the crosshair icon, pick the bottom edge, **Ctrl**-click the top edge
+   ("2 boundaries picked"), type `ends` in the **Name** box and press **Create and use**.
 
 Three nodes now stand under **Loads & Boundary Conditions**: Correlation Convection 1,
 Radiation to Ambient 1 and Adiabatic 1. Their heat flows are reported under these names.
@@ -147,19 +154,23 @@ Radiation to Ambient 1 and Adiabatic 1. Their heat flows are reported under thes
 
 ### 6. Initial condition
 
-1. Click the node **Initial Condition**. "Kind" is **uniform**, which is what you want.
+1. Click the node **Initial Condition**. "Kind" is **Uniform**, which is what you want. The
+   panel shows only the row of that kind, "Temperature".
 2. In "Temperature" type `500` and press Enter. The default is 293.15 K, so this step is
    not optional: without it the plate would start almost at room temperature.
 
 ### 7. Transient settings
 
-1. Click the node **Analysis Settings**. In "Analysis type" choose **transient**. More
-   fields appear: end time, the time-step controls, integration and output.
-2. In "End time" type `3600` and press Enter (seconds).
-3. In "Initial time step" type `1` and press Enter. See the note below.
-4. Leave the rest: "Adaptive time step" on, "Time-step tolerance" 0.02, "Theta" 1 (backward
-   Euler, stable for any step), "Lumped capacitance" off, "Output steps" **all** (every step
-   is stored).
+1. Click the node **Analysis Settings**. In "Analysis type" choose **Transient**. More
+   boxes appear: **Time**, **Time stepping**, **Integration (advanced)** and **Results to
+   store**. (**Convergence (advanced)** is there for a steady analysis too.)
+2. In the **Time** box, in "End time", type `3600` and press Enter (seconds).
+3. In the **Time stepping** box open the collapsed line **More**. In "Initial time step"
+   type `1` and press Enter. See the note below.
+4. Leave the rest: "Adaptive time step" on, "Time-step tolerance" 0.02, "Time integration"
+   at "Backward Euler (θ = 1, default)" (stable for any step; the **Integration** box is
+   collapsed, so you do not need to open it), "Lumped capacitance" off, "Output steps" at
+   "All steps" (every step is stored).
 
 *Why set the first time step?* If the field is empty the program suggests a first step from
 the mesh and the material (0.0367 s for this plate) and starts from it. Here the start is
@@ -195,10 +206,15 @@ fail the test in most elements even when nothing jumps.
 
 **Temperature history.**
 
-1. Choose **Results > Nodal history...**. The viewport switches to node picking by itself and
-   the status bar says to pick the nodes.
-2. Click a node near the middle of the plate. Choose **Results > Nodal history...** again. A
-   chart window shows the temperature of the node against time.
+1. Choose **Results > Nodal history...**. An item "Nodal history 1" appears under
+   **Results** and its panel opens. Because no node was selected, the panel starts the
+   pick at once: the toolbar switches to **Node** by itself and a strip says "Click the
+   nodes in the view (Ctrl+click adds or removes one)."
+2. Click a node near the middle of the plate. The strip counts "1 node picked". Press **Use
+   nodes** (or Enter). The node is listed in the panel and marked in the view with its number
+   ("node" and the number). Press **Plot**. A chart window shows the temperature of the node
+   against time, with the same node number in its legend. The item is saved with the model,
+   and the chart is drawn again after a new solve (as in step 10).
 
 **Heat-flow history.** Choose **Results > Heat-flow history**. A chart window shows the heat
 flow through each condition against time. A negative value is heat leaving the plate. Two
@@ -216,7 +232,7 @@ on `net`. The imbalance is too small to see.
 The plate is not yet at the air temperature after an hour. You can go on without starting
 again.
 
-1. In **Analysis Settings** change "End time" to `7200` and press Enter. The properties
+1. In **Analysis Settings** change "End time" to `7200` and press Enter.
    Click the node "Temperature 1": its panel now says "These results are out of date: the
    model changed since the solve." That is correct: the results end at 3600 s and the model
    now asks for 7200 s.
@@ -312,10 +328,13 @@ step of the first part gave 2.821e-7, and you can read it in the message log, in
 
 - Change "Emissivity" to `0.1` (a bare, polished surface). Solve again from the start with
   **Solve > Solve** and compare the shares and the time constant with the table above.
-- Switch on "Lumped capacitance" in **Analysis Settings** and compare the temperature at
-  3600 s. Then leave "Initial time step" empty and see how the warning of step 7 changes.
-- Change "Time-step tolerance" to `0.005` and watch the number of steps and the answer.
-- Set "Output steps" to **times** and "Output times" to `600, 1800, 3600`. The results then
+- Open the collapsed **Integration (advanced)** box in **Analysis Settings** and switch on
+  "Lumped capacitance"; compare the temperature at 3600 s. Choose "Crank-Nicolson (θ =
+  1/2)" in "Time integration" and compare. Then leave "Initial time step"
+  empty (under **More** in the Time stepping box) and see how the warning of step 7 changes.
+- Change "Time-step tolerance" (under **More** in the Time stepping box) to `0.005` and watch
+  the number of steps and the answer.
+- Set "Output steps" to "At given times" and "Output times" to `600, 1800, 3600`. The results then
   hold four stored steps, and the history chart has four points.
 - Open **Tools > Units...** and show temperatures in degrees Celsius. Every panel and chart
   converts; nothing in the model changes.

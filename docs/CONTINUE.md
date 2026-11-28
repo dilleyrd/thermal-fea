@@ -281,10 +281,29 @@ After all of them: M11.6, the release review, which depends on M11.7–M11.16.
   region names, load values), M11.46 (probe markers), M11.47 (energy table) and M11.48
   (path drawing). The check passed with 2718 tests. `dist\ThermalFEA` predates them;
   rebuild with `scripts\build_exe.ps1` before using the built program.
-- **Held window fixes:** nine items are in `docs/tasks.md` under "Held: window fixes
-  from the second M8.G review": three from the owner's V-10 review and six found while
-  building the oil-cooler example (M11.65, done). Turn them into tasks only after the owner
-  finishes the V-17 review and releases them.
+- **The second M8.G review's window fixes are built (M11.66-M11.79, 2026-11-27 to
+  2026-11-28).** The held items of `docs/tasks.md` ("Held: window fixes from the second
+  M8.G review") were released by the owner and built, with the consistency rules of
+  `docs/gui-conventions.md` (C1-C13), which **govern the window**: a new panel or tool
+  follows them from the start, and where an item's text and a rule disagree, the rule wins.
+  What the window now has:
+  - readable dropdown texts; framed boxes with collapsed "More" and advanced boxes; "Time
+    integration"; "Conductivity (along axis)" / "(across axis)" with the empty mode
+    "Isotropic"; symbols in labels ("Fluid temperature T∞");
+  - the selection field (role label, dropdown with sizes, ✓ Update / ↶ Revert, ⌖ New with an
+    empty Name box and "Create and use", ✎ Edit), and value tables ("+ Add", "New…") in the
+    Mesh and Initial Condition panels;
+  - one pick workflow (`thermalfea.gui.pick`: strip, Enter and Esc, the toolbar switches
+    itself); View > Part names and View > Stretch;
+  - saved result items under Results (contours, vector plots, nodal histories, path plots)
+    with their own panels and an eye toggle; warning marks in the tree.
+  - The guide pages, the examples' guides and `docs/data-model.md` §13 were brought up to
+    date by M11.79. The oil-cooler window screenshots (`examples/oil_cooler/img/gui-*.png`)
+    have no script and still show the earlier panels.
+  - **Pick up here:** the owner's third look at the walkthrough
+    (`docs/gui-walkthrough.md`, M8.G), building V-10 and V-17 in the redesigned window;
+    then M11.6, the release review. Window findings from that look become new tasks that
+    follow `docs/gui-conventions.md`.
 - **GUI identity, M11.49–M11.64 (owner's decisions D1–D8, 2026-11-24): built.**
   - **What it is:** the owner decided on the proposal
     (https://claude.ai/artifact/RGQmdWAkgsREaaEwPiMgWq, private):

@@ -41,7 +41,10 @@ message that says so; it is never solved with that part left out.
   verification cases in the window and list every point of friction) is not done. The
   window tests run without a screen; on 2026-11-23 a scripted session on a real screen
   (V-10, V-17, V-27 and the dialogs, with screenshots) found and fixed layout and display
-  defects. Expect further findings in usability.
+  defects. The fixes from the owner's second review of the window (readable dropdowns,
+  framed panels, one pick workflow, selection fields with Update, value tables, saved result
+  items; tasks M11.66 to M11.79) are built, and the owner's third look is still to come.
+  Expect further findings in usability.
 - **Property and correlation sources.** Since 2026-11-23 every built-in property comes from
   Incropera et al., *Fundamentals of Heat and Mass Transfer*, 7th ed. (2011), Appendix A,
   except water, which comes from the NIST Chemistry WebBook. Every correlation cites its
@@ -182,12 +185,13 @@ rebuilt from the reference text on 2026-11-23 (tasks M11.37–M11.42).
 - **Animation export to GIF blocks the window** while a long animation is written.
 - **Animation export to MP4 needs ffmpeg** on the PATH (for example
   `winget install Gyan.FFmpeg`); without it, write a GIF.
-- **Probe, chart path pick and the stream "pick path points" toggle all listen to
-  viewport clicks.** The probe and the chart path pick exclude each other, but the stream
-  toggle does not switch the others off, and it leaves the selection mode at "None" when
-  turned off.
+- **Only one pick runs at a time.** Starting a pick (a selection field's New or Edit, the
+  stream path, a nodal history's nodes, a path plot's points, the Selections panel's Add and
+  Remove) cancels the running one. Enter confirms and Esc cancels.
 - **Probe reads the pixel you click,** not a coordinate. For exact values use the CSV
   export.
-- **Selections are named after the field that created them** ("Convection 1 selection"),
-  and the tree does not offer to rename a selection.
-- **Open charts are not redrawn** when new results arrive. They are marked "(out of date)".
+- **A stretched view (View > Stretch) is not true scale.** The view says so in its corner.
+  Picking follows what you see on the screen.
+- **The charts of the heat-flow history, the energy balance, nodal histories and path plots
+  are drawn again** when new results arrive. Other open charts are not redrawn; they are
+  marked "(out of date)".

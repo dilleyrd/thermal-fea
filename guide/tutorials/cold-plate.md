@@ -14,7 +14,8 @@ to check the energy balance by hand; and how the answer changes with the mass fl
 
 The finished model is in [models/cold-plate.tfea](models/cold-plate.tfea); open it with
 **File > Open...** to compare with your own. If you have not used the program before, do
-[Tutorial 1](t4-plate.md) first: it explains the selection procedure used below in detail.
+[Tutorial 1](t4-plate.md) first: it explains the selection fields (the crosshair icon, the
+Name box, Create and use, and the Update check mark) used below in detail.
 
 ## The problem
 
@@ -87,8 +88,8 @@ wheel if you cannot hit the edges later. A middle-button drag pans.
 
 1. Right-click **Parts** and choose **Add part**. A part "Part 1" appears and the panel
    "Part" opens. Type `Plate` in "Name" and press Enter.
-2. Open the box of the "Selection" field and choose **all** (every surface of the model, here
-   the one plate).
+2. Open the box of the "Selection" field and choose **all · 1 part** (every part of the
+   model, here the one plate), then press the check mark (**Update**) that appears.
 3. "Material" already reads "Aluminum, Alloy 2024-T6". In "Thickness" type `0.05` and press Enter.
 
 ### 4. Enter the loads
@@ -97,16 +98,16 @@ wheel if you cannot hit the edges later. A middle-button drag pans.
 
 1. Right-click **Loads & Boundary Conditions** and choose **Add > Add Heat Flux**. The node
    "Heat Flux 1" appears and its panel opens.
-2. In "Selection" press **Pick in viewport**, choose **Boundary** in the toolbar, click the
-   top edge ("1 boundary picked"), type `top` in "New name", press **Apply** and switch
-   picking off.
-3. In "Heat flux" type `20000` and press Enter (W/m²). A positive flux heats the plate.
+2. In the "Boundary" field press the crosshair icon (**New selection**); the toolbar goes
+   to **Boundary** by itself. Click the top edge ("1 boundary picked"), type `top` in the
+   **Name** box and press **Create and use**.
+3. In "Heat flux q" type `20000` and press Enter (W/m²). A positive flux heats the plate.
 
 **Insulated ends.**
 
 1. Right-click **Loads & Boundary Conditions** and choose **Add > Add Adiabatic**.
-2. In "Selection" pick the left edge, **Ctrl**-click the right edge ("2 boundaries picked"),
-   type `ends` in "New name", press **Apply** and switch picking off.
+2. In "Boundary" press the crosshair icon, pick the left edge, **Ctrl**-click the right edge
+   ("2 boundaries picked"), type `ends` in the **Name** box and press **Create and use**.
 
 The bottom edge gets no load. It belongs to the stream, which you add next.
 
@@ -123,35 +124,42 @@ The bottom edge gets no load. It belongs to the stream, which you add next.
    | Fluid | Water |
    | Flow area [m^2] | `1e-4` |
    | Wetted perimeter [m] | `0.104` |
-   | Cross-section | parallel_plates_one_side |
+   | Cross-section | Parallel plates, one side insulated (`parallel_plates_one_side`) |
    | Inlet temperature [K] | `300` |
 
 3. Press **Create**. If a field is empty, the window stays open and says which one ("enter the
    flow area", "choose a fluid", ...). When it closes, a node **Stream 1** appears under
-   **Streams** (under **Flow**, which now replaces the dimmed line) and its panel "Stream: Stream 1" opens. The mode is `in_plane`: the water
-   flows along a path in the plane of the drawing. (The other mode, `through_plane`, is for
-   flow perpendicular to the drawing, such as a cooling hole seen in cross-section.)
+   **Streams** (under **Flow**, which now replaces the dimmed line) and its panel "Stream: Stream 1" opens. The mode is "Along a path in the plane": the
+   water flows along a path in the plane of the drawing. (The other mode, "Through the
+   plane", is for flow perpendicular to the drawing, such as a cooling hole seen in
+   cross-section.)
 
 The dialog only asks for the values every stream needs. The rest are in the panel, which you
 now complete.
 
 ### 6. Complete the stream
 
-1. **Walls.** In the "Walls" field press **Pick in viewport**, choose **Boundary** in the toolbar,
-   click the bottom edge ("1 boundary picked"), type `wall` in "New name", press **Apply** and
-   switch picking off. The field now lists "wall". This is the edge the water cools.
-2. **Path.** In "Path" type `0, 0; 0.2, 0` and press Enter. The format is `x, y; x, y`, one
-   pair per point, in metres. The label under the "Path" buttons reads "2 path points". (You
-   may instead press **Pick path points** and click the inlet and then the outlet in the
-   viewport. The clicks are not exact, so typing is better here.) The path runs along the wall
-   from the inlet end to the outlet end.
-3. **Mass flow.** The box "Mass flow" shows the mode None, because no mass flow has been set
-   yet. Type `0.02` and press Enter (kg/s). (Leave the field empty only when
-   a flow network supplies the flow.)
-4. Leave the rest as it is: "Wall roughness" 0 (smooth), "Number of cells" empty (one fluid
-   cell per wall edge along the path, which is 40 here), "Nusselt option" **auto** (laminar
-   table, Gnielinski for turbulent flow), "Coefficient multiplier" 1 and "Coefficient override"
-   empty.
+1. **Walls.** "Walls" is a list of boundary selections; it starts as "(none)". In its row
+   press the crosshair icon (**New selection**); the toolbar goes to **Boundary** by itself.
+   Click the bottom edge ("1 boundary picked"), type `wall` in the **Name** box and press
+   **Create and add**. The list now shows "wall · 1 boundary", with a pencil and a cross. This
+   is the edge the water cools.
+2. **Path.** In the **Path** box, in "Path", type `0, 0; 0.2, 0` and press Enter. The format
+   is `x, y; x, y`, one pair per point, in metres. The label under the "Path" buttons reads
+   "2 path points". (You may instead press **Pick path**, click the inlet and then the
+   outlet in the viewport, and press **Use path**. The points are drawn as numbered markers.
+   The clicks are not exact, so typing is better here.) The path runs along the wall from
+   the inlet end to the outlet end.
+3. **Mass flow.** The box "Mass flow" starts on its empty mode, "From network" (its hint says
+   the flow then comes from a network branch), and its number box is disabled. Choose
+   **Constant** in the mode box, then type `0.02` and press Enter (kg/s). (Leave the mode on
+   "From network" only when a flow network supplies the flow.)
+4. Leave the rest as it is. The **Cross-section** box already holds what you entered. In the
+   **Heat-transfer coefficient** box, which is collapsed, open **More** to see "Wall
+   roughness" 0 (smooth), "Number of cells" empty (hint "one per wall edge": one fluid cell
+   per wall edge along the path, which is 40 here), "Nusselt option" **Automatic**
+   (laminar table, Gnielinski for turbulent flow), "Coefficient multiplier" 1 and
+   "Coefficient override" empty (hint "use the correlation").
 
 ### 7. Mesh and solve
 
@@ -275,11 +283,12 @@ What changes is how warm the water gets and how hot the plate runs.
 
 ## Things to try
 
-- Change "Cross-section" in the stream panel to `parallel_plates` (heated on both sides) and
-  see how the laminar h changes: the table gives 7.54 against 4.86.
-- Give "Wall roughness" a value and compare the pressure drop at 0.1 kg/s.
-- Type a value in "Coefficient override" to replace the correlation with a fixed h, and
-  compare the plate temperature with the correlation result.
+- Change "Cross-section" in the stream panel to "Parallel plates, both heated"
+  (`parallel_plates`) and see how the laminar h changes: the table gives 7.54 against 4.86.
+- Under **More** in the Heat-transfer coefficient box, give "Wall roughness" a value and
+  compare the pressure drop at 0.1 kg/s.
+- Type a value in "Coefficient override" (under the same **More**) to replace the correlation
+  with a fixed h, and compare the plate temperature with the correlation result.
 - Set "Number of cells" to `10` and compare the outlet temperature and the plate temperature
   with the 40-cell result.
 

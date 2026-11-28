@@ -128,6 +128,19 @@ def test_the_chart_is_drawn_from_the_item(shell) -> None:
     assert not chart.out_of_date
 
 
+def test_closing_the_chart_then_editing_is_safe(shell, qtbot) -> None:
+    """A closed (deleted) chart window is forgotten, not touched (found in M11.79)."""
+    history = shell.history
+    mesh = history.mesh()
+    name = history.add([tuple(mesh.nodes[2, :2])])
+    chart = history.plot(name)
+    chart.close()
+    qtbot.wait(10)  # let the deleteLater run
+    history.set_points(name, [tuple(mesh.nodes[4, :2])])  # an edit after the close
+    again = history.plot(name)
+    assert again is not None and again is not chart
+
+
 def test_the_results_menu_adds_an_item_and_starts_picking(shell) -> None:
     charts, history = shell.charts, shell.history
     assert charts.request_history() is None

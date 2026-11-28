@@ -198,14 +198,23 @@ State these when you show the results:
 These steps were run in the program's window, with the screenshots taken along the way, and
 the model they build gives the same results as the script (oil outlet 321.781 K, water
 outlet 299.517 K, 119.537 W). Start the program from the project folder with
-`.venv\Scripts\python.exe -m thermalfea.gui.app`. Widen the Properties dock (drag its
-right edge): the stream panel is long and its picking row needs the width.
+`.venv\Scripts\python.exe -m thermalfea.gui.app`. Every pick below works the same way: press
+the crosshair icon of a selection field, click in the view (Ctrl-click for more), type a
+name and press **Create and use** (**Create and add** in a list); Enter confirms and Esc
+cancels.
+
+*The screenshots below were taken with the window before its second review (2026-11). The
+panels have been redesigned since, so wording and layout in the pictures of panels differ
+from the steps; the steps are current.*
 
 **About the screenshots of the tube.** The wall is 1.245 mm thick and 2 m long. Zoomed to
 true scale it is either invisible (the whole length) or a few elements of one color (a few
-centimetres). The views of the whole tube below were therefore taken with the radial
-direction stretched, which the window cannot do; in the window, zoom with the mouse wheel
-and pan with the middle button.
+centimetres). In the window, choose **View > Stretch > Stretch r × 100** (in an axisymmetric
+model the axes are called r and z; use the largest factor that suits your screen) to see the
+whole tube; the view says "Stretched r × 100: not true scale" in its corner. Zoom with the
+mouse wheel and pan with the middle button as usual, and choose **View > Stretch > True
+scale** to go back. The views of the whole tube below were taken with the radial direction
+stretched through code, before the window had this menu, so they do not carry that note.
 
 ### 7.1 An axisymmetric model
 
@@ -238,29 +247,32 @@ the annulus. So open **both** dialogs before creating either stream:
 1. Right-click **Contacts · Flow · Enclosures** > **Add stream**, then do it again. Two
    "New stream" dialogs are open.
 2. In the first, for the oil: Fluid **Engine Oil (Unused)**, Flow area [m^2] `8.1886e-05`,
-   Wetted perimeter [m] `0.032078`, Cross-section **circular**, Inlet temperature [K] `350`.
+   Wetted perimeter [m] `0.032078`, Cross-section **Circular**, Inlet temperature [K] `350`.
    Press **Create**.
 3. In the second, for the water: Fluid **Water**, Flow area `1.8748e-04`, Wetted perimeter
-   `0.10273`, Cross-section **annulus_inner**, Diameter ratio D_i/D_o (annulus only)
-   `0.635`, Inlet temperature `290`. Press **Create**.
+   `0.10273`, Cross-section **Annulus, inner surface heated** (`annulus_inner`), Diameter
+   ratio D_i/D_o (annulus only) `0.635`, Inlet temperature `290`. Press **Create**.
 
 ![New stream: oil](img/gui-04a-new-stream-oil.png) ![New stream: water](img/gui-04b-new-stream-water.png)
 
 The streams are called "Stream 1" and "Stream 2" under Flow > Streams. Rename them (right-
 click > Rename) to `Oil` and `Water`. Then, in each stream's panel:
 
-4. **Walls:** press **Pick in viewport**, choose **Boundary** in the toolbar, click the
-   inner face of the wall (the left edge, r = D_i/2) for the oil, type `oil wall` in "New
-   name" and press **Apply**; switch picking off. For the water, pick the outer face (the
-   right edge, r = D_o/2) and name it `water wall`.
-5. **Mass flow:** its mode box starts at "None". Set it to **Constant** first, then type
-   `0.002` for the oil and `0.003` for the water and press Enter. (A number typed while the
-   mode is "None" is not used, and Validate then reports the stream as having no mass
-   flow.)
-6. **Path:** the stream's path from its inlet to its outlet, as `x, y` pairs separated by
-   semicolons. Oil: `0.0051054, 0; 0.0051054, 2` (up the bore). Water:
+4. **Walls:** in the "Fluid and flow" box, in the "Walls" row, press the crosshair icon
+   (the toolbar goes to **Boundary** by itself), click the inner face of the wall (the left
+   edge, r = D_i/2) for the oil, type `oil wall` in the **Name** box and press **Create and
+   add**. For the water, pick the outer face (the right edge, r = D_o/2) and name it
+   `water wall`. The selected wall is highlighted in the view.
+5. **Mass flow:** its mode box starts on the empty mode "From network" and the number box is
+   disabled. Set the mode to **Constant** first, then type `0.002` for the oil and `0.003`
+   for the water and press Enter. (Leaving "From network" in place makes Validate report the
+   stream as having no mass flow, because the model has no network.)
+6. **Path:** in the "Path" box, the stream's path from its inlet to its outlet, as `x, y`
+   pairs separated by semicolons. Oil: `0.0051054, 0; 0.0051054, 2` (up the bore). Water:
    `0.00635, 2; 0.00635, 0` (down the annulus: this is what makes it counterflow).
-7. Leave "Mode" at **in_plane** and "Number of cells" empty (one cell per wall element).
+7. Leave "Mode" at **Along a path in the plane** and, in the collapsed **More** line of the
+   "Heat-transfer coefficient" box, "Number of cells" empty (one cell per wall element; its
+   hint reads "one per wall edge").
 
 ![Oil stream panel](img/gui-05-stream-oil.png)
 
@@ -271,14 +283,18 @@ click > Rename) to `Oil` and `Water`. Then, in each stream's panel:
 ### 7.4 Insulated ends, material and part
 
 1. **Tube ends:** right-click **Loads & Boundary Conditions** > **Add** > **Add
-   Adiabatic**. Pick the bottom end edge, zoom to the top and Ctrl-click the top end edge
-   ("2 boundaries picked"), name them `tube ends`, **Apply**. The ends would be insulated
-   anyway; the named selection is needed for the mesh.
+   Adiabatic**. In its "Boundary" field press the crosshair icon, pick the bottom end edge,
+   zoom to the top and Ctrl-click the top end edge ("2 boundaries picked"), name them
+   `tube ends` and press **Create and use**. The ends would be insulated anyway; the named
+   selection is needed for the mesh.
 2. **Material:** right-click **Materials** > **Add material**. In the panel's "From library"
-   box type `Copper (pure)` and press **Use library values**. The tree's summary reads
+   box type `Copper (pure)` and press **Use library values**. The panel's conductivity
+   fields become "Conductivity (along axis)" 401 W/(m K) and "Conductivity (across axis)"
+   at its mode "Isotropic" (copper is isotropic). The tree's summary reads
    "Copper (pure) · library".
-3. **Part:** right-click **Parts** > **Add part**. Name `Tube`. In its Selection field pick
-   with **Part** mode inside the wall, name it `tube`, **Apply**. Material "Material 1".
+3. **Part:** right-click **Parts** > **Add part**. Name `Tube`. In its Selection field press
+   the crosshair icon (the toolbar goes to **Part** by itself), click inside the wall, name
+   the selection `tube` and press **Create and use**. Material "Material 1".
 
 ![Material from the library](img/gui-07-material.png)
 
@@ -286,9 +302,18 @@ click > Rename) to `Oil` and `Water`. Then, in each stream's panel:
 
 ### 7.5 Mesh
 
-Click **Mesh**. "Element shape" **quad**, "Global element size" `0.01`, "Boundary
-divisions" `oil wall=200, water wall=200, tube ends=4`, "Structured parts": choose
-**tube**. Press **Generate mesh**: "Mesh generated: 1005 nodes, 800 elements" (200 along the
+Click **Mesh**. In the **Element type** box set "Element shape" to **Quadrilaterals
+(quad-dominant)**. In the **Element size** box set "Global element size" `0.01`. In the
+**Structured mesh** box:
+
+- "Structured parts": open the box "(add a selection…)", choose **tube · 1 part** and press
+  the check mark (**Update**) that appears.
+- "Boundary divisions" is a table. Press **+ Add**, choose **oil wall · 1 boundary** in the
+  new row, type `200` in "Elements" and press Enter. Add two more rows: **water wall**
+  with `200` and **tube ends** with `4`. (A row's selection is highlighted in the view
+  while you edit it.)
+
+Press **Generate mesh**: "Mesh generated: 1005 nodes, 800 elements" (200 along the
 tube, 4 across the wall).
 
 ![Mesh](img/gui-09-mesh.png)
@@ -327,12 +352,14 @@ water s = L − z; the combined plot of section 3 puts both on z.*
 1. **File > Save As...** `oil-cooler-startup.tfea`. Do this first: a model's solve writes
    its results to `<model file>.h5`, so the start-up must not overwrite the steady results
    it starts from.
-2. **Analysis Settings:** "Analysis type" **transient**, "End time" `120`, "Initial time
-   step" `0.02`, "Largest time step" `0.25`, "Output steps" **every_n**, "Store every n-th
-   step" `1`.
-3. **Initial Condition:** "Kind" **from_results**, "Results file": the full path of
-   `oil-cooler.tfea.h5` from 7.6. (The panel still shows the uniform temperature fields;
-   they are not used.)
+2. **Analysis Settings:** "Analysis type" **Transient**. In the **Time** box "End time"
+   `120`. In the **Time stepping** box "Largest time step" `0.25`, and under its **More**
+   line "Initial time step" `0.02`. In the **Results to store** box "Output steps" **Every
+   n-th step**, "Store every n-th step" `1`.
+3. **Initial Condition:** "Kind" **From a results file**. The panel then shows only
+   "Results file": press the folder icon beside the box and choose `oil-cooler.tfea.h5`
+   from 7.6 (or type its full path). Validate refuses the model if this is the file the
+   start-up itself would write.
 4. **Oil stream, Inlet temperature:** mode **Table**, "As a function of" **time (t)**,
    **hold ends**, rows `0, 350` and `1, 370` (the rise over 1 s, then held).
 5. **Solve > Solve**: "Solve finished at t = 120 s: 485 stored step(s)".
@@ -348,8 +375,11 @@ water s = L − z; the combined plot of section 3 puts both on z.*
 *The copper at the end of the start-up (radial direction stretched): 34.6 °C (307.77 K) at
 the oil inlet end.*
 
-6. **Results > Nodal history**: pick a node at mid-length to plot its temperature against
-   time; **Results > Energy balance** lists the heat flows of every step.
+6. **Results > Nodal history...** adds an item "Nodal history 1" and, because no node is
+   selected, starts the pick: click a node at mid-length (the toolbar goes to **Node** by
+   itself), press **Use nodes** and then **Plot** to see its temperature against time. The
+   node is marked in the view with its number, which the chart's legend repeats.
+   **Results > Energy balance** lists the heat flows of every step.
 
 ![Nodal history at mid-length](img/gui-18-nodal-history.png)
 

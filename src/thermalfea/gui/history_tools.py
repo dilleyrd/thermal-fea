@@ -202,7 +202,11 @@ class HistoryController(QObject):
             self.objects_changed.emit()
         self._draw_markers()
         for name, chart in list(self._charts.items()):
-            if self.get(name) is None or not chart.isVisible():
+            try:
+                gone = self.get(name) is None or not chart.isVisible()
+            except RuntimeError:  # the chart window was closed and deleted
+                gone = True
+            if gone:
                 self._charts.pop(name, None)
             elif chart.redraw is not None:
                 try:
@@ -234,7 +238,12 @@ class HistoryController(QObject):
         if item is None or not item.points or self.results_controller.results is None:
             return None
         chart = self._charts.get(name)
-        if chart is not None and chart.isVisible() and chart.redraw is not None:
+        try:
+            alive = chart is not None and chart.isVisible()
+        except RuntimeError:  # closed and deleted
+            alive = False
+            self._charts.pop(name, None)
+        if alive and chart.redraw is not None:
             chart.redraw()
             chart.raise_()
             return chart

@@ -60,11 +60,16 @@ Three habits save trouble:
 - A field that holds a physical function (conductivity, temperature, heat-transfer
   coefficient, ...) has a mode box with Constant, Table and Expression. Leave it on
   **Constant** and type the number.
-- Edges and faces are chosen from the panel of the object that needs them: press **Pick in
-  viewport** in the **Selection** field, choose the matching toolbar mode (**Boundary** for
-  edges, **Part** for faces), click, type a name for the selection in the "New name" box
-  (it is pre-filled with a suggestion), press **Apply**, then press **Pick in viewport**
-  again to switch picking off. Hold **Ctrl** to add a second item to the selection.
+- Edges and faces are chosen from the panel of the object that needs them, in its selection
+  field (a row labeled "Boundary" for edges, "Selection" in a part's panel for faces). Press
+  the crosshair icon (**New selection**); the toolbar switches to the right mode by itself
+  and a yellow strip tells you what to click. Click, hold **Ctrl** to add more items, type a
+  name for the selection in the **Name** box (it starts empty) and press **Create and use**
+  (or Enter). **Esc** cancels the pick. The selection is created and used by the object in
+  one step.
+- A choice made in the dropdown of a selection field, by contrast, waits: the dropdown gets
+  a colored border and a check mark (**Update**) and an arrow (**Revert**) appear. Press
+  the check mark to apply the choice.
 - The tree has a second column that summarises each item, for example the conductivity of a
   material or the number of nodes of the mesh. **View > Summary column** hides it.
 
@@ -91,20 +96,23 @@ curves.
 1. Right-click **Materials** and choose **Add material**. A node "Material 1" appears and its
    panel opens. A new material starts with every property at 0, which means "not set
    yet".
-2. In "Thermal conductivity" (mode Constant) type `52` and press Enter. Density and specific
-   heat do not affect a steady answer; they may stay at 0.
+2. In "Conductivity (along axis)" (mode Constant) type `52` and press Enter. Leave
+   "Conductivity (across axis)" on its mode "Isotropic": the plate has the same conductivity
+   in every direction. Density and specific heat do not affect a steady answer; they may
+   stay at 0. (Before you type the conductivity, the tree marks the material with a small
+   warning sign; hover over it to read why.)
 
 ### 3. Assign it to the plate
 
 1. Right-click **Parts** and choose **Add part**. A part "Part 1" appears under **Parts** and
-   its panel ("Part") opens, with the fields "Name", "Selection", "Material", "Thickness" and
-   "Material angle". Its "Material" box already shows "Material 1". Type `Plate` in "Name"
-   and press Enter.
-2. In the "Selection" field press **Pick in viewport**, choose **Part** in the toolbar,
-   click inside the lower rectangle, **Ctrl**-click inside the upper one (the status line
-   under the buttons says "2 parts picked"). Type `plate` in "New name", press **Apply**, and
-   switch picking off.
-3. Leave "Thickness" at 1 and "Material angle" at 0.
+   its panel ("Part") opens, with the fields "Name", "Selection", "Material" and
+   "Thickness". Its "Material" box already shows "Material 1". Type `Plate` in "Name" and
+   press Enter.
+2. In the "Selection" field press the crosshair icon (**New selection**). The toolbar
+   switches to **Part** by itself. Click inside the lower rectangle, **Ctrl**-click inside
+   the upper one (the strip says "2 parts picked"). Type `plate` in the **Name** box and
+   press **Create and use**. The field now reads "plate · 2 parts".
+3. Leave "Thickness" at 1. ("Material angle" is hidden: the material is isotropic.)
 
 A part ties a material to some faces and, in a planar model, gives the depth of the plate
 perpendicular to the drawing. Every heat flow the program reports is for that depth: here, per
@@ -118,27 +126,28 @@ There are three. Each is added from the node **Loads & Boundary Conditions**.
 
 1. Right-click **Loads & Boundary Conditions** and choose **Add > Add Fixed Temperature**. A
    node "Fixed Temperature 1" appears and its panel opens.
-2. In "Selection" press **Pick in viewport**. The panel starts in Point mode, because a fixed
-   temperature may also be put on points, so choose **Boundary** in the toolbar. Click the
-   bottom edge of the plate. The status line says "1 boundary picked". Type `base` in "New
-   name" and press **Apply**. The field now reads "base". Switch picking off.
-3. In "Temperature" type `373.15` and press Enter (the unit shown is K).
+2. In the field labeled "Boundary or point" (a fixed temperature may also be put on points)
+   press the crosshair icon (**New selection**). The toolbar switches to **Boundary** by
+   itself. Click the bottom edge of the plate. The strip says "1 boundary picked". Type
+   `base` in the **Name** box and press **Create and use**. The field now reads
+   "base · 1 boundary".
+3. In "Temperature T" type `373.15` and press Enter (the unit shown is K).
 
 **Convection on the right and top edges.**
 
 1. Right-click **Loads & Boundary Conditions** and choose **Add > Add Convection**.
-2. In "Selection" press **Pick in viewport** and choose **Boundary**. The right edge is two
+2. In the field labeled "Boundary" press the crosshair icon. The right edge is two
    boundaries (it is split at y = 0.2). Click the lower right edge, then hold **Ctrl** and
-   click the upper right edge and the top edge. The status line says "3 boundaries picked".
-   Type `cooled` in "New name", press **Apply** and switch picking off.
-3. In "Heat-transfer coefficient" type `750` and press Enter (W/(m² K)).
-4. In "Fluid temperature" type `273.15` and press Enter (K).
+   click the upper right edge and the top edge. The strip says "3 boundaries picked".
+   Type `cooled` in the **Name** box and press **Create and use**.
+3. In "Heat-transfer coefficient h" type `750` and press Enter (W/(m² K)).
+4. In "Fluid temperature T∞" type `273.15` and press Enter (K).
 
 **Adiabatic on the left edge.**
 
 1. Right-click **Loads & Boundary Conditions** and choose **Add > Add Adiabatic**.
-2. In "Selection" pick the lower left edge, **Ctrl**-click the upper left edge ("2 boundaries
-   picked"), type `left side` in "New name", press **Apply**, and switch picking off.
+2. In "Boundary" pick the lower left edge, **Ctrl**-click the upper left edge ("2 boundaries
+   picked"), type `left side` in the **Name** box and press **Create and use**.
 
 An adiabatic edge changes nothing: every edge without a condition is already insulated. The
 condition is there so that the model says what you meant, and so that the edge has a name.
@@ -151,8 +160,9 @@ Convection 1".
 ### 5. Mesh
 
 1. Click the node **Mesh**. The panel "Mesh" opens.
-2. In "Global element size" type `0.025` and press Enter. Leave "Element order" at 1 and
-   "Element shape" at tri: linear triangles.
+2. In "Global element size" (the **Element size** box) type `0.025` and press Enter. Leave
+   "Element order" at "Linear (1)" and "Element shape" at "Triangles" (the **Element type**
+   box): linear triangles. The boxes below (Structured mesh, Refinements) stay empty.
 3. Press **Generate mesh** (or choose **Mesh > Generate mesh**). The status bar reports
    "Mesh generated: 1210 nodes, 2290 elements", and the mesh panel lists the same counts. The
    mesh is drawn in the viewport.
@@ -226,7 +236,7 @@ temperature at (0.6, 0.2) from the CSV each time.
 | 0.025 | 1210 | 2290 | 18.21 | 18.25 |
 | 0.0125 | 4629 | 9000 | 18.24 | 18.25 |
 
-(The quadratic column needs "Element order" 2; the node counts for those meshes are 337,
+(The quadratic column needs "Element order" "Quadratic (2)"; the node counts for those meshes are 337,
 1245, 4709 and 18 257.)
 
 ![Temperature at (0.6, 0.2) against element size](img/t4-convergence.png)
@@ -250,15 +260,17 @@ has about 2300 triangles and no local refinement.
 
 ## Things to try
 
-- Select the Convection 1 node and change "Heat-transfer coefficient" to `800`. The tree
+- Select the Convection 1 node and change "Heat-transfer coefficient h" to `800`. The tree
   shows "contour · out of date" for the result, the viewport title ends " · out of date", and
   the results panel shows "These results are out of date: the model changed since the
   solve." with the change listed beneath it. The mesh is still valid, so you can solve again
   at once. **Edit > Undo** returns the value to 750 and the results are current again.
 - In **Boundary** mode, hover over an edge of the plate: a tooltip names the boundary, its
   selections and the loads on it. Click it once to see the same report in the status bar.
-- Set "Element shape" to quad and compare. Set "Element order" to 2 and compare with the
-  table.
+- Set "Element shape" to "Quadrilaterals (quad-dominant)" and compare. Set "Element order"
+  to "Quadratic (2)" and compare with the table.
+- Choose **View > Part names** to write the part's name in the view, and **View > Load
+  values** to switch the load labels off and on.
 - Save the model (**File > Save As...**), choose **File > New**, then **File > Open...** the
   file. The geometry is rebuilt by itself. The results saved beside the model are attached
   again after you press **Generate mesh**.
