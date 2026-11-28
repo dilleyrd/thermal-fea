@@ -65,8 +65,9 @@ SOLUTION_FORM = FormSpec(
             tooltip="Limit of the temperature change in one step; empty for none.",
         ),  # fmt: skip
         FieldSpec(
-            "theta", "Theta", "float",
-            tooltip="Time integration: 1 backward Euler, 0.5 Crank-Nicolson (0 < theta <= 1).",
+            "theta", "Time integration", "float",
+            tooltip="Theta of the time integration: 1 backward Euler, 2/3 Galerkin, "
+            "0.5 Crank-Nicolson (0 < theta <= 1).",
         ),  # fmt: skip
         FieldSpec(
             "lumped_capacitance", "Lumped capacitance", "bool",

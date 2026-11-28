@@ -8,6 +8,11 @@ for the chosen analysis kind:
 * transient: also end time, time stepping, integration and output; "store every n-th step"
   only when the output is ``every_n`` and the output times only when it is ``times``.
 
+"Time integration" is a choice of the named methods of :data:`THETA_METHODS` (Theory §6),
+not a number box; the model still stores the number ``theta``. A stored value that is none
+of them (a script may set any 0 < theta <= 1) is shown as a fourth entry "Custom (θ = …)"
+and kept unchanged until another method is chosen.
+
 Below the form are the "Validate" and "Solve" buttons. They call the solve controller
 (``validate()`` and ``solve()``), so the panel needs no solver knowledge. "Solve" is enabled
 when the controller says a solve can start.
@@ -15,11 +20,13 @@ when the controller says a solve can start.
 
 from __future__ import annotations
 
+import math
 from typing import Any
 
+from PySide6.QtCore import Qt
 from PySide6.QtWidgets import QComboBox, QFormLayout, QHBoxLayout, QLabel, QPushButton, QWidget
 
-from thermalfea.core.forms import FormSpec
+from thermalfea.core.forms import FieldSpec, FormSpec
 from thermalfea.gui.addressing import Address
 from thermalfea.gui.document import Document
 from thermalfea.gui.property_panels.form import FormPanel
@@ -32,6 +39,25 @@ from thermalfea.model.solution_forms import (
 
 #: ``(text, Model.analysis value)`` of the "Geometry type" choice.
 GEOMETRY_TYPES = (("Planar", "planar"), ("Axisymmetric", "axisymmetric"))
+
+#: ``(text, theta, tooltip)`` of the "Time integration" choice (Theory §6).
+THETA_METHODS = (
+    ("Backward Euler (θ = 1, default)", 1.0,
+     "Always stable and never oscillates; first-order accurate in time."),
+    ("Galerkin (θ = 2/3)", 2.0 / 3.0,
+     "Between backward Euler and Crank-Nicolson."),
+    ("Crank-Nicolson (θ = 1/2)", 0.5,
+     "Second-order accurate in time; may oscillate after a sudden change (a thermal shock)."),
+)  # fmt: skip
+_THETA = "theta"
+
+
+def theta_method_index(theta: float) -> int | None:
+    """Index in :data:`THETA_METHODS` of the method with this theta, or ``None``."""
+    for i, (_text, value, _tip) in enumerate(THETA_METHODS):
+        if math.isclose(theta, value, rel_tol=0.0, abs_tol=1e-12):
+            return i
+    return None
 
 
 class SolutionPanel(FormPanel):
@@ -105,6 +131,39 @@ class SolutionPanel(FormPanel):
         self._update_visibility()
         self._sync_geometry_type()
         self._refresh_buttons()
+
+    # ------------------------------------------------------------- time integration
+    def _make_editor(self, f: FieldSpec) -> tuple[QWidget, QLabel | None]:
+        if f.name != _THETA:
+            return super()._make_editor(f)
+        combo = QComboBox()
+        combo.activated.connect(lambda i: self._on_theta(i))
+        return combo, None
+
+    def _load(self, f: FieldSpec, value: Any) -> None:
+        if f.name != _THETA:
+            super()._load(f, value)
+            return
+        combo = self.editors[_THETA]
+        assert isinstance(combo, QComboBox)
+        combo.blockSignals(True)
+        combo.clear()
+        for i, (text, theta, tip) in enumerate(THETA_METHODS):
+            combo.addItem(text, theta)
+            combo.setItemData(i, tip, Qt.ItemDataRole.ToolTipRole)
+        index = theta_method_index(float(value))
+        if index is None:  # a value set elsewhere stays visible, never silently replaced
+            combo.addItem(f"Custom (θ = {float(value):g})", float(value))
+            combo.setItemData(combo.count() - 1, "Set outside the window; kept unchanged.",
+                              Qt.ItemDataRole.ToolTipRole)  # fmt: skip
+            index = combo.count() - 1
+        combo.setCurrentIndex(index)
+        combo.blockSignals(False)
+
+    def _on_theta(self, index: int) -> None:
+        combo = self.editors[_THETA]
+        assert isinstance(combo, QComboBox)
+        self._apply(_THETA, float(combo.itemData(index)))
 
     # ------------------------------------------------------------------ refresh
     def refresh(self) -> None:

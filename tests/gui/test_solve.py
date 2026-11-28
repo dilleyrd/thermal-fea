@@ -14,7 +14,7 @@ from types import SimpleNamespace
 from typing import Any
 
 import pytest
-from PySide6.QtCore import QTimer
+from PySide6.QtCore import Qt, QTimer
 from PySide6.QtWidgets import QPushButton
 
 from thermalfea import api
@@ -143,13 +143,39 @@ def test_panel_covers_every_field_and_hides_transient_fields_when_steady(steady)
     assert not panel.is_field_shown("end_time")
 
 
+def test_time_integration_is_a_choice_of_named_methods(steady) -> None:
+    from thermalfea.gui.property_panels.solution import THETA_METHODS
+
+    panel = open_panel(steady)
+    combo = panel.editors["theta"]
+    texts = [combo.itemText(i) for i in range(combo.count())]
+    assert texts == [text for text, _theta, _tip in THETA_METHODS]
+    assert texts[combo.currentIndex()].startswith("Backward Euler")
+    assert all(combo.itemData(i, Qt.ItemDataRole.ToolTipRole) for i in range(combo.count()))
+    doc, steps = steady.doc, steady.doc.undo_stack.count()
+    combo.setCurrentIndex(2)
+    combo.activated.emit(2)
+    assert doc.model.solution.theta == 0.5 and doc.undo_stack.count() == steps + 1
+    assert doc.undo_stack.undoText() == "Edit Time integration"
+    combo.setCurrentIndex(1)
+    combo.activated.emit(1)
+    assert doc.model.solution.theta == pytest.approx(2.0 / 3.0)
+    assert combo.currentText().startswith("Galerkin")
+    # a value set outside the window is shown as "Custom" and kept, never replaced
+    doc.edit("script", lambda m: setattr(m.solution, "theta", 0.6))
+    assert combo.count() == len(THETA_METHODS) + 1
+    assert combo.currentText() == "Custom (θ = 0.6)"
+    assert doc.model.solution.theta == 0.6
+    combo.setCurrentIndex(0)
+    combo.activated.emit(0)
+    assert doc.model.solution.theta == 1.0 and combo.count() == len(THETA_METHODS)
+    doc.undo_stack.undo()
+    assert combo.currentText() == "Custom (θ = 0.6)"
+
+
 def test_panel_edits_units_output_times_and_rejects_bad_values(steady) -> None:
     panel = open_panel(steady)
     steps = steady.doc.undo_stack.count()
-    enter(panel.editors["theta"], "2")
-    assert steady.doc.model.solution.theta == 1.0
-    assert steady.doc.undo_stack.count() == steps
-    assert "theta" in panel.error_text("theta")
     enter(panel.editors["max_iterations"], "0")
     assert steady.doc.model.solution.max_iterations == 30
     assert steady.doc.undo_stack.count() == steps

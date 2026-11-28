@@ -934,11 +934,16 @@ Found while building the oil-cooler example in the window (M11.65):
 
 From the owner's V-17 review:
 
-10. **Documents still name the old conductivity labels.** The material fields were renamed
-    "Conductivity (along axis)" and "Conductivity (across axis, empty = isotropic)" during
-    the review (owner, 2026-11-27), and the panel now says that each part's Material angle
-    sets the axis. `docs/gui-walkthrough.md` (§2 step 2, §3), `guide/tutorials/t4-plate.md`
-    and any screenshot of the Material panel still show "Thermal conductivity".
+10. **Documents still name the old labels.** Two panels were changed during the review
+    (owner, 2026-11-27):
+    - the material fields are "Conductivity (along axis)" and "Conductivity (across axis,
+      empty = isotropic)", and the panel says that each part's Material angle sets the axis;
+      `docs/gui-walkthrough.md` (§2 step 2, §3), `guide/tutorials/t4-plate.md` and any
+      screenshot of the Material panel still show "Thermal conductivity";
+    - "Theta" in Analysis Settings is now "Time integration", a choice of Backward Euler
+      (θ = 1), Galerkin (θ = 2/3) and Crank-Nicolson (θ = 1/2); the model still stores the
+      number, and another stored value shows as "Custom (θ = …)".
+      `guide/getting-started.md` and `guide/tutorials/fin-quench.md` still say "Theta".
 
 - [ ] **M11.6 [C] Release review.** Check every item of Plan §6; resolve or document every
   entry in `docs/OPEN_QUESTIONS.md`. Version 1 excludes the held features M9 and M10.2 and
