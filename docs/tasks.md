@@ -968,6 +968,40 @@ From the owner's V-17 review:
     below the groups. Panel-only (`SolutionPanel`): the model, files and `docs/data-model.md`
     are unchanged. The guide pages that describe this panel (`guide/getting-started.md`,
     `guide/tutorials/fin-quench.md`, the walkthrough) are updated with item 10.
+12. **Selection fields redesigned** (owner, 2026-11-27; friction entry 4 on the session
+    page). Today a selection field shows its value twice (a label and the dropdown), a
+    "New name" box crowded onto the button row, and "Nothing picked" when nothing is being
+    picked. Its default name ("Convection 1 selection") reads like the load's name, and it
+    is not clear that "New name" creates a selection and attaches it. Redesign, after Ansys
+    (Scoping Method, Apply), COMSOL (Selection list, Create Selection / "Use in") and Abaqus
+    (Sets, Done, Edit Region):
+    - one row: the role as its label ("Boundary", "Part", "Point"), one dropdown of the
+      compatible named selections with their sizes ("cooled · 1 boundary"), and the buttons
+      "New…" and "Edit…"; no second value label and no idle status line;
+    - "New…" opens a strip below the row only while picking: an instruction, "N boundaries
+      picked", a Name box (default "Boundary N" / "Part N", text pre-selected) and
+      "Create and use for this load" / Cancel; the toolbar's pick mode is set to the field's
+      role (walkthrough friction 2);
+    - "Edit…" changes the entities of the current selection, says which other objects use
+      it, and offers "Save as new selection…";
+    - the chosen selection is highlighted in the view;
+    - list fields (a stream's walls, the mesh panel's structured parts) show their
+      selections as a list, each with ✕, and the same "add" control. This also removes the
+      cut-off picking rows of item 9 and walkthrough friction 10.
+
+    Open for the owner when the item is released: a dropdown change applies at once with
+    undo (recommended) or arms an "Update" button; default names "Boundary N" (recommended)
+    or empty; buttons as words or icons.
+13. **Value-per-selection fields as tables** (owner, 2026-11-27). "Boundary divisions"
+    (`cooled=1, long sides=40, symmetry plane=1`) is typed as comma-separated text; so are
+    "Boundary sizes", "Point sizes" and the Initial Condition's "Temperature per part". Show
+    each as a small table: one row per entry, a dropdown of the compatible named selections
+    (boundaries, points or parts; a name already used is not offered twice), the value box
+    with its unit (an integer box for divisions), ✕ to remove the row, and "+ Add" below
+    it, with "New…" to pick a new selection as in item 12. A row's selection is highlighted
+    in the view while the row is focused. The model keeps its mappings; panel-only.
+    Consider grouping "Boundary divisions" with "Structured parts" under one heading
+    ("Structured mesh"), since a structured part's opposite sides need matching divisions.
 
 - [ ] **M11.6 [C] Release review.** Check every item of Plan §6; resolve or document every
   entry in `docs/OPEN_QUESTIONS.md`. Version 1 excludes the held features M9 and M10.2 and
