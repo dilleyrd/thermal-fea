@@ -890,8 +890,9 @@ tasks come before the owner's M8.G session (D8).
     constant solid properties).
 ### Held: window fixes from the second M8.G review (owner, 2026-11-25 to 2026-11-26)
 
-**The owner finished the M8.G re-review on 2026-11-27. The items stay held until the owner
-releases them** (the open decisions of `docs/gui-conventions.md` first).
+**The owner finished the M8.G re-review on 2026-11-27 and released every item as tasks
+M11.66–M11.79 below** (same day, in that order). The item texts here are their
+specification, with `docs/gui-conventions.md`.
 
 **Every item follows `docs/gui-conventions.md`** (owner, 2026-11-27); where an item's text
 and a convention disagree, the convention wins. The conventions widen these items:
@@ -1091,7 +1092,75 @@ convention of `docs/gui-conventions.md` to the parts no earlier item touches:
 Known gap, not a task until the owner asks: enclosures cannot be added or edited in the
 window (no form, no Add action, no editor for their surfaces).
 
+### Window fixes released after the second M8.G review (owner, 2026-11-27)
+
+Each task implements the held items it names, following `docs/gui-conventions.md` (Cn
+below). Shared controls come first so every panel is built once; documents come last so
+the screenshots show the final window. Do not update documents, walkthroughs or
+screenshots before M11.79 unless a task says so. Each task's acceptance tests are GUI
+tests (offscreen) of the behavior it adds, plus the whole suite.
+
+- [ ] **M11.66 [A] Spelling "color".** Held item 2: every user-visible "colour" (menus,
+  panel groups, checkboxes, messages, tooltips) and the documentation become "color".
+  Code identifiers may follow; saved model keys do not change. Acceptance: a test that no
+  user-visible string in `src/thermalfea/gui` contains "colour"; the suite passes.
+- [ ] **M11.67 [B] Guard the initial-condition results file.** Held item 6: refuse (Validate
+  issue and Solve) a transient whose initial condition reads the results file the solve
+  will write, with a message naming the file and the fix (save the model under another
+  name). Acceptance: a test of the refusal and of an allowed different file.
+- [ ] **M11.68 [C] Shared controls.** The mechanisms of C5–C8, C11 and C12, with tests, used
+  by later tasks: the icon set with tooltips and accessible names (C6); a framed box with
+  title and description, a collapsible "More" line and a collapsible box whose title
+  counts non-default values (C5, C12); grey hint text for empty number and text boxes and
+  a per-field name for a formula field's empty mode (C7); a window-side table of readable
+  dropdown texts with the stored values unchanged (C8); one error line under each field
+  and the panel-top line only for other errors (C11). Applied in this task to the
+  Analysis Settings panel only (held item 11 with decisions C and G), as the reference.
+  Depends on M11.66.
+- [ ] **M11.69 [C] One pick workflow.** C2 and held item 16: a shared pick strip
+  (instruction, count, confirm, Cancel), marks in the view, the toolbar switched and
+  restored, Enter confirms and Esc cancels. Applied to the Selections panel's Add/Remove,
+  the stream path, the probe and the geometry tool dialogs. Depends on M11.68.
+- [ ] **M11.70 [C] Selection fields.** Held item 12 with C1 (Update and Revert, the pending
+  mark, decision A) and the list fields (stream walls, structured parts); held item 9 and
+  walkthrough frictions 2, 4, 9 and 10. Depends on M11.69.
+- [ ] **M11.71 [C] Value-per-selection tables.** Held item 13: boundary and point sizes,
+  boundary divisions, temperature per part, and the Mesh panel's Refinements table as one
+  table component (C1, C6, C10); the "Structured mesh" box. Depends on M11.70.
+- [ ] **M11.72 [B] Panel layouts.** Held items 18, 20, 4 and 8 with C5, C7 and C12: boxes
+  and advanced fields of the Mesh, Correlation convection, Stream, network and Part
+  panels; hint text in every panel; a required formula field starts in Constant; the
+  Initial Condition panel shows only the fields of its kind and a Browse icon for the
+  results file. Depends on M11.71.
+- [ ] **M11.73 [B] Names and words.** Held items 21 and 22 with C8 and C9 (decisions E and
+  H): readable dropdown texts; Part/Boundary/Point in labels, tooltips, summaries, status
+  lines, validation messages, the Issues panel and the View menu; field symbols in panel
+  labels, view labels and summaries. Then the owner checks the window on screen before
+  M11.75. Depends on M11.72.
+- [ ] **M11.74 [C] View.** Held items 1, 5, 23 and 7 with C10: labels drawn in front of
+  lines; highlights for streams (walls and path), enclosures and the Mesh panel's rows;
+  a stretched view for slender models, stated in the view. Depends on M11.73.
+- [ ] **M11.75 [C] Saved result items.** Held items 17 and 3 with C3 and C4 (decision B):
+  contours and vector plots saved in the model file and undoable; an eye toggle on every
+  result item; heat-flow and energy charts redrawn after a new solve. **Stop for the
+  owner's approval of the `docs/data-model.md` entries before writing code.** Depends on
+  M11.74.
+- [ ] **M11.76 [C] Nodal history item.** Held item 14 with C2, C3 and C10: a saved result
+  item whose panel holds the node list with its pick strip, the quantity and Plot; node
+  numbers marked in the view and used in the legend. Depends on M11.75.
+- [ ] **M11.77 [C] Path plot item.** Held item 15, phase 1 (two points, along boundaries)
+  then phase 2 (point table, several times on one chart); Results > Finish / Cancel path
+  plot removed. **Stop for the owner's approval of the data-model entry first.** Depends
+  on M11.76.
+- [ ] **M11.78 [B] Problems marked in the tree.** Held item 25 with C13, updated as the
+  model is edited. Depends on M11.77.
+- [ ] **M11.79 [B] Documents and screenshots.** Held item 10 and every page and image the
+  tasks above changed: `docs/gui-walkthrough.md` with its screenshots, `guide/` (getting
+  started, tutorials, units), `examples/oil_cooler/README.md` and its window screenshots,
+  `docs/data-model.md` §13. Then the owner's third look at the walkthrough (M8.G).
+  Depends on M11.78.
+
 - [ ] **M11.6 [C] Release review.** Check every item of Plan §6; resolve or document every
   entry in `docs/OPEN_QUESTIONS.md`. Version 1 excludes the held features M9 and M10.2 and
   their cases V-22a–d, V-23, V-24 and V-36 (owner, 2026-11-22, Q29.15); the guide's
-  limitations say so. Depends on M11.7–M11.64, M8.G and M11.1.
+  limitations say so. Depends on M11.7–M11.79, M8.G and M11.1.
