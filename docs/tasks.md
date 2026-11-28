@@ -999,14 +999,15 @@ From the owner's V-17 review:
     - **Buttons are icons** (new, edit, update, remove), each with a tooltip and an
       accessible name that says what it does.
 
-    To confirm at release: whether item 13's table rows also wait for "Update".
+    The same rule holds for item 13's table rows (owner, 2026-11-27).
 13. **Value-per-selection fields as tables** (owner, 2026-11-27). "Boundary divisions"
     (`cooled=1, long sides=40, symmetry plane=1`) is typed as comma-separated text; so are
     "Boundary sizes", "Point sizes" and the Initial Condition's "Temperature per part". Show
     each as a small table: one row per entry, a dropdown of the compatible named selections
     (boundaries, points or parts; a name already used is not offered twice), the value box
     with its unit (an integer box for divisions), ✕ to remove the row, and "+ Add" below
-    it, with "New…" to pick a new selection as in item 12. A row's selection is highlighted
+    it, with "New…" to pick a new selection as in item 12. Changing a row's dropdown waits
+    for the "Update" button, as in item 12 (owner, 2026-11-27). A row's selection is highlighted
     in the view while the row is focused. The model keeps its mappings; panel-only.
     Consider grouping "Boundary divisions" with "Structured parts" under one heading
     ("Structured mesh"), since a structured part's opposite sides need matching divisions.
