@@ -36,7 +36,7 @@ STREAM_FORM = FormSpec(
         ),  # fmt: skip
         FieldSpec(
             "walls", "Walls", "selection_list", selection_dims=(1,),
-            tooltip="Boundary selections (curves) wetted by the stream.",
+            tooltip="Boundary selections wetted by the stream.",
         ),  # fmt: skip
         FieldSpec(
             "flow_area", "Flow area", "float", quantity="area", minimum=0.0,

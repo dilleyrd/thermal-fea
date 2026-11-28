@@ -102,10 +102,10 @@ def test_region_names_at_the_area_weighted_centre(window, doc) -> None:
 def test_label_text_constant_in_si_and_degc(window, doc) -> None:
     add(doc, Convection("cooling", "top", h=Constant(750.0), T_inf=Constant(300.0)))
     view, _ctl = make(window, doc)
-    assert view.texts() == ["cooling: h = 750 W/(m^2 K), T_inf = 300 K"]
+    assert view.texts() == ["cooling: h = 750 W/(m^2 K), T∞ = 300 K"]
     doc.edit("zero", lambda m: setattr(m.bcs[0], "T_inf", Constant(273.15)))
     doc.edit("units", lambda m: setattr(m, "display_units", UnitSettings(temperature="degC")))
-    assert view.texts() == ["cooling: h = 750 W/(m^2 K), T_inf = 0 °C"]
+    assert view.texts() == ["cooling: h = 750 W/(m^2 K), T∞ = 0 °C"]
 
 
 def test_label_text_table_and_expression(window, doc) -> None:
@@ -117,7 +117,7 @@ def test_label_text_table_and_expression(window, doc) -> None:
         HeatFlux("flux", "bottom", q=Table([300.0, 400.0], [1.0, 2.0], "T")),
     )
     view, _ctl = make(window, doc)
-    assert view.texts() == ["mixed: h = table(t), T_inf = 300 + 2*t", "flux: q = table(T)"]
+    assert view.texts() == ["mixed: h = table(t), T∞ = 300 + 2*t", "flux: q = table(T)"]
 
 
 def test_label_position_is_at_the_longest_curve_midpoint(window, doc) -> None:

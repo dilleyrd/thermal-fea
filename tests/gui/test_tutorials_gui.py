@@ -139,10 +139,12 @@ def set_number(ctx: AppContext, address: tuple, name: str, text: str) -> None:
 
 
 def choose(ctx: AppContext, address: tuple, name: str, text: str) -> None:
-    """Choose an entry of a list field (a combo box) by its text."""
+    """Choose an entry of a list field (a combo box) by its stored value, else by its text."""
     panel = open_panel(ctx, address)
     combo = panel.editors[name]
-    index = combo.findText(text)
+    index = combo.findData(text)
+    if index < 0:
+        index = combo.findText(text)
     assert index >= 0, (name, text, [combo.itemText(i) for i in range(combo.count())])
     combo.setCurrentIndex(index)
     combo.activated.emit(index)
@@ -286,7 +288,7 @@ def test_fin_quench_in_the_gui(
     tree_action(ctx, "loads", ("add_bc", "correlation_convection"))
     assert doc.model.bcs == []  # added when the dialog is accepted
     dialog = ctx.tree.load_dialog
-    dialog.correlation_box.setCurrentText(fin.CORRELATION)
+    dialog.correlation_box.setCurrentIndex(dialog.correlation_box.findData(fin.CORRELATION))
     dialog.fluid_box.setCurrentText(fin.FLUID)
     dialog.ambient_edit.setText(str(fin.T_AMBIENT))
     dialog.ok_button.click()
@@ -387,7 +389,7 @@ def test_fin_quench_in_the_gui(
     trigger(ctx, "tools.htc")
     calc = ctx.flow.htc_window
     assert calc is not None and calc.isVisible()
-    calc.correlation_box.setCurrentIndex(calc.correlation_box.findText(fin.CORRELATION))
+    calc.correlation_box.setCurrentIndex(calc.correlation_box.findData(fin.CORRELATION))
     calc.fluid_box.setCurrentIndex(calc.fluid_box.findText(fin.FLUID))
     calc.t_surface_edit.setText(str(fin.T_INIT))
     calc.t_inf_edit.setText(str(fin.T_AMBIENT))
@@ -467,7 +469,7 @@ def test_cold_plate_in_the_gui(
     dialog.fluid_box.setCurrentIndex(dialog.fluid_box.findText(cold.FLUID))
     dialog.flow_area_edit.setText(f"{cold.flow_area():.6g}")
     dialog.wetted_edit.setText(f"{cold.wetted_perimeter():.6g}")
-    dialog.cross_box.setCurrentIndex(dialog.cross_box.findText(cold.CROSS_SECTION))
+    dialog.cross_box.setCurrentIndex(dialog.cross_box.findData(cold.CROSS_SECTION))
     dialog.inlet_edit.setText(str(cold.T_INLET))
     assert dialog.submit()
     assert not dialog.isVisible()

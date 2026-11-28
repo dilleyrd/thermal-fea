@@ -23,12 +23,13 @@ from PySide6.QtGui import QAction
 from thermalfea.core.errors import ModelError
 from thermalfea.core.forms import FieldSpec, form_for
 from thermalfea.core.units import UnitSettings, from_si, unit_label
+from thermalfea.gui.field_texts import choice_text, symbol_of
 from thermalfea.gui.overlay_labels import format_value
 from thermalfea.materials import library
 from thermalfea.model import geometry_ops as ops
 from thermalfea.model.model import Model
 from thermalfea.model.selections import StaleSelectionError, resolve, selection_users
-from thermalfea.model.vocabulary import entity_word, shape_word
+from thermalfea.model.vocabulary import entity_word
 
 if TYPE_CHECKING:
     from thermalfea.gui.document import Document
@@ -93,7 +94,7 @@ def load_summary(obj: Any, units: UnitSettings) -> str:
             continue
         text = format_value(spec, getattr(obj, spec.name, None), units)
         if text is not None:
-            parts.append(f"{spec.name} {text}")
+            parts.append(f"{symbol_of(spec.name)} {text}")
     out = form.title
     if parts:
         out += _SEP + ", ".join(parts)
@@ -126,12 +127,13 @@ def mesh_summary(document: Document) -> str:
 
 
 def initial_summary(model: Model) -> str:
-    """``uniform 20 °C`` / ``expression`` / ``per region`` / ``from results``."""
+    """``uniform 20 °C`` / ``expression of x and y`` / ``per part`` / ``from a results file``."""
     ic = model.initial_condition
+    word = choice_text("Initial condition", "kind", ic.kind).lower()
     if ic.kind == "uniform":
         text = format_value(_spec("temperature"), ic.value, model.display_units)
-        return f"uniform {text}" if text else "uniform"
-    return {"per_region": "per part", "from_results": "from results"}.get(ic.kind, ic.kind)
+        return f"{word} {text}" if text else word
+    return word
 
 
 def analysis_summary(model: Model) -> str:
@@ -164,15 +166,13 @@ def material_summary(material: Any, units: UnitSettings) -> str:
 
 
 def region_summary(region: Any, model: Model, built: Any = None) -> str:
-    """Material, the number of surfaces (with a build) and the thickness of a planar part."""
+    """Material and the thickness of a planar part; "no selection" or "stale selection"."""
     parts = [str(region.material) or "no material"]
     if not region.selection:
         parts.append("no selection")
     elif built is not None and region.selection in model.selections:
         try:
-            selection = model.selections[region.selection]
-            n = len(resolve(selection, built))
-            parts.append(f"{n} {shape_word(selection.dim, n != 1)}")
+            resolve(model.selections[region.selection], built)
         except (StaleSelectionError, ModelError):
             parts.append("stale selection")
     if model.analysis == "planar":
@@ -260,7 +260,8 @@ def _object_summary(document: Document, address: tuple) -> str:
     if kind == "streams":
         return f"{len(model.streams[key].walls)} walls"
     if kind == "enclosures":
-        return f"{len(model.enclosures[key].surfaces)} surfaces"
+        n = len(model.enclosures[key].surfaces)
+        return f"{n} {entity_word(1, model, plural=n != 1)}"
     if kind == "network":
         net = model.network
         return "none" if net is None else f"{len(net.branches)} branches"

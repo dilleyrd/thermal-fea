@@ -112,7 +112,7 @@ INITIAL_CONDITION_FORM = FormSpec(
         FieldSpec(
             "kind", "Kind", "choice",
             choices=("uniform", "expression", "per_region", "from_results"),
-            tooltip="Uniform, a function of x and y, one value per region, or the last "
+            tooltip="Uniform, a function of x and y, one value per part, or the last "
             "step of a results file.",
         ),  # fmt: skip
         FieldSpec(

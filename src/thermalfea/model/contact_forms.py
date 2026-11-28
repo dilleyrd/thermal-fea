@@ -16,16 +16,16 @@ CONTACT_FORM = FormSpec(
     [
         FieldSpec(
             "selection", "Interface boundaries", "selection", selection_dims=(1,),
-            tooltip="Boundary selection (curves); every boundary must lie between two regions.",
+            tooltip="Boundary selection; every boundary must lie between two parts.",
         ),  # fmt: skip
         FieldSpec(
-            "conductance", "Contact conductance", "function", quantity="htc", minimum=0.0,
+            "conductance", "Contact conductance h", "function", quantity="htc", minimum=0.0,
             tooltip="Conductance of the interface. It may depend on time and position, "
             "but not on temperature.",
         ),  # fmt: skip
     ],
     category="contact",
-    description="A thermal contact resistance between two regions along interface boundaries.",
+    description="A thermal contact resistance between two parts along interface boundaries.",
 )
 
 register_form(Contact, CONTACT_FORM)

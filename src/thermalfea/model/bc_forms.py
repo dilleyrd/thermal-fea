@@ -32,14 +32,14 @@ def _temperature(
 BC_FORMS: dict[str, FormSpec] = {
     "fixed_temperature": FormSpec(
         "Fixed Temperature",
-        [_sel((0, 1), "boundaries or points"), _temperature("T", "Temperature", ("t", "x", "y"))],
+        [_sel((0, 1), "boundaries or points"), _temperature("T", "Temperature T", ("t", "x", "y"))],
         description="Prescribed temperature on boundaries or points.",
     ),
     "heat_flux": FormSpec(
         "Heat Flux",
         [
             _sel(_CURVES, "boundaries"),
-            FieldSpec("q", "Heat flux", "function", quantity="heat_flux"),
+            FieldSpec("q", "Heat flux q", "function", quantity="heat_flux"),
         ],
         description="Heat flux on boundaries, positive into the body.",
     ),
@@ -47,7 +47,7 @@ BC_FORMS: dict[str, FormSpec] = {
         "Heat Flow",
         [
             _sel(_CURVES, "boundaries"),
-            FieldSpec("P", "Heat flow", "function", quantity="power", variables=("t",)),
+            FieldSpec("P", "Heat flow P", "function", quantity="power", variables=("t",)),
         ],
         description="Total heat flow spread uniformly over boundaries, positive into the body.",
     ),
@@ -55,7 +55,7 @@ BC_FORMS: dict[str, FormSpec] = {
         "Heat Generation",
         [
             _sel(_SURFACES, "parts"),
-            FieldSpec("Q", "Heat generation", "function", quantity="heat_gen"),
+            FieldSpec("Q", "Heat generation Q", "function", quantity="heat_gen"),
         ],
         description="Volumetric heat generation in parts.",
     ),
@@ -63,7 +63,7 @@ BC_FORMS: dict[str, FormSpec] = {
         "Heat Power",
         [
             _sel(_SURFACES, "parts"),
-            FieldSpec("P", "Power", "function", quantity="power", variables=("t",)),
+            FieldSpec("P", "Power P", "function", quantity="power", variables=("t",)),
         ],
         description="Total power generated uniformly in parts.",
     ),
@@ -71,8 +71,8 @@ BC_FORMS: dict[str, FormSpec] = {
         "Convection",
         [
             _sel(_CURVES, "boundaries"),
-            FieldSpec("h", "Heat-transfer coefficient", "function", quantity="htc"),
-            _temperature("T_inf", "Fluid temperature"),
+            FieldSpec("h", "Heat-transfer coefficient h", "function", quantity="htc"),
+            _temperature("T_inf", "Fluid temperature T∞"),
         ],
         description="Convection to a fluid at a given temperature.",
     ),
@@ -82,7 +82,7 @@ BC_FORMS: dict[str, FormSpec] = {
             _sel(_CURVES, "boundaries"),
             FieldSpec("correlation", "Correlation", "str", tooltip="Correlation identifier."),
             FieldSpec("fluid", "Fluid", "str", tooltip="Name of a library fluid."),
-            _temperature("T_inf", "Fluid temperature"),
+            _temperature("T_inf", "Fluid temperature T∞"),
             FieldSpec(
                 "velocity", "Velocity", "function", quantity="velocity", optional=True,
                 tooltip="Free-stream velocity.",
@@ -114,8 +114,8 @@ BC_FORMS: dict[str, FormSpec] = {
         "Radiation to Ambient",
         [
             _sel(_CURVES, "boundaries"),
-            FieldSpec("emissivity", "Emissivity", "function", minimum=0.0, maximum=1.0),
-            _temperature("T_inf", "Ambient temperature"),
+            FieldSpec("emissivity", "Emissivity ε", "function", minimum=0.0, maximum=1.0),
+            _temperature("T_inf", "Ambient temperature T∞"),
         ],
         description="Radiation from boundaries to surroundings.",
     ),

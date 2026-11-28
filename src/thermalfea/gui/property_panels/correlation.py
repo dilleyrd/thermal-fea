@@ -49,7 +49,7 @@ _PREVIEW_FIELDS: dict[str, FieldSpec] = {
         optional=True, tooltip="Wall temperature T_s for the preview (not stored).",
     ),
     "T_inf": FieldSpec(
-        "T_inf", "Fluid temperature", "float", quantity="temperature", minimum=0.0,
+        "T_inf", "Fluid temperature T∞", "float", quantity="temperature", minimum=0.0,
         optional=True, tooltip="Used because the fluid temperature is not a constant.",
     ),
     "length": FieldSpec(
@@ -86,11 +86,11 @@ _PREVIEW_FIELDS: dict[str, FieldSpec] = {
     ),
     "x_r": FieldSpec(
         "x_r", "Half-width x_r", "float", quantity="length", minimum=0.0, optional=True,
-        tooltip="Half-width of the region averaged over.",
+        tooltip="Half-width of the area averaged over.",
     ),
     "r_r": FieldSpec(
         "r_r", "Radius r_r", "float", quantity="length", minimum=0.0, optional=True,
-        tooltip="Radius of the region averaged over.",
+        tooltip="Radius of the area averaged over.",
     ),
     "C": FieldSpec("C", "C", "float", optional=True, tooltip="Coefficient C of the power law."),
     "n": FieldSpec("n", "n", "float", optional=True, tooltip="Exponent n of the power law."),

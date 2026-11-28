@@ -173,11 +173,15 @@ def test_correlation_and_fluid_are_lists(qtbot, built_doc) -> None:
     corr, fluid = panel.editors["correlation"], panel.editors["fluid"]
     assert isinstance(corr, QComboBox) and isinstance(fluid, QComboBox)
     # every correlation except the internal-flow ones, which streams use (M11.29)
-    offered = [corr.itemText(i) for i in range(corr.count())]
+    offered = [corr.itemData(i) for i in range(corr.count())]
     assert offered == [c for c, info in CORRELATIONS.items() if info.kind != "internal"]
     assert "duct_internal" not in offered
+    # the texts are the correlations' titles (C8)
+    assert [corr.itemText(i) for i in range(corr.count())] == [
+        CORRELATION_INFO[c].title for c in offered
+    ]
     assert [fluid.itemText(i) for i in range(fluid.count())] == library.fluid_names()
-    assert corr.currentText() == "vplate_natural" and fluid.currentText() == "Air"
+    assert corr.currentData() == "vplate_natural" and fluid.currentText() == "Air"
     fluid.setCurrentIndex(fluid.findText("Water"))
     fluid.activated.emit(fluid.currentIndex())
     assert built_doc.model.bcs[0].fluid == "Water" and built_doc.undo_stack.count() == 2
@@ -365,7 +369,8 @@ def test_panel_shows_formula_and_validity_of_every_correlation(qtbot, built_doc,
     assert info.validity in panel.validity_label.text()
     assert info.title == panel.title_label_info.text()
     assert info.length in panel.length_label.text()
-    assert panel.editors["correlation"].currentText() == cid
+    assert panel.editors["correlation"].currentData() == cid
+    assert panel.editors["correlation"].currentText() == info.title
 
 
 def test_unknown_correlation_is_reported_not_raised(qtbot, built_doc) -> None:

@@ -36,6 +36,7 @@ from thermalfea.core.forms import unit_label
 from thermalfea.core.units import UnitSettings, from_si, to_si
 from thermalfea.gui.addressing import Address
 from thermalfea.gui.document import Document
+from thermalfea.gui.field_texts import branch_kind_text
 from thermalfea.gui.property_panels.sections import Box, SectionBox
 from thermalfea.model.bcs import FlowNetwork, NetBranch, NetNode
 
@@ -281,6 +282,7 @@ class NetworkPanel(QWidget):
             table.setCellWidget(row, 3, self._combo(
                 list(KINDS), branch.kind,
                 lambda v, r=row: self._edit_branch(r, "kind", v),
+                text_of=branch_kind_text,
             ))  # fmt: skip
             table.setItem(row, 4, QTableWidgetItem(self._shown(branch.length, "length")))
             table.setItem(row, 5, QTableWidgetItem(_show(branch.K_minor)))
@@ -296,6 +298,7 @@ class NetworkPanel(QWidget):
         current: str | None,
         on_pick: Callable[[str | None], None],
         none_text: str | None = None,
+        text_of: Callable[[str], str] = str,
     ) -> QComboBox:
         """A combo of ``items`` (preceded by ``None`` when ``none_text``) showing ``current``.
 
@@ -306,7 +309,7 @@ class NetworkPanel(QWidget):
             entries.append(current)
         combo = QComboBox()
         for entry in entries:
-            combo.addItem(none_text if entry is None else str(entry))
+            combo.addItem(none_text if entry is None else text_of(entry), entry)
         combo.setCurrentIndex(entries.index(current) if current in entries else 0)
         combo.activated.connect(lambda i, e=entries: on_pick(e[i]))
         return combo

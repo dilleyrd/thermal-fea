@@ -260,8 +260,7 @@ class MainWindow(QMainWindow):
                 continue
             role = role_of(dim, model)
             action.setText(entity_word(dim, model).capitalize())
-            geometry = {"point": "", "curve": " (curves)", "surface": " (surfaces)"}[mode]
-            action.setToolTip(f"Pick {entity_word(dim, model, plural=True)}{geometry}")
+            action.setToolTip(f"Pick {entity_word(dim, model, plural=True)}")
             action.setStatusTip(f"Selection mode: {role}")
         self.actions["select.none"].setToolTip("Selection mode: none")
 

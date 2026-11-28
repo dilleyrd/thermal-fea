@@ -128,9 +128,9 @@ def test_initial_condition_and_analysis_summaries(tree, doc) -> None:
 def test_expression_and_results_initial_summaries(doc) -> None:
     model = doc.model
     model.initial_condition = InitialCondition("expression", Expression("300 + x"))
-    assert ts.initial_summary(model) == "expression"
+    assert ts.initial_summary(model) == "expression of x and y"
     model.initial_condition = InitialCondition("from_results", None, None, "r.h5")
-    assert ts.initial_summary(model) == "from results"
+    assert ts.initial_summary(model) == "from a results file"
 
 
 def test_material_summaries(doc) -> None:
@@ -147,7 +147,7 @@ def test_material_summaries(doc) -> None:
 def test_regions_and_materials_nodes(tree, doc) -> None:
     assert summary(tree, section="materials") == str(len(doc.model.materials))
     assert summary(tree, section="regions") == "1"
-    assert summary(tree, ("regions", 0)) == "Copper (pure) · 1 surface · t 1 m"
+    assert summary(tree, ("regions", 0)) == "Copper (pure) · t 1 m"
     # no contact, stream, network or enclosure: their sections fold into one line (M11.51)
     assert summary(tree, section="folded") == "none"
     assert summary(tree, section="solution") == ""

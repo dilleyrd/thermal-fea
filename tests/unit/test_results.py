@@ -260,7 +260,7 @@ def test_bad_results_files(tmp_path: Path) -> None:
 def test_solve_validates_when_given_the_built_geometry() -> None:
     model, built, mesh = nafems_t4()
     model.regions.clear()
-    with pytest.raises(ModelError, match="no region assignment"):
+    with pytest.raises(ModelError, match="no part assignment"):
         api.solve(model, mesh, built=built)
 
 

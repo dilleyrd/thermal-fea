@@ -38,6 +38,7 @@ from thermalfea.convection.correlation_info import (
 )
 from thermalfea.convection.correlations import CORRELATIONS
 from thermalfea.core.errors import ModelError
+from thermalfea.gui.field_texts import add_choices, correlation_text, cross_section_text
 from thermalfea.gui.property_panels.network import parse_number
 from thermalfea.materials import library
 from thermalfea.model.bcs import STREAM_CROSS_SECTIONS
@@ -55,8 +56,8 @@ INPUT_LABELS: dict[str, tuple[str, str]] = {
     "W": ("Slot width W", "m"),
     "D": ("Nozzle diameter D", "m"),
     "H": ("Nozzle-to-surface distance H", "m"),
-    "x_r": ("Half-width x_r of the averaged region", "m"),
-    "r_r": ("Radius r_r of the averaged region", "m"),
+    "x_r": ("Half-width x_r of the area averaged over", "m"),
+    "r_r": ("Radius r_r of the area averaged over", "m"),
     "mass_flow": ("Mass flow", "kg/s"),
     "area": ("Flow area", "m^2"),
     "wetted_perimeter": ("Wetted perimeter", "m"),
@@ -98,11 +99,11 @@ class HtcCalculator(QWidget):
         self.result: HtcResult | None = None
         self.message = ""
         self.correlation_box = QComboBox()
-        self.correlation_box.addItems(list(CORRELATIONS))
+        add_choices(self.correlation_box, list(CORRELATIONS), correlation_text)
         self.fluid_box = QComboBox()
         self.fluid_box.addItems(library.fluid_names())
         self.cross_box = QComboBox()
-        self.cross_box.addItems(list(STREAM_CROSS_SECTIONS))
+        add_choices(self.cross_box, list(STREAM_CROSS_SECTIONS), cross_section_text)
         self.cross_label = QLabel("Cross-section")
         self.t_surface_edit = QLineEdit()
         self.t_inf_edit = QLineEdit()
@@ -169,7 +170,7 @@ class HtcCalculator(QWidget):
     @property
     def correlation(self) -> str:
         """Identifier of the chosen correlation."""
-        return self.correlation_box.currentText()
+        return str(self.correlation_box.currentData() or "")
 
     def visible_inputs(self) -> list[str]:
         """Names of the input fields shown for the chosen correlation (in form order)."""
@@ -243,7 +244,7 @@ class HtcCalculator(QWidget):
             name = label if unit == "-" else f"{label} [{unit}]"
             values[key] = self._number(self.input_edits[key], name)
         if self.correlation == DUCT_CORRELATION:
-            values["cross_section"] = self.cross_box.currentText()
+            values["cross_section"] = str(self.cross_box.currentData() or "")
         fluid: str | None = None
         if needs_fluid:
             fluid = self.fluid_box.currentText()

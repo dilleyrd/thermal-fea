@@ -1132,7 +1132,7 @@ tests (offscreen) of the behavior it adds, plus the whole suite.
   panels; hint text in every panel; a required formula field starts in Constant; the
   Initial Condition panel shows only the fields of its kind and a Browse icon for the
   results file. Depends on M11.71.
-- [ ] **M11.73 [B] Names and words.** Held items 21 and 22 with C8 and C9 (decisions E and
+- [x] **M11.73 [B] Names and words.** Held items 21 and 22 with C8 and C9 (decisions E and
   H): readable dropdown texts; Part/Boundary/Point in labels, tooltips, summaries, status
   lines, validation messages, the Issues panel and the View menu; field symbols in panel
   labels, view labels and summaries. Then the owner checks the window on screen before

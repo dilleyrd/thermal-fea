@@ -284,7 +284,7 @@ def test_solve_without_built_runs_the_checks_that_need_only_the_model(tmp_path: 
     mesh = api.mesh(model, built)
     assert api.solve(model, mesh, path=tmp_path / "ok.h5").n_steps >= 1  # a good model solves
     model.bcs.append(HeatFlux("flux", "all", q=1.0))  # a surface selection
-    with pytest.raises(ModelError, match=r"needs a selection of boundaries \(curves\)"):
+    with pytest.raises(ModelError, match=r"needs a selection of boundaries"):
         api.solve(model, mesh, path=tmp_path / "a.h5")
     model.bcs.pop()
     material = model.materials["Carbon steel AISI 1010"]

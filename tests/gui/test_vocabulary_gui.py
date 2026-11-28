@@ -19,8 +19,8 @@ def test_toolbar_labels_without_a_document(window) -> None:
         "none": "None", "point": "Point", "curve": "Boundary", "surface": "Part",
         "node": "Node", "element": "Element",
     }  # fmt: skip
-    assert window.actions["select.curve"].toolTip() == "Pick boundaries (curves)"
-    assert window.actions["select.surface"].toolTip() == "Pick parts (surfaces)"
+    assert window.actions["select.curve"].toolTip() == "Pick boundaries"
+    assert window.actions["select.surface"].toolTip() == "Pick parts"
     assert window.actions["select.point"].toolTip() == "Pick points"
 
 

@@ -29,6 +29,7 @@ from thermalfea.core.errors import ModelError
 from thermalfea.core.forms import unit_label
 from thermalfea.core.functions import Constant
 from thermalfea.core.units import UnitSettings
+from thermalfea.gui.field_texts import add_choices, correlation_text
 from thermalfea.gui.property_panels.network import parse_number
 from thermalfea.materials import library
 from thermalfea.model.bcs import BoundaryCondition, CorrelationConvection, RadiationAmbient
@@ -168,8 +169,8 @@ class NewCorrelationConvectionDialog(NewLoadDialog):
 
     def add_fields(self) -> None:
         self.correlation_box = QComboBox()
-        self.correlation_box.addItem("")
-        self.correlation_box.addItems(list(boundary_correlations()))
+        self.correlation_box.addItem("", "")
+        add_choices(self.correlation_box, list(boundary_correlations()), correlation_text)
         self.fluid_box = QComboBox()
         self.fluid_box.addItem("")
         self.fluid_box.addItems(library.fluid_names())
@@ -179,7 +180,7 @@ class NewCorrelationConvectionDialog(NewLoadDialog):
         self.fluid_box.currentIndexChanged.connect(self.update_state)
 
     def build_load(self) -> CorrelationConvection:
-        correlation = self.correlation_box.currentText()
+        correlation = str(self.correlation_box.currentData() or "")
         if not correlation:
             raise ValueError("choose a correlation")
         fluid = self.fluid_box.currentText()

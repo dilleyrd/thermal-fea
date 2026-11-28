@@ -80,8 +80,13 @@ def coolant(**changes: Any) -> Stream:
 
 
 def pick(combo: Any, text: str) -> None:
-    """Choose a combo entry by its text (``setCurrentText`` only works when editable)."""
-    combo.setCurrentIndex(combo.findText(text))
+    """Choose a combo entry by its stored id (item data), else by its text.
+
+    ``setCurrentText`` only works when editable. Correlation and cross-section combos show
+    readable texts (C8) and keep the id as item data.
+    """
+    index = combo.findData(text)
+    combo.setCurrentIndex(index if index >= 0 else combo.findText(text))
 
 
 @pytest.fixture
@@ -551,7 +556,7 @@ NEW_IDS_M11_39 = [
 
 
 def test_new_correlations_are_offered_with_their_inputs(calc) -> None:
-    offered = [calc.correlation_box.itemText(i) for i in range(calc.correlation_box.count())]
+    offered = [calc.correlation_box.itemData(i) for i in range(calc.correlation_box.count())]
     for cid in NEW_IDS_M11_39:
         assert cid in offered
         pick(calc.correlation_box, cid)
@@ -567,7 +572,7 @@ def test_new_correlations_are_offered_with_their_inputs(calc) -> None:
 
 
 def test_vertical_channels_are_offered_with_the_spacing_input(calc) -> None:
-    offered = [calc.correlation_box.itemText(i) for i in range(calc.correlation_box.count())]
+    offered = [calc.correlation_box.itemData(i) for i in range(calc.correlation_box.count())]
     for cid in ("vchannel_natural", "vchannel_one_side_natural"):
         assert cid in offered
         pick(calc.correlation_box, cid)
@@ -576,7 +581,7 @@ def test_vertical_channels_are_offered_with_the_spacing_input(calc) -> None:
 
 
 def test_jets_are_offered_with_their_inputs(calc) -> None:
-    offered = [calc.correlation_box.itemText(i) for i in range(calc.correlation_box.count())]
+    offered = [calc.correlation_box.itemData(i) for i in range(calc.correlation_box.count())]
     for cid, names in (
         ("slot_jet", {"velocity", "W", "H", "x_r"}),
         ("round_jet", {"velocity", "D", "H", "r_r"}),
@@ -599,7 +604,7 @@ def test_stream_form_offers_the_new_sections_and_sieder_tate() -> None:
 def test_new_stream_dialog_offers_the_sections_and_the_ratio(qtbot) -> None:
     dialog = NewStreamDialog()
     qtbot.addWidget(dialog)
-    offered = [dialog.cross_box.itemText(i) for i in range(dialog.cross_box.count())]
+    offered = [dialog.cross_box.itemData(i) for i in range(dialog.cross_box.count())]
     assert "annulus_inner" in offered and "triangle" in offered
     assert dialog.diameter_ratio_edit is not None
 
@@ -672,7 +677,7 @@ def test_cross_section_is_offered_only_for_the_duct_correlation(calc) -> None:
     """Defect Q26.4(c): the duct correlation needs the cross-section; no other correlation does."""
     pick(calc.correlation_box, "duct_internal")
     assert not calc.cross_box.isHidden() and not calc.cross_label.isHidden()
-    items = [calc.cross_box.itemText(i) for i in range(calc.cross_box.count())]
+    items = [calc.cross_box.itemData(i) for i in range(calc.cross_box.count())]
     assert items == list(bcs.STREAM_CROSS_SECTIONS)
     pick(calc.correlation_box, "vplate_natural")
     assert calc.cross_box.isHidden() and calc.cross_label.isHidden()

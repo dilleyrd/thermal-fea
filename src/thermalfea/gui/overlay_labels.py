@@ -7,7 +7,7 @@
   with the text the model tree shows (``"<selection> -> <material>"``);
 * ``load_values`` -- one label per active condition (and per contact) at its entities, with
   the name and the values of the form fields of kind ``function`` and ``float`` in the
-  display units, e.g. ``cooling: h = 750 W/(m²·K), T_inf = 0 °C``.
+  display units, e.g. ``cooling: h = 750 W/(m²·K), T∞ = 0 °C``.
 
 The label text comes from the forms of the registry (``form_for``), so a condition
 registered later is labelled without a change here. Two checkable View-menu actions,
@@ -28,6 +28,7 @@ from thermalfea.core.forms import format_value as format_value  # re-exported (M
 from thermalfea.core.units import UnitSettings
 from thermalfea.geometry.builder import BuiltGeometry
 from thermalfea.gui.document import Document
+from thermalfea.gui.field_texts import symbol_of
 from thermalfea.gui.load_symbols import contact_entities, entities_of
 from thermalfea.gui.main_window import MainWindow
 from thermalfea.gui.scene import OverlayItem, OverlayText, SceneView
@@ -56,7 +57,7 @@ def label_text(obj: Any, units: UnitSettings) -> str:
             continue
         text = format_value(spec, getattr(obj, spec.name, None), units)
         if text is not None:
-            parts.append(f"{spec.name} = {text}")
+            parts.append(f"{symbol_of(spec.name)} = {text}")
     name = str(getattr(obj, "name", ""))
     return f"{name}: {', '.join(parts)}" if parts else name
 
@@ -166,7 +167,7 @@ class OverlayLabelController(QObject):
         super().__init__(window)
         self.document = document
         self.view = view
-        self.region_action = QAction("Region &names", window)
+        self.region_action = QAction("Part &names", window)
         self.region_action.setCheckable(True)
         self.region_action.setChecked(False)
         self.load_action = QAction("Load &values", window)

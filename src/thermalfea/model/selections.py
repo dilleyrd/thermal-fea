@@ -132,7 +132,8 @@ def resolve(selection: Selection, built: BuiltGeometry) -> list[int]:
             if fingerprint_matches(fp, other, length)
         ]
         if not matches:
-            kind = {0: "point", 1: "curve", 2: "surface"}.get(selection.dim, "entity")
+            # the roles of a 2-D domain (see model.vocabulary), named as the window does
+            kind = {0: "point", 1: "boundary", 2: "part"}.get(selection.dim, "entity")
             raise StaleSelectionError(
                 f"selection {selection.name!r} is stale: its {kind} #{i + 1} (centre "
                 f"({fp.center[0]:.6g}, {fp.center[1]:.6g}), size {fp.measure:.6g}) no longer "

@@ -53,7 +53,7 @@ def test_function_edit_converts_units_and_pushes_one_command(qtbot, doc) -> None
     p.value_changed.connect(lambda n, v: changes.append(n))
     enter(p.editors["T_inf"].value_edit, "25")
     assert doc.model.bcs[0].T_inf.value == pytest.approx(298.15)
-    assert doc.undo_stack.count() == 1 and doc.undo_stack.undoText() == "Edit Fluid temperature"
+    assert doc.undo_stack.count() == 1 and doc.undo_stack.undoText() == "Edit Fluid temperature T∞"
     assert changes == ["T_inf"]
     # the stored model value is in kelvin; the box still shows what was typed (as degC)
     assert float(p.editors["T_inf"].value_edit.text()) == pytest.approx(25.0)
@@ -108,7 +108,9 @@ def test_choice_bool_str_dict_fields(qtbot, doc) -> None:
     combo.activated.emit(1)
     assert doc.model.bcs[1].wall_T_mode == "average"
     face = p.editors["face_direction"]
-    assert [face.itemText(i) for i in range(face.count())] == ["up", "down", "(none)"]
+    assert [face.itemText(i) for i in range(face.count())] == [
+        "Facing up", "Facing down", "(automatic)",
+    ]
     face.setCurrentIndex(1)
     face.activated.emit(1)
     assert doc.model.bcs[1].face_direction == "down"

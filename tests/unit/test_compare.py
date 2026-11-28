@@ -85,7 +85,7 @@ def test_a_value_inside_a_table_is_a_change(solved) -> None:
     table = edited(solved, with_table(20.0))
     table2 = edited(table, with_table(25.0))
     # both are shown as "table(T)": the line says the field changed instead of a no-op arrow
-    assert model_changes(table, table2) == ["Load cool: Heat-transfer coefficient changed"]
+    assert model_changes(table, table2) == ["Load cool: Heat-transfer coefficient h changed"]
 
 
 def test_renames(solved) -> None:

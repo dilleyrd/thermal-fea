@@ -165,7 +165,7 @@ def test_panel_rename_is_one_undo_step_and_refusals_change_nothing(shell) -> Non
 
 def test_panel_content(shell) -> None:
     p = panel(shell, "cooled")
-    assert p.kind_label.text() == "Boundary · 2 curves"
+    assert p.kind_label.text() == "2 boundaries"
     assert "total length" in p.entities_label.text()
     assert p.bounds_label.text() == "plate"
     assert [b.text() for b in p.user_buttons] == ["convection cooling"]

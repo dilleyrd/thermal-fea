@@ -66,7 +66,7 @@ def test_surface_without_region() -> None:
     model.regions.pop()
     issue = only(validate(model, built, mesh), "no-region")
     assert issue.severity == "error" and issue.kind == "region"
-    assert "has no region assignment" in issue.message and "surface" in issue.message
+    assert "has no part assignment" in issue.message and "the area" in issue.message
 
 
 def test_surface_with_two_regions() -> None:
@@ -140,7 +140,7 @@ def test_bc_with_unknown_or_wrong_selection() -> None:
     assert (issue.kind, issue.name) == ("boundary condition", "flux")
     model.bcs[-1] = bcs.FixedTemperature("fix", "L", T=300.0)  # a surface selection
     issue = only(validate(model, built, mesh), "wrong-selection")
-    assert "points or boundaries (curves)" in issue.message
+    assert "points or boundaries" in issue.message
     model.bcs[-1].active = False  # inactive conditions are not checked
     assert validate(model, built, mesh) == []
 
@@ -257,7 +257,7 @@ def test_contact_must_be_an_interface_between_two_regions() -> None:
     model.contacts[0].selection = "west"  # an outer boundary: one region only
     issue = only(validate(model, built, mesh), "contact-not-interface")
     assert issue.severity == "error" and (issue.kind, issue.name) == ("contact", "joint")
-    assert "borders 1 region" in issue.message
+    assert "borders 1 part" in issue.message
     model.contacts[0].selection = "L"
     assert "wrong-selection" in codes(validate(model, built, mesh))
 
@@ -281,7 +281,7 @@ def test_raise_if_errors_lists_every_error() -> None:
     assert len(errors(issues)) == 2
     with pytest.raises(ModelError, match="2 error") as info:
         raise_if_errors(issues)
-    assert "no region assignment" in str(info.value) and "'missing'" in str(info.value)
+    assert "no part assignment" in str(info.value) and "'missing'" in str(info.value)
 
 
 def test_features_without_a_solver_term_are_refused_not_ignored() -> None:
@@ -494,10 +494,10 @@ def test_selection_dimensions_come_from_the_registered_form() -> None:
     model.bcs.append(bcs.HeatFlux("flux", "L", q=10.0))  # a surface selection
     issue = only(validate(model, built, mesh), "wrong-selection")
     assert issue.severity == "error" and (issue.kind, issue.name) == ("boundary condition", "flux")
-    assert "curves" in issue.message
+    assert "boundaries" in issue.message
     model.bcs[-1] = bcs.HeatGeneration("gen", "west", Q=10.0)  # a curve selection
     issue = only(validate(model, built, mesh), "wrong-selection")
-    assert issue.name == "gen" and "surfaces" in issue.message
+    assert issue.name == "gen" and "parts" in issue.message
     model.bcs[-1] = bcs.HeatPower("pow", "origin", P=10.0)  # a point selection
     assert "wrong-selection" in codes(validate(model, built, mesh))
     model.bcs[-1] = bcs.FixedTemperature("pin", "origin", T=350.0)  # a point is fine
@@ -694,7 +694,7 @@ def test_network_with_negative_roughness_names_the_branch() -> None:
         (InitialCondition("expression", value=Expression("300 + T")), "cannot depend on T"),
         (InitialCondition("per_region", per_region=None), "per_region"),
         (InitialCondition("per_region", per_region={}), "per_region"),
-        (InitialCondition("per_region", per_region={"L": 300.0, "nope": 310.0}), "not a region"),
+        (InitialCondition("per_region", per_region={"L": 300.0, "nope": 310.0}), "not a part"),
         (InitialCondition("per_region", per_region={"L": float("nan")}), "not finite"),
         (InitialCondition("from_results"), "results file"),
     ],

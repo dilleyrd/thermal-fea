@@ -44,13 +44,21 @@ def open_dialog(tree: ModelTree, qtbot, tag: str):
     return dialog
 
 
+def choose(combo, value) -> None:
+    """Choose the item whose data is ``value`` (the dialogs show readable texts, C8)."""
+    index = combo.findData(value)
+    assert index >= 0, value
+    combo.setCurrentIndex(index)
+
+
 def test_adding_a_correlation_convection_opens_the_dialog(tree, doc, qtbot) -> None:
     dialog = open_dialog(tree, qtbot, "correlation_convection")
     assert isinstance(dialog, NewCorrelationConvectionDialog)
     assert doc.model.bcs == [] and doc.undo_stack.count() == 0  # nothing added yet
     assert dialog.correlation_box.currentText() == "" and dialog.fluid_box.currentText() == ""
     assert dialog.ambient_edit.text() == "" and not dialog.ok_button.isEnabled()
-    items = [dialog.correlation_box.itemText(i) for i in range(dialog.correlation_box.count())]
+    # the ids are the items' data; the texts are the readable titles (C8)
+    items = [dialog.correlation_box.itemData(i) for i in range(dialog.correlation_box.count())]
     assert items[1:] == list(boundary_correlations()) and "duct_internal" not in items
 
 
@@ -69,7 +77,7 @@ def test_other_loads_are_still_added_at_once(tree, doc) -> None:
 
 def test_correlation_ok_waits_for_every_field(tree, doc, qtbot) -> None:
     d = open_dialog(tree, qtbot, "correlation_convection")
-    d.correlation_box.setCurrentText("vplate_natural")
+    choose(d.correlation_box, "vplate_natural")
     assert not d.ok_button.isEnabled() and "fluid" in d.message_label.text()
     d.fluid_box.setCurrentText("Air")
     assert not d.ok_button.isEnabled() and "ambient" in d.message_label.text()
@@ -88,7 +96,7 @@ def test_correlation_ok_waits_for_every_field(tree, doc, qtbot) -> None:
 
 def test_power_law_needs_no_fluid(tree, qtbot) -> None:
     d = open_dialog(tree, qtbot, "correlation_convection")
-    d.correlation_box.setCurrentText("power_law")
+    choose(d.correlation_box, "power_law")
     d.ambient_edit.setText("300")
     assert d.ok_button.isEnabled()
 
@@ -110,7 +118,7 @@ def test_created_correlation_load_holds_the_typed_values_in_kelvin(tree, doc, qt
     before = doc.undo_stack.count()
     d = open_dialog(tree, qtbot, "correlation_convection")
     assert "[K]" not in d.form.labelForField(d.ambient_edit).text()  # shown in the display unit
-    d.correlation_box.setCurrentText("vplate_natural")
+    choose(d.correlation_box, "vplate_natural")
     d.fluid_box.setCurrentText("Air")
     d.ambient_edit.setText("25")
     d.ok_button.click()

@@ -33,6 +33,7 @@ from PySide6.QtWidgets import (
 from thermalfea.core.errors import ModelError
 from thermalfea.core.forms import (
     FieldSpec,
+    form_for,
     format_str_list,
     format_str_lists,
     format_xy_list,
@@ -43,6 +44,7 @@ from thermalfea.core.forms import (
     to_display,
     unit_label,
 )
+from thermalfea.gui.field_texts import choice_text
 from thermalfea.gui.geometry_defs import DEFAULTS, ToolDef, make_op
 from thermalfea.gui.pick import manager_for
 from thermalfea.gui.property_panels.form import NumberEdit
@@ -262,8 +264,9 @@ class GeometryOpDialog(QDialog):
             editor = QCheckBox()
         elif spec.kind == "choice":
             combo = QComboBox()
-            for choice in spec.choices or ():
-                combo.addItem(str(choice))
+            title = form_for(self.tool.cls).title
+            for choice in spec.choices or ():  # readable text shown, the id kept as data (C8)
+                combo.addItem(choice_text(title, name, choice), choice)
             editor = combo
         else:  # str, xy_list
             editor = QLineEdit()
@@ -357,7 +360,11 @@ class GeometryOpDialog(QDialog):
         elif isinstance(editor, QCheckBox):
             editor.setChecked(bool(value))
         elif isinstance(editor, QComboBox):
-            editor.setCurrentText(str(value))
+            index = editor.findData(value)
+            if index >= 0:
+                editor.setCurrentIndex(index)
+            else:
+                editor.setCurrentText(str(value))
         elif self.specs[name].kind == "xy_list":
             shown = to_display(self.specs[name], list(value), self._units)
             editor.setText(format_xy_list(shown))  # type: ignore[attr-defined]
@@ -383,7 +390,8 @@ class GeometryOpDialog(QDialog):
         if isinstance(editor, QCheckBox):
             return editor.isChecked()
         if isinstance(editor, QComboBox):
-            return editor.currentText()
+            data = editor.currentData()
+            return editor.currentText() if data is None else data
         text = editor.text()  # type: ignore[attr-defined]
         if spec.kind == "xy_list":
             return from_display(spec, parse_xy_list(text), self._units)

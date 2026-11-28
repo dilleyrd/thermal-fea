@@ -70,7 +70,7 @@ REGION_FORM = FormSpec(
         ),  # fmt: skip
         FieldSpec(
             "selection", "Selection", "selection", selection_dims=_SURFACES,
-            tooltip="Named selection of parts (surfaces) the material is assigned to.",
+            tooltip="Named selection of parts the material is assigned to.",
         ),  # fmt: skip
         FieldSpec(
             "material", "Material", "str",
@@ -89,7 +89,7 @@ REGION_FORM = FormSpec(
         ),  # fmt: skip
     ],
     category="region",
-    description="A part: the material and thickness of the surfaces of a selection.",
+    description="A part: the material and thickness of the selection's parts.",
 )
 
 register_form(Material, MATERIAL_FORM)

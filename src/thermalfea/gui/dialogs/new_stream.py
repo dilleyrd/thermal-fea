@@ -25,6 +25,7 @@ from PySide6.QtWidgets import (
 from thermalfea.core.errors import ModelError
 from thermalfea.core.forms import unit_label
 from thermalfea.core.units import UnitSettings
+from thermalfea.gui.field_texts import add_choices, cross_section_text
 from thermalfea.gui.property_panels.network import parse_number
 from thermalfea.materials import library
 from thermalfea.model.bcs import STREAM_CROSS_SECTIONS, Stream
@@ -76,8 +77,8 @@ class NewStreamDialog(QDialog):
         self.fluid_box.addItem("")
         self.fluid_box.addItems(library.fluid_names())
         self.cross_box = QComboBox()
-        self.cross_box.addItem("")
-        self.cross_box.addItems(list(CROSS_SECTIONS))
+        self.cross_box.addItem("", "")
+        add_choices(self.cross_box, list(CROSS_SECTIONS), cross_section_text)
         self.flow_area_edit = QLineEdit()
         self.wetted_edit = QLineEdit()
         self.inlet_edit = QLineEdit()
@@ -119,7 +120,7 @@ class NewStreamDialog(QDialog):
         fluid = self.fluid_box.currentText()
         if not fluid:
             raise ValueError("choose a fluid")
-        cross = self.cross_box.currentText()
+        cross = str(self.cross_box.currentData() or "")
         if not cross:
             raise ValueError("choose a cross-section")
         ratio_text = self.diameter_ratio_edit.text().strip()

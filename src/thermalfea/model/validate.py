@@ -245,29 +245,27 @@ class _Checker:
 
     def _use(self, name: str, dims: tuple[int, ...], kind: str, owner: str) -> list[int] | None:
         """Tags of a selection used by ``owner``, reporting unknown or wrong ones."""
+        who = "part" if kind == "region" else kind  # the word the user reads (C9)
         selection = self.model.selections.get(name)
         if selection is None:
-            self.error("unknown-selection", f"{kind} {owner!r} refers to unknown selection "
+            self.error("unknown-selection", f"{who} {owner!r} refers to unknown selection "
                        f"{name!r}", kind, owner)
             return None
         if selection.dim not in dims:
-            geometry = {0: "", 1: " (curves)", 2: " (surfaces)"}
-            wanted = " or ".join(
-                entity_word(d, self.model, plural=True) + geometry[d] for d in dims
-            )
-            self.error("wrong-selection", f"{kind} {owner!r} needs a selection of {wanted}, "
+            wanted = " or ".join(entity_word(d, self.model, plural=True) for d in dims)
+            self.error("wrong-selection", f"{who} {owner!r} needs a selection of {wanted}, "
                        f"but {name!r} is not", kind, owner)
             return None
         tags = self.tags.get(name)  # None when stale (already reported) or not built
         if tags is not None and not tags:
-            self.error("empty-selection", f"{kind} {owner!r} uses selection {name!r}, which "
+            self.error("empty-selection", f"{who} {owner!r} uses selection {name!r}, which "
                        "contains no geometry", kind, owner)
         return tags
 
     # ------------------------------------------------------------------------ regions
 
     def regions(self) -> None:
-        """Every surface has exactly one region assignment; materials and fluids exist."""
+        """Every surface has exactly one part assignment; materials and fluids exist."""
         model = self.model
         owners: dict[int, list[str]] = (
             {tag: [] for tag in self.built.surfaces} if self.built is not None else {}
@@ -277,21 +275,21 @@ class _Checker:
             for tag in tags or []:
                 owners.setdefault(tag, []).append(region.selection)
             if region.material not in model.materials:
-                self.error("missing-material", f"region {region.selection!r} uses material "
+                self.error("missing-material", f"part {region.selection!r} uses material "
                            f"{region.material!r}, which is not in the model",
                            "region", region.selection)
             if model.analysis == "planar" and not region.thickness > 0.0:
-                self.error("bad-thickness", f"region {region.selection!r} has a non-positive "
+                self.error("bad-thickness", f"part {region.selection!r} has a non-positive "
                            "thickness", "region", region.selection)
         for tag, names in owners.items():
             assert self.built is not None
             centre = self.built.surfaces[tag].center
-            where = f"surface {tag} (centre {centre[0]:.4g}, {centre[1]:.4g})"
+            where = f"the area {tag} (centre {centre[0]:.4g}, {centre[1]:.4g})"
             if not names:
-                self.error("no-region", f"{where} has no region assignment (no material)",
+                self.error("no-region", f"{where} has no part assignment (no material)",
                            "region", "")
             elif len(names) > 1:
-                self.error("multiple-regions", f"{where} is assigned by more than one region: "
+                self.error("multiple-regions", f"{where} is assigned by more than one part: "
                            f"{', '.join(map(repr, names))}", "region", names[-1])
 
         for bc in model.bcs:
@@ -329,7 +327,7 @@ class _Checker:
                     fixed_on.setdefault(tag, []).append(bc.name)
         for tag, names in fixed_on.items():
             if len(names) > 1:
-                self.error("double-fixed-temperature", f"curve {tag} carries more than one "
+                self.error("double-fixed-temperature", f"boundary {tag} carries more than one "
                            f"fixed temperature: {', '.join(map(repr, names))}", "bc", names[-1])
 
     def bc_values(self) -> None:
@@ -567,7 +565,7 @@ class _Checker:
                        "mesh", "")
 
     def contacts(self, known: list[tuple[float, str, str]]) -> None:
-        """A contact curve is an interface between two regions; its conductance is positive."""
+        """A contact boundary lies between two parts; its conductance is positive."""
         names = [c.name for c in self.model.contacts]
         for name in sorted({n for n in names if names.count(n) > 1}):
             self.error("duplicate-name", f"more than one contact is called {name!r}",
@@ -590,8 +588,8 @@ class _Checker:
             for tag in tags or []:
                 n = len(self.built.curve_surfaces.get(tag, []))
                 if n != _INTERFACE_SIDES:
-                    self.error("contact-not-interface", f"contact {contact.name!r}: curve "
-                               f"{tag} borders {n} region(s); a contact must lie between "
+                    self.error("contact-not-interface", f"contact {contact.name!r}: boundary "
+                               f"{tag} borders {n} part(s); a contact must lie between "
                                "exactly two", "contact", contact.name)
 
     # ------------------------------------------------------------- streams and network
@@ -673,14 +671,14 @@ class _Checker:
                 bad("an initial temperature cannot depend on T")
         elif ic.kind == "per_region":
             if not ic.per_region:
-                bad("'per_region' needs a temperature per region")
+                bad("'per_region' needs a temperature per part")
             else:
                 regions = {r.selection for r in model.regions}
                 for key, value in ic.per_region.items():
                     if key not in regions:
-                        bad(f"'{key}' is not a region of the model")
+                        bad(f"'{key}' is not a part of the model")
                     if not np.isfinite(float(value)):
-                        bad(f"the temperature of region '{key}' is not finite")
+                        bad(f"the temperature of part '{key}' is not finite")
         elif not ic.results_path:
             bad("'from_results' needs a results file")
 

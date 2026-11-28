@@ -400,7 +400,8 @@ class FormPanel(QWidget):
                 self._choices[name] = tuple(listed)
                 self._open_lists.add(name)
                 pick = QComboBox()
-                pick.addItems([self.choice_label(name, c) for c in listed])
+                for c in listed:  # readable text shown, the stored value kept as item data
+                    pick.addItem(self.choice_label(name, c), c)
                 pick.activated.connect(lambda i, n=name: self._apply(n, self._choices[n][i]))
                 return pick, None
             line = QLineEdit()
@@ -412,7 +413,7 @@ class FormPanel(QWidget):
             self._choices[name] = tuple(f.choices)
             combo = QComboBox()
             for choice in f.choices:
-                combo.addItem(self.choice_label(name, choice))
+                combo.addItem(self.choice_label(name, choice), choice)
             combo.activated.connect(lambda i, n=name: self._apply(n, self._choices[n][i]))
             return combo, None
         if f.kind == "function":
@@ -572,7 +573,7 @@ class FormPanel(QWidget):
                 # a value that is not in the offered list stays visible, not replaced
                 choices = (*choices, value if value is not None else "")
                 self._choices[f.name] = choices
-                editor.addItem(self.choice_label(f.name, choices[-1]))
+                editor.addItem(self.choice_label(f.name, choices[-1]), choices[-1])
             editor.setCurrentIndex(choices.index(value) if value in choices else 0)
             editor.blockSignals(False)
         elif isinstance(editor, FunctionEditor):

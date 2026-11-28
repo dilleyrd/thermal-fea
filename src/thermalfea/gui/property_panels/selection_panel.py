@@ -135,10 +135,8 @@ class SelectionPanel(QWidget):
         model = self.document.model
         built = self.document.built
         units = model.display_units
-        role = entity_word(selection.dim, model).capitalize()
         n = len(selection.tags)
-        geometric = _DIM_MODE[selection.dim] + ("" if n == 1 else "s")
-        self.kind_label.setText(f"{role} · {n} {geometric}")
+        self.kind_label.setText(f"{n} {entity_word(selection.dim, model, plural=n != 1)}")
         current = self._current(selection)
         shown = current if current is not None else list(selection.tags)
         text = ", ".join(f"#{t}" for t in shown) or "none"

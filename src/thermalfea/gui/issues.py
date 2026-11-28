@@ -18,7 +18,7 @@ Issue kind to tree address
 ``contact``     ``("contacts", i)``
 ``material``    ``("materials", name)``
 ``region``      ``("regions", i)`` of the assignment whose selection is ``name``; with no
-                name (a surface without region) the *Regions* section node
+                name (an area without a part) the *Parts* section node (shown as "part")
 ``selection``   ``("selections", name)`` when that selection exists (stale selection)
 ``mesh``        ``("mesh_settings",)``
 ``solution``    ``("solution",)``
@@ -103,9 +103,14 @@ def address_for_issue(model: Model, issue: Issue) -> Address | None:
     return None
 
 
+#: ``Issue.kind`` -> the word the window uses for that kind of object (C9, tree names).
+KIND_WORDS: dict[str, str] = {"region": "part", "bc": "load", "boundary condition": "load"}
+
+
 def object_text(issue: Issue) -> str:
-    """Text of the "Object" column of an issue."""
-    return f"{issue.kind} {issue.name}".strip() if issue.name else issue.kind
+    """Text of the "Object" column of an issue: "part X", "load cooling", "mesh"."""
+    kind = KIND_WORDS.get(issue.kind, issue.kind)
+    return f"{kind} {issue.name}".strip() if issue.name else kind
 
 
 class IssuePanel(QTableWidget):

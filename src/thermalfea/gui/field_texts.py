@@ -17,7 +17,32 @@ Later tasks (M11.72, M11.73) fill in the other panels.
 
 from __future__ import annotations
 
+from collections.abc import Iterable
 from typing import Any
+
+from thermalfea.convection.correlation_info import CORRELATION_INFO
+
+#: Text of each cross-section of a stream (Theory §8.1); shared with the dialogs.
+CROSS_SECTION_TEXTS: dict[str, str] = {
+    "circular": "Circular",
+    "parallel_plates": "Parallel plates, both heated",
+    "parallel_plates_one_side": "Parallel plates, one side insulated",
+    "square": "Square",
+    "rectangle_1_43": "Rectangle, sides 1.43 : 1",
+    "rectangle_2": "Rectangle, sides 2 : 1",
+    "rectangle_3": "Rectangle, sides 3 : 1",
+    "rectangle_4": "Rectangle, sides 4 : 1",
+    "rectangle_8": "Rectangle, sides 8 : 1",
+    "triangle": "Triangle",
+    "annulus_inner": "Annulus, inner surface heated",
+    "annulus_outer": "Annulus, outer surface heated",
+}
+
+#: Text of each correlation: its title in :data:`CORRELATION_INFO`.
+CORRELATION_TEXTS: dict[str, str] = {cid: info.title for cid, info in CORRELATION_INFO.items()}
+
+#: Text of the kind of a network branch.
+BRANCH_KIND_TEXTS: dict[str, str] = {"duct": "Duct", "loss": "Loss (K factor)"}
 
 #: ``(form title, field) -> {stored value: shown text}``.
 CHOICE_TEXTS: dict[tuple[str, str], dict[Any, str]] = {
@@ -27,7 +52,90 @@ CHOICE_TEXTS: dict[tuple[str, str], dict[Any, str]] = {
         "every_n": "Every n-th step",
         "times": "At given times",
     },
+    ("Initial condition", "kind"): {
+        "uniform": "Uniform",
+        "expression": "Expression of x and y",
+        "per_region": "Per part",
+        "from_results": "From a results file",
+    },
+    ("Mesh", "order"): {1: "Linear (1)", 2: "Quadratic (2)"},
+    ("Mesh", "element_shape"): {"tri": "Triangles", "quad": "Quadrilaterals (quad-dominant)"},
+    ("Mesh", "algorithm"): {
+        "delaunay": "Delaunay",
+        "frontal": "Frontal",
+        "frontal_quad": "Frontal for quadrilaterals",
+    },
+    ("Stream", "mode"): {
+        "in_plane": "Along a path in the plane",
+        "through_plane": "Through the plane",
+    },
+    ("Stream", "cross_section"): CROSS_SECTION_TEXTS,
+    ("Stream", "nu_option"): {
+        "auto": "Automatic",
+        "dittus_boelter": "Dittus–Boelter",
+        "sieder_tate": "Sieder–Tate",
+    },
+    ("Correlation Convection", "correlation"): CORRELATION_TEXTS,
+    ("Correlation Convection", "face_direction"): {
+        None: "(automatic)",
+        "up": "Facing up",
+        "down": "Facing down",
+    },
+    ("Correlation Convection", "wall_T_mode"): {
+        "local": "Local wall temperature",
+        "average": "Mean wall temperature",
+    },
+    ("Boolean", "kind"): {
+        "union": "Union",
+        "cut": "Cut (subtract the tools)",
+        "intersect": "Intersection",
+    },
+    ("Transform", "kind"): {
+        "translate": "Move",
+        "rotate": "Rotate",
+        "mirror": "Mirror",
+        "scale": "Scale",
+    },
+    ("Import File", "format"): {"step": "STEP", "brep": "BREP", "dxf": "DXF"},
 }
+
+#: Field name -> the symbol that labels, load labels and tree summaries show (decision H).
+SYMBOLS: dict[str, str] = {
+    "T": "T",
+    "q": "q",
+    "P": "P",
+    "Q": "Q",
+    "h": "h",
+    "T_inf": "T∞",
+    "emissivity": "ε",
+    "conductance": "h",
+}
+
+
+def symbol_of(field: str) -> str:
+    """The typeset symbol of a field name ("T_inf" -> "T∞"); the name itself if it has none."""
+    return SYMBOLS.get(field, field)
+
+
+def cross_section_text(value: str) -> str:
+    """The text of a stream cross-section id ("annulus_inner" -> "Annulus, inner ...")."""
+    return CROSS_SECTION_TEXTS.get(value, str(value))
+
+
+def correlation_text(value: str) -> str:
+    """The text of a correlation id: its title."""
+    return CORRELATION_TEXTS.get(value, str(value))
+
+
+def branch_kind_text(value: str) -> str:
+    """The text of a network branch kind ("loss" -> "Loss (K factor)")."""
+    return BRANCH_KIND_TEXTS.get(value, str(value))
+
+
+def add_choices(combo: Any, values: Iterable[Any], text_of: Any) -> None:
+    """Add one item per value: the readable ``text_of(value)`` shown, the value as item data."""
+    for value in values:
+        combo.addItem(text_of(value), value)
 
 #: ``(form title, field) -> what an empty value means``.
 EMPTY_TEXTS: dict[tuple[str, str], str] = {

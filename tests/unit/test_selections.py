@@ -94,14 +94,14 @@ def test_selection_becomes_stale_when_its_curve_is_cut_in_two() -> None:
     with pytest.raises(StaleSelectionError) as info:
         resolve(model.selections["bottom"], rebuilt)
     message = str(info.value)
-    assert "'bottom'" in message and "stale" in message and "curve" in message
+    assert "'bottom'" in message and "stale" in message and "boundary" in message
     assert "select it again" in message
     assert isinstance(info.value, ModelError)
 
     old_bottom_tags = list(model.selections["bottom"].tags)
     stale = refresh(model.selections, rebuilt)
     assert set(stale) == {"bottom", "all"}  # the surface was split too
-    assert "'all'" in stale["all"] and "surface" in stale["all"]
+    assert "'all'" in stale["all"] and "part" in stale["all"]
     assert model.selections["bottom"].tags == old_bottom_tags  # stale ones are left alone
     # the two side curves and the corner point are untouched and still resolve
     assert len(resolve(model.selections["sides"], rebuilt)) == 2
