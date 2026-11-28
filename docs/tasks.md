@@ -1148,7 +1148,7 @@ tests (offscreen) of the behavior it adds, plus the whole suite.
 - [x] **M11.76 [C] Nodal history item.** Held item 14 with C2, C3 and C10: a saved result
   item whose panel holds the node list with its pick strip, the quantity and Plot; node
   numbers marked in the view and used in the legend. Depends on M11.75.
-- [ ] **M11.77 [C] Path plot item.** Held item 15, phase 1 (two points, along boundaries)
+- [x] **M11.77 [C] Path plot item.** Held item 15, phase 1 (two points, along boundaries)
   then phase 2 (point table, several times on one chart); Results > Finish / Cancel path
   plot removed. **Stop for the owner's approval of the data-model entry first.** Depends
   on M11.76.

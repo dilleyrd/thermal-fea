@@ -294,6 +294,11 @@ def _explicit_refs(model: Model, name: str) -> list[SelectionRef]:
     if per_region and name in per_region:
         refs.append(SelectionRef(("initial_condition",), "initial condition (per part)",
                                  per_region, name, "key"))  # fmt: skip
+    # a path plot along boundaries (Data §3a, M11.77)
+    for item in getattr(model, "result_items", []):
+        if getattr(item, "kind", None) == "boundaries" and hasattr(item, "selection"):
+            refs += _value_refs(item, "selection", name, ("path", item.name),
+                                f"path plot {item.name}")  # fmt: skip
     return refs
 
 

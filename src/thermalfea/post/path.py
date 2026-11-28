@@ -444,6 +444,29 @@ def sample(
     return s, _evaluate(results, step, xy, field)
 
 
+def values_at(
+    results: Results, step: int, points: Sequence[Sequence[float]], field: str = "T"
+) -> ndarray:
+    """Field values at given points (SI units), NaN outside the mesh (M11.77).
+
+    Parameters
+    ----------
+    results : Results
+    step : int
+        Stored step; negative counts from the end.
+    points : sequence of (x, y)
+        Positions [m], e.g. the mesh nodes along a boundary.
+    field : str
+        As for :func:`sample`.
+
+    Returns
+    -------
+    ndarray, shape (n,)
+    """
+    pts = np.asarray(points, dtype=float).reshape(-1, 2)
+    return _evaluate(results, step, pts, field)
+
+
 def value_at(results: Results, step: int, point: Sequence[float], field: str = "T") -> float:
     """Field value at one point (SI units), NaN outside the mesh.
 

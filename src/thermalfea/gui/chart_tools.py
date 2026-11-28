@@ -431,6 +431,11 @@ class ChartController(QObject):
     # ---------------------------------------------------------------- path plot
     def request_path(self) -> ChartWindow | None:
         """The "Path plot..." action: start picking, or finish when already picking."""
+        items = getattr(self, "path_items", None)
+        if items is not None:  # M11.77: a saved path plot item with its own panel
+            self.cancel_path()
+            items.add()
+            return None
         if self.path_active:
             return self.finish_path()
         if self.results_controller.results is None:

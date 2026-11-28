@@ -134,6 +134,8 @@ class PropertyController:
         self.results_controller: Any = None
         #: The nodal history items (set by :func:`~thermalfea.gui.history_tools.attach_history`).
         self.history_controller: Any = None
+        #: The path plot items (set by :func:`~thermalfea.gui.path_tools.attach_paths`).
+        self.path_controller: Any = None
         #: The result panel currently shown, if any.
         self.result_panel: QWidget | None = None
         self._installed: QWidget | None = None
@@ -147,6 +149,18 @@ class PropertyController:
         results = self.results_controller
         if address and address[0] == RESULT_ADDRESS and results is not None:
             self._show_result(address)
+            return
+        paths = self.path_controller
+        if address and address[0] == "path" and paths is not None:
+            from thermalfea.gui.path_tools import PathPanel  # imports the chart stack
+
+            if len(address) < 2 or paths.get(address[1]) is None:  # noqa: PLR2004
+                self._install(self._placeholder(), None, None)
+                return
+            scroll = QScrollArea()
+            scroll.setWidgetResizable(True)
+            scroll.setWidget(PathPanel(paths, str(address[1])))
+            self._install(scroll, None, address)
             return
         history = self.history_controller
         if address and address[0] == "history" and history is not None:

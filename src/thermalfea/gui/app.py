@@ -28,6 +28,7 @@ from thermalfea.gui.mesh_tools import MeshController, attach_mesh_tools
 from thermalfea.gui.overlay_labels import attach_labels
 from thermalfea.gui.panels import PropertyController, attach_tree
 from thermalfea.gui.part_colors import attach_part_colors
+from thermalfea.gui.path_tools import attach_paths
 from thermalfea.gui.results_tools import ResultController, attach_results
 from thermalfea.gui.solve_tools import SolveController, attach_solve
 from thermalfea.gui.tree import ModelTree
@@ -229,6 +230,7 @@ def build_application(
     results_controller = attach_results(window, document, view)
     charts = attach_charts(window, document, view, results_controller)
     attach_history(window, document, view, results_controller, charts)
+    attach_paths(window, document, view, results_controller, charts)
     flow = attach_flow(window, document, view, results_controller)
     attach_inspect(
         window, document, view, tree,
