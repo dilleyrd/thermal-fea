@@ -24,6 +24,7 @@ from thermalfea.gui.document import Document
 from thermalfea.gui.panels import attach_tree
 from thermalfea.gui.property_panels.results import ResultPanel
 from thermalfea.gui.results_tools import (
+    DEFAULT_CONTOUR,
     ContourObject,
     VectorObject,
     attach_results,
@@ -32,7 +33,7 @@ from thermalfea.gui.scene import FieldDisplay, SceneView
 from thermalfea.gui.viewport_mpl import MplSceneView
 from thermalfea.model import bcs
 from thermalfea.model.model import Model
-from thermalfea.model.serialize import to_json
+from thermalfea.model.serialize import from_json, to_json
 from thermalfea.model.settings import SolutionSettings
 from thermalfea.post.path import value_at
 from thermalfea.post.plots import contour_data, display_value, field_range, vector_data
@@ -232,17 +233,22 @@ def test_add_rename_duplicate_show_delete_through_the_tree(steady) -> None:
     # the open panel followed the displayed object
     assert steady.props.result_panel is not None
     assert steady.props.result_panel.name == ctrl.shown
-    # deleting everything clears the display
+    # deleting every stored object brings back the default contour (Data §3a, M11.75):
+    # with no result items the window shows an unstored Temperature contour
     for obj in list(ctrl.objects):
         ctrl.delete(obj.name)
-    assert ctrl.shown is None and steady.view.last is None
+    assert ctrl.document.model.result_items == []
+    assert [o.name for o in ctrl.objects] == [DEFAULT_CONTOUR]
+    assert ctrl.shown == DEFAULT_CONTOUR and steady.view.last is not None
 
 
-def test_result_objects_are_not_model_data(steady) -> None:
+def test_result_objects_are_saved_undoable_and_never_stale(steady) -> None:
+    """M11.75 (owner's decision B): result items are model data; every change is one undo
+    step and marks the model changed, but never makes the results out of date."""
     doc, ctrl = steady.doc, steady.ctrl
-    before = to_json(doc.model)
     stale = doc.results_stale
     count = doc.undo_stack.count()
+    assert doc.model.result_items == []  # the default contour is shown, not stored
     ctrl.add_contour("qmag")
     ctrl.add_vectors()
     ctrl.update(ctrl.shown, density=10)
@@ -251,9 +257,13 @@ def test_result_objects_are_not_model_data(steady) -> None:
     ctrl.delete("Arrows")
     panel = open_panel(steady, ctrl.objects[0].name)
     panel.mesh_check.setChecked(True)
-    assert to_json(doc.model) == before
-    assert not doc.modified and doc.undo_stack.count() == count
-    assert doc.results_stale == stale
+    assert doc.undo_stack.count() == count + 7 and doc.modified
+    assert doc.results_stale == stale and not ctrl.status().out_of_date
+    names = [item.name for item in doc.model.result_items]
+    assert names == [o.name for o in ctrl.objects]
+    assert from_json(to_json(doc.model)).result_items == doc.model.result_items
+    doc.undo_stack.setIndex(count)
+    assert doc.model.result_items == [] and [o.name for o in ctrl.objects] == [DEFAULT_CONTOUR]
 
 
 # ---------------------------------------------------------------------------- the controls

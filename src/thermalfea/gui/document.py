@@ -57,10 +57,12 @@ def _dumps(data: dict[str, Any]) -> str:
 
 
 def _comparable(data: dict[str, Any]) -> dict[str, Any]:
-    """Model JSON without the build-derived selection caches (tags, ``"all"``) and without
-    the display units (they change how numbers are shown, never what is computed)."""
+    """Model JSON without the build-derived selection caches (tags, ``"all"``), without
+    the display units (they change how numbers are shown, never what is computed) and
+    without the result items (displays of the results, Data §3a)."""
     out = dict(data)
     out.pop("display_units", None)
+    out.pop("result_items", None)
     selections = {
         name: {k: v for k, v in sel.items() if k != "tags"}
         for name, sel in data.get("selections", {}).items()
@@ -202,7 +204,9 @@ class Document(QObject):
         self.undo_stack.setClean()
 
     # ------------------------------------------------------------------ editing
-    def edit(self, text: str, mutate: Callable[[Model], None]) -> bool:
+    def edit(
+        self, text: str, mutate: Callable[[Model], None], merge_key: str | None = None
+    ) -> bool:
         """Change the model through ``mutate`` as one undoable step.
 
         ``mutate`` receives a working copy; if it raises, the exception propagates and
@@ -214,6 +218,10 @@ class Document(QObject):
             Name of the command ("Undo <text>").
         mutate : callable
             ``mutate(model)`` edits the given model in place.
+        merge_key : str, optional
+            Consecutive edits with the same key merge into one undo step (e.g. dragging the
+            time slider of a result item, M11.75); the merged step undoes to the state
+            before the first of them.
 
         Returns
         -------
@@ -226,7 +234,7 @@ class Document(QObject):
         after = _dumps(to_json(working))
         if after == before:
             return False
-        self.undo_stack.push(ModelEditCommand(self, text, before, after))
+        self.undo_stack.push(ModelEditCommand(self, text, before, after, merge_key))
         return True
 
     def apply_snapshot(self, snapshot: str, previous: str) -> None:

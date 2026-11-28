@@ -118,6 +118,11 @@ class ResultPanel(QWidget):
         # --- what to show
         self.show_group = QGroupBox("Display")
         form = QFormLayout(self.show_group)
+        # the eye toggle (C4): hide the field and keep the settings
+        self.visible_check = QCheckBox("Show in the view")
+        self.visible_check.setToolTip("Hide or show this display; its settings are kept")
+        self.visible_check.toggled.connect(self._on_visible)
+        form.addRow(self.visible_check)
         self.field_combo = QComboBox()
         for key in self.controller.fields() or list(FIELDS):
             self.field_combo.addItem(FIELDS[key][3], key)
@@ -292,6 +297,10 @@ class ResultPanel(QWidget):
         self.probe_label.setText(text)
 
     # --------------------------------------------------------------------- sync
+    def _on_visible(self, on: bool) -> None:
+        if not self._syncing:
+            self.controller.set_visible(self.name, bool(on))
+
     def _sync(self, *_args: object) -> None:
         """Show the controller's state (without feeding it back as edits)."""
         controller = self.controller
@@ -328,6 +337,7 @@ class ResultPanel(QWidget):
                 self.time_edit.setText(f"{shown_time:.6g}")
             self.time_edit.setEnabled(n > 1)
             self.mesh_check.setChecked(obj.show_mesh)
+            self.visible_check.setChecked(obj.visible)
 
             if is_contour:
                 index = self.field_combo.findData(obj.field)

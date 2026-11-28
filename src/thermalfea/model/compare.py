@@ -34,7 +34,8 @@ from .serialize import TYPE_KEY, to_json
 from .settings import MeshSettings, SolutionSettings
 
 #: Top-level keys of the model JSON that never change a result.
-_IGNORED = ("display_units", "name", "schema_version")
+#: Keys that never make results out of date (result items are display only, Data §3a).
+_IGNORED = ("display_units", "name", "schema_version", "result_items")
 _VALUE_KINDS = ("function", "float", "int", "bool", "choice", "str")
 _ARROW = " → "
 

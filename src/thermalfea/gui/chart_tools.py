@@ -99,6 +99,7 @@ from thermalfea.gui.scene import (
     SceneView,
 )
 from thermalfea.post.report import write_report
+from thermalfea.post.results import Results
 
 _log = logging.getLogger(__name__)
 
@@ -350,6 +351,21 @@ class ChartController(QObject):
             self.windows.remove(chart)  # type: ignore[arg-type]
             chart.deleteLater()  # type: ignore[attr-defined]
 
+    def _current_results(self) -> Results:
+        """The current results (for charts that draw again after a new solve)."""
+        results = self.results_controller.results
+        if results is None:
+            raise ThermalFEAError("there are no results")
+        return results
+
+    def _open_renewable(self, draw: Callable[[ChartWindow], None]) -> ChartWindow | None:
+        """Open a chart whose ``draw`` reads the current results: a new solve draws it
+        again instead of marking it out of date (M11.75)."""
+        chart = self._open(draw)
+        if chart is not None:
+            chart.renewable = True  # type: ignore[attr-defined]
+        return chart
+
     def _open(self, draw: Callable[[ChartWindow], None]) -> ChartWindow | None:
         """Create a chart window, draw into it, show it; errors go to ``show_error``."""
         chart = self._new_window()
@@ -497,31 +513,33 @@ class ChartController(QObject):
     # --------------------------------------------------- heat flow and energy
     def plot_heat_flows(self, bc_names: list[str] | None = None) -> ChartWindow | None:
         """Open a window with the heat flow through boundary conditions (all by default)."""
-        results = self.results_controller.results
-        if results is None:
+        if self.results_controller.results is None:
             return None
-        return self._open(lambda w: w.show_heat_flows(results, bc_names))
+        return self._open_renewable(
+            lambda w: w.show_heat_flows(self._current_results(), bc_names)
+        )
 
     def plot_contact_heat(self) -> ChartWindow | None:
         """Open a window with the heat across every contact (side A to side B)."""
-        results = self.results_controller.results
-        if results is None:
+        if self.results_controller.results is None:
             return None
-        return self._open(lambda w: w.show_term_results(results, "contact_heat"))
+        return self._open_renewable(
+            lambda w: w.show_term_results(self._current_results(), "contact_heat")
+        )
 
     def plot_h_mean(self) -> ChartWindow | None:
         """Open a window with the mean heat-transfer coefficient of correlation loads."""
-        results = self.results_controller.results
-        if results is None:
+        if self.results_controller.results is None:
             return None
-        return self._open(lambda w: w.show_term_results(results, "h_mean"))
+        return self._open_renewable(
+            lambda w: w.show_term_results(self._current_results(), "h_mean")
+        )
 
     def plot_energy_balance(self) -> ChartWindow | None:
         """Open a window with the stored energy-balance columns against time."""
-        results = self.results_controller.results
-        if results is None:
+        if self.results_controller.results is None:
             return None
-        return self._open(lambda w: w.show_energy_balance(results))
+        return self._open_renewable(lambda w: w.show_energy_balance(self._current_results()))
 
     # ------------------------------------------------------------ results change
     def _on_model_changed(self) -> None:
@@ -544,7 +562,15 @@ class ChartController(QObject):
         self.update_actions()
 
     def _on_results_changed(self) -> None:
+        # heat-flow, contact-heat, mean-h and energy charts draw again from the new results;
+        # the others (and those that cannot) are marked out of date
         for chart in self.windows:
+            if getattr(chart, "renewable", False) and chart.redraw is not None:
+                try:
+                    chart.redraw()
+                    continue
+                except (ThermalFEAError, OSError, KeyError, ValueError):
+                    pass
             chart.mark_out_of_date()
         if self.history_pending:
             self.history_pending = False

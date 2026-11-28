@@ -1140,7 +1140,7 @@ tests (offscreen) of the behavior it adds, plus the whole suite.
 - [x] **M11.74 [C] View.** Held items 1, 5, 23 and 7 with C10: labels drawn in front of
   lines; highlights for streams (walls and path), enclosures and the Mesh panel's rows;
   a stretched view for slender models, stated in the view. Depends on M11.73.
-- [ ] **M11.75 [C] Saved result items.** Held items 17 and 3 with C3 and C4 (decision B):
+- [x] **M11.75 [C] Saved result items.** Held items 17 and 3 with C3 and C4 (decision B):
   contours and vector plots saved in the model file and undoable; an eye toggle on every
   result item; heat-flow and energy charts redrawn after a new solve. **Stop for the
   owner's approval of the `docs/data-model.md` entries before writing code.** Depends on

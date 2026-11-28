@@ -26,13 +26,38 @@ class ModelEditCommand(QUndoCommand):
         Command name shown in the Edit menu ("Undo <text>").
     before, after : str
         Model JSON text before and after the edit.
+    merge_key : str, optional
+        Commands with the same key that follow each other merge into one: the merged
+        command keeps the first "before" and the last "after" (M11.75).
     """
 
-    def __init__(self, document: Document, text: str, before: str, after: str) -> None:
+    def __init__(
+        self,
+        document: Document,
+        text: str,
+        before: str,
+        after: str,
+        merge_key: str | None = None,
+    ) -> None:
         super().__init__(text)
         self._document = document
         self._before = before
         self._after = after
+        self.merge_key = merge_key
+
+    def id(self) -> int:  # noqa: A003 (Qt API)
+        """One id for every mergeable command (``-1``: never merged); keys are compared in
+        :meth:`mergeWith`."""
+        return 1 if self.merge_key else -1
+
+    def mergeWith(self, other: QUndoCommand) -> bool:  # noqa: N802 (Qt API)
+        """Absorb ``other`` when it carries the same merge key."""
+        if not isinstance(other, ModelEditCommand) or other.merge_key != self.merge_key:
+            return False
+        if other.before != self._after:  # pragma: no cover - the stack keeps them in order
+            return False
+        self._after = other.after
+        return True
 
     @property
     def before(self) -> str:

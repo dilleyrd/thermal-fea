@@ -1,18 +1,24 @@
 """Result displays: contour and vector objects, probe and animation (Plan M8.10).
 
-Result objects are *view state*, not model data
------------------------------------------------
+Result objects are saved result items (M11.75, Data §3a)
+---------------------------------------------------------
 A :class:`ContourObject` or :class:`VectorObject` says how some results are shown (which
-field, which step, the color range, ...). The model file format has no place for them and
-they describe a view of a solve, not the model, so they live only here, in the
-:class:`ResultController` that the application owns:
+field, which step, the color range, ...). They are the window's working form of the
+model's :class:`~thermalfea.model.result_items.ContourItem` and
+:class:`~thermalfea.model.result_items.VectorItem` (``Model.result_items``), which are saved
+in the model file (owner's decision B):
 
-* they are **not** in ``to_json(document.model)``, creating or editing one never marks the
-  document modified and never makes the results stale;
-* edits are **not** undoable (they are not on ``document.undo_stack``): a slider that is
-  dragged or an animation that plays must not fill the undo history. Delete and re-add is
-  the way back;
-* they are not saved with the model; a new model starts without them.
+* every add, delete, rename or change is one ``Document.edit`` (one undo step, the model
+  is marked changed); result items never make the results stale;
+* the model stores the *time* shown (``None`` = the last step) and a manual color range in
+  SI; here they become a stored step and display units;
+* consecutive changes of the time of one object (dragging the step slider) merge into
+  one undo step; an animation keeps its step in the window while it plays and stores the
+  step it stops on as one undo step when the user stops it or it reaches the end;
+* with no items in the model, a default "Temperature" contour is shown that is not
+  stored; the first change stores it, so opening results is not an edit;
+* ``visible`` is the eye toggle (C4): the displayed object with ``visible`` off hides the
+  field and keeps its settings. Which object is displayed is window state.
 
 The tree shows them under the Solution node (the controller is the tree's *provider*, see
 :meth:`~thermalfea.gui.tree.ModelTree.add_provider`) with addresses ``("result", name)``;
@@ -78,6 +84,7 @@ from thermalfea.gui.property_panels.results import RESULT_ADDRESS
 from thermalfea.gui.scene import FieldDisplay, OverlayMarker, SceneView
 from thermalfea.gui.tree_summary import analysis_summary
 from thermalfea.model.compare import model_changes
+from thermalfea.model.result_items import ContourItem, VectorItem
 from thermalfea.post.path import value_at
 from thermalfea.post.plots import (
     FIELDS,
@@ -287,6 +294,7 @@ class ContourObject:
     levels: int = 12
     show_mesh: bool = False
     markers: bool = True
+    visible: bool = True
 
 
 @dataclass
@@ -309,9 +317,13 @@ class VectorObject:
     step: int = 0
     density: int = 30
     show_mesh: bool = False
+    visible: bool = True
 
 
 ResultObject = ContourObject | VectorObject
+#: Name of the default contour shown while the model has no result items (not stored);
+#: the name the window always gave its first contour.
+DEFAULT_CONTOUR = unique_name("Temperature", [])
 
 
 @dataclass(frozen=True)
@@ -399,6 +411,8 @@ class ResultController(QObject):
         self.tree: Any = None
         self.objects: list[ResultObject] = []
         self.shown: str | None = None
+        #: Steps an animation is showing, not stored yet: object name -> step.
+        self._live: dict[str, int] = {}
         self.display: FieldDisplay | None = None
         self.probes: list[ProbeReading] = []
         self._markers: list[tuple[float, float]] = []
@@ -495,6 +509,7 @@ class ResultController(QObject):
         """The document was replaced (New, Open, Example): drop the old model's results state."""
         self.objects = []
         self.shown = None
+        self._live = {}
         self.display = None
         self.probes = []
         self._clear_markers()  # before set_probe(False), which only clears kept markers
@@ -523,16 +538,90 @@ class ResultController(QObject):
             except (ThermalFEAError, OSError, KeyError) as exc:
                 _log.warning("results %s cannot be read: %s", path, exc)
                 self._status(f"Results cannot be read: {exc}")
-        if self._results is not None:
-            if not self.objects:
-                name = unique_name("Temperature", [])
-                self.objects.append(ContourObject(name, step=self.n_steps - 1))
-            self.objects = [self._clamped(obj) for obj in self.objects]
-            if self.get(self.shown) is None:
-                self.shown = self.objects[0].name
-        self.objects_changed.emit()
+        self._live = {}
+        self._sync_from_model()
+        self.objects_changed.emit()  # new results or a new model: the tree and panel follow
         self._refresh()
         self.status_changed.emit()
+
+    # ------------------------------------------------------- model <-> objects
+    def _sync_from_model(self) -> None:
+        """Rebuild :attr:`objects` from ``Model.result_items`` (and the default contour)."""
+        items = [
+            i for i in self.document.model.result_items if isinstance(i, ContourItem | VectorItem)
+        ]
+        if items:
+            objects = [self._to_object(item) for item in items]
+        elif self._results is not None:  # shown, not stored, until it is first changed
+            objects = [ContourObject(DEFAULT_CONTOUR, step=max(self.n_steps - 1, 0))]
+        else:
+            objects = []
+        changed = [o.name for o in objects] != [o.name for o in self.objects]
+        self.objects = objects
+        if self.get(self.shown) is None:
+            visible = [o for o in objects if o.visible]
+            self.shown = (visible or objects)[0].name if objects else None
+        if changed:
+            self.objects_changed.emit()
+
+    def _to_object(self, item: ContourItem | VectorItem) -> ResultObject:
+        """The window's object of a stored item (time -> step, SI range -> display)."""
+        last = max(self.n_steps - 1, 0)
+        if item.name in self._live:
+            step = self._live[item.name]
+        elif item.time is None or not self.n_steps:
+            step = last
+        else:
+            step = self.step_for_time(item.time)
+        step = min(max(step, 0), last)
+        if isinstance(item, VectorItem):
+            return VectorObject(item.name, step, item.density, item.show_mesh, item.visible)
+        field, mode, lo, hi = item.field, item.range_mode, item.vmin, item.vmax
+        if self._results is not None and field not in self.fields():
+            field, mode, lo, hi = "T", "auto_step", None, None
+        units = self.document.model.display_units
+        if lo is not None and hi is not None:
+            lo, hi = (
+                float(np.ravel(field_display_values(field, v, units))[0]) for v in (lo, hi)
+            )
+        return ContourObject(
+            item.name, field, step, mode, lo, hi, item.banded, item.levels, item.show_mesh,
+            item.markers, item.visible,
+        )
+
+    def _to_item(self, obj: ResultObject) -> ContourItem | VectorItem:
+        """The stored item of a window object (step -> time, display range -> SI)."""
+        last = self.n_steps - 1
+        time = None if self.n_steps == 0 or obj.step >= last else self.time_of(obj.step)
+        if isinstance(obj, VectorObject):
+            return VectorItem(obj.name, time, obj.density, obj.show_mesh, obj.visible)
+        units = self.document.model.display_units
+        lo, hi = obj.vmin, obj.vmax
+        if lo is not None and hi is not None:
+            lo, hi = (
+                float(np.ravel(field_si_values(obj.field, v, units))[0]) for v in (lo, hi)
+            )
+        return ContourItem(
+            obj.name, obj.field, time, obj.range_mode, lo, hi,  # type: ignore[arg-type]
+            obj.banded, obj.levels, obj.show_mesh, obj.markers, obj.visible,
+        )
+
+    def _write(
+        self,
+        text: str,
+        objects: list[ResultObject],
+        merge_key: str | None = None,
+    ) -> bool:
+        """Store ``objects`` as the model's contour and vector items in one undo step."""
+        items = [self._to_item(o) for o in objects]
+
+        def mutate(model: Any) -> None:
+            others = [
+                i for i in model.result_items if not isinstance(i, ContourItem | VectorItem)
+            ]
+            model.result_items = [*items, *others]
+
+        return self.document.edit(text, mutate, merge_key)
 
     def status(self) -> ResultStatus:
         """Freshness of the displayed results (cached per model object and file)."""
@@ -549,48 +638,33 @@ class ResultController(QObject):
         return status
 
     def _on_model_changed(self) -> None:
-        self._apply_units()
+        if self.document.generation != self._generation:
+            return  # a new model: results_changed follows and starts afresh
+        units_changed = self._apply_units()
+        before = list(self.objects)
+        self._sync_from_model()
         status = self.status()
-        if self._results is not None and self._suffixed != status.out_of_date:
-            self._refresh()  # the viewport title gains or loses " · out of date"
+        if units_changed or self.objects != before or (
+            self._results is not None and self._suffixed != status.out_of_date
+        ):
+            self._refresh()  # the settings changed, or the title gains " · out of date"
         self.status_changed.emit()
 
-    def _apply_units(self) -> None:
-        """Show the results again when the display units changed.
+    def _apply_units(self) -> bool:
+        """Follow a change of the display units; ``True`` if they changed.
 
-        Manual color ranges are typed in display units, so they are converted to the new
-        units (the same SI values); the cached ranges over all steps are dropped.
+        The stored items keep their manual ranges in SI, so the objects are simply built
+        again in the new units (by the caller); the cached ranges are dropped.
         """
         new = self.document.model.display_units
-        old = self._units
-        if new == old:
-            return
+        if new == self._units:
+            return False
         self._units = new
         self._follow_document_units = True
-        if self._results is None:
-            return
-        self._results.display_units = new
-        self._ranges.clear()
-        converted: list[ResultObject] = []
-        for obj in self.objects:
-            if isinstance(obj, ContourObject) and obj.vmin is not None and obj.vmax is not None:
-                lo, hi = (
-                    float(field_display_values(
-                        obj.field, field_si_values(obj.field, v, old), new)[0])
-                    for v in (obj.vmin, obj.vmax)
-                )
-                obj = replace(obj, vmin=lo, vmax=hi)
-            converted.append(obj)
-        self.objects = converted
-        self.objects_changed.emit()
-        self._refresh()
-
-    def _clamped(self, obj: ResultObject) -> ResultObject:
-        step = min(max(obj.step, 0), max(self.n_steps - 1, 0))
-        out = replace(obj, step=step) if step != obj.step else obj
-        if isinstance(out, ContourObject) and out.field not in self.fields():
-            out = replace(out, field="T", range_mode="auto_step", vmin=None, vmax=None)
-        return out
+        if self._results is not None:
+            self._results.display_units = new
+            self._ranges.clear()
+        return True
 
     def _status(self, text: str, timeout_ms: int = 8000) -> None:
         self.window.statusBar().showMessage(text, timeout_ms)
@@ -610,9 +684,10 @@ class ResultController(QObject):
         return [o.name for o in self.objects]
 
     def _added(self, obj: ResultObject) -> str:
-        self.objects.append(obj)
+        self.pause(store=True)  # the displayed object changes
+        self.shown = obj.name  # shown as soon as the edit's model_changed rebuilds the objects
+        self._write(f"Add {obj.name}", [*self.objects, obj])
         self.show(obj.name)
-        self.objects_changed.emit()
         if self.tree is not None:
             self.tree.select_address((RESULT_ADDRESS, obj.name))
         return obj.name
@@ -656,20 +731,25 @@ class ResultController(QObject):
             return False
         if new_name in self._names():
             raise ModelError(f"the name {new_name!r} is already used")
-        self.objects[self.objects.index(obj)] = replace(obj, name=new_name)
+        objects = list(self.objects)
+        objects[objects.index(obj)] = replace(obj, name=new_name)
         if self.shown == name:
             self.shown = new_name
-        self.objects_changed.emit()
+        if name in self._live:
+            self._live[new_name] = self._live.pop(name)
+        self._write(f"Rename {name}", objects)
         return True
 
     def duplicate(self, name: str) -> str:
         """Copy an object under a new unique name, show the copy and return its name."""
         obj = self._require(name)
         copy = replace(obj, name=copy_name(name, self._names()))
-        position = self.objects.index(obj) + 1
-        self.objects.insert(position, copy)
+        objects = list(self.objects)
+        objects.insert(objects.index(obj) + 1, copy)
+        self.pause(store=True)  # the displayed object changes
+        self.shown = copy.name
+        self._write(f"Duplicate {name}", objects)
         self.show(copy.name)
-        self.objects_changed.emit()
         if self.tree is not None:
             self.tree.select_address((RESULT_ADDRESS, copy.name))
         return copy.name
@@ -677,23 +757,35 @@ class ResultController(QObject):
     def delete(self, name: str) -> bool:
         """Delete an object; another one (or none) is displayed afterwards."""
         obj = self._require(name)
-        index = self.objects.index(obj)
-        del self.objects[index]
+        objects = list(self.objects)
+        index = objects.index(obj)
+        del objects[index]
         if self.shown == name:
             self.pause()
-            following = self.objects[min(index, len(self.objects) - 1)] if self.objects else None
+            following = objects[min(index, len(objects) - 1)] if objects else None
             self.shown = following.name if following is not None else None
-        self.objects_changed.emit()
-        self._refresh()
+        self._live.pop(name, None)
+        # deleting the last stored one brings back the default contour (Data §3a)
+        self._write(f"Delete {name}", objects)
         return True
 
     def show(self, name: str) -> None:
-        """Make the object the displayed one."""
+        """Make the object the displayed one (window state, not an edit)."""
         self._require(name)
         if self.shown != name:
-            self.pause()
+            self.pause(store=True)
         self.shown = name
         self._refresh()
+
+    def set_visible(self, name: str, visible: bool) -> bool:
+        """The eye toggle (C4): show or hide the object's field; the settings are kept."""
+        obj = self._require(name)
+        if obj.visible == bool(visible):
+            return False
+        if not visible and self.shown == name:
+            self.pause(store=True)
+        self.update(name, visible=bool(visible))
+        return True
 
     # ----------------------------------------------------------------- editing
     def update(self, name: str, **changes: Any) -> ResultObject:
@@ -723,13 +815,24 @@ class ResultController(QObject):
             if key not in valid:
                 raise ModelError(f"a {obj.kind} object has no setting {key!r}")
         new = self._validated(obj, changes)
-        if new != obj:
-            self.objects[self.objects.index(obj)] = new
-            if self.shown == name:
-                self._refresh()
-            else:
-                self.display_changed.emit()
-        return new
+        if new == obj:
+            return new
+        objects = list(self.objects)
+        objects[objects.index(obj)] = new
+        only_time = {k for k in changes if getattr(new, k) != getattr(obj, k)} == {"step"}
+        self._live.pop(name, None)
+        if only_time:  # dragging the step slider: one undo step for the whole drag
+            self._write(f"Show a step of {name}", objects, merge_key=f"time:{name}")
+        else:
+            self._write(f"Edit {name}", objects)
+        # the stored value may equal the model already (an animation showed another step):
+        # rebuild from the model so the window shows what is stored
+        self._sync_from_model()
+        if self.shown == name:
+            self._refresh()
+        else:
+            self.display_changed.emit()
+        return self.get(name) or new
 
     def _validated(self, obj: ResultObject, changes: dict[str, Any]) -> ResultObject:
         values = dict(changes)
@@ -741,7 +844,7 @@ class ResultController(QObject):
                 if not 1 <= number <= (MAX_LEVELS if key == "levels" else 10**6):
                     raise ModelError(f"{key} must be at least 1 (levels at most {MAX_LEVELS})")
                 values[key] = number
-            elif key in ("banded", "show_mesh", "markers"):
+            elif key in ("banded", "show_mesh", "markers", "visible"):
                 values[key] = bool(value)
             elif key == "field":
                 if value not in (self.fields() or list(FIELDS)):
@@ -830,7 +933,7 @@ class ResultController(QObject):
     def _refresh(self) -> None:
         obj = self.get(self.shown)
         spec: FieldDisplay | None = None
-        if obj is not None and self._results is not None:
+        if obj is not None and obj.visible and self._results is not None:
             try:
                 spec = self.build_display(obj)
             except (ThermalFEAError, OSError, KeyError) as exc:
@@ -883,17 +986,45 @@ class ResultController(QObject):
         if not self.can_play or obj is None:
             return False
         if obj.step >= self.n_steps - 1:
-            self.update(obj.name, step=0)
+            self._set_live(obj.name, 0)
         self.timer.start()
         self._announce_playing()
         return True
 
-    def pause(self) -> None:
-        """Stop the animation (no effect when it is not running)."""
+    def pause(self, store: bool = False) -> None:
+        """Stop the animation (no effect when it is not running).
+
+        Parameters
+        ----------
+        store : bool
+            Store the step the animation stopped on (one undo step); otherwise the object
+            returns to its stored step.
+        """
         was = self.timer.isActive()
         self.timer.stop()
         if was:
             self._announce_playing()
+        live, self._live = self._live, {}
+        for name, step in live.items():
+            obj = self.get(name)
+            if obj is None:
+                continue
+            if store:
+                objects = [replace(o, step=step) if o.name == name else o for o in self.objects]
+                self._write(f"Show a step of {name}", objects, merge_key=f"time:{name}")
+            else:
+                self._sync_from_model()
+        if live and not store:
+            self._refresh()
+
+    def _set_live(self, name: str, step: int) -> None:
+        """Show ``step`` of an object during an animation, without storing it."""
+        self._live[name] = step
+        self.objects = [replace(o, step=step) if o.name == name else o for o in self.objects]
+        if self.shown == name:
+            self._refresh()
+        else:
+            self.display_changed.emit()
 
     def _announce_playing(self) -> None:
         self._update_actions()
@@ -904,7 +1035,7 @@ class ResultController(QObject):
             if not self.play():
                 self._update_actions()
         else:
-            self.pause()
+            self.pause(store=True)
 
     def tick(self) -> None:
         """One animation frame: advance the displayed object by one step.
@@ -919,12 +1050,12 @@ class ResultController(QObject):
         step = obj.step + 1
         if step > last:
             if not self.loop:
-                self.pause()
+                self.pause(store=True)
                 return
             step = 0
-        self.update(obj.name, step=step)
+        self._set_live(obj.name, step)
         if step >= last and not self.loop:
-            self.pause()
+            self.pause(store=True)
 
     # ------------------------------------------------------------------- probe
     @property

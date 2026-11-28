@@ -101,6 +101,7 @@ class Model:
     enclosures: list[Enclosure]
     contacts: list[Contact]
     solution: SolutionSettings               # §10
+    result_items: list[ResultItem] = []      # §3a, saved displays of the results (M11.75)
 ```
 
 ```python
@@ -134,6 +135,80 @@ class InitialCondition:
     per_region: dict[str, float] | None = None
     results_path: str | None = None          # take the last step of another results file
 ```
+
+## §3a Result items (owner's approval, 2026-11-28; M11.75-M11.77)
+
+`model/result_items.py`. The displays of the results the user builds in the window: plain
+records without Qt, saved in the model file (`Model.result_items`). A file without them
+loads with an empty list.
+
+```python
+@dataclass
+class ContourItem:                        # M11.75
+    name: str                             # unique among the result items
+    field: str = "T"                      # key of post.plots.FIELDS (T, qx, qmag, ...)
+    time: float | None = None             # s shown; None = the last stored step (steady: the solution)
+    range_mode: Literal["auto_step", "auto_all", "manual"] = "auto_step"
+    vmin: float | None = None             # SI; manual range only
+    vmax: float | None = None
+    banded: bool = True
+    levels: int = 12
+    show_mesh: bool = False
+    markers: bool = True                  # mark the minimum and maximum
+    visible: bool = True                  # eye toggle (convention C4)
+
+@dataclass
+class VectorItem:                         # M11.75
+    name: str
+    time: float | None = None
+    density: int = 30
+    show_mesh: bool = False
+    visible: bool = True
+
+@dataclass
+class HistoryItem:                        # M11.76: nodal history
+    name: str
+    points: list[tuple[float, float]]     # m; each matched to the nearest mesh node when plotted
+    field: str = "T"
+    visible: bool = True                  # node markers and numbers in the view
+
+@dataclass
+class PathItem:                           # M11.77: path plot
+    name: str
+    kind: Literal["two_points", "boundaries", "points"]
+    points: list[tuple[float, float]] = []   # m; two_points: [A, B]; points: the polyline
+    selection: str = ""                   # boundaries: a boundary selection joined end to end
+    samples: int = 100                    # two_points / points: evenly spaced samples
+    snap: bool = False                    # two_points: snap A and B to the nearest nodes
+    reverse: bool = False                 # run from B to A
+    field: str = "T"
+    times: list[float] | None = None      # s; None = the displayed step; several are overlaid
+    axis: Literal["distance", "x", "y"] = "distance"   # horizontal axis (r, z when axisymmetric)
+    visible: bool = True
+
+ResultItem = ContourItem | VectorItem | HistoryItem | PathItem
+```
+
+Rules:
+
+- Every add, delete, rename or change of a result item is one undo step and marks the
+  model as changed (owner's decision B).
+- Result items are display only: they never make results "out of date"
+  (`model/compare.py` ignores them), the solver ignores them, and the results file is
+  unchanged.
+- An item stores the *time* it shows, not a step index: a new solve may store different
+  steps, so the nearest stored step is shown; `None` is always the last one.
+- A manual color range is in SI, so a change of display units does not change it.
+- At most one contour or vector item is visible (the view has one field layer); its eye
+  toggle hides the field and keeps its settings. History markers and path drawings are
+  overlays with their own toggles.
+- A nodal history stores positions, not node numbers (they change when the mesh is
+  regenerated); the view and the legend show the current node numbers ("N 412").
+- A path plot's boundary selection is a selection reference: renaming the selection
+  updates it, and it cannot be deleted while used, as for loads.
+- With no result items, the window shows a default Temperature contour that is not
+  stored; it becomes a stored item the first time it is changed, so opening results is not
+  an edit.
 
 ## §4 Geometry operations
 

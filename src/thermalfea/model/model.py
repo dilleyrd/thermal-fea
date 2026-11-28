@@ -11,6 +11,7 @@ from ..core.units import UnitSettings
 from ..materials.material import Material
 from .bcs import BoundaryCondition, Contact, Enclosure, FlowNetwork, Stream, coerce_functions
 from .geometry_ops import GeometryOp
+from .result_items import ResultItem
 from .selections import Selection
 from .settings import MeshSettings, SolutionSettings
 
@@ -130,6 +131,8 @@ class Model:
     enclosures : list of Enclosure
     contacts : list of Contact
     solution : SolutionSettings
+    result_items : list of ResultItem
+        Saved displays of the results (Data §3a; display only, M11.75).
     """
 
     schema_version: int = SCHEMA_VERSION
@@ -148,6 +151,7 @@ class Model:
     enclosures: list[Enclosure] = field(default_factory=list)
     contacts: list[Contact] = field(default_factory=list)
     solution: SolutionSettings = field(default_factory=SolutionSettings)
+    result_items: list[ResultItem] = field(default_factory=list)
 
     def __post_init__(self) -> None:
         if self.analysis not in ("planar", "axisymmetric"):

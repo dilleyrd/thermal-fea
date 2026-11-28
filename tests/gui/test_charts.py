@@ -353,14 +353,19 @@ def test_actions_disabled_without_results(window) -> None:
 
 
 # --------------------------------------------------------------- results change / close
-def test_results_changed_marks_charts_out_of_date(shell) -> None:
-    chart = shell.charts.plot_energy_balance()
+def test_results_changed_redraws_or_marks_charts(shell) -> None:
+    """M11.75 (held item 17): energy and heat-flow charts draw again from new results;
+    a nodal history (until it becomes a saved item, M11.76) is marked out of date."""
+    energy = shell.charts.plot_energy_balance()
+    history = shell.charts.plot_history([0, 1])
     shell.window.actions[PATH_ID].trigger()
-    assert shell.charts.path_active and "out of date" not in chart.windowTitle()
+    assert shell.charts.path_active and "out of date" not in energy.windowTitle()
     shell.doc.set_results(shell.path)
-    assert chart.out_of_date and chart.windowTitle().endswith("(out of date)")
+    assert not energy.out_of_date and not energy.windowTitle().endswith("(out of date)")
+    assert history.out_of_date and history.windowTitle().endswith("(out of date)")
     assert not shell.charts.path_active
-    assert shell.charts.windows == [chart] and lines(chart)  # data is kept
+    assert shell.charts.windows == [energy, history]
+    assert lines(energy) and lines(history)  # data is kept
 
 
 def test_charts_close_with_the_main_window(shell) -> None:
