@@ -989,9 +989,17 @@ From the owner's V-17 review:
       selections as a list, each with ✕, and the same "add" control. This also removes the
       cut-off picking rows of item 9 and walkthrough friction 10.
 
-    Open for the owner when the item is released: a dropdown change applies at once with
-    undo (recommended) or arms an "Update" button; default names "Boundary N" (recommended)
-    or empty; buttons as words or icons.
+    Owner's decisions (2026-11-27):
+    - **A dropdown change waits for an "Update" button.** Choosing another selection does not
+      change the object; it enables "Update" (one undo step) and a way to revert the
+      dropdown to the stored selection. The dropdown of an existing object starts on its
+      stored selection.
+    - **Default names are empty.** The Name box of a new selection starts empty with a
+      placeholder; "Create and use" stays disabled until a valid, unused name is typed.
+    - **Buttons are icons** (new, edit, update, remove), each with a tooltip and an
+      accessible name that says what it does.
+
+    To confirm at release: whether item 13's table rows also wait for "Update".
 13. **Value-per-selection fields as tables** (owner, 2026-11-27). "Boundary divisions"
     (`cooled=1, long sides=40, symmetry plane=1`) is typed as comma-separated text; so are
     "Boundary sizes", "Point sizes" and the Initial Condition's "Temperature per part". Show
