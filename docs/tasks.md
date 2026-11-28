@@ -944,6 +944,30 @@ From the owner's V-17 review:
       (θ = 1), Galerkin (θ = 2/3) and Crank-Nicolson (θ = 1/2); the model still stores the
       number, and another stored value shows as "Custom (θ = …)".
       `guide/getting-started.md` and `guide/tutorials/fin-quench.md` still say "Theta".
+11. **Analysis Settings panel grouped by purpose** (owner, 2026-11-27). For a transient
+    analysis the panel lists 16 fields of equal weight with no grouping. Lay it out as
+    Ansys Mechanical (Step / Nonlinear / Output Controls) and Abaqus (Basic /
+    Incrementation tabs) do, in this order, each group a **framed box** (owner's choice; they
+    will judge whether boxes are awkward to navigate) with a title and a one-line
+    description:
+    - **Analysis:** Geometry type, Analysis type.
+    - **Time** ("How long the analysis runs."): End time.
+    - **Time stepping** ("The solver sizes each step to keep its error estimate within the
+      tolerance."): Adaptive time step, Time-step tolerance (shown only when adaptive is
+      on), Initial, Smallest and Largest time step, Largest temperature change per step.
+    - **Integration** ("How each step is calculated."): Time integration, Lumped capacitance.
+    - **Results to store:** Output steps, and "Store every n-th step" / "Output times" for
+      their output choice, as today.
+    - **Convergence (advanced)** ("Iteration within each step; the defaults suit most
+      models."): Residual tolerance, Temperature tolerance, Maximum iterations, Line search.
+      **Collapsed by default** (owner); shown for steady and transient analyses.
+
+    Optional boxes show placeholder text for an empty value: "suggested from the mesh"
+    (initial step), "no limit" (largest step, largest temperature change). A steady
+    analysis shows only Analysis and the collapsed Convergence group. Validate and Solve stay
+    below the groups. Panel-only (`SolutionPanel`): the model, files and `docs/data-model.md`
+    are unchanged. The guide pages that describe this panel (`guide/getting-started.md`,
+    `guide/tutorials/fin-quench.md`, the walkthrough) are updated with item 10.
 
 - [ ] **M11.6 [C] Release review.** Check every item of Plan §6; resolve or document every
   entry in `docs/OPEN_QUESTIONS.md`. Version 1 excludes the held features M9 and M10.2 and
