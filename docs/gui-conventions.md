@@ -6,8 +6,8 @@ who learns one part of the window can predict the rest. Approved by the owner on
 held window fixes and a comparison with Ansys Mechanical, COMSOL and Abaqus/CAE.
 
 Every held window fix in `docs/tasks.md` follows these rules. Where an item's text and a
-rule disagree, the rule wins. A new panel or tool follows them from the start. Items marked
-**open** wait for the owner.
+rule disagree, the rule wins. A new panel or tool follows them from the start. The owner's
+decisions A–H of 2026-11-27 are written into the rules.
 
 ## C1. When a change takes effect
 
@@ -26,7 +26,8 @@ rule disagree, the rule wins. A new panel or tool follows them from the start. I
   "not applied"), with Update (✓) and Revert (↶) beside it. Update is one undo step.
 - In a table row, Enter in the value box applies the whole row, its pending selection
   included, so a row is never half-applied.
-- **Open (A):** leaving the panel with a change pending.
+- Leaving the panel with a change pending discards it, and the status bar says "Selection
+  change not applied" (owner, decision A).
 
 ## C2. Picking in the view
 
@@ -53,7 +54,8 @@ probe and the geometry tool dialogs.
 - Heat-flow history and energy balance need no input; they stay Results-menu windows and
   also redraw after a new solve.
 - This adds saved types to `docs/data-model.md`; the owner approves the entries.
-- **Open (B):** whether edits to result items are undo steps.
+- Adding, deleting, renaming and changing a result item is an undo step and marks the
+  model as changed, like every model edit (owner, decision B).
 
 ## C4. Show and hide
 
@@ -82,7 +84,8 @@ description. Today's bold-label headings (Mesh, network) become boxes.
 - An optional formula field names its empty mode by its meaning instead of "None":
   "Isotropic", "From network", "Use correlation".
 - A required formula field starts in Constant, never in an empty mode.
-- **Open (E):** the label "Conductivity (across axis, empty = isotropic)".
+- So the meaning of empty is never put in a label: the Material panel's field becomes
+  "Conductivity (across axis)" with the empty mode "Isotropic" (owner, decision E).
 
 ## C8. Readable choices
 
@@ -98,8 +101,9 @@ values as before. The mapping lives in the window, as for "Time integration".
   name for a part or boundary.
 - The Geometry section keeps shape words, since its operations make shapes ("Surface from
   curves").
-- **Open (H):** how a field's symbol is shown (labels in the view and summaries use `T_inf`,
-  `h`, while the panel says "Fluid temperature").
+- A field with a symbol carries it in its panel label ("Fluid temperature T∞",
+  "Heat-transfer coefficient h", "Emissivity ε"), and labels in the view and the tree's
+  summaries use that same symbol, typeset (T∞, not `T_inf`) (owner, decision H).
 
 ## C10. Highlighting
 
@@ -122,12 +126,13 @@ for an error that belongs to no single field.
 - Advanced fields stay in their purpose box under a collapsed "More" line at its bottom; a
   box that is wholly advanced is collapsed itself. A field that applies only in some cases
   is hidden when it does not apply, not collapsed.
-- **Open (C):** how a collapsed part shows values that are not the default.
+- A collapsed part stays collapsed and its title counts the values that are not the default:
+  "Convergence (advanced) · 2 changed" (owner, decision C).
 - Per panel:
   - Analysis Settings: Time stepping › More holds Initial time step, Smallest time step,
     Time-step tolerance and Largest temperature change per step; Integration (Time
     integration, Lumped capacitance; its title shows the method) and Convergence are
-    collapsed boxes. **Open (G):** confirm these two changes to held item 11.
+    collapsed boxes (owner, decision G: both changes to held item 11 accepted).
   - Mesh: Element type › More holds Algorithm and Smoothing passes.
   - Correlation convection: More holds Characteristic length, Face direction, Wall
     temperature and Multiplier.
